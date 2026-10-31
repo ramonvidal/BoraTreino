@@ -16,3 +16,6 @@ captures/
 *.apk
 *.jks
 *.keystore
+
+# The signing key text for the GitHub secret; never committed
+/signing/
