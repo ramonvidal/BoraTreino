@@ -50,6 +50,9 @@ android {
 dependencies {
     implementation(projects.core.model)
     implementation(projects.core.ui)
+    // Hilt needs the data and database modules on the app's classpath to find their bindings.
+    implementation(projects.core.data)
+    implementation(projects.core.database)
     implementation(projects.feature.today)
     implementation(projects.feature.calendar)
     implementation(projects.feature.progress)

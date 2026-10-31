@@ -1,4 +1,27 @@
 <resources>
     <string name="routines_title">Routines</string>
-    <string name="routines_message">Your machines and routines. Coming in Phase 1 and 2.</string>
+    <string name="routines_note">Routines come in Phase 2.</string>
+    <string name="routines_machines">Machines</string>
+    <string name="routines_empty_title">No machines yet</string>
+    <string name="routines_empty_body">Add one from the list below, or make your own.</string>
+    <string name="routines_new_machine">New machine</string>
+    <string name="routines_archived">Archived</string>
+    <string name="routines_add_from_list">Add from the list</string>
+    <string name="routines_add_starter">Add %1$s</string>
+    <string name="routines_expand">Show</string>
+    <string name="routines_collapse">Hide</string>
+    <string name="editor_title_new">New machine</string>
+    <string name="editor_title_edit">Edit machine</string>
+    <string name="editor_name">Name</string>
+    <string name="editor_name_error">Give the machine a name.</string>
+    <string name="editor_muscle_group">Muscle group</string>
+    <string name="editor_kind">Kind</string>
+    <string name="editor_kind_weights">Weights</string>
+    <string name="editor_kind_bodyweight">Bodyweight</string>
+    <string name="editor_step">Weight step</string>
+    <string name="editor_step_value">%1$s kg</string>
+    <string name="editor_setup_note">Setup note</string>
+    <string name="editor_setup_note_hint">Seat 4, back pad 2</string>
+    <string name="editor_archive">Archive</string>
+    <string name="editor_unarchive">Unarchive</string>
 </resources>

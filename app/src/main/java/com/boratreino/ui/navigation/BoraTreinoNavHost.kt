@@ -29,11 +29,13 @@ import com.boratreino.feature.calendar.calendarScreen
 import com.boratreino.feature.progress.PROGRESS_ROUTE
 import com.boratreino.feature.progress.progressScreen
 import com.boratreino.feature.routines.ROUTINES_ROUTE
+import com.boratreino.feature.routines.machineEditorRoute
+import com.boratreino.feature.routines.machineEditorScreen
 import com.boratreino.feature.routines.routinesScreen
 import com.boratreino.feature.settings.SETTINGS_ROUTE
 import com.boratreino.feature.settings.settingsScreen
 import com.boratreino.feature.today.TODAY_ROUTE
-import com.boratreino.feature.today.todayScreen
+import com.boratreino.feature.today.todayGraph
 import com.boratreino.feature.update.UpdateBanner
 
 enum class TopLevelDestination(
@@ -47,7 +49,7 @@ enum class TopLevelDestination(
     Routines(ROUTINES_ROUTE, R.string.nav_routines, CoreUiR.drawable.ic_routines),
 }
 
-/** The four tabs; Settings is a full screen above them with the bottom bar hidden. */
+/** The four tabs; Settings, the machine editor and Today's picker and machine screens are full screens above them with the bottom bar hidden. */
 @Composable
 fun BoraTreinoNavHost() {
     val navController = rememberNavController()
@@ -86,10 +88,16 @@ fun BoraTreinoNavHost() {
             startDestination = TopLevelDestination.Today.route,
             modifier = Modifier.padding(innerPadding),
         ) {
-            todayScreen(onOpenSettings = { navController.navigate(SETTINGS_ROUTE) { launchSingleTop = true } })
+            todayGraph(
+                navController = navController,
+                onOpenSettings = { navController.navigate(SETTINGS_ROUTE) { launchSingleTop = true } },
+                onEditMachine = { machineId -> navController.navigate(machineEditorRoute(machineId)) },
+                onNewMachine = { navController.navigate(machineEditorRoute(null)) },
+            )
             calendarScreen()
             progressScreen()
-            routinesScreen()
+            routinesScreen(onOpenEditor = { machineId -> navController.navigate(machineEditorRoute(machineId)) })
+            machineEditorScreen(onDone = { navController.popBackStack() })
             settingsScreen(onBack = { navController.popBackStack() })
         }
     }

@@ -1,6 +1,49 @@
 <resources>
     <string name="today_app_name">Bora pro Treino!</string>
     <string name="today_open_settings">Settings</string>
-    <string name="today_title">Today</string>
-    <string name="today_message">Log your sets here. Coming in Phase 1.</string>
+
+    <!-- Today tab -->
+    <string name="today_pick_to_start">Pick a machine to start</string>
+    <string name="today_all_machines">All machines</string>
+    <string name="today_add_machine">Add machine</string>
+    <string name="today_done">Done</string>
+    <string name="today_machines_and_sets">%1$s · %2$s</string>
+    <string name="today_training_now">Training now · %1$s</string>
+    <string name="today_done_snackbar">Done: %1$s</string>
+    <plurals name="today_machines">
+        <item quantity="one">%d machine</item>
+        <item quantity="other">%d machines</item>
+    </plurals>
+    <plurals name="today_sets">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
+
+    <!-- Picker -->
+    <string name="today_picker_title">Pick a machine</string>
+    <string name="today_recent">Recent</string>
+    <string name="today_more_machines">More machines</string>
+    <string name="today_new_machine">New machine</string>
+
+    <!-- Machine screen -->
+    <string name="today_edit_machine">Edit machine</string>
+    <string name="today_machine_not_found">This machine was not found</string>
+    <string name="today_first_time">First time on this machine</string>
+    <string name="today_last_time">Last time: %1$s</string>
+    <string name="today_last_time_on">Last time: %1$s · %2$s</string>
+    <string name="today_uniform_no_weight">%1$d × %2$d</string>
+    <plurals name="today_reps_only">
+        <item quantity="one">%d rep</item>
+        <item quantity="other">%d reps</item>
+    </plurals>
+    <string name="today_this_session">This session</string>
+    <string name="today_edit_set">Edit set</string>
+    <string name="today_set_number">Set %1$d</string>
+    <string name="today_weight">Weight (kg)</string>
+    <string name="today_added_weight">Added weight (kg)</string>
+    <string name="today_reps">Reps</string>
+    <string name="today_same_again">Same again · %1$s</string>
+    <string name="today_log_set">Log set</string>
+    <string name="today_delete">Delete</string>
+    <string name="today_set_removed">Set removed</string>
 </resources>

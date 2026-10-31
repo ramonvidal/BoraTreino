@@ -6,3 +6,7 @@ plugins {
 android {
     namespace = "com.boratreino.feature.today"
 }
+
+dependencies {
+    implementation(libs.kotlinx.coroutines.android)
+}
