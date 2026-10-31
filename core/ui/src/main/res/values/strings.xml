@@ -4,4 +4,24 @@
     <string name="undo">Undo</string>
     <string name="back">Back</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="done">Done</string>
+    <string name="ok">OK</string>
+    <string name="delete">Delete</string>
+    <string name="unit_kg">kg</string>
+    <string name="stepper_minus">Decrease %1$s</string>
+    <string name="stepper_plus">Increase %1$s</string>
+    <string name="number_pad_delete_digit">Delete last digit</string>
+    <string name="number_pad_decimal_separator">.</string>
+    <string name="weight_kg">%1$s kg</string>
+    <string name="set_text">%1$s kg × %2$d</string>
+    <string name="set_summary_uniform">%1$d × %2$d at %3$s kg</string>
+    <string name="set_summary_same_weight">%1$s kg: %2$s</string>
+    <string name="set_summary_separator">, </string>
+    <string name="muscle_group_legs">Legs</string>
+    <string name="muscle_group_chest">Chest</string>
+    <string name="muscle_group_back">Back</string>
+    <string name="muscle_group_shoulders">Shoulders</string>
+    <string name="muscle_group_arms">Arms</string>
+    <string name="muscle_group_core">Core</string>
+    <string name="muscle_group_cardio">Cardio</string>
 </resources>
