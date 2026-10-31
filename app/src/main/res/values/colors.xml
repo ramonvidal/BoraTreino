@@ -1,0 +1,4 @@
+<resources>
+    <!-- Window colour before Compose draws: ChoreMe's page colour (see core/ui theme). -->
+    <color name="window_background">#F4F4F2</color>
+</resources>

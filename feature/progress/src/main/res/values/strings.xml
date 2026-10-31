@@ -1,0 +1,4 @@
+<resources>
+    <string name="progress_title">Progress</string>
+    <string name="progress_message">Weight over time for each machine. Coming in Phase 5.</string>
+</resources>
