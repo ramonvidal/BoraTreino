@@ -17,10 +17,10 @@ internal interface MachineDao {
     /** Not archived, most recently logged first; machines without sets are left out. */
     @Query(
         "SELECT machines.* FROM machines " +
-            "INNER JOIN (SELECT machineId, MAX(loggedAt) AS lastAt, MAX(id) AS lastId FROM workout_sets GROUP BY machineId) AS last " +
-            "ON last.machineId = machines.id " +
+            "INNER JOIN (SELECT machineId, MAX(loggedAt) AS lastAt, MAX(id) AS lastId FROM workout_sets GROUP BY machineId) AS recent " +
+            "ON recent.machineId = machines.id " +
             "WHERE machines.archived = 0 " +
-            "ORDER BY last.lastAt DESC, last.lastId DESC LIMIT :limit",
+            "ORDER BY recent.lastAt DESC, recent.lastId DESC LIMIT :limit",
     )
     fun observeRecent(limit: Int): Flow<List<MachineEntity>>
 

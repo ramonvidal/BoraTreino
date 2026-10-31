@@ -30,7 +30,7 @@ fun setSummaryText(summary: SetSummary): String {
         is SetSummary.SameWeight ->
             stringResource(R.string.set_summary_same_weight, formatKg(summary.weightKg), summary.reps.joinToString(separator))
         is SetSummary.Mixed ->
-            summary.sets.joinToString(separator) { stringResource(R.string.set_text, formatKg(it.weightKg), it.reps) }
+            summary.sets.map { setText(it.weightKg, it.reps) }.joinToString(separator)
     }
 }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -18,8 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
 private const val MAX_LENGTH = 7
@@ -81,11 +81,15 @@ fun NumberPadDialog(
                         Box(Modifier.weight(1f))
                     }
                     PadKey("0", Modifier.weight(1f)) { press('0') }
-                    PadKey(
-                        "<",
-                        Modifier.weight(1f),
-                        description = stringResource(R.string.number_pad_delete_digit),
-                    ) { backspace() }
+                    FilledTonalButton(
+                        onClick = { backspace() },
+                        modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_backspace),
+                            contentDescription = stringResource(R.string.number_pad_delete_digit),
+                        )
+                    }
                 }
             }
         },
@@ -104,14 +108,11 @@ fun NumberPadDialog(
 private fun PadKey(
     label: String,
     modifier: Modifier,
-    description: String? = null,
     onClick: () -> Unit,
 ) {
     FilledTonalButton(
         onClick = onClick,
-        modifier = modifier
-            .heightIn(min = 56.dp)
-            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
+        modifier = modifier.heightIn(min = 56.dp),
     ) {
         Text(label, style = MaterialTheme.typography.titleLarge)
     }
