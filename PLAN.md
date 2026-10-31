@@ -122,7 +122,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 
 ## Phases
 
-- [ ] **Phase 0: Skeleton.** Modules above (empty where not needed yet), convention plugins
+- [x] **Phase 0: Skeleton.** Modules above (empty where not needed yet; `:core:health` waits for Phase 8), convention plugins
       and the module-rules check copied from PodOuvir, ChoreMe's theme with Figtree,
       launcher icon from `docs/icon-original.png`, bottom navigation with
       Today / Calendar / Progress / Routines placeholders, GitHub Actions building the APK,
