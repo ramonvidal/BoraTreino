@@ -133,7 +133,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - [x] **Phase 2: Routines and progression.** Any number of routines with targets, "in turn"
       and "fixed weekdays" modes, next routine on Today (ticks as you go), double
       progression suggestions, records with a buzz.
-- [ ] **Phase 3: Calendar.** Month view with the routine letter on each training day, day
+- [x] **Phase 3: Calendar.** Month view with the routine letter on each training day, day
       detail (edit or delete a past session, log one you forgot), weekly goal and streak of
       weeks.
 - [ ] **Phase 4: Reminders and comfort.** Training-day reminders naming the next routine,
