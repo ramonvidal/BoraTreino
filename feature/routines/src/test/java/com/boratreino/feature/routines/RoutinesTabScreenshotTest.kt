@@ -2,44 +2,93 @@ package com.boratreino.feature.routines
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.StarterMachines
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The Routines tab, light, dark and at the largest font scale; saved to build/outputs/roborazzi. */
+/** The Routines tab's machine list, with the archived and starter folds open; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class RoutinesTabScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun shoot(name: String, dark: Boolean, fontScale: Float = 1f) {
+    private fun shoot(name: String, state: RoutinesUiState) {
         compose.setContent {
-            BoraTreinoTheme(darkTheme = dark) {
-                CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
-                    Surface(Modifier.fillMaxSize()) { RoutinesContent(Modifier.fillMaxSize()) }
+            BoraTreinoTheme {
+                Surface(Modifier.fillMaxSize()) {
+                    RoutinesContent(state = state, callbacks = RoutinesCallbacks(), modifier = Modifier.fillMaxSize())
                 }
             }
         }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
-    @Test
-    fun light() = shoot("tab-routines", dark = false)
+    private val legPress = machine(1, "Leg press", MuscleGroup.LEGS, 5.0, "Seat 4")
+    private val legExtension = machine(2, "Leg extension", MuscleGroup.LEGS, 2.5)
+    private val latPulldown = machine(3, "Lat pulldown", MuscleGroup.BACK, 2.5, "Thigh pad 3")
+    private val seatedRow = machine(4, "Seated row", MuscleGroup.BACK, 2.5)
+    private val pullUps = machine(5, "Pull-ups", MuscleGroup.BACK, 2.5, bodyweight = true)
+    private val chestPress = machine(6, "Chest press", MuscleGroup.CHEST, 2.5)
+    private val shoulderPress = machine(7, "Shoulder press", MuscleGroup.SHOULDERS, 2.5)
+    private val cableCurl = machine(8, "Cable biceps curl", MuscleGroup.ARMS, 2.5)
+    private val hackSquat = machine(9, "Hack squat", MuscleGroup.LEGS, 5.0).copy(archived = true)
+
+    private val added = listOf(legPress, legExtension, latPulldown, seatedRow, pullUps, chestPress, shoulderPress, cableCurl, hackSquat)
+        .map { it.name }
+        .toSet()
+
+    private val starters = MuscleGroup.entries.mapNotNull { group ->
+        StarterMachines.all
+            .filter { it.muscleGroup == group && it.name !in added }
+            .takeIf { it.isNotEmpty() }
+            ?.let { StarterGroup(group, it) }
+    }
 
     @Test
-    fun dark() = shoot("tab-routines-dark", dark = true)
-
-    @Test
-    fun largeText() = shoot("tab-routines-large", dark = false, fontScale = 2f)
+    fun `machines with archived and starters expanded`() = shoot(
+        "routines-machines",
+        RoutinesUiState(
+            machineGroups = listOf(
+                MachineGroup(MuscleGroup.LEGS, listOf(legPress, legExtension)),
+                MachineGroup(MuscleGroup.BACK, listOf(latPulldown, seatedRow, pullUps)),
+                MachineGroup(MuscleGroup.CHEST, listOf(chestPress)),
+                MachineGroup(MuscleGroup.SHOULDERS, listOf(shoulderPress)),
+                MachineGroup(MuscleGroup.ARMS, listOf(cableCurl)),
+            ),
+            archived = listOf(hackSquat),
+            starterGroups = starters,
+            archivedExpanded = true,
+            startersExpanded = true,
+        ),
+    )
 }
+
+private fun machine(
+    id: Long,
+    name: String,
+    group: MuscleGroup,
+    stepKg: Double,
+    setupNote: String? = null,
+    bodyweight: Boolean = false,
+): Machine = Machine(
+    id = id,
+    name = name,
+    muscleGroup = group,
+    kind = if (bodyweight) MachineKind.BODYWEIGHT_REPS else MachineKind.WEIGHT_REPS,
+    stepKg = stepKg,
+    setupNote = setupNote,
+    restSeconds = null,
+    archived = false,
+)

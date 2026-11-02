@@ -5,7 +5,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,18 +18,20 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The Today tab, light, dark and at the largest font scale; saved to build/outputs/roborazzi. */
+/** The Today tab with nothing open and with a session open; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class TodayTabScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun shoot(name: String, dark: Boolean, fontScale: Float = 1f) {
+    private fun shoot(name: String, state: TodayUiState, dark: Boolean = false, fontScale: Float = 1f) {
         compose.setContent {
             BoraTreinoTheme(darkTheme = dark) {
                 CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
-                    Surface(Modifier.fillMaxSize()) { TodayContent(Modifier.fillMaxSize()) }
+                    Surface(Modifier.fillMaxSize()) {
+                        TodayContent(state = state, actions = TodayActions(), modifier = Modifier.fillMaxSize())
+                    }
                 }
             }
         }
@@ -35,11 +39,34 @@ class TodayTabScreenshotTest {
     }
 
     @Test
-    fun light() = shoot("tab-today", dark = false)
+    fun `empty light`() = shoot("today-empty", TodaySamples.noSession)
 
     @Test
-    fun dark() = shoot("tab-today-dark", dark = true)
+    fun `empty dark`() = shoot("today-empty-dark", TodaySamples.noSession, dark = true)
 
     @Test
-    fun largeText() = shoot("tab-today-large", dark = false, fontScale = 2f)
+    fun `empty large text`() = shoot("today-empty-large", TodaySamples.noSession, fontScale = 2f)
+
+    @Test
+    fun `session light`() = shoot("today-session", TodaySamples.openSession)
+
+    @Test
+    fun `session dark`() = shoot("today-session-dark", TodaySamples.openSession, dark = true)
+
+    @Test
+    fun `session large text`() = shoot("today-session-large", TodaySamples.openSession, fontScale = 2f)
+
+    @Test
+    fun `before the first read the body is blank`() {
+        compose.setContent {
+            BoraTreinoTheme {
+                Surface(Modifier.fillMaxSize()) {
+                    TodayContent(state = TodayUiState(loaded = false), actions = TodayActions(), modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
+
+        compose.onNodeWithText("Pick a machine to start").assertDoesNotExist()
+        compose.onNodeWithText("All machines").assertDoesNotExist()
+    }
 }
