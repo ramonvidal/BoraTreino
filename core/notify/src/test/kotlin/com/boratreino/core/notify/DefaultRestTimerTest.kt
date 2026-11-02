@@ -154,6 +154,7 @@ class DefaultRestTimerTest {
 
         clock.advance(Duration.ofSeconds(1))
         scope.advanceUntilIdle()
+        scope.runCurrent()
 
         assertNull(timer.state.value.endsAt)
         assertEquals(1, finished)
@@ -186,6 +187,7 @@ class DefaultRestTimerTest {
 
         clock.advance(Duration.ofSeconds(20))
         scope.advanceUntilIdle()
+        scope.runCurrent()
 
         assertEquals(0, finished)
     }
