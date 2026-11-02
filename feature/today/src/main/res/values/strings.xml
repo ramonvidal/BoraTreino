@@ -35,6 +35,11 @@
     <string name="today_target">Target %1$s</string>
     <string name="today_missed_twice">Missed the lowest reps twice</string>
 
+    <!-- Rest timer -->
+    <string name="today_rest">Rest %1$s</string>
+    <string name="today_rest_extend">+%1$d s</string>
+    <string name="today_rest_skip">Skip</string>
+
     <!-- Picker -->
     <string name="today_picker_title">Pick a machine</string>
     <string name="today_recent">Recent</string>

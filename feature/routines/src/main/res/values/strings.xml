@@ -29,6 +29,9 @@
     <string name="editor_kind_bodyweight">Bodyweight</string>
     <string name="editor_step">Weight step</string>
     <string name="editor_step_value">%1$s kg</string>
+    <string name="editor_rest">Rest after each set</string>
+    <string name="editor_rest_default">Default</string>
+    <string name="editor_rest_value">%1$d s</string>
     <string name="editor_setup_note">Setup note</string>
     <string name="editor_setup_note_hint">Seat 4, back pad 2</string>
     <string name="editor_archive">Archive</string>

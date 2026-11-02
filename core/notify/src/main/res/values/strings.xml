@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notify_rest_channel">Rest timer</string>
+    <string name="notify_rest_channel_description">Countdown between sets and the buzz when it is over</string>
+    <string name="notify_reminders_channel">Training reminders</string>
+    <string name="notify_reminders_channel_description">A nudge on your training days</string>
+
+    <string name="notify_rest">Rest</string>
+    <string name="notify_rest_over">Rest over</string>
+    <string name="notify_next_set">Next set</string>
+
+    <string name="notify_reminder_next_up">Gym today? Next up: %1$s</string>
+    <string name="notify_reminder_time_to_train">Gym today? Time to train.</string>
+    <string name="notify_reminder_behind_goal">Gym today? %1$d of %2$d this week, train today to stay on your goal.</string>
+    <string name="notify_reminder_next_routine">Next up: %1$s</string>
+</resources>

@@ -6,6 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.Record
+import com.boratreino.core.model.RestTimerRules
+import com.boratreino.core.notify.RestTimer
+import com.boratreino.core.settings.TrainingSettings
+import java.time.Clock
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.Suggestion
 import com.boratreino.core.model.LoggingRules
@@ -22,7 +26,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -58,6 +67,8 @@ internal data class MachineUiState(
     val suggestion: Suggestion? = null,
     /** The record just set, shown for a few seconds. */
     val record: Record? = null,
+    /** Whole seconds of rest left; null = no timer running. */
+    val restSeconds: Int? = null,
 )
 
 internal sealed interface MachineEvent {
@@ -75,6 +86,9 @@ private const val RECORD_SHOWN_MILLIS = 4_000L
 class MachineViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val training: TrainingRepository,
+    private val restTimer: RestTimer,
+    private val settings: TrainingSettings,
+    private val clock: Clock,
 ) : ViewModel() {
 
     private val machineId: Long = checkNotNull(savedStateHandle.get<Long>(MACHINE_ID_ARG)) { "machineId missing" }
@@ -88,7 +102,31 @@ class MachineViewModel @Inject constructor(
     private val pad = MutableStateFlow<NumberPad?>(null)
     private val record = MutableStateFlow<Record?>(null)
 
-    internal val state: StateFlow<MachineUiState> = combine(
+    /** Fires once when a rest countdown reaches zero; the screen gives a haptic. */
+    internal val restFinished: Flow<Unit> = restTimer.finished
+
+    /** The seconds left, ticking once a second while a timer runs. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val restSeconds: Flow<Int?> = restTimer.state.flatMapLatest { timer ->
+        val endsAt = timer.endsAt
+        if (endsAt == null) {
+            flowOf(null)
+        } else {
+            flow {
+                while (true) {
+                    val left = RestTimerRules.remainingSeconds(endsAt, clock.instant())
+                    if (left <= 0) {
+                        emit(null)
+                        break
+                    }
+                    emit(left)
+                    delay(1_000)
+                }
+            }
+        }
+    }
+
+    private val logState: Flow<MachineUiState> = combine(
         training.observeMachineLog(machineId),
         draftOverride,
         editor,
@@ -115,6 +153,10 @@ class MachineViewModel @Inject constructor(
                 record = newRecord,
             )
         }
+    }
+
+    internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds) { ui, rest ->
+        ui.copy(restSeconds = rest)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MachineUiState())
 
     // Logging: the write finishes first, then the event (haptic) and the fresh prefill.
@@ -130,9 +172,11 @@ class MachineViewModel @Inject constructor(
     }
 
     private suspend fun log(draft: SetDraft) {
+        val machine = state.value.machine
         val logged = training.logSet(machineId, draft)
         draftOverride.value = null
         eventChannel.send(MachineEvent.Logged(logged.record))
+        startRest(machine)
         val newRecord = logged.record ?: return
         record.value = newRecord
         viewModelScope.launch {
@@ -140,6 +184,23 @@ class MachineViewModel @Inject constructor(
             if (record.value == newRecord) record.value = null
         }
     }
+
+    /** After the write: starts the rest countdown when it is on. Never lets a failure here touch logging. */
+    private suspend fun startRest(machine: Machine?) {
+        if (machine == null) return
+        try {
+            val rest = settings.restTimer.first()
+            if (rest.enabled) restTimer.start(RestTimerRules.durationFor(machine, rest.defaultSeconds))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // The timer is a comfort; the set is already saved.
+        }
+    }
+
+    internal fun skipRest() = restTimer.skip()
+
+    internal fun extendRest() = restTimer.extend()
 
     internal fun stepWeight(up: Boolean) {
         val s = state.value

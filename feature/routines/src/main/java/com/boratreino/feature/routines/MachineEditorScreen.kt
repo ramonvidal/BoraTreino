@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
@@ -57,6 +58,7 @@ internal fun MachineEditorScreen(
             onKindChange = viewModel::setKind,
             onStepChange = viewModel::setStep,
             onSetupNoteChange = viewModel::setSetupNote,
+            onRestChange = viewModel::setRest,
             onSave = viewModel::save,
             onToggleArchived = viewModel::toggleArchived,
         ),
@@ -145,6 +147,30 @@ internal fun MachineEditorContent(
                             selected = state.stepKg == step,
                             onClick = { callbacks.onStepChange(step) },
                             label = { Text(stringResource(R.string.editor_step_value, formatKg(step))) },
+                        )
+                    }
+                }
+            }
+
+            Section(stringResource(R.string.editor_rest)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = state.restSeconds == null,
+                        onClick = { callbacks.onRestChange(null) },
+                        label = { Text(stringResource(R.string.editor_rest_default)) },
+                    )
+                    // A stored value outside the options keeps its own chip.
+                    val stored = state.restSeconds
+                    val options = if (stored == null || stored in RestTimerRules.OPTIONS) {
+                        RestTimerRules.OPTIONS
+                    } else {
+                        (RestTimerRules.OPTIONS + stored).sorted()
+                    }
+                    options.forEach { seconds ->
+                        FilterChip(
+                            selected = state.restSeconds == seconds,
+                            onClick = { callbacks.onRestChange(seconds) },
+                            label = { Text(stringResource(R.string.editor_rest_value, seconds)) },
                         )
                     }
                 }

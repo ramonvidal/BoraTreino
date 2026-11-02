@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -56,6 +57,7 @@ import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.recordText
 import com.boratreino.core.ui.suggestionText
 import com.boratreino.core.ui.targetText
+import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.model.Suggestion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -81,6 +83,8 @@ internal data class MachineActions(
     val onSaveEditor: () -> Unit = {},
     val onDeleteEditor: () -> Unit = {},
     val onDismissEditor: () -> Unit = {},
+    val onSkipRest: () -> Unit = {},
+    val onExtendRest: () -> Unit = {},
 )
 
 @Composable
@@ -95,6 +99,16 @@ internal fun MachineScreen(
     val removedText = stringResource(R.string.today_set_removed)
     val undoLabel = stringResource(CoreUiR.string.undo)
     val failedText = stringResource(CoreUiR.string.error_generic)
+
+    LaunchedEffect(viewModel) {
+        viewModel.restFinished.collect {
+            // Rest is over: the same three ticks as a record, so it is felt in a pocket.
+            repeat(3) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                delay(140)
+            }
+        }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -136,6 +150,8 @@ internal fun MachineScreen(
             onSaveEditor = viewModel::saveEditor,
             onDeleteEditor = viewModel::deleteEditor,
             onDismissEditor = viewModel::closeEditor,
+            onSkipRest = viewModel::skipRest,
+            onExtendRest = viewModel::extendRest,
         ),
         snackbarHostState = snackbar,
     )
@@ -430,6 +446,24 @@ private fun RecordCard(text: String) {
         ) {
             Icon(painterResource(CoreUiR.drawable.ic_emoji_events), contentDescription = null)
             Text(text, style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+/** The slim rest countdown above the steppers: time left, +30 s and Skip. Shown only while a timer runs. */
+@Composable
+private fun RestBar(seconds: Int, onExtend: () -> Unit, onSkip: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.today_rest, RestTimerRules.format(seconds)),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        TextButton(onClick = onExtend, modifier = Modifier.heightIn(min = 48.dp)) {
+            Text(stringResource(R.string.today_rest_extend, RestTimerRules.EXTEND_SECONDS))
+        }
+        TextButton(onClick = onSkip, modifier = Modifier.heightIn(min = 48.dp)) {
+            Text(stringResource(R.string.today_rest_skip))
         }
     }
 }

@@ -8,6 +8,7 @@ import com.boratreino.core.model.Machine
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.SessionSummary
+import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.model.SetSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -72,6 +73,7 @@ internal sealed interface TodayEvent {
 class TodayViewModel @Inject constructor(
     private val training: TrainingRepository,
     machines: MachineRepository,
+    private val restTimer: RestTimer,
 ) : ViewModel() {
 
     private val eventChannel = Channel<TodayEvent>(Channel.BUFFERED)
@@ -151,6 +153,13 @@ class TodayViewModel @Inject constructor(
     internal fun finish() {
         viewModelScope.launch {
             try {
+                try {
+                    restTimer.skip()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    // Finishing the session matters more than the timer.
+                }
                 val summary = training.finishSession() ?: return@launch
                 eventChannel.send(TodayEvent.Finished(summary))
             } catch (e: CancellationException) {

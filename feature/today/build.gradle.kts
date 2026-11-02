@@ -8,5 +8,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.notify)
+    implementation(projects.core.settings)
     implementation(libs.kotlinx.coroutines.android)
 }

@@ -50,6 +50,7 @@ android {
 dependencies {
     implementation(projects.core.model)
     implementation(projects.core.ui)
+    implementation(projects.core.notify)
     // Hilt needs the data and database modules on the app's classpath to find their bindings.
     implementation(projects.core.data)
     implementation(projects.core.database)
@@ -66,4 +67,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
+    // Gives WorkManager Hilt's worker factory (see BoraTreinoApp).
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
 }

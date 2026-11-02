@@ -27,6 +27,8 @@ internal data class MachineEditorUiState(
     val kind: MachineKind = MachineKind.WEIGHT_REPS,
     val stepKg: Double = 2.5,
     val setupNote: String = "",
+    /** Rest after each set in seconds; null = the default from Settings. */
+    val restSeconds: Int? = null,
     val archived: Boolean = false,
     /** True once the name has been edited (or a save was tried), so the error doesn't show on an untouched new form. */
     val nameTouched: Boolean = false,
@@ -45,6 +47,7 @@ internal data class MachineEditorCallbacks(
     val onKindChange: (MachineKind) -> Unit = {},
     val onStepChange: (Double) -> Unit = {},
     val onSetupNoteChange: (String) -> Unit = {},
+    val onRestChange: (Int?) -> Unit = {},
     val onSave: () -> Unit = {},
     val onToggleArchived: () -> Unit = {},
 )
@@ -79,6 +82,7 @@ class MachineEditorViewModel @Inject constructor(
                             kind = machine.kind,
                             stepKg = machine.stepKg,
                             setupNote = machine.setupNote.orEmpty(),
+                            restSeconds = machine.restSeconds,
                             archived = machine.archived,
                         )
                     }
@@ -92,6 +96,7 @@ class MachineEditorViewModel @Inject constructor(
     internal fun setKind(value: MachineKind) = _uiState.update { it.copy(kind = value) }
     internal fun setStep(value: Double) = _uiState.update { it.copy(stepKg = value) }
     internal fun setSetupNote(value: String) = _uiState.update { it.copy(setupNote = value) }
+    internal fun setRest(value: Int?) = _uiState.update { it.copy(restSeconds = value) }
 
     internal fun save() {
         val s = _uiState.value
@@ -103,7 +108,7 @@ class MachineEditorViewModel @Inject constructor(
                 kind = s.kind,
                 stepKg = s.stepKg,
                 setupNote = s.setupNote.trim().ifEmpty { null },
-                restSeconds = original?.restSeconds,
+                restSeconds = s.restSeconds,
                 archived = s.archived,
             )
         } catch (e: IllegalArgumentException) {
