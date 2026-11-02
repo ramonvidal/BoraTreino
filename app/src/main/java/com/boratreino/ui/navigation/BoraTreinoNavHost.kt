@@ -27,7 +27,7 @@ import com.boratreino.core.ui.R as CoreUiR
 import com.boratreino.feature.calendar.CALENDAR_ROUTE
 import com.boratreino.feature.calendar.calendarGraph
 import com.boratreino.feature.progress.PROGRESS_ROUTE
-import com.boratreino.feature.progress.progressScreen
+import com.boratreino.feature.progress.progressGraph
 import com.boratreino.feature.routines.ROUTINES_ROUTE
 import com.boratreino.feature.routines.machineEditorRoute
 import com.boratreino.feature.routines.machineEditorScreen
@@ -97,7 +97,7 @@ fun BoraTreinoNavHost() {
                 onNewMachine = { navController.navigate(machineEditorRoute(null)) },
             )
             calendarGraph(navController)
-            progressScreen()
+            progressGraph(navController)
             routinesScreen(
                 onOpenEditor = { machineId -> navController.navigate(machineEditorRoute(machineId)) },
                 onOpenRoutine = { routineId -> navController.navigate(routineEditorRoute(routineId)) },

@@ -6,3 +6,7 @@ plugins {
 android {
     namespace = "com.boratreino.feature.progress"
 }
+
+dependencies {
+    implementation(libs.kotlinx.coroutines.android)
+}

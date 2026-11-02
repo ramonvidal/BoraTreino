@@ -1,4 +1,54 @@
 <resources>
     <string name="progress_title">Progress</string>
-    <string name="progress_message">Weight over time for each machine. Coming in Phase 5.</string>
+    <string name="progress_empty">Log a training to see your progress.</string>
+    <string name="progress_summary">This month: %1$s · %2$s</string>
+    <plurals name="progress_trainings">
+        <item quantity="one">%d training</item>
+        <item quantity="other">%d trainings</item>
+    </plurals>
+    <plurals name="progress_records">
+        <item quantity="one">%d record</item>
+        <item quantity="other">%d records</item>
+    </plurals>
+    <string name="progress_most_improved">Most improved this month</string>
+    <string name="progress_machines">Machines</string>
+    <string name="progress_from_to_kg">%1$s → %2$s kg</string>
+    <string name="progress_from_to_reps">%1$s → %2$s reps</string>
+    <string name="progress_best_kg">Best %1$s kg</string>
+    <plurals name="progress_best_reps">
+        <item quantity="one">Best %d rep</item>
+        <item quantity="other">Best %d reps</item>
+    </plurals>
+    <string name="progress_last_trained">Last: %1$s</string>
+    <plurals name="progress_delta_reps">
+        <item quantity="one">%1$s rep</item>
+        <item quantity="other">%1$s reps</item>
+    </plurals>
+    <plurals name="progress_sets">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
+    <string name="progress_detail">%1$s · %2$s · %3$s</string>
+    <string name="progress_detail_pair">%1$s · %2$s</string>
+    <string name="progress_trend_weight">Trend: %1$s to %2$s kg</string>
+    <string name="progress_trend_reps">Trend: %1$s to %2$s reps</string>
+
+    <string name="progress_machine_not_found">This machine was not found.</string>
+    <string name="progress_tile_best">Best</string>
+    <string name="progress_tile_change">Change</string>
+    <string name="progress_no_change">No change</string>
+    <string name="progress_dash">-</string>
+    <string name="progress_change_needs_two">Needs 2 sessions</string>
+    <string name="progress_range_3m">3 months</string>
+    <string name="progress_range_1y">1 year</string>
+    <string name="progress_range_all">All</string>
+    <string name="progress_chart_title_weight">Top weight (kg)</string>
+    <string name="progress_chart_title_reps">Top reps</string>
+    <string name="progress_chart_not_enough">Not enough sessions in this range</string>
+    <string name="progress_chart_description_weight">Top weight from %1$s kg on %2$s to %3$s kg on %4$s; best %5$s kg</string>
+    <string name="progress_chart_description_reps">Top reps from %1$s on %2$s to %3$s on %4$s; best %5$s</string>
+    <string name="progress_chart_description_one_weight">Top weight %1$s kg on %2$s</string>
+    <string name="progress_chart_description_one_reps">Top reps %1$s on %2$s</string>
+    <string name="progress_sessions">Sessions</string>
+    <string name="progress_show_all">Show all</string>
 </resources>
