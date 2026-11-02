@@ -50,10 +50,15 @@ internal class DefaultTrainingRepository @Inject constructor(
             val all = plan.routines.map { it.routine }
             val mode = plan.plan.scheduleMode
             val suggested = NextRoutineRules.next(mode, all, lastRoutineId, today())
-            val activeId = open?.routineId ?: when (choice) {
-                RoutineChoice.Suggested -> suggested?.id
-                RoutineChoice.Free -> null
-                is RoutineChoice.Chosen -> choice.routineId
+            // An open session's own routine decides (null = Free); the choice only counts before one opens.
+            val activeId = if (open != null) {
+                open.routineId
+            } else {
+                when (choice) {
+                    RoutineChoice.Suggested -> suggested?.id
+                    RoutineChoice.Free -> null
+                    is RoutineChoice.Chosen -> choice.routineId
+                }
             }
             TodayPlan(
                 mode = mode,

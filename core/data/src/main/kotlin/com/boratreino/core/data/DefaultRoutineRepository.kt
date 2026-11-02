@@ -59,7 +59,10 @@ internal class DefaultRoutineRepository @Inject constructor(
                     clean.copy(planId = plan.id, position = store.routines(plan.id).size),
                 )
             } else {
-                store.updateRoutine(clean)
+                // The stored plan and position win, so a caller can't move a routine out of the plan.
+                val stored = store.routines(plan.id).firstOrNull { it.id == routine.id }
+                    ?: throw IllegalArgumentException("No routine with id ${routine.id}")
+                store.updateRoutine(clean.copy(planId = stored.planId, position = stored.position))
                 routine.id
             }
             store.replaceRoutineItems(
