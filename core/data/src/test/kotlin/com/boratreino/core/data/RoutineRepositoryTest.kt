@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Assert.fail
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.Instant
@@ -342,5 +343,41 @@ class RoutineRepositoryTest {
 
         assertEquals(emptyList<String>(), orderedShortNames())
         assertTrue(routines.observePlan().first().routines.isEmpty())
+    }
+
+    @Test
+    fun `saving an existing routine keeps its stored plan and position whatever the caller passes`() = runTest {
+        save("Routine A", "A")
+        val b = save("Routine B", "B")
+        val planId = routines.observePlan().first().plan.id
+
+        routines.saveRoutine(
+            Routine(id = b, planId = 0L, name = "Routine B2", shortName = "B", position = 99, weekdays = emptySet()),
+            emptyList(),
+        )
+
+        val stored = stored(b)
+        assertEquals(planId, stored.planId)
+        assertEquals(1, stored.position)
+        assertEquals("Routine B2", stored.name)
+        assertEquals(listOf("A" to 0, "B" to 1), positionsOf())
+        assertTrue(routines.observePlan().first().routines.any { it.routine.id == b })
+    }
+
+    @Test
+    fun `saving a routine with an id that is not stored throws and changes nothing`() = runTest {
+        save("Routine A", "A")
+
+        try {
+            routines.saveRoutine(
+                Routine(id = 999L, planId = 1L, name = "Ghost", shortName = "G", position = 0, weekdays = emptySet()),
+                emptyList(),
+            )
+            fail("expected IllegalArgumentException")
+        } catch (expected: IllegalArgumentException) {
+            // expected
+        }
+
+        assertEquals(listOf("A"), orderedShortNames())
     }
 }

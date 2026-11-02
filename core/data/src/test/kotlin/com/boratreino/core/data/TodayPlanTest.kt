@@ -383,4 +383,38 @@ class TodayPlanTest {
         assertEquals("B", plan.suggested?.shortName)
         assertFalse(plan.restDay)
     }
+
+    // An open session's own routine decides; the choice only counts before one opens.
+
+    @Test
+    fun `a reopened Free session has no active routine, though the choice is back to Suggested`() = runTest {
+        val press = machine("Leg press")
+        routine("A", press)
+        routine("B", machine("Lat pulldown"))
+        training.chooseRoutine(RoutineChoice.Free)
+        val logged = training.logSet(press, SetDraft(100.0, 10))
+        training.finishSession()
+
+        training.reopenSession(logged.set.sessionId)
+
+        assertEquals(RoutineChoice.Suggested, plan().choice)
+        assertNull(plan().active)
+        assertNull(requireNotNull(training.observeMachineLog(press).first()).target)
+    }
+
+    @Test
+    fun `an open session keeps its own routine when the choice changes in memory`() = runTest {
+        val press = machine("Leg press")
+        routine("A", machine("Lat pulldown"))
+        val b = routine("B", press)
+        training.chooseRoutine(RoutineChoice.Chosen(b))
+        val logged = training.logSet(press, SetDraft(100.0, 10))
+        training.finishSession()
+        training.reopenSession(logged.set.sessionId)
+
+        // The finish reset the choice to Suggested (which would be A), but the open session is B.
+        assertEquals(RoutineChoice.Suggested, plan().choice)
+        assertEquals(b, plan().active?.routine?.id)
+        assertEquals(b, requireNotNull(training.observeMachineLog(press).first()).target?.routineId)
+    }
 }
