@@ -139,7 +139,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - [x] **Phase 4: Reminders and comfort.** Training-day reminders naming the next routine,
       behind-the-goal nudge, rest timer with notification, Settings screen, backup
       export / import.
-- [ ] **Phase 5: Progress.** Per-machine chart and history, records list, most improved
+- [x] **Phase 5: Progress.** Per-machine chart and history, records list, most improved
       this month.
 - [ ] **Phase 6: Updates and language.** Port `:core:update` and `:feature:update`; README
       with the fixed "latest APK" link; Baianês translation.
