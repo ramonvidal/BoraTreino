@@ -1,0 +1,129 @@
+package com.boratreino.core.model
+
+import java.time.LocalDate
+import java.time.YearMonth
+
+/** What a machine's progress chart measures. */
+enum class ProgressMetric { WEIGHT, REPS }
+
+/** One point per session for one machine; [topSet] is the set that gave [value]. */
+data class SessionPoint(
+    val sessionId: Long,
+    val date: LocalDate,
+    val value: Double,
+    val topSet: WorkoutSet,
+    val setCount: Int,
+)
+
+/** A rise from [from] to [to]. */
+data class Improvement(val from: Double, val to: Double) {
+    val delta: Double get() = to - from
+    val percent: Double get() = if (from > 0) delta / from * 100 else 0.0
+}
+
+enum class ProgressRange { THREE_MONTHS, ONE_YEAR, ALL }
+
+/** Axis bounds and tick values, ascending; the first tick is [min] and the last is [max]. */
+data class ChartScale(val min: Double, val max: Double, val ticks: List<Double>)
+
+/** A machine's whole history as chart points, ascending. */
+data class MachineProgress(val machine: Machine, val metric: ProgressMetric, val points: List<SessionPoint>)
+
+data class ProgressOverview(
+    /** Machines with at least one point, last trained first (ties: name). */
+    val machines: List<MachineProgress>,
+    val trainingsThisMonth: Int,
+    val recordsThisMonth: Int,
+)
+
+object ProgressRules {
+    /** BODYWEIGHT_REPS machine with no set whose weight > 0 -> REPS; everything else -> WEIGHT. */
+    fun metricFor(machine: Machine, sets: List<WorkoutSet>): ProgressMetric =
+        if (machine.kind == MachineKind.BODYWEIGHT_REPS && sets.none { (it.weightKg ?: 0.0) > 0.0 }) {
+            ProgressMetric.REPS
+        } else {
+            ProgressMetric.WEIGHT
+        }
+
+    /**
+     * One point per session that has at least one of this machine's sets, ascending by date then session id.
+     * [sessionDates] maps session id -> its local date; sets whose session is missing are ignored.
+     * WEIGHT: topSet = heaviest weight (null counts 0), ties -> more reps, then later position. REPS: topSet = most
+     * reps, ties -> heavier, then later position. value = that set's weight or reps.
+     */
+    fun points(
+        sets: List<WorkoutSet>,
+        sessionDates: Map<Long, LocalDate>,
+        metric: ProgressMetric,
+    ): List<SessionPoint> {
+        val order: Comparator<WorkoutSet> = when (metric) {
+            ProgressMetric.WEIGHT -> compareBy<WorkoutSet>({ it.weightKg ?: 0.0 }, { it.reps ?: 0 }, { it.position })
+            ProgressMetric.REPS -> compareBy<WorkoutSet>({ it.reps ?: 0 }, { it.weightKg ?: 0.0 }, { it.position })
+        }
+        return sets
+            .filter { it.sessionId in sessionDates }
+            .groupBy { it.sessionId }
+            .map { (sessionId, group) ->
+                val top = group.maxWith(order)
+                val value = when (metric) {
+                    ProgressMetric.WEIGHT -> top.weightKg ?: 0.0
+                    ProgressMetric.REPS -> (top.reps ?: 0).toDouble()
+                }
+                SessionPoint(sessionId, sessionDates.getValue(sessionId), value, top, group.size)
+            }
+            .sortedWith(compareBy({ it.date }, { it.sessionId }))
+    }
+
+    /** THREE_MONTHS: date >= today minus 3 months (calendar months); ONE_YEAR: minus 1 year; ALL: everything. Order kept. */
+    fun inRange(points: List<SessionPoint>, range: ProgressRange, today: LocalDate): List<SessionPoint> {
+        val from = when (range) {
+            ProgressRange.THREE_MONTHS -> today.minusMonths(3)
+            ProgressRange.ONE_YEAR -> today.minusYears(1)
+            ProgressRange.ALL -> return points
+        }
+        return points.filter { !it.date.isBefore(from) }
+    }
+
+    /** Highest value; ties -> the most recent. Null when empty. */
+    fun best(points: List<SessionPoint>): SessionPoint? =
+        points.maxWithOrNull(compareBy({ it.value }, { it.date }, { it.sessionId }))
+
+    /** last.value - first.value of the given points (already range-filtered); null with fewer than 2 points. */
+    fun change(points: List<SessionPoint>): Double? =
+        if (points.size < 2) null else points.last().value - points.first().value
+
+    /**
+     * Best value in the last [days] days (date > today - days) against the best value before that
+     * (date <= today - days). Null when either side has no point or the recent best is not higher than the
+     * earlier best.
+     */
+    fun improvement(points: List<SessionPoint>, today: LocalDate, days: Int = 30): Improvement? {
+        val cut = today.minusDays(days.toLong())
+        val recent = points.filter { it.date.isAfter(cut) }.maxOfOrNull { it.value } ?: return null
+        val earlier = points.filter { !it.date.isAfter(cut) }.maxOfOrNull { it.value } ?: return null
+        return if (recent > earlier) Improvement(earlier, recent) else null
+    }
+
+    /**
+     * Records logged in [month]: replay every machine's sets in loggedAt order (then position) and count those
+     * where RecordRules.recordFor(set, earlier sets of the same machine) != null whose session date is in [month].
+     */
+    fun recordsInMonth(sets: List<WorkoutSet>, sessionDates: Map<Long, LocalDate>, month: YearMonth): Int {
+        var count = 0
+        for (group in sets.groupBy { it.machineId }.values) {
+            val earlier = ArrayList<WorkoutSet>()
+            for (set in group.sortedWith(compareBy({ it.loggedAt }, { it.position }))) {
+                val date = sessionDates[set.sessionId]
+                if (date != null && YearMonth.from(date) == month && RecordRules.recordFor(set, earlier) != null) {
+                    count++
+                }
+                earlier.add(set)
+            }
+        }
+        return count
+    }
+
+    /** Distinct training dates in [month]. */
+    fun trainingDaysInMonth(sessionDates: Collection<LocalDate>, month: YearMonth): Int =
+        sessionDates.filter { YearMonth.from(it) == month }.toSet().size
+}

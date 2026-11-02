@@ -213,6 +213,12 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
 
     override suspend fun machines(): List<Machine> = machineDao.allNow().map { it.toModel() }
 
+    override fun observeAllSets(): Flow<List<WorkoutSet>> =
+        setDao.observeAll().map { list -> list.map { it.toModel() } }
+
+    override fun observeSessions(): Flow<List<Session>> =
+        sessionDao.observeAll().map { list -> list.map { it.toModel() } }
+
     override suspend fun exportAll(): BackupData = db.withTransaction {
         BackupData(
             machines = backupDao.machines().map { it.toModel() },

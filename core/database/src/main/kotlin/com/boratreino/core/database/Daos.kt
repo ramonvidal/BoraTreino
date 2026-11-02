@@ -57,6 +57,9 @@ internal interface SessionDao {
     @Query("UPDATE sessions SET endedAt = :endedAt WHERE id = :id")
     suspend fun setEndedAt(id: Long, endedAt: Long?)
 
+    @Query("SELECT * FROM sessions ORDER BY startedAt ASC, id ASC")
+    fun observeAll(): Flow<List<SessionEntity>>
+
     @Query("SELECT * FROM sessions WHERE id = :id")
     suspend fun byId(id: Long): SessionEntity?
 
@@ -136,6 +139,9 @@ internal interface WorkoutSetDao {
 
     @Insert
     suspend fun insertAll(sets: List<WorkoutSetEntity>)
+
+    @Query("SELECT * FROM workout_sets ORDER BY loggedAt ASC, id ASC")
+    fun observeAll(): Flow<List<WorkoutSetEntity>>
 
     @Query("SELECT * FROM workout_sets WHERE machineId = :machineId")
     suspend fun forMachine(machineId: Long): List<WorkoutSetEntity>

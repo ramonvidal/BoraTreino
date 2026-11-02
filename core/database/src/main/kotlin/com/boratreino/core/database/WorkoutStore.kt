@@ -128,6 +128,13 @@ interface WorkoutStore {
     /** Every machine, archived included. */
     suspend fun machines(): List<Machine>
 
+    // Progress
+
+    /** Every set ever logged, by logged time. */
+    fun observeAllSets(): Flow<List<WorkoutSet>>
+    /** Every session, open or closed, by start time. */
+    fun observeSessions(): Flow<List<Session>>
+
     // Backup
 
     /** Everything stored, read in one transaction. */
