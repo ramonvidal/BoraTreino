@@ -368,6 +368,14 @@ internal class FakeWorkoutStore : WorkoutStore {
 
     override suspend fun machines(): List<Machine> = machineRows.toList()
 
+    // Progress
+
+    override fun observeAllSets(): Flow<List<WorkoutSet>> = observe {
+        sets.sortedWith(compareBy<WorkoutSet>({ it.loggedAt }, { it.id }))
+    }
+
+    override fun observeSessions(): Flow<List<Session>> = observe { sessionsByStart() }
+
     // Backup
 
     /** Everything, each table by id (items by routine then position). */
