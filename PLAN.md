@@ -136,7 +136,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - [x] **Phase 3: Calendar.** Month view with the routine letter on each training day, day
       detail (edit or delete a past session, log one you forgot), weekly goal and streak of
       weeks.
-- [ ] **Phase 4: Reminders and comfort.** Training-day reminders naming the next routine,
+- [x] **Phase 4: Reminders and comfort.** Training-day reminders naming the next routine,
       behind-the-goal nudge, rest timer with notification, Settings screen, backup
       export / import.
 - [ ] **Phase 5: Progress.** Per-machine chart and history, records list, most improved
