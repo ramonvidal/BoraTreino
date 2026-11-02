@@ -114,3 +114,5 @@ internal fun RoutineItem.toEntity() = RoutineItemEntity(
     repsMin = repsMin,
     repsMax = repsMax,
 )
+
+internal fun RoutinePlan.toEntity() = RoutinePlanEntity(id = id, scheduleMode = scheduleMode.name)

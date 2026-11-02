@@ -21,6 +21,7 @@ internal abstract class BoraTreinoDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun workoutSetDao(): WorkoutSetDao
     abstract fun routineDao(): RoutineDao
+    abstract fun backupDao(): BackupDao
 
     companion object {
         const val NAME = "boratreino.db"

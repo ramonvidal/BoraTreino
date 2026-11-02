@@ -1,5 +1,6 @@
 package com.boratreino.core.database
 
+import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
@@ -126,6 +127,16 @@ interface WorkoutStore {
     suspend fun restoreSession(session: Session, sets: List<WorkoutSet>)
     /** Every machine, archived included. */
     suspend fun machines(): List<Machine>
+
+    // Backup
+
+    /** Everything stored, read in one transaction. */
+    suspend fun exportAll(): BackupData
+    /**
+     * Replaces everything stored with [data], ids kept, in one transaction (deletes in foreign-key
+     * order, inserts parents first). New rows get ids after the highest one ever used.
+     */
+    suspend fun replaceAll(data: BackupData)
 
     /** Runs [block] as one database transaction. */
     suspend fun <T> inTransaction(block: suspend () -> T): T

@@ -1,6 +1,7 @@
 package com.boratreino.core.database
 
 import androidx.room.withTransaction
+import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
@@ -18,6 +19,7 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
     private val sessionDao = db.sessionDao()
     private val setDao = db.workoutSetDao()
     private val routineDao = db.routineDao()
+    private val backupDao = db.backupDao()
 
     override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> =
         machineDao.observeAll(includeArchived).map { list -> list.map { it.toModel() } }
@@ -210,6 +212,36 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
     }
 
     override suspend fun machines(): List<Machine> = machineDao.allNow().map { it.toModel() }
+
+    override suspend fun exportAll(): BackupData = db.withTransaction {
+        BackupData(
+            machines = backupDao.machines().map { it.toModel() },
+            plans = backupDao.plans().map { it.toModel() },
+            routines = backupDao.routines().map { it.toModel() },
+            items = backupDao.items().map { it.toModel() },
+            sessions = backupDao.sessions().map { it.toModel() },
+            sets = backupDao.sets().map { it.toModel() },
+        )
+    }
+
+    override suspend fun replaceAll(data: BackupData) {
+        db.withTransaction {
+            backupDao.deleteSets()
+            backupDao.deleteSessions()
+            backupDao.deleteItems()
+            backupDao.deleteRoutines()
+            backupDao.deletePlans()
+            backupDao.deleteMachines()
+            // AUTOINCREMENT keeps its counter across deletes, so new ids continue after the
+            // highest id ever used, and inserting explicit ids raises it further when needed.
+            backupDao.insertMachines(data.machines.map { it.toEntity() })
+            backupDao.insertPlans(data.plans.map { it.toEntity() })
+            backupDao.insertRoutines(data.routines.map { it.toEntity() })
+            backupDao.insertItems(data.items.map { it.toEntity() })
+            backupDao.insertSessions(data.sessions.map { it.toEntity() })
+            backupDao.insertSets(data.sets.map { it.toEntity() })
+        }
+    }
 
     override suspend fun <T> inTransaction(block: suspend () -> T): T = db.withTransaction { block() }
 }
