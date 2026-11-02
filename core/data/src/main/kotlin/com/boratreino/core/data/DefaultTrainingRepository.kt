@@ -29,7 +29,9 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 internal class DefaultTrainingRepository @Inject constructor(
     private val store: WorkoutStore,
     private val clock: Clock,
@@ -37,6 +39,11 @@ internal class DefaultTrainingRepository @Inject constructor(
 ) : TrainingRepository {
     /** The owner's pick for today's training; in memory only, back to Suggested when a session ends. */
     private val choice = MutableStateFlow<RoutineChoice>(RoutineChoice.Suggested)
+
+    /** Back to Suggested; used when a session ends in some other way (deleted from the calendar). */
+    internal fun resetChoice() {
+        choice.value = RoutineChoice.Suggested
+    }
 
     private fun today() = LocalDate.now(clock).dayOfWeek
 

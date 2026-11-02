@@ -177,5 +177,39 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
         }
     }
 
+    override fun observeSessionsStartedBetween(start: Instant, end: Instant): Flow<List<Session>> =
+        sessionDao.observeBetween(start.toEpochMilli(), end.toEpochMilli()).map { list -> list.map { it.toModel() } }
+
+    override fun observeSetsOfSessionsStartedBetween(start: Instant, end: Instant): Flow<List<WorkoutSet>> =
+        setDao.observeStartedBetween(start.toEpochMilli(), end.toEpochMilli()).map { list -> list.map { it.toModel() } }
+
+    override fun observeSessionStarts(): Flow<List<Instant>> =
+        sessionDao.observeStarts().map { list -> list.map(Instant::ofEpochMilli) }
+
+    override fun observeSession(id: Long): Flow<Session?> = sessionDao.observeById(id).map { it?.toModel() }
+
+    override suspend fun session(id: Long): Session? = sessionDao.byId(id)?.toModel()
+
+    override fun observeAllRoutines(): Flow<List<Routine>> =
+        routineDao.observeAllRoutines().map { list -> list.map { it.toModel() } }
+
+    override suspend fun allRoutines(): List<Routine> = routineDao.allRoutines().map { it.toModel() }
+
+    override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> =
+        setDao.lastTimeBefore(sessionId, machineId).map { it.toModel() }
+
+    override suspend fun deleteSession(sessionId: Long) {
+        sessionDao.delete(sessionId)
+    }
+
+    override suspend fun restoreSession(session: Session, sets: List<WorkoutSet>) {
+        db.withTransaction {
+            sessionDao.insert(session.toEntity())
+            if (sets.isNotEmpty()) setDao.insertAll(sets.map { it.toEntity() })
+        }
+    }
+
+    override suspend fun machines(): List<Machine> = machineDao.allNow().map { it.toModel() }
+
     override suspend fun <T> inTransaction(block: suspend () -> T): T = db.withTransaction { block() }
 }

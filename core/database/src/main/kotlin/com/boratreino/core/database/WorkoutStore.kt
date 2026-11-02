@@ -105,6 +105,28 @@ interface WorkoutStore {
     /** Replaces the routine's items with [items] (stored as given). */
     suspend fun replaceRoutineItems(routineId: Long, items: List<RoutineItem>)
 
+    // Calendar and history
+
+    /** Sessions with startedAt in [start, end), by startedAt. */
+    fun observeSessionsStartedBetween(start: Instant, end: Instant): Flow<List<Session>>
+    /** Sets of the sessions with startedAt in [start, end). */
+    fun observeSetsOfSessionsStartedBetween(start: Instant, end: Instant): Flow<List<WorkoutSet>>
+    /** The start time of every session. */
+    fun observeSessionStarts(): Flow<List<Instant>>
+    fun observeSession(id: Long): Flow<Session?>
+    suspend fun session(id: Long): Session?
+    /** Routines of every plan by position. */
+    fun observeAllRoutines(): Flow<List<Routine>>
+    suspend fun allRoutines(): List<Routine>
+    /** The machine's sets in its most recent session that started before session [sessionId]'s. */
+    suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet>
+    /** Deletes the session; its sets go with it (cascade). */
+    suspend fun deleteSession(sessionId: Long)
+    /** Re-inserts [session] and [sets] with their ids, in one transaction. */
+    suspend fun restoreSession(session: Session, sets: List<WorkoutSet>)
+    /** Every machine, archived included. */
+    suspend fun machines(): List<Machine>
+
     /** Runs [block] as one database transaction. */
     suspend fun <T> inTransaction(block: suspend () -> T): T
 }

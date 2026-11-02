@@ -11,6 +11,9 @@ internal interface MachineDao {
     @Query("SELECT * FROM machines WHERE :includeArchived = 1 OR archived = 0 ORDER BY name COLLATE NOCASE ASC, id ASC")
     fun observeAll(includeArchived: Boolean): Flow<List<MachineEntity>>
 
+    @Query("SELECT * FROM machines")
+    suspend fun allNow(): List<MachineEntity>
+
     @Query("SELECT * FROM machines WHERE id = :id")
     fun observe(id: Long): Flow<MachineEntity?>
 
@@ -54,6 +57,21 @@ internal interface SessionDao {
     @Query("UPDATE sessions SET endedAt = :endedAt WHERE id = :id")
     suspend fun setEndedAt(id: Long, endedAt: Long?)
 
+    @Query("SELECT * FROM sessions WHERE id = :id")
+    suspend fun byId(id: Long): SessionEntity?
+
+    @Query("SELECT * FROM sessions WHERE id = :id")
+    fun observeById(id: Long): Flow<SessionEntity?>
+
+    @Query("SELECT * FROM sessions WHERE startedAt >= :start AND startedAt < :end ORDER BY startedAt ASC, id ASC")
+    fun observeBetween(start: Long, end: Long): Flow<List<SessionEntity>>
+
+    @Query("SELECT startedAt FROM sessions ORDER BY startedAt ASC")
+    fun observeStarts(): Flow<List<Long>>
+
+    @Query("DELETE FROM sessions WHERE id = :id")
+    suspend fun delete(id: Long)
+
     @Query("UPDATE sessions SET routineId = :routineId WHERE id = :id")
     suspend fun setRoutineId(id: Long, routineId: Long?)
 
@@ -95,6 +113,29 @@ internal interface WorkoutSetDao {
             "ORDER BY sessions.startedAt DESC, sessions.id DESC, workout_sets.position ASC, workout_sets.id ASC",
     )
     fun observeLastSessions(machineId: Long, excludeSessionId: Long, limit: Int): Flow<List<WorkoutSetEntity>>
+
+    /** Sets of sessions that started in [start, end). */
+    @Query(
+        "SELECT workout_sets.* FROM workout_sets " +
+            "INNER JOIN sessions ON sessions.id = workout_sets.sessionId " +
+            "WHERE sessions.startedAt >= :start AND sessions.startedAt < :end",
+    )
+    fun observeStartedBetween(start: Long, end: Long): Flow<List<WorkoutSetEntity>>
+
+    /** The machine's sets in its most recent session that started before session [sessionId]'s. */
+    @Query(
+        "SELECT * FROM workout_sets WHERE machineId = :machineId AND sessionId = (" +
+            "SELECT s.id FROM sessions AS s, sessions AS cur " +
+            "WHERE cur.id = :sessionId AND s.id <> cur.id " +
+            "AND (s.startedAt < cur.startedAt OR (s.startedAt = cur.startedAt AND s.id < cur.id)) " +
+            "AND EXISTS (SELECT 1 FROM workout_sets AS w WHERE w.sessionId = s.id AND w.machineId = :machineId) " +
+            "ORDER BY s.startedAt DESC, s.id DESC LIMIT 1) " +
+            "ORDER BY position ASC, id ASC",
+    )
+    suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSetEntity>
+
+    @Insert
+    suspend fun insertAll(sets: List<WorkoutSetEntity>)
 
     @Query("SELECT * FROM workout_sets WHERE machineId = :machineId")
     suspend fun forMachine(machineId: Long): List<WorkoutSetEntity>
@@ -146,6 +187,12 @@ internal interface RoutineDao {
 
     @Query("SELECT * FROM routines WHERE planId = :planId ORDER BY position ASC, id ASC")
     suspend fun routines(planId: Long): List<RoutineEntity>
+
+    @Query("SELECT * FROM routines ORDER BY position ASC, id ASC")
+    fun observeAllRoutines(): Flow<List<RoutineEntity>>
+
+    @Query("SELECT * FROM routines ORDER BY position ASC, id ASC")
+    suspend fun allRoutines(): List<RoutineEntity>
 
     @Query("SELECT * FROM routines WHERE id = :id")
     fun observeRoutine(id: Long): Flow<RoutineEntity?>
