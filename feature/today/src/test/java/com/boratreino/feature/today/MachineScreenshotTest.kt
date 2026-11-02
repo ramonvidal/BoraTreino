@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -163,4 +164,26 @@ class MachineScreenshotTest {
             record = Record.MostReps(120.0, 12),
         ),
     )
+
+    /** A set was just logged: the rest bar with 1:12 left sits above the steppers. */
+    @Test
+    fun `rest running after a set`() {
+        shoot(
+            "machine-rest",
+            MachineUiState(
+                loaded = true,
+                machine = TodaySamples.legPress,
+                lastTime = SetSummary.Uniform(count = 3, weightKg = 120.0, reps = 12),
+                lastTimeAt = lastVisit,
+                sets = listOf(
+                    TodaySamples.set(1, TodaySamples.legPress, 0, 120.0, 12, Instant.parse("2026-10-31T18:12:00Z")),
+                ),
+                weightKg = 120.0,
+                reps = 11,
+                sameAgain = SetDraft(120.0, 12),
+                restSeconds = 72,
+            ),
+        )
+        compose.onNodeWithText("Rest 1:12").assertExists()
+    }
 }

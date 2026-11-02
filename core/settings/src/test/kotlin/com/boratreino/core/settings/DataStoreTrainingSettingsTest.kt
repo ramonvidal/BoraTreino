@@ -6,7 +6,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.model.ReminderSettings
+import com.boratreino.core.model.RestTimerSettings
 import java.io.File
+import java.time.DayOfWeek
+import java.time.LocalTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -101,5 +105,103 @@ class DataStoreTrainingSettingsTest {
         newSettings(dataStore).setWeeklyGoal(4)
 
         assertEquals(4, newSettings(dataStore).weeklyGoal.first())
+    }
+
+    // Training reminders
+
+    @Test
+    fun `reminders are off on Monday to Friday at 18 00 until they are set`() = runTest {
+        val reminders = newSettings().reminders.first()
+
+        assertEquals(ReminderSettings(), reminders)
+        assertEquals(false, reminders.enabled)
+        assertEquals(setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY), reminders.weekdays)
+        assertEquals(LocalTime.of(18, 0), reminders.time)
+    }
+
+    @Test
+    fun `reminder settings are read back as they were set`() = runTest {
+        val settings = newSettings()
+        val wanted = ReminderSettings(enabled = true, weekdays = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY), time = LocalTime.of(7, 45))
+
+        settings.setReminders(wanted)
+
+        assertEquals(wanted, settings.reminders.first())
+    }
+
+    @Test
+    fun `an empty set of weekdays is stored and read back as empty`() = runTest {
+        val settings = newSettings()
+
+        settings.setReminders(ReminderSettings(enabled = true, weekdays = emptySet(), time = LocalTime.of(18, 0)))
+
+        assertEquals(emptySet<DayOfWeek>(), settings.reminders.first().weekdays)
+    }
+
+    @Test
+    fun `the reminder time is stored as minutes of the day`() = runTest {
+        val dataStore = newDataStore()
+
+        newSettings(dataStore).setReminders(ReminderSettings(enabled = true, time = LocalTime.of(7, 45)))
+
+        assertEquals(7 * 60 + 45, dataStore.data.first()[intPreferencesKey("reminder_minute_of_day")])
+    }
+
+    @Test
+    fun `turning reminders off keeps the chosen days and time`() = runTest {
+        val settings = newSettings()
+        settings.setReminders(ReminderSettings(enabled = true, weekdays = setOf(DayOfWeek.TUESDAY), time = LocalTime.of(20, 30)))
+
+        settings.setReminders(settings.reminders.first().copy(enabled = false))
+
+        val reminders = settings.reminders.first()
+        assertEquals(false, reminders.enabled)
+        assertEquals(setOf(DayOfWeek.TUESDAY), reminders.weekdays)
+        assertEquals(LocalTime.of(20, 30), reminders.time)
+    }
+
+    // Rest timer
+
+    @Test
+    fun `the rest timer is on with 90 seconds until it is set`() = runTest {
+        assertEquals(RestTimerSettings(enabled = true, defaultSeconds = 90), newSettings().restTimer.first())
+    }
+
+    @Test
+    fun `rest timer settings are read back as they were set`() = runTest {
+        val settings = newSettings()
+        val wanted = RestTimerSettings(enabled = false, defaultSeconds = 120)
+
+        settings.setRestTimer(wanted)
+
+        assertEquals(wanted, settings.restTimer.first())
+    }
+
+    @Test
+    fun `a default below 15 seconds is stored as 15`() = runTest {
+        val settings = newSettings()
+
+        settings.setRestTimer(RestTimerSettings(enabled = true, defaultSeconds = 5))
+
+        assertEquals(15, settings.restTimer.first().defaultSeconds)
+    }
+
+    @Test
+    fun `a default above 600 seconds is stored as 600`() = runTest {
+        val settings = newSettings()
+
+        settings.setRestTimer(RestTimerSettings(enabled = true, defaultSeconds = 4_000))
+
+        assertEquals(600, settings.restTimer.first().defaultSeconds)
+    }
+
+    @Test
+    fun `reminders and rest timer do not change each other`() = runTest {
+        val settings = newSettings()
+        settings.setRestTimer(RestTimerSettings(enabled = false, defaultSeconds = 60))
+        settings.setReminders(ReminderSettings(enabled = true))
+
+        assertEquals(RestTimerSettings(enabled = false, defaultSeconds = 60), settings.restTimer.first())
+        assertEquals(3, settings.weeklyGoal.first())
     }
 }

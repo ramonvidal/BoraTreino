@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -59,4 +60,23 @@ class MachineEditorScreenshotTest {
             archived = false,
         ),
     )
+
+    /** The rest chips, with 90 seconds chosen. */
+    @Test
+    fun `rest after each set, 90 seconds chosen`() {
+        shoot(
+            "machine-editor-rest",
+            MachineEditorUiState(
+                loading = false,
+                machineId = 3L,
+                name = "Lat pulldown",
+                muscleGroup = MuscleGroup.BACK,
+                kind = MachineKind.WEIGHT_REPS,
+                stepKg = 2.5,
+                setupNote = "Thigh pad 3",
+                restSeconds = 90,
+            ),
+        )
+        compose.onNodeWithText("90 s").assertExists()
+    }
 }

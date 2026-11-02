@@ -1,6 +1,7 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
+import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
@@ -366,6 +367,40 @@ internal class FakeWorkoutStore : WorkoutStore {
     }
 
     override suspend fun machines(): List<Machine> = machineRows.toList()
+
+    // Backup
+
+    /** Everything, each table by id (items by routine then position). */
+    override suspend fun exportAll(): BackupData = BackupData(
+        machines = machineRows.sortedBy { it.id },
+        plans = plans.sortedBy { it.id },
+        routines = routines.sortedBy { it.id },
+        items = items.sortedWith(compareBy({ it.routineId }, { it.position })),
+        sessions = sessions.sortedBy { it.id },
+        sets = sets.sortedBy { it.id },
+    )
+
+    /** Replaces every table; ids are kept and the counters continue after the highest id seen. */
+    override suspend fun replaceAll(data: BackupData) {
+        sets.clear()
+        sessions.clear()
+        items.clear()
+        routines.clear()
+        plans.clear()
+        machineRows.clear()
+        machineRows += data.machines
+        plans += data.plans
+        routines += data.routines
+        items += data.items
+        sessions += data.sessions
+        sets += data.sets
+        nextMachineId = maxOf(nextMachineId, (data.machines.maxOfOrNull { it.id } ?: 0L) + 1)
+        nextPlanId = maxOf(nextPlanId, (data.plans.maxOfOrNull { it.id } ?: 0L) + 1)
+        nextRoutineId = maxOf(nextRoutineId, (data.routines.maxOfOrNull { it.id } ?: 0L) + 1)
+        nextSessionId = maxOf(nextSessionId, (data.sessions.maxOfOrNull { it.id } ?: 0L) + 1)
+        nextSetId = maxOf(nextSetId, (data.sets.maxOfOrNull { it.id } ?: 0L) + 1)
+        changed()
+    }
 
     override suspend fun <T> inTransaction(block: suspend () -> T): T = block()
 }
