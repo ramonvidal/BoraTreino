@@ -6,3 +6,8 @@ plugins {
 android {
     namespace = "com.boratreino.feature.calendar"
 }
+
+dependencies {
+    implementation(projects.core.settings)
+    implementation(libs.kotlinx.coroutines.android)
+}

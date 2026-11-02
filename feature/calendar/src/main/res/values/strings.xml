@@ -1,4 +1,57 @@
 <resources>
-    <string name="calendar_title">Calendar</string>
-    <string name="calendar_message">Your training days and weekly goal. Coming in Phase 3.</string>
+    <!-- Week card and month -->
+    <string name="calendar_week_progress">This week: %1$d of %2$d</string>
+    <plurals name="calendar_streak">
+        <item quantity="one">Streak: %d week</item>
+        <item quantity="other">Streak: %d weeks</item>
+    </plurals>
+    <plurals name="calendar_streak_start">
+        <item quantity="one">Train %d day this week to start a streak</item>
+        <item quantity="other">Train %d days this week to start a streak</item>
+    </plurals>
+    <string name="calendar_goal_title">Weekly goal</string>
+    <string name="calendar_goal_label">Training days per week</string>
+    <string name="calendar_previous_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+
+    <!-- Day detail -->
+    <string name="calendar_free_training">Free training</string>
+    <string name="calendar_session_summary">%1$s · %2$s · %3$s</string>
+    <string name="calendar_time_range">%1$s–%2$s</string>
+    <string name="calendar_time_open">%1$s, training now</string>
+    <string name="calendar_edit">Edit</string>
+    <string name="calendar_delete">Delete</string>
+    <string name="calendar_nothing_logged">Nothing logged</string>
+    <string name="calendar_add_training">Add a training</string>
+    <string name="calendar_delete_title">Delete this training?</string>
+    <string name="calendar_delete_message">The training and all its sets will be removed.</string>
+    <string name="calendar_deleted">Training deleted</string>
+    <plurals name="calendar_machines">
+        <item quantity="one">%d machine</item>
+        <item quantity="other">%d machines</item>
+    </plurals>
+    <plurals name="calendar_sets">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
+
+    <!-- Session editor -->
+    <string name="calendar_free">Free</string>
+    <string name="calendar_no_sets">No sets yet. Add a machine to start.</string>
+    <string name="calendar_add_set">Add set</string>
+    <string name="calendar_add_machine">Add machine</string>
+    <string name="calendar_pick_machine">Pick a machine</string>
+    <string name="calendar_no_machines">No machines yet</string>
+    <string name="calendar_session_not_found">This training no longer exists</string>
+    <string name="calendar_edit_set">Edit set</string>
+    <string name="calendar_set_removed">Set removed</string>
+    <string name="calendar_set_number">Set %1$d</string>
+    <string name="calendar_weight">Weight (kg)</string>
+    <string name="calendar_added_weight">Added weight (kg)</string>
+    <string name="calendar_reps">Reps</string>
+    <string name="calendar_uniform_no_weight">%1$d × %2$d</string>
+    <plurals name="calendar_reps_only">
+        <item quantity="one">%d rep</item>
+        <item quantity="other">%d reps</item>
+    </plurals>
 </resources>

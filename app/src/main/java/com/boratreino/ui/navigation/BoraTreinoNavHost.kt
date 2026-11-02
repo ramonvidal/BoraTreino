@@ -25,7 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import com.boratreino.R
 import com.boratreino.core.ui.R as CoreUiR
 import com.boratreino.feature.calendar.CALENDAR_ROUTE
-import com.boratreino.feature.calendar.calendarScreen
+import com.boratreino.feature.calendar.calendarGraph
 import com.boratreino.feature.progress.PROGRESS_ROUTE
 import com.boratreino.feature.progress.progressScreen
 import com.boratreino.feature.routines.ROUTINES_ROUTE
@@ -96,7 +96,7 @@ fun BoraTreinoNavHost() {
                 onEditMachine = { machineId -> navController.navigate(machineEditorRoute(machineId)) },
                 onNewMachine = { navController.navigate(machineEditorRoute(null)) },
             )
-            calendarScreen()
+            calendarGraph(navController)
             progressScreen()
             routinesScreen(
                 onOpenEditor = { machineId -> navController.navigate(machineEditorRoute(machineId)) },
