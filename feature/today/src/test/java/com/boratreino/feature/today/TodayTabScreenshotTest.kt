@@ -56,6 +56,18 @@ class TodayTabScreenshotTest {
     fun `session large text`() = shoot("today-session-large", TodaySamples.openSession, fontScale = 2f)
 
     @Test
+    fun `routine B is next, nothing done yet`() = shoot("today-routine", TodaySamples.routineBNotStarted)
+
+    @Test
+    fun `routine B in progress`() = shoot("today-routine-session", TodaySamples.routineBInProgress)
+
+    @Test
+    fun `routine B in progress dark`() = shoot("today-routine-dark", TodaySamples.routineBInProgress, dark = true)
+
+    @Test
+    fun `rest day on fixed weekdays`() = shoot("today-rest-day", TodaySamples.restDay)
+
+    @Test
     fun `before the first read the body is blank`() {
         compose.setContent {
             BoraTreinoTheme {

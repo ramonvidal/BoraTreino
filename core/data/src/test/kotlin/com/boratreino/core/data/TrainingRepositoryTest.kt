@@ -30,12 +30,16 @@ class TrainingRepositoryTest {
     fun setUp() {
         store = FakeWorkoutStore()
         clock = TestClock(t0)
-        training = DefaultTrainingRepository(store, clock)
+        training = DefaultTrainingRepository(store, clock, DefaultRoutineRepository(store))
         machines = DefaultMachineRepository(store)
     }
 
     private suspend fun machine(name: String, group: MuscleGroup = MuscleGroup.BACK): Long =
         machines.save(Machine(0, name, group, MachineKind.WEIGHT_REPS, 2.5, null, null, false))
+
+    /** The logged set without its record; the record has its own tests. */
+    private suspend fun logSet(machineId: Long, draft: SetDraft): WorkoutSet =
+        training.logSet(machineId, draft).set
 
     private suspend fun machineLog(machineId: Long): MachineLog =
         requireNotNull(training.observeMachineLog(machineId).first())
@@ -49,7 +53,7 @@ class TrainingRepositoryTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
         assertNull(training.observeOpenSession().first())
 
-        val set = training.logSet(leg, SetDraft(120.0, 12))
+        val set = logSet(leg, SetDraft(120.0, 12))
 
         val open = requireNotNull(training.observeOpenSession().first())
         assertEquals(set.sessionId, open.session.id)
@@ -61,9 +65,9 @@ class TrainingRepositoryTest {
     @Test
     fun `later sets in the same visit join the open session`() = runTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
-        val first = training.logSet(leg, SetDraft(120.0, 12))
+        val first = logSet(leg, SetDraft(120.0, 12))
         clock.advance(minutes(5))
-        val second = training.logSet(leg, SetDraft(120.0, 10))
+        val second = logSet(leg, SetDraft(120.0, 10))
 
         assertEquals(first.sessionId, second.sessionId)
         assertEquals(1, store.allSessions().size)
@@ -72,10 +76,10 @@ class TrainingRepositoryTest {
     @Test
     fun `a set 2 h 59 min after the last one stays in the same session`() = runTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
-        val first = training.logSet(leg, SetDraft(120.0, 12))
+        val first = logSet(leg, SetDraft(120.0, 12))
         clock.advance(Duration.ofHours(2).plusMinutes(59))
 
-        val second = training.logSet(leg, SetDraft(120.0, 12))
+        val second = logSet(leg, SetDraft(120.0, 12))
 
         assertEquals(first.sessionId, second.sessionId)
         assertEquals(1, store.allSessions().size)
@@ -84,13 +88,13 @@ class TrainingRepositoryTest {
     @Test
     fun `a set 3 h after the last one closes the old session at that last set and opens a new one`() = runTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
-        val first = training.logSet(leg, SetDraft(120.0, 12))
+        val first = logSet(leg, SetDraft(120.0, 12))
         clock.advance(Duration.ofHours(1))
-        val second = training.logSet(leg, SetDraft(120.0, 12))
+        val second = logSet(leg, SetDraft(120.0, 12))
         val lastSetAt = second.loggedAt
         clock.advance(Duration.ofHours(3))
 
-        val third = training.logSet(leg, SetDraft(125.0, 10))
+        val third = logSet(leg, SetDraft(125.0, 10))
 
         val old = store.allSessions().first { it.id == first.sessionId }
         assertEquals(lastSetAt, old.endedAt)
@@ -115,7 +119,7 @@ class TrainingRepositoryTest {
     @Test
     fun `close stale session leaves a fresh session open`() = runTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
-        training.logSet(leg, SetDraft(120.0, 12))
+        logSet(leg, SetDraft(120.0, 12))
         clock.advance(Duration.ofHours(2))
 
         training.closeStaleSession()
@@ -126,7 +130,7 @@ class TrainingRepositoryTest {
     @Test
     fun `close stale session closes a stale session at its last set`() = runTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
-        val set = training.logSet(leg, SetDraft(120.0, 12))
+        val set = logSet(leg, SetDraft(120.0, 12))
         clock.advance(Duration.ofHours(3))
 
         training.closeStaleSession()
@@ -138,12 +142,12 @@ class TrainingRepositoryTest {
     @Test
     fun `staleness counts from the last set, not from the start of the session`() = runTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
-        val first = training.logSet(leg, SetDraft(120.0, 12))
+        val first = logSet(leg, SetDraft(120.0, 12))
         clock.advance(Duration.ofHours(2))
-        training.logSet(leg, SetDraft(120.0, 12))
+        logSet(leg, SetDraft(120.0, 12))
         clock.advance(Duration.ofHours(2))
 
-        val third = training.logSet(leg, SetDraft(120.0, 12))
+        val third = logSet(leg, SetDraft(120.0, 12))
 
         assertEquals(first.sessionId, third.sessionId)
         assertEquals(1, store.allSessions().size)
@@ -156,9 +160,9 @@ class TrainingRepositoryTest {
         val lat = machine("Lat pulldown")
         val row = machine("Seated row")
 
-        val a = training.logSet(lat, SetDraft(55.0, 10))
-        val b = training.logSet(row, SetDraft(40.0, 10))
-        val c = training.logSet(lat, SetDraft(55.0, 9))
+        val a = logSet(lat, SetDraft(55.0, 10))
+        val b = logSet(row, SetDraft(40.0, 10))
+        val c = logSet(lat, SetDraft(55.0, 9))
 
         assertEquals(listOf(0, 0, 1), listOf(a, b, c).map { it.position })
     }
@@ -169,11 +173,11 @@ class TrainingRepositoryTest {
     fun `the open session lists its machines most recently logged first`() = runTest {
         val lat = machine("Lat pulldown")
         val row = machine("Seated row")
-        training.logSet(lat, SetDraft(55.0, 10))
+        logSet(lat, SetDraft(55.0, 10))
         clock.advance(minutes(5))
-        training.logSet(row, SetDraft(40.0, 10))
+        logSet(row, SetDraft(40.0, 10))
         clock.advance(minutes(10))
-        training.logSet(lat, SetDraft(55.0, 8))
+        logSet(lat, SetDraft(55.0, 8))
 
         val open = requireNotNull(training.observeOpenSession().first())
 
@@ -186,7 +190,7 @@ class TrainingRepositoryTest {
     fun `the open session lists only machines with sets`() = runTest {
         val lat = machine("Lat pulldown")
         machine("Seated row")
-        training.logSet(lat, SetDraft(55.0, 10))
+        logSet(lat, SetDraft(55.0, 10))
 
         val open = requireNotNull(training.observeOpenSession().first())
 
@@ -215,13 +219,13 @@ class TrainingRepositoryTest {
     @Test
     fun `last time comes from the previous session, not the open one`() = runTest {
         val press = machine("Leg press", MuscleGroup.LEGS)
-        val lastVisit1 = training.logSet(press, SetDraft(120.0, 12))
+        val lastVisit1 = logSet(press, SetDraft(120.0, 12))
         clock.advance(minutes(10))
-        val lastVisit2 = training.logSet(press, SetDraft(120.0, 10))
+        val lastVisit2 = logSet(press, SetDraft(120.0, 10))
         clock.advance(minutes(10))
         training.finishSession()
         clock.now = t0.plus(Duration.ofDays(1))
-        val today = training.logSet(press, SetDraft(125.0, 12))
+        val today = logSet(press, SetDraft(125.0, 12))
 
         val log = machineLog(press)
 
@@ -235,13 +239,13 @@ class TrainingRepositoryTest {
         val press = machine("Leg press", MuscleGroup.LEGS)
         val row = machine("Seated row")
         val curl = machine("Biceps curl")
-        val lastVisit = training.logSet(press, SetDraft(120.0, 12))
+        val lastVisit = logSet(press, SetDraft(120.0, 12))
         training.finishSession()
         clock.now = t0.plus(Duration.ofDays(1))
-        training.logSet(row, SetDraft(40.0, 10))
+        logSet(row, SetDraft(40.0, 10))
         training.finishSession()
         clock.now = t0.plus(Duration.ofDays(2))
-        training.logSet(curl, SetDraft(10.0, 12))
+        logSet(curl, SetDraft(10.0, 12))
 
         val log = machineLog(press)
 
@@ -254,8 +258,8 @@ class TrainingRepositoryTest {
     fun `this session holds only that machine's sets in the open session`() = runTest {
         val press = machine("Leg press", MuscleGroup.LEGS)
         val row = machine("Seated row")
-        val pressSet = training.logSet(press, SetDraft(120.0, 12))
-        training.logSet(row, SetDraft(40.0, 10))
+        val pressSet = logSet(press, SetDraft(120.0, 12))
+        logSet(row, SetDraft(40.0, 10))
 
         val log = machineLog(press)
 
@@ -268,9 +272,9 @@ class TrainingRepositoryTest {
     fun `finishing returns the totals and closes the session now`() = runTest {
         val lat = machine("Lat pulldown")
         val row = machine("Seated row")
-        val first = training.logSet(lat, SetDraft(55.0, 10))
-        training.logSet(lat, SetDraft(55.0, 9))
-        training.logSet(row, SetDraft(40.0, 10))
+        val first = logSet(lat, SetDraft(55.0, 10))
+        logSet(lat, SetDraft(55.0, 9))
+        logSet(row, SetDraft(40.0, 10))
         clock.advance(minutes(40))
 
         val summary = training.finishSession()
@@ -288,7 +292,7 @@ class TrainingRepositoryTest {
     @Test
     fun `reopening a finished session makes it open again`() = runTest {
         val lat = machine("Lat pulldown")
-        val set = training.logSet(lat, SetDraft(55.0, 10))
+        val set = logSet(lat, SetDraft(55.0, 10))
         training.finishSession()
 
         training.reopenSession(set.sessionId)
@@ -301,9 +305,9 @@ class TrainingRepositoryTest {
     @Test
     fun `reopening does nothing while another session is open`() = runTest {
         val lat = machine("Lat pulldown")
-        val finished = training.logSet(lat, SetDraft(55.0, 10))
+        val finished = logSet(lat, SetDraft(55.0, 10))
         training.finishSession()
-        val other = training.logSet(lat, SetDraft(55.0, 10))
+        val other = logSet(lat, SetDraft(55.0, 10))
 
         training.reopenSession(finished.sessionId)
 
@@ -317,7 +321,7 @@ class TrainingRepositoryTest {
     @Test
     fun `a deleted set is gone and restoring it brings it back with its id`() = runTest {
         val lat = machine("Lat pulldown")
-        val set = training.logSet(lat, SetDraft(55.0, 10))
+        val set = logSet(lat, SetDraft(55.0, 10))
 
         training.deleteSet(set)
         assertEquals(emptyList<WorkoutSet>(), machineLog(lat).thisSession)
@@ -329,7 +333,7 @@ class TrainingRepositoryTest {
     @Test
     fun `an updated set shows its new weight and reps`() = runTest {
         val lat = machine("Lat pulldown")
-        val set = training.logSet(lat, SetDraft(55.0, 10))
+        val set = logSet(lat, SetDraft(55.0, 10))
 
         training.updateSet(set.copy(weightKg = 57.5, reps = 8))
 

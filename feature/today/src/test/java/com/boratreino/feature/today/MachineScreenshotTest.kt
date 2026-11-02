@@ -7,8 +7,11 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.boratreino.core.model.Record
+import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetSummary
+import com.boratreino.core.model.Suggestion
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import org.junit.Rule
 import org.junit.Test
@@ -84,6 +87,80 @@ class MachineScreenshotTest {
             weightKg = 0.0,
             reps = 10,
             sameAgain = null,
+        ),
+    )
+
+    private val legPressTarget = RoutineItem(routineId = 2L, machineId = TodaySamples.legPress.id, position = 0, targetSets = 3, repsMin = 8, repsMax = 12)
+
+    @Test
+    fun `target and an up suggestion`() = shoot(
+        "machine-suggestion",
+        MachineUiState(
+            loaded = true,
+            machine = TodaySamples.legPress,
+            lastTime = SetSummary.Uniform(count = 3, weightKg = 120.0, reps = 12),
+            lastTimeAt = lastVisit,
+            sets = emptyList(),
+            weightKg = 125.0,
+            reps = 8,
+            sameAgain = SetDraft(120.0, 12),
+            target = legPressTarget,
+            suggestion = Suggestion.Up(125.0, 8),
+        ),
+    )
+
+    @Test
+    fun `target and a down suggestion after missing the bottom twice`() = shoot(
+        "machine-suggestion-down",
+        MachineUiState(
+            loaded = true,
+            machine = TodaySamples.legPress,
+            lastTime = SetSummary.Uniform(count = 3, weightKg = 120.0, reps = 8),
+            lastTimeAt = lastVisit,
+            sets = emptyList(),
+            weightKg = 115.0,
+            reps = 8,
+            sameAgain = SetDraft(120.0, 8),
+            target = legPressTarget,
+            suggestion = Suggestion.Down(115.0, 8),
+        ),
+    )
+
+    @Test
+    fun `a heaviest-weight record shown after the set`() = shoot(
+        "machine-record",
+        MachineUiState(
+            loaded = true,
+            machine = TodaySamples.legPress,
+            lastTime = SetSummary.Uniform(count = 3, weightKg = 120.0, reps = 12),
+            lastTimeAt = lastVisit,
+            sets = listOf(
+                TodaySamples.set(5, TodaySamples.legPress, 0, 125.0, 8, Instant.parse("2026-10-31T18:12:00Z")),
+            ),
+            weightKg = 125.0,
+            reps = 8,
+            sameAgain = SetDraft(120.0, 12),
+            target = legPressTarget,
+            record = Record.HeaviestWeight(125.0),
+        ),
+    )
+
+    @Test
+    fun `a most-reps record shown after the set`() = shoot(
+        "machine-record-reps",
+        MachineUiState(
+            loaded = true,
+            machine = TodaySamples.legPress,
+            lastTime = SetSummary.Uniform(count = 3, weightKg = 120.0, reps = 10),
+            lastTimeAt = lastVisit,
+            sets = listOf(
+                TodaySamples.set(6, TodaySamples.legPress, 0, 120.0, 12, Instant.parse("2026-10-31T18:12:00Z")),
+            ),
+            weightKg = 120.0,
+            reps = 12,
+            sameAgain = SetDraft(120.0, 10),
+            target = legPressTarget,
+            record = Record.MostReps(120.0, 12),
         ),
     )
 }

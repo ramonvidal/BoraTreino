@@ -30,7 +30,7 @@ class MachineRepositoryTest {
         store = FakeWorkoutStore()
         clock = TestClock(t0)
         machines = DefaultMachineRepository(store)
-        training = DefaultTrainingRepository(store, clock)
+        training = DefaultTrainingRepository(store, clock, DefaultRoutineRepository(store))
     }
 
     private fun starter(name: String): StarterMachine = StarterMachines.all.single { it.name == name }
@@ -232,5 +232,47 @@ class MachineRepositoryTest {
 
         assertNotNull(machines.observeMachine(id).first())
         assertEquals(2, machines.observeMachines(includeArchived = true).first().size)
+    }
+
+    // Names are trimmed; matching ignores surrounding spaces and case
+
+    @Test
+    fun `saving trims the name`() = runTest {
+        val id = save("  Lat pulldown  ")
+
+        assertEquals("Lat pulldown", machines.observeMachine(id).first()?.name)
+    }
+
+    @Test
+    fun `a stored name with a trailing space counts as the starter`() = runTest {
+        val stored = store.saveMachine(Machine(0, "Leg press ", MuscleGroup.LEGS, MachineKind.WEIGHT_REPS, 5.0, null, null, false))
+
+        val names = machines.observeStartersNotAdded().first().map { it.name }
+
+        assertFalse(names.contains("Leg press"))
+        assertEquals(StarterMachines.all.size - 1, names.size)
+        assertEquals(stored, machines.addStarter(starter("Leg press")))
+        assertEquals(1, machines.observeMachines(includeArchived = true).first().size)
+    }
+
+    @Test
+    fun `a stored name with spaces and another case counts as the starter`() = runTest {
+        store.saveMachine(Machine(0, "  LEG PRESS ", MuscleGroup.LEGS, MachineKind.WEIGHT_REPS, 5.0, null, null, false))
+
+        val names = machines.observeStartersNotAdded().first().map { it.name }
+
+        assertFalse(names.contains("Leg press"))
+    }
+
+    @Test
+    fun `adding a starter whose stored name has spaces unarchives that machine`() = runTest {
+        val stored = store.saveMachine(Machine(0, "Leg press ", MuscleGroup.LEGS, MachineKind.WEIGHT_REPS, 5.0, null, null, true))
+
+        val returned = machines.addStarter(starter("Leg press"))
+
+        assertEquals(stored, returned)
+        val all = machines.observeMachines(includeArchived = true).first()
+        assertEquals(1, all.size)
+        assertFalse(all.single().archived)
     }
 }

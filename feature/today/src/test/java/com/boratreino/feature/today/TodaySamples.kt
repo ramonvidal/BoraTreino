@@ -3,6 +3,8 @@ package com.boratreino.feature.today
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.Routine
+import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.StarterMachines
@@ -59,6 +61,84 @@ internal object TodaySamples {
         loaded = true,
         session = null,
         recent = listOf(legPress, latPulldown, pullUps, chestPress),
+    )
+
+    // Routines (Phase 2): A, B and C in turn. Routine B is next.
+
+    val routineA = Routine(id = 1L, planId = 1L, name = "Routine A", shortName = "A", position = 0, weekdays = emptySet())
+    val routineB = Routine(id = 2L, planId = 1L, name = "Routine B", shortName = "B", position = 1, weekdays = emptySet())
+    val routineC = Routine(id = 3L, planId = 1L, name = "Routine C", shortName = "C", position = 2, weekdays = emptySet())
+
+    /** Routine B's machines in order, each 3 sets: Leg extension is the one to rep-range 10-15. */
+    val routineBItems: List<RoutineItem> = listOf(
+        RoutineItem(routineId = 2L, machineId = legPress.id, position = 0, targetSets = 3, repsMin = 8, repsMax = 12),
+        RoutineItem(routineId = 2L, machineId = legExtension.id, position = 1, targetSets = 3, repsMin = 10, repsMax = 15),
+        RoutineItem(routineId = 2L, machineId = latPulldown.id, position = 2, targetSets = 3, repsMin = 8, repsMax = 12),
+        RoutineItem(routineId = 2L, machineId = chestPress.id, position = 3, targetSets = 3, repsMin = 8, repsMax = 12),
+    )
+
+    /** The chips with [selectedId] selected. */
+    fun chips(selectedId: Long?): List<RoutineChipUi> = listOf(routineA, routineB, routineC).map {
+        RoutineChipUi(it.id, it.shortName, selected = it.id == selectedId)
+    }
+
+    /** Routine B, nothing done yet: the first machine is highlighted. */
+    val routineBNotStarted = TodayUiState(
+        loaded = true,
+        session = null,
+        recent = emptyList(),
+        routines = RoutineUi(
+            chips = chips(routineB.id),
+            freeSelected = false,
+            activeName = routineB.name,
+            machines = routineBItems.mapIndexed { i, item ->
+                RoutineMachineUi(
+                    machine = listOf(legPress, legExtension, latPulldown, chestPress)[i],
+                    target = item,
+                    setCount = 0,
+                    done = false,
+                    highlighted = i == 0,
+                )
+            },
+        ),
+    )
+
+    /**
+     * Routine B in progress: Leg press done (a tick), Leg extension at 2 of 3 and highlighted next,
+     * a seated row done outside the routine (Also this session). 3 machines, 7 sets.
+     */
+    val routineBInProgress = TodayUiState(
+        loaded = true,
+        session = SessionUi(
+            machineCount = 3,
+            setCount = 7,
+            machines = listOf(
+                SessionMachineUi(seatedRow, SetSummary.Uniform(2, 40.0, 10)),
+                SessionMachineUi(legExtension, SetSummary.SameWeight(60.0, listOf(10, 9))),
+                SessionMachineUi(legPress, SetSummary.Uniform(3, 120.0, 12)),
+            ),
+        ),
+        recent = emptyList(),
+        routines = RoutineUi(
+            chips = chips(routineB.id),
+            freeSelected = false,
+            activeName = routineB.name,
+            machines = listOf(
+                RoutineMachineUi(legPress, routineBItems[0], setCount = 3, done = true, highlighted = false),
+                RoutineMachineUi(legExtension, routineBItems[1], setCount = 2, done = false, highlighted = true),
+                RoutineMachineUi(latPulldown, routineBItems[2], setCount = 0, done = false, highlighted = false),
+                RoutineMachineUi(chestPress, routineBItems[3], setCount = 0, done = false, highlighted = false),
+            ),
+            alsoThisSession = listOf(SessionMachineUi(seatedRow, SetSummary.Uniform(2, 40.0, 10))),
+        ),
+    )
+
+    /** On fixed weekdays with nothing scheduled today: the chips and the plain machine lists under "Rest day". */
+    val restDay = TodayUiState(
+        loaded = true,
+        session = null,
+        recent = listOf(legPress, latPulldown, pullUps),
+        routines = RoutineUi(chips = chips(null), freeSelected = false, restDay = true),
     )
 
     fun set(

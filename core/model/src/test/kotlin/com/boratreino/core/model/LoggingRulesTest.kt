@@ -209,4 +209,45 @@ class LoggingRulesTest {
     fun `reps from 0 going up reach 1`() {
         assertEquals(1, LoggingRules.stepReps(0, up = true))
     }
+
+    // prefill with a progression suggestion
+
+    @Test
+    fun `prefill starts on the suggestion when nothing is logged this session`() {
+        val lastTime = listOf(set(0, 120.0, 12), set(1, 120.0, 12), set(2, 120.0, 12))
+
+        assertEquals(
+            SetDraft(125.0, 8),
+            LoggingRules.prefill(lastTime, emptyList(), Suggestion.Up(125.0, 8)),
+        )
+    }
+
+    @Test
+    fun `prefill starts on a down suggestion when nothing is logged this session`() {
+        val lastTime = listOf(set(0, 120.0, 7), set(1, 120.0, 8), set(2, 120.0, 8))
+
+        assertEquals(
+            SetDraft(115.0, 8),
+            LoggingRules.prefill(lastTime, emptyList(), Suggestion.Down(115.0, 8)),
+        )
+    }
+
+    @Test
+    fun `prefill starts on the suggestion when there is no last time`() {
+        assertEquals(
+            SetDraft(42.5, 8),
+            LoggingRules.prefill(emptyList(), emptyList(), Suggestion.Up(42.5, 8)),
+        )
+    }
+
+    @Test
+    fun `prefill follows this session once it has a set, whatever the suggestion`() {
+        val lastTime = listOf(set(0, 120.0, 12))
+        val thisSession = listOf(set(0, 122.5, 10))
+
+        assertEquals(
+            SetDraft(122.5, 10),
+            LoggingRules.prefill(lastTime, thisSession, Suggestion.Up(125.0, 8)),
+        )
+    }
 }

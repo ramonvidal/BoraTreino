@@ -10,6 +10,8 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.Routine
+import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.StarterMachines
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import org.junit.Rule
@@ -57,6 +59,27 @@ class RoutinesTabScreenshotTest {
     }
 
     @Test
+    fun `three routines in turn, above the machines`() = shoot(
+        "routines-list",
+        RoutinesUiState(
+            routines = listOf(
+                RoutineRow(routine(1L, "Routine A", "A", 0), machineCount = 4),
+                RoutineRow(routine(2L, "Routine B", "B", 1), machineCount = 4),
+                RoutineRow(routine(3L, "Routine C", "C", 2), machineCount = 3),
+            ),
+            scheduleMode = ScheduleMode.IN_TURN,
+            machineGroups = listOf(
+                MachineGroup(MuscleGroup.LEGS, listOf(legPress, legExtension)),
+                MachineGroup(MuscleGroup.BACK, listOf(latPulldown, seatedRow, pullUps)),
+                MachineGroup(MuscleGroup.CHEST, listOf(chestPress)),
+                MachineGroup(MuscleGroup.SHOULDERS, listOf(shoulderPress)),
+                MachineGroup(MuscleGroup.ARMS, listOf(cableCurl)),
+            ),
+            starterGroups = starters,
+        ),
+    )
+
+    @Test
     fun `machines with archived and starters expanded`() = shoot(
         "routines-machines",
         RoutinesUiState(
@@ -91,4 +114,13 @@ private fun machine(
     setupNote = setupNote,
     restSeconds = null,
     archived = false,
+)
+
+private fun routine(id: Long, name: String, shortName: String, position: Int): Routine = Routine(
+    id = id,
+    planId = 1L,
+    name = name,
+    shortName = shortName,
+    position = position,
+    weekdays = emptySet(),
 )
