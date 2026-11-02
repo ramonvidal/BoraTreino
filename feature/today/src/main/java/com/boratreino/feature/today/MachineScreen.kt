@@ -325,6 +325,7 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
             Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            state.restSeconds?.let { RestBar(it, actions.onExtendRest, actions.onSkipRest) }
             Stepper(
                 label = weightLabel(machine),
                 value = formatKg(state.weightKg),
