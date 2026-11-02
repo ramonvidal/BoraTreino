@@ -24,6 +24,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # Robolectric downloads its Android runtime jars from Maven Central on first use, outside
+      # Gradle's cache. Keeping them here stops a network blip from failing every UI and Room test.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: robolectric-
+
       # The fixed signing key: without it every build would get a new random key, Android would
       # refuse to update over the installed app, and reinstalling would wipe people's training history.
       - name: Add the signing key
