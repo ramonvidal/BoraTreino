@@ -1,5 +1,10 @@
 package com.boratreino.feature.today
 
+import com.boratreino.core.ui.formatKg
+import com.boratreino.core.ui.weightLabel
+import com.boratreino.core.ui.summaryLabel
+import com.boratreino.core.ui.draftText
+import com.boratreino.core.ui.showUndo
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.Machine
-import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.NumberPadDialog
@@ -209,11 +213,6 @@ internal fun MachineContent(
     }
 }
 
-@Composable
-private fun weightLabel(machine: Machine): String = stringResource(
-    if (machine.kind == MachineKind.BODYWEIGHT_REPS) R.string.today_added_weight else R.string.today_weight,
-)
-
 /** Setup note and "Last time" in one white card. */
 @Composable
 private fun InfoCard(machine: Machine, state: MachineUiState) {
@@ -312,7 +311,7 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
         ) {
             Stepper(
                 label = weightLabel(machine),
-                value = weightValue(state.weightKg),
+                value = formatKg(state.weightKg),
                 onMinus = { actions.onStepWeight(false) },
                 onPlus = { actions.onStepWeight(true) },
                 onValueClick = { actions.onOpenPad(PadTarget.WEIGHT) },
@@ -376,7 +375,7 @@ private fun EditSetSheet(machine: Machine, editor: SetEditor, actions: MachineAc
             Text(stringResource(R.string.today_set_number, editor.number), style = MaterialTheme.typography.titleLarge)
             Stepper(
                 label = weightLabel(machine),
-                value = weightValue(editor.weightKg),
+                value = formatKg(editor.weightKg),
                 onMinus = { actions.onStepEditorWeight(false) },
                 onPlus = { actions.onStepEditorWeight(true) },
                 onValueClick = { actions.onOpenPad(PadTarget.EDIT_WEIGHT) },

@@ -47,16 +47,9 @@
     <string name="today_first_time">First time on this machine</string>
     <string name="today_last_time">Last time: %1$s</string>
     <string name="today_last_time_on">Last time: %1$s · %2$s</string>
-    <string name="today_uniform_no_weight">%1$d × %2$d</string>
-    <plurals name="today_reps_only">
-        <item quantity="one">%d rep</item>
-        <item quantity="other">%d reps</item>
-    </plurals>
     <string name="today_this_session">This session</string>
     <string name="today_edit_set">Edit set</string>
     <string name="today_set_number">Set %1$d</string>
-    <string name="today_weight">Weight (kg)</string>
-    <string name="today_added_weight">Added weight (kg)</string>
     <string name="today_reps">Reps</string>
     <string name="today_same_again">Same again</string>
     <string name="today_log_set">Log set</string>

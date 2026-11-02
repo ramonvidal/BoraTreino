@@ -1,5 +1,9 @@
 package com.boratreino.feature.calendar
 
+import com.boratreino.core.ui.formatKg
+import com.boratreino.core.ui.weightLabel
+import com.boratreino.core.ui.draftText
+import com.boratreino.core.ui.showUndo
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -342,7 +346,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
             Text(stringResource(R.string.calendar_set_number, editor.number), style = MaterialTheme.typography.titleLarge)
             Stepper(
                 label = weightLabel(editor.machine),
-                value = weightValue(editor.weightKg),
+                value = formatKg(editor.weightKg),
                 onMinus = { actions.onStepEditorWeight(false) },
                 onPlus = { actions.onStepEditorWeight(true) },
                 onValueClick = { actions.onOpenPad(PadTarget.EDIT_WEIGHT) },

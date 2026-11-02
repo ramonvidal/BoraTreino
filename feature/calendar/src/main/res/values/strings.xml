@@ -46,12 +46,5 @@
     <string name="calendar_edit_set">Edit set</string>
     <string name="calendar_set_removed">Set removed</string>
     <string name="calendar_set_number">Set %1$d</string>
-    <string name="calendar_weight">Weight (kg)</string>
-    <string name="calendar_added_weight">Added weight (kg)</string>
     <string name="calendar_reps">Reps</string>
-    <string name="calendar_uniform_no_weight">%1$d × %2$d</string>
-    <plurals name="calendar_reps_only">
-        <item quantity="one">%d rep</item>
-        <item quantity="other">%d reps</item>
-    </plurals>
 </resources>
