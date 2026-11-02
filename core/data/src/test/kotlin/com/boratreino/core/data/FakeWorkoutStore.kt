@@ -20,7 +20,7 @@ import java.time.Instant
  * re-read after every write, like Room does.
  */
 internal class FakeWorkoutStore : WorkoutStore {
-    private val machines = mutableListOf<Machine>()
+    private val machineRows = mutableListOf<Machine>()
     private val sessions = mutableListOf<Session>()
     private val sets = mutableListOf<WorkoutSet>()
     private val plans = mutableListOf<RoutinePlan>()
@@ -39,8 +39,8 @@ internal class FakeWorkoutStore : WorkoutStore {
     /** Every set, in insertion order. For assertions only. */
     fun allSets(): List<WorkoutSet> = sets.toList()
 
-    /** Every routine, by position. For assertions only. */
-    fun allRoutines(): List<Routine> = routines.sortedBy { it.position }
+    /** Every routine, by position. */
+    private fun routinesByPosition(): List<Routine> = routines.sortedWith(compareBy<Routine>({ it.position }, { it.id }))
 
     /** Every routine item, by routine then position. For assertions only. */
     fun allRoutineItems(): List<RoutineItem> = items.sortedWith(compareBy({ it.routineId }, { it.position }))
@@ -63,17 +63,17 @@ internal class FakeWorkoutStore : WorkoutStore {
     // Machines
 
     override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = observe {
-        machines
+        machineRows
             .filter { includeArchived || !it.archived }
             .sortedWith(compareBy<Machine>({ it.name.lowercase() }, { it.id }))
     }
 
     override fun observeMachine(id: Long): Flow<Machine?> = observe {
-        machines.firstOrNull { it.id == id }
+        machineRows.firstOrNull { it.id == id }
     }
 
     override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = observe {
-        machines
+        machineRows
             .filter { !it.archived }
             .mapNotNull { machine ->
                 sets.filter { it.machineId == machine.id }
@@ -87,8 +87,8 @@ internal class FakeWorkoutStore : WorkoutStore {
 
     override suspend fun saveMachine(machine: Machine): Long {
         val id = if (machine.id == 0L) nextMachineId++ else machine.id
-        machines.removeAll { it.id == id }
-        machines += machine.copy(id = id)
+        machineRows.removeAll { it.id == id }
+        machineRows += machine.copy(id = id)
         changed()
         return id
     }
@@ -96,11 +96,11 @@ internal class FakeWorkoutStore : WorkoutStore {
     /** Matches the stored name trimmed and ignoring case, like the store's TRIM(name) = :name COLLATE NOCASE. */
     override suspend fun addMachineOrUnarchive(machine: Machine): Long {
         val wanted = machine.name.trim()
-        val existing = machines.firstOrNull { it.name.trim().equals(wanted, ignoreCase = true) }
+        val existing = machineRows.firstOrNull { it.name.trim().equals(wanted, ignoreCase = true) }
         if (existing != null) {
             if (existing.archived) {
-                machines.removeAll { it.id == existing.id }
-                machines += existing.copy(archived = false)
+                machineRows.removeAll { it.id == existing.id }
+                machineRows += existing.copy(archived = false)
                 changed()
             }
             return existing.id
@@ -109,9 +109,9 @@ internal class FakeWorkoutStore : WorkoutStore {
     }
 
     override suspend fun setMachineArchived(id: Long, archived: Boolean) {
-        val existing = machines.firstOrNull { it.id == id } ?: return
-        machines.removeAll { it.id == id }
-        machines += existing.copy(archived = archived)
+        val existing = machineRows.firstOrNull { it.id == id } ?: return
+        machineRows.removeAll { it.id == id }
+        machineRows += existing.copy(archived = archived)
         changed()
     }
 
@@ -307,6 +307,65 @@ internal class FakeWorkoutStore : WorkoutStore {
         this.items += items
         changed()
     }
+
+    // Calendar and history
+
+    private fun startedIn(session: Session, start: Instant, end: Instant): Boolean =
+        !session.startedAt.isBefore(start) && session.startedAt.isBefore(end)
+
+    private fun sessionsByStart(): List<Session> =
+        sessions.sortedWith(compareBy<Session>({ it.startedAt }, { it.id }))
+
+    override fun observeSessionsStartedBetween(start: Instant, end: Instant): Flow<List<Session>> = observe {
+        sessionsByStart().filter { startedIn(it, start, end) }
+    }
+
+    override fun observeSetsOfSessionsStartedBetween(start: Instant, end: Instant): Flow<List<WorkoutSet>> = observe {
+        val inRange = sessions.filter { startedIn(it, start, end) }.map { it.id }.toSet()
+        sets.filter { it.sessionId in inRange }
+    }
+
+    override fun observeSessionStarts(): Flow<List<Instant>> = observe {
+        sessions.map { it.startedAt }.sorted()
+    }
+
+    override fun observeSession(id: Long): Flow<Session?> = observe { sessions.firstOrNull { it.id == id } }
+
+    override suspend fun session(id: Long): Session? = sessions.firstOrNull { it.id == id }
+
+    override fun observeAllRoutines(): Flow<List<Routine>> = observe { routinesByPosition() }
+
+    override suspend fun allRoutines(): List<Routine> = routinesByPosition()
+
+    /** The machine's sets in the latest session that started before [sessionId]'s (an equal start counts as earlier by id). */
+    override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> {
+        val current = sessions.firstOrNull { it.id == sessionId } ?: return emptyList()
+        val earlier = sessions.filter { s ->
+            s.id != sessionId &&
+                (s.startedAt.isBefore(current.startedAt) || (s.startedAt == current.startedAt && s.id < current.id)) &&
+                sets.any { it.sessionId == s.id && it.machineId == machineId }
+        }
+        val latest = earlier.maxWithOrNull(compareBy<Session>({ it.startedAt }, { it.id })) ?: return emptyList()
+        return setsOf(latest.id, machineId).sortedWith(compareBy<WorkoutSet>({ it.position }, { it.id }))
+    }
+
+    /** Foreign key cascade: the session's sets go with it. */
+    override suspend fun deleteSession(sessionId: Long) {
+        sessions.removeAll { it.id == sessionId }
+        sets.removeAll { it.sessionId == sessionId }
+        changed()
+    }
+
+    /** Re-inserts with the given ids, as Room does with explicit ids. */
+    override suspend fun restoreSession(session: Session, sets: List<WorkoutSet>) {
+        sessions += session
+        this.sets += sets
+        nextSessionId = maxOf(nextSessionId, session.id + 1)
+        nextSetId = maxOf(nextSetId, (sets.maxOfOrNull { it.id } ?: 0L) + 1)
+        changed()
+    }
+
+    override suspend fun machines(): List<Machine> = machineRows.toList()
 
     override suspend fun <T> inTransaction(block: suspend () -> T): T = block()
 }

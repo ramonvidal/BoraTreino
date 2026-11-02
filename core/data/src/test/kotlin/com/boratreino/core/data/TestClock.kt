@@ -6,11 +6,11 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 
-/** A clock the test moves by hand. */
-internal class TestClock(var now: Instant) : Clock() {
-    override fun getZone(): ZoneId = ZoneOffset.UTC
+/** A clock the test moves by hand; [zone] is the zone the repositories read dates in. */
+internal class TestClock(var now: Instant, private val zone: ZoneId = ZoneOffset.UTC) : Clock() {
+    override fun getZone(): ZoneId = zone
 
-    override fun withZone(zone: ZoneId): Clock = this
+    override fun withZone(zone: ZoneId): Clock = TestClock(now, zone)
 
     override fun instant(): Instant = now
 
