@@ -2,6 +2,10 @@ package com.boratreino.core.database
 
 import androidx.room.withTransaction
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.Routine
+import com.boratreino.core.model.RoutineItem
+import com.boratreino.core.model.RoutinePlan
+import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.WorkoutSet
@@ -13,6 +17,7 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
     private val machineDao = db.machineDao()
     private val sessionDao = db.sessionDao()
     private val setDao = db.workoutSetDao()
+    private val routineDao = db.routineDao()
 
     override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> =
         machineDao.observeAll(includeArchived).map { list -> list.map { it.toModel() } }
@@ -32,12 +37,12 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
         }
 
     override suspend fun addMachineOrUnarchive(machine: Machine): Long = db.withTransaction {
-        val existing = machineDao.byName(machine.name)
+        val existing = machineDao.byName(machine.name.trim())
         if (existing != null) {
             if (existing.archived) machineDao.setArchived(existing.id, false)
             existing.id
         } else {
-            machineDao.insert(machine.copy(id = 0).toEntity())
+            machineDao.insert(machine.copy(id = 0, name = machine.name.trim()).toEntity())
         }
     }
 
@@ -90,6 +95,86 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
 
     override suspend fun deleteSet(setId: Long) {
         setDao.delete(setId)
+    }
+
+    override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) {
+        sessionDao.setRoutineId(sessionId, routineId)
+    }
+
+    override fun observeLastRoutineId(): Flow<Long?> = sessionDao.observeLastRoutineId()
+
+    override suspend fun lastRoutineId(): Long? = sessionDao.lastRoutineId()
+
+    override fun observeLastSessionSets(
+        machineId: Long,
+        excludeSessionId: Long,
+        limit: Int,
+    ): Flow<List<List<WorkoutSet>>> =
+        setDao.observeLastSessions(machineId, excludeSessionId, limit).map { list ->
+            // Rows come ordered by session (most recent first); groupBy keeps that order.
+            list.map { it.toModel() }.groupBy { it.sessionId }.values.toList()
+        }
+
+    override suspend fun machineSets(machineId: Long): List<WorkoutSet> =
+        setDao.forMachine(machineId).map { it.toModel() }
+
+    override suspend fun machinesSetsBefore(machineIds: List<Long>, before: Instant): List<WorkoutSet> =
+        if (machineIds.isEmpty()) emptyList()
+        else setDao.forMachinesBefore(machineIds, before.toEpochMilli()).map { it.toModel() }
+
+    override suspend fun sessionSets(sessionId: Long): List<WorkoutSet> =
+        setDao.forSession(sessionId).map { it.toModel() }
+
+    override fun observePlan(): Flow<RoutinePlan?> = routineDao.observePlan().map { it?.toModel() }
+
+    override suspend fun plan(): RoutinePlan? = routineDao.plan()?.toModel()
+
+    override suspend fun ensurePlan(): RoutinePlan = db.withTransaction {
+        routineDao.plan()?.toModel() ?: run {
+            val entity = RoutinePlanEntity(scheduleMode = ScheduleMode.IN_TURN.name)
+            RoutinePlan(id = routineDao.insertPlan(entity), scheduleMode = ScheduleMode.IN_TURN)
+        }
+    }
+
+    override suspend fun setScheduleMode(planId: Long, mode: ScheduleMode) {
+        routineDao.setScheduleMode(planId, mode.name)
+    }
+
+    override fun observeRoutines(planId: Long): Flow<List<Routine>> =
+        routineDao.observeRoutines(planId).map { list -> list.map { it.toModel() } }
+
+    override suspend fun routines(planId: Long): List<Routine> =
+        routineDao.routines(planId).map { it.toModel() }
+
+    override fun observeRoutine(id: Long): Flow<Routine?> =
+        routineDao.observeRoutine(id).map { it?.toModel() }
+
+    override fun observeAllRoutineItems(): Flow<List<RoutineItem>> =
+        routineDao.observeAllItems().map { list -> list.map { it.toModel() } }
+
+    override fun observeRoutineItems(routineId: Long): Flow<List<RoutineItem>> =
+        routineDao.observeItems(routineId).map { list -> list.map { it.toModel() } }
+
+    override suspend fun insertRoutine(routine: Routine): Long =
+        routineDao.insertRoutine(routine.copy(id = 0).toEntity())
+
+    override suspend fun updateRoutine(routine: Routine) {
+        routineDao.updateRoutine(routine.toEntity())
+    }
+
+    override suspend fun setRoutinePosition(id: Long, position: Int) {
+        routineDao.setPosition(id, position)
+    }
+
+    override suspend fun deleteRoutine(id: Long) {
+        routineDao.deleteRoutine(id)
+    }
+
+    override suspend fun replaceRoutineItems(routineId: Long, items: List<RoutineItem>) {
+        db.withTransaction {
+            routineDao.deleteItems(routineId)
+            if (items.isNotEmpty()) routineDao.insertItems(items.map { it.toEntity() })
+        }
     }
 
     override suspend fun <T> inTransaction(block: suspend () -> T): T = db.withTransaction { block() }

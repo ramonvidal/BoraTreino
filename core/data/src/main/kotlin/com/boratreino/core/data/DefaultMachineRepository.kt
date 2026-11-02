@@ -26,13 +26,14 @@ internal class DefaultMachineRepository @Inject constructor(
             StarterMachines.all.filter { it.name.trim().lowercase(Locale.ROOT) !in names }
         }
 
-    override suspend fun save(machine: Machine): Long = store.saveMachine(machine)
+    override suspend fun save(machine: Machine): Long =
+        store.saveMachine(machine.copy(name = machine.name.trim()))
 
     override suspend fun addStarter(starter: StarterMachine): Long =
         store.addMachineOrUnarchive(
             Machine(
                 id = 0,
-                name = starter.name,
+                name = starter.name.trim(),
                 muscleGroup = starter.muscleGroup,
                 kind = starter.kind,
                 stepKg = starter.stepKg,

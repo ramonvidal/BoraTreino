@@ -49,6 +49,11 @@ import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.NumberPadDialog
 import com.boratreino.core.ui.Stepper
+import com.boratreino.core.ui.recordText
+import com.boratreino.core.ui.suggestionText
+import com.boratreino.core.ui.targetText
+import com.boratreino.core.model.Suggestion
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -91,7 +96,16 @@ internal fun MachineScreen(
         viewModel.events.collect { event ->
             when (event) {
                 // Only sent once the repository write has finished.
-                MachineEvent.Logged -> haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                is MachineEvent.Logged -> launch {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (event.record != null) {
+                        // A record buzzes three times, so it can be told from a normal set without looking.
+                        repeat(2) {
+                            delay(140)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        }
+                    }
+                }
                 is MachineEvent.SetRemoved -> launch {
                     if (snackbar.showUndo(removedText, undoLabel)) viewModel.restoreSet(event.set)
                 }
@@ -167,6 +181,7 @@ internal fun MachineContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     InfoCard(machine, state)
+                    state.record?.let { RecordCard(recordText(it)) }
                     SetsCard(machine, state.sets, actions.onOpenSet)
                 }
                 LogPanel(machine, state, actions)
@@ -229,6 +244,23 @@ private fun InfoCard(machine: Machine, state: MachineUiState) {
                 },
                 style = MaterialTheme.typography.titleMedium,
             )
+            state.target?.let {
+                Text(
+                    stringResource(R.string.today_target, targetText(it)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            state.suggestion?.let { suggestion ->
+                Text(suggestionText(suggestion), style = MaterialTheme.typography.titleMedium)
+                if (suggestion is Suggestion.Down) {
+                    Text(
+                        stringResource(R.string.today_missed_twice),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
@@ -378,6 +410,27 @@ private fun EditSetSheet(machine: Machine, editor: SetEditor, actions: MachineAc
                     Text(stringResource(CoreUiR.string.save))
                 }
             }
+        }
+    }
+}
+
+/** "New record: 125 kg" with a tick, shown for a few seconds after the set is logged. */
+@Composable
+private fun RecordCard(text: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(painterResource(CoreUiR.drawable.ic_emoji_events), contentDescription = null)
+            Text(text, style = MaterialTheme.typography.titleMedium)
         }
     }
 }

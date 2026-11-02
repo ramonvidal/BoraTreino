@@ -17,7 +17,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +32,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.ScheduleMode
+import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
@@ -37,6 +43,7 @@ import com.boratreino.core.ui.R as CoreUiR
 @Composable
 internal fun RoutinesScreen(
     onOpenEditor: (machineId: Long?) -> Unit,
+    onOpenRoutine: (routineId: Long?) -> Unit,
     viewModel: RoutinesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,6 +55,10 @@ internal fun RoutinesScreen(
             onAddStarter = viewModel::addStarter,
             onToggleArchived = viewModel::toggleArchived,
             onToggleStarters = viewModel::toggleStarters,
+            onNewRoutine = { onOpenRoutine(null) },
+            onOpenRoutine = { onOpenRoutine(it) },
+            onMoveRoutine = viewModel::moveRoutine,
+            onScheduleModeChange = viewModel::setScheduleMode,
         ),
         modifier = Modifier.fillMaxSize(),
     )
@@ -66,15 +77,9 @@ internal fun RoutinesContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.routines_title), style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    stringResource(R.string.routines_note),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text(stringResource(R.string.routines_title), style = MaterialTheme.typography.headlineMedium)
         }
+        item { RoutinesSection(state, callbacks) }
         item {
             SectionTitle(stringResource(R.string.routines_machines))
         }
@@ -149,6 +154,85 @@ internal fun RoutinesContent(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Routines: one row each with up / down, "New routine", and the In turn / On weekdays switch. */
+@Composable
+private fun RoutinesSection(state: RoutinesUiState, callbacks: RoutinesCallbacks) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (state.routines.isNotEmpty()) {
+            GroupCard(title = null) {
+                state.routines.forEachIndexed { index, row ->
+                    if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    RoutineRowItem(
+                        row = row,
+                        canMoveUp = index > 0,
+                        canMoveDown = index < state.routines.lastIndex,
+                        callbacks = callbacks,
+                    )
+                }
+            }
+        }
+        OutlinedButton(
+            onClick = callbacks.onNewRoutine,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        ) {
+            Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null, modifier = Modifier.size(20.dp))
+            Text(stringResource(R.string.routines_new_routine), modifier = Modifier.padding(start = 8.dp))
+        }
+        Text(
+            stringResource(R.string.routines_next_routine),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = state.scheduleMode == ScheduleMode.IN_TURN,
+                onClick = { callbacks.onScheduleModeChange(ScheduleMode.IN_TURN) },
+                label = { Text(stringResource(R.string.routines_mode_in_turn)) },
+            )
+            FilterChip(
+                selected = state.scheduleMode == ScheduleMode.WEEKDAYS,
+                onClick = { callbacks.onScheduleModeChange(ScheduleMode.WEEKDAYS) },
+                label = { Text(stringResource(R.string.routines_mode_weekdays)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RoutineRowItem(row: RoutineRow, canMoveUp: Boolean, canMoveDown: Boolean, callbacks: RoutinesCallbacks) {
+    val count = LocalContext.current.resources
+        .getQuantityString(R.plurals.routines_machine_count, row.machineCount, row.machineCount)
+    Row(
+        Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp)
+            .clickable { callbacks.onOpenRoutine(row.routine.id) }
+            .padding(start = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        RoutineBadge(shortName = row.routine.shortName)
+        Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+            Text(row.routine.name, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                count,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = { callbacks.onMoveRoutine(row.routine.id, true) }, enabled = canMoveUp) {
+            Icon(
+                painterResource(CoreUiR.drawable.ic_arrow_upward),
+                contentDescription = stringResource(R.string.routines_move_up, row.routine.name),
+            )
+        }
+        IconButton(onClick = { callbacks.onMoveRoutine(row.routine.id, false) }, enabled = canMoveDown) {
+            Icon(
+                painterResource(CoreUiR.drawable.ic_arrow_downward),
+                contentDescription = stringResource(R.string.routines_move_down, row.routine.name),
+            )
         }
     }
 }

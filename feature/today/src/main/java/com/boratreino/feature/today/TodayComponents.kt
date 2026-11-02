@@ -1,6 +1,7 @@
 package com.boratreino.feature.today
 
 import android.content.res.Resources
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,11 +41,18 @@ internal suspend fun SnackbarHostState.showUndo(message: String, undoLabel: Stri
 }
 
 /** "3 machines · 9 sets", with the right singular forms. */
-internal fun Resources.machinesAndSets(machines: Int, sets: Int): String = getString(
-    R.string.today_machines_and_sets,
-    getQuantityString(R.plurals.today_machines, machines, machines),
-    getQuantityString(R.plurals.today_sets, sets, sets),
-)
+internal fun Resources.machinesAndSets(machines: Int, sets: Int, records: Int = 0): String {
+    val base = getString(
+        R.string.today_machines_and_sets,
+        getQuantityString(R.plurals.today_machines, machines, machines),
+        getQuantityString(R.plurals.today_sets, sets, sets),
+    )
+    return if (records > 0) {
+        getString(R.string.today_summary_with_records, base, getQuantityString(R.plurals.today_records, records, records))
+    } else {
+        base
+    }
+}
 
 /** A tappable white card with a title and an optional grey line, at least 64 dp tall. */
 @Composable
@@ -54,10 +62,12 @@ internal fun MachineRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
+    highlighted: Boolean = false,
 ) {
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
+        border = if (highlighted) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
     ) {
         Row(

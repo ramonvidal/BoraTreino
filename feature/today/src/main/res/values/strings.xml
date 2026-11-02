@@ -19,6 +19,22 @@
         <item quantity="other">%d sets</item>
     </plurals>
 
+    <!-- Routines on Today -->
+    <string name="today_free">Free</string>
+    <string name="today_next_up">Next up: %1$s</string>
+    <string name="today_training_now_routine">Training now · %1$s · %2$s</string>
+    <string name="today_rest_day">Rest day</string>
+    <string name="today_also_this_session">Also this session</string>
+    <string name="today_progress">%1$d of %2$d</string>
+    <string name="today_machine_done">Done</string>
+    <string name="today_summary_with_records">%1$s · %2$s</string>
+    <plurals name="today_records">
+        <item quantity="one">%d record</item>
+        <item quantity="other">%d records</item>
+    </plurals>
+    <string name="today_target">Target %1$s</string>
+    <string name="today_missed_twice">Missed the lowest reps twice</string>
+
     <!-- Picker -->
     <string name="today_picker_title">Pick a machine</string>
     <string name="today_recent">Recent</string>

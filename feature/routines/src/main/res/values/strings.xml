@@ -1,6 +1,15 @@
 <resources>
     <string name="routines_title">Routines</string>
-    <string name="routines_note">Routines come in Phase 2.</string>
+    <string name="routines_new_routine">New routine</string>
+    <string name="routines_next_routine">Next routine</string>
+    <string name="routines_mode_in_turn">In turn</string>
+    <string name="routines_mode_weekdays">On weekdays</string>
+    <string name="routines_move_up">Move %1$s up</string>
+    <string name="routines_move_down">Move %1$s down</string>
+    <plurals name="routines_machine_count">
+        <item quantity="one">%1$d machine</item>
+        <item quantity="other">%1$d machines</item>
+    </plurals>
     <string name="routines_machines">Machines</string>
     <string name="routines_empty_title">No machines yet</string>
     <string name="routines_empty_body">Add one from the list below, or make your own.</string>
@@ -24,4 +33,24 @@
     <string name="editor_setup_note_hint">Seat 4, back pad 2</string>
     <string name="editor_archive">Archive</string>
     <string name="editor_unarchive">Unarchive</string>
+    <string name="routine_title_new">New routine</string>
+    <string name="routine_title_edit">Edit routine</string>
+    <string name="routine_name">Name</string>
+    <string name="routine_name_error">Give the routine a name.</string>
+    <string name="routine_short_name">Short name</string>
+    <string name="routine_weekdays">Weekdays</string>
+    <string name="routine_machines">Machines</string>
+    <string name="routine_no_machines">No machines yet.</string>
+    <string name="routine_add_machine">Add machine</string>
+    <string name="routine_add_machine_empty">All your machines are already in this routine.</string>
+    <string name="routine_sets">Sets</string>
+    <string name="routine_reps_min">Reps from</string>
+    <string name="routine_reps_max">Reps to</string>
+    <string name="routine_move_up">Move %1$s up</string>
+    <string name="routine_move_down">Move %1$s down</string>
+    <string name="routine_remove">Remove %1$s</string>
+    <string name="routine_delete">Delete routine</string>
+    <string name="routine_delete_title">Delete this routine?</string>
+    <string name="routine_delete_body">Your logged sets are kept.</string>
+    <string name="routine_delete_confirm">Delete</string>
 </resources>

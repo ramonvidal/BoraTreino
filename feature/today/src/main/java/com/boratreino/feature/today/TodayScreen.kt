@@ -34,6 +34,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.RoutineChoice
+import com.boratreino.core.ui.RoutineBadge
+import com.boratreino.core.ui.targetText
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.Alignment
 import com.boratreino.core.ui.label
 import kotlinx.coroutines.launch
 import com.boratreino.core.ui.R as CoreUiR
@@ -45,6 +55,7 @@ internal data class TodayActions(
     val onAddMachine: () -> Unit = {},
     val onDone: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
+    val onChooseRoutine: (RoutineChoice) -> Unit = {},
 )
 
 @Composable
@@ -66,7 +77,7 @@ internal fun TodayScreen(
                 is TodayEvent.Finished -> launch {
                     val text = resources.getString(
                         R.string.today_done_snackbar,
-                        resources.machinesAndSets(event.summary.machineCount, event.summary.setCount),
+                        resources.machinesAndSets(event.summary.machineCount, event.summary.setCount, event.summary.recordCount),
                     )
                     if (snackbar.showUndo(text, undoLabel)) viewModel.reopen(event.summary.sessionId)
                 }
@@ -83,6 +94,7 @@ internal fun TodayScreen(
             onAddMachine = onAllMachines,
             onDone = viewModel::finish,
             onOpenSettings = onOpenSettings,
+            onChooseRoutine = viewModel::choose,
         ),
         snackbarHostState = snackbar,
     )
@@ -122,7 +134,10 @@ internal fun TodayContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             val session = state.session
-            if (session == null) {
+            val routines = state.routines
+            if (routines != null) {
+                withRoutines(state, routines, actions)
+            } else if (session == null) {
                 noSession(state.recent, actions)
             } else {
                 openSession(session, actions)
@@ -131,10 +146,14 @@ internal fun TodayContent(
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.noSession(recent: List<Machine>, actions: TodayActions) {
+private fun LazyListScope.noSession(
+    recent: List<Machine>,
+    actions: TodayActions,
+    title: Int = R.string.today_pick_to_start,
+) {
     item(key = "title") {
         Text(
-            stringResource(R.string.today_pick_to_start),
+            stringResource(title),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
         )
@@ -151,19 +170,29 @@ private fun androidx.compose.foundation.lazy.LazyListScope.noSession(recent: Lis
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.openSession(session: SessionUi, actions: TodayActions) {
+private fun LazyListScope.openSession(session: SessionUi, actions: TodayActions) {
+    sessionHeader(session, actions, routineName = null)
+    sessionRows(session.machines, actions)
+    item(key = "add") {
+        AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine)
+    }
+}
+
+private fun LazyListScope.sessionHeader(session: SessionUi, actions: TodayActions, routineName: String?) {
     item(key = "header") {
         val resources = LocalContext.current.resources
+        val counts = resources.machinesAndSets(session.machineCount, session.setCount)
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    stringResource(
-                        R.string.today_training_now,
-                        resources.machinesAndSets(session.machineCount, session.setCount),
-                    ),
+                    if (routineName == null) {
+                        stringResource(R.string.today_training_now, counts)
+                    } else {
+                        stringResource(R.string.today_training_now_routine, routineName, counts)
+                    },
                     style = MaterialTheme.typography.titleMedium,
                 )
                 FilledTonalButton(
@@ -176,15 +205,96 @@ private fun androidx.compose.foundation.lazy.LazyListScope.openSession(session: 
             }
         }
     }
-    items(session.machines, key = { "m${it.machine.id}" }) { item ->
+}
+
+private fun LazyListScope.sessionRows(machines: List<SessionMachineUi>, actions: TodayActions) {
+    items(machines, key = { "m${it.machine.id}" }) { item ->
         MachineRow(
             title = item.machine.name,
             supporting = item.summary?.let { summaryLabel(item.machine, it) },
             onClick = { actions.onOpenMachine(item.machine.id) },
         )
     }
-    item(key = "add") {
-        AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine)
+}
+
+/** Today when the owner has routines: the chips, then the active routine's machines (or the Phase 1 lists). */
+private fun LazyListScope.withRoutines(state: TodayUiState, routines: RoutineUi, actions: TodayActions) {
+    item(key = "chips") { RoutineChips(routines, actions.onChooseRoutine) }
+    val session = state.session
+    val active = routines.activeName
+    if (active == null) {
+        // Free, or a rest day: the Phase 1 lists, under a "Rest day" heading on a rest day.
+        if (session == null) {
+            noSession(state.recent, actions, if (routines.restDay) R.string.today_rest_day else R.string.today_pick_to_start)
+        } else {
+            openSession(session, actions)
+        }
+        return
+    }
+    if (session == null) {
+        item(key = "title") {
+            Text(
+                stringResource(R.string.today_next_up, active),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+            )
+        }
+        routineRows(routines, actions)
+        item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
+    } else {
+        sessionHeader(session, actions, routineName = active)
+        routineRows(routines, actions)
+        if (routines.alsoThisSession.isNotEmpty()) {
+            item(key = "also") { SectionTitle(stringResource(R.string.today_also_this_session)) }
+            sessionRows(routines.alsoThisSession, actions)
+        }
+        item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
+    }
+}
+
+private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions) {
+    items(routines.machines, key = { "rm${it.machine.id}" }) { row ->
+        MachineRow(
+            title = row.machine.name,
+            supporting = targetText(row.target),
+            onClick = { actions.onOpenMachine(row.machine.id) },
+            highlighted = row.highlighted,
+            trailing = {
+                when {
+                    row.done -> Icon(
+                        painterResource(CoreUiR.drawable.ic_check),
+                        contentDescription = stringResource(R.string.today_machine_done),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    row.setCount > 0 -> Text(
+                        stringResource(R.string.today_progress, row.setCount, row.target.targetSets),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+        )
+    }
+}
+
+/** Routine badges and "Free"; the selected one is green-tinted. */
+@Composable
+private fun RoutineChips(routines: RoutineUi, onChoose: (RoutineChoice) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        items(routines.chips, key = { it.id }) { chip ->
+            Box(
+                Modifier.heightIn(min = 48.dp).clickable(role = Role.RadioButton) {
+                    onChoose(RoutineChoice.Chosen(chip.id))
+                },
+                contentAlignment = Alignment.Center,
+            ) { RoutineBadge(chip.shortName, selected = chip.selected) }
+        }
+        item(key = "free") {
+            Box(
+                Modifier.heightIn(min = 48.dp).clickable(role = Role.RadioButton) { onChoose(RoutineChoice.Free) },
+                contentAlignment = Alignment.Center,
+            ) { RoutineBadge(stringResource(R.string.today_free), selected = routines.freeSelected) }
+        }
     }
 }
 

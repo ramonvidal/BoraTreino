@@ -24,7 +24,7 @@ internal interface MachineDao {
     )
     fun observeRecent(limit: Int): Flow<List<MachineEntity>>
 
-    @Query("SELECT * FROM machines WHERE name = :name COLLATE NOCASE LIMIT 1")
+    @Query("SELECT * FROM machines WHERE TRIM(name) = :name COLLATE NOCASE LIMIT 1")
     suspend fun byName(name: String): MachineEntity?
 
     @Insert
@@ -53,6 +53,16 @@ internal interface SessionDao {
 
     @Query("UPDATE sessions SET endedAt = :endedAt WHERE id = :id")
     suspend fun setEndedAt(id: Long, endedAt: Long?)
+
+    @Query("UPDATE sessions SET routineId = :routineId WHERE id = :id")
+    suspend fun setRoutineId(id: Long, routineId: Long?)
+
+    /** Routine of the most recent finished session that had one. */
+    @Query("SELECT routineId FROM sessions WHERE routineId IS NOT NULL AND endedAt IS NOT NULL ORDER BY startedAt DESC, id DESC LIMIT 1")
+    fun observeLastRoutineId(): Flow<Long?>
+
+    @Query("SELECT routineId FROM sessions WHERE routineId IS NOT NULL AND endedAt IS NOT NULL ORDER BY startedAt DESC, id DESC LIMIT 1")
+    suspend fun lastRoutineId(): Long?
 }
 
 @Dao
@@ -74,6 +84,27 @@ internal interface WorkoutSetDao {
     )
     fun observeLastTime(machineId: Long, excludeSessionId: Long): Flow<List<WorkoutSetEntity>>
 
+    /** The machine's sets in its last [limit] sessions other than [excludeSessionId], most recent session first. */
+    @Query(
+        "SELECT workout_sets.* FROM workout_sets " +
+            "INNER JOIN sessions ON sessions.id = workout_sets.sessionId " +
+            "WHERE workout_sets.machineId = :machineId AND workout_sets.sessionId IN (" +
+            "SELECT s.id FROM sessions AS s WHERE s.id <> :excludeSessionId AND EXISTS (" +
+            "SELECT 1 FROM workout_sets AS w WHERE w.sessionId = s.id AND w.machineId = :machineId) " +
+            "ORDER BY s.startedAt DESC, s.id DESC LIMIT :limit) " +
+            "ORDER BY sessions.startedAt DESC, sessions.id DESC, workout_sets.position ASC, workout_sets.id ASC",
+    )
+    fun observeLastSessions(machineId: Long, excludeSessionId: Long, limit: Int): Flow<List<WorkoutSetEntity>>
+
+    @Query("SELECT * FROM workout_sets WHERE machineId = :machineId")
+    suspend fun forMachine(machineId: Long): List<WorkoutSetEntity>
+
+    @Query("SELECT * FROM workout_sets WHERE machineId IN (:machineIds) AND loggedAt < :before")
+    suspend fun forMachinesBefore(machineIds: List<Long>, before: Long): List<WorkoutSetEntity>
+
+    @Query("SELECT * FROM workout_sets WHERE sessionId = :sessionId ORDER BY loggedAt ASC, id ASC")
+    suspend fun forSession(sessionId: Long): List<WorkoutSetEntity>
+
     @Query("SELECT COUNT(*) FROM workout_sets WHERE sessionId = :sessionId AND machineId = :machineId")
     suspend fun countForMachine(sessionId: Long, machineId: Long): Int
 
@@ -94,4 +125,52 @@ internal interface WorkoutSetDao {
 
     @Query("DELETE FROM workout_sets WHERE id = :id")
     suspend fun delete(id: Long)
+}
+
+@Dao
+internal interface RoutineDao {
+    @Query("SELECT * FROM routine_plans ORDER BY id ASC LIMIT 1")
+    fun observePlan(): Flow<RoutinePlanEntity?>
+
+    @Query("SELECT * FROM routine_plans ORDER BY id ASC LIMIT 1")
+    suspend fun plan(): RoutinePlanEntity?
+
+    @Insert
+    suspend fun insertPlan(plan: RoutinePlanEntity): Long
+
+    @Query("UPDATE routine_plans SET scheduleMode = :mode WHERE id = :planId")
+    suspend fun setScheduleMode(planId: Long, mode: String)
+
+    @Query("SELECT * FROM routines WHERE planId = :planId ORDER BY position ASC, id ASC")
+    fun observeRoutines(planId: Long): Flow<List<RoutineEntity>>
+
+    @Query("SELECT * FROM routines WHERE planId = :planId ORDER BY position ASC, id ASC")
+    suspend fun routines(planId: Long): List<RoutineEntity>
+
+    @Query("SELECT * FROM routines WHERE id = :id")
+    fun observeRoutine(id: Long): Flow<RoutineEntity?>
+
+    @Insert
+    suspend fun insertRoutine(routine: RoutineEntity): Long
+
+    @Update
+    suspend fun updateRoutine(routine: RoutineEntity)
+
+    @Query("UPDATE routines SET position = :position WHERE id = :id")
+    suspend fun setPosition(id: Long, position: Int)
+
+    @Query("DELETE FROM routines WHERE id = :id")
+    suspend fun deleteRoutine(id: Long)
+
+    @Query("SELECT * FROM routine_items ORDER BY routineId ASC, position ASC")
+    fun observeAllItems(): Flow<List<RoutineItemEntity>>
+
+    @Query("SELECT * FROM routine_items WHERE routineId = :routineId ORDER BY position ASC")
+    fun observeItems(routineId: Long): Flow<List<RoutineItemEntity>>
+
+    @Query("DELETE FROM routine_items WHERE routineId = :routineId")
+    suspend fun deleteItems(routineId: Long)
+
+    @Insert
+    suspend fun insertItems(items: List<RoutineItemEntity>)
 }

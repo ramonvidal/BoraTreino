@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.Record
+import com.boratreino.core.model.RoutineItem
+import com.boratreino.core.model.Suggestion
 import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetSummary
@@ -14,6 +17,7 @@ import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,16 +52,24 @@ internal data class MachineUiState(
     val sameAgain: SetDraft? = null,
     val editor: SetEditor? = null,
     val pad: NumberPad? = null,
+    /** This machine's target in the active routine, if it is in it. */
+    val target: RoutineItem? = null,
+    /** "Try 125 kg" (up) or the way back down; the weight stepper starts on it. */
+    val suggestion: Suggestion? = null,
+    /** The record just set, shown for a few seconds. */
+    val record: Record? = null,
 )
 
 internal sealed interface MachineEvent {
-    /** The set is written; the screen gives the haptic tick. */
-    data object Logged : MachineEvent
+    /** The set is written; the screen gives the haptic tick (a stronger one when [record] is set). */
+    data class Logged(val record: Record? = null) : MachineEvent
 
     /** The set was deleted; the screen offers Undo. */
     data class SetRemoved(val set: WorkoutSet) : MachineEvent
     data object Failed : MachineEvent
 }
+
+private const val RECORD_SHOWN_MILLIS = 4_000L
 
 @HiltViewModel
 class MachineViewModel @Inject constructor(
@@ -74,17 +86,19 @@ class MachineViewModel @Inject constructor(
     private val draftOverride = MutableStateFlow<SetDraft?>(null)
     private val editor = MutableStateFlow<SetEditor?>(null)
     private val pad = MutableStateFlow<NumberPad?>(null)
+    private val record = MutableStateFlow<Record?>(null)
 
     internal val state: StateFlow<MachineUiState> = combine(
         training.observeMachineLog(machineId),
         draftOverride,
         editor,
         pad,
-    ) { log, override, editing, padding ->
+        record,
+    ) { log, override, editing, padding, newRecord ->
         if (log == null) {
             MachineUiState(loaded = true)
         } else {
-            val draft = override ?: LoggingRules.prefill(log.lastTime, log.thisSession)
+            val draft = override ?: LoggingRules.prefill(log.lastTime, log.thisSession, log.suggestion)
             MachineUiState(
                 loaded = true,
                 machine = log.machine,
@@ -96,6 +110,9 @@ class MachineViewModel @Inject constructor(
                 sameAgain = LoggingRules.sameAgain(log.lastTime, log.thisSession),
                 editor = editing,
                 pad = padding,
+                target = log.target,
+                suggestion = log.suggestion,
+                record = newRecord,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MachineUiState())
@@ -113,9 +130,15 @@ class MachineViewModel @Inject constructor(
     }
 
     private suspend fun log(draft: SetDraft) {
-        training.logSet(machineId, draft)
+        val logged = training.logSet(machineId, draft)
         draftOverride.value = null
-        eventChannel.send(MachineEvent.Logged)
+        eventChannel.send(MachineEvent.Logged(logged.record))
+        val newRecord = logged.record ?: return
+        record.value = newRecord
+        viewModelScope.launch {
+            delay(RECORD_SHOWN_MILLIS)
+            if (record.value == newRecord) record.value = null
+        }
     }
 
     internal fun stepWeight(up: Boolean) {
