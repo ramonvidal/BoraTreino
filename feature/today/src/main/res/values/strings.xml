@@ -42,7 +42,7 @@
     <string name="today_weight">Weight (kg)</string>
     <string name="today_added_weight">Added weight (kg)</string>
     <string name="today_reps">Reps</string>
-    <string name="today_same_again">Same again · %1$s</string>
+    <string name="today_same_again">Same again</string>
     <string name="today_log_set">Log set</string>
     <string name="today_delete">Delete</string>
     <string name="today_set_removed">Set removed</string>

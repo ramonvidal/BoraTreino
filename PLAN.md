@@ -127,7 +127,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       launcher icon from `docs/icon-original.png`, bottom navigation with
       Today / Calendar / Progress / Routines placeholders, GitHub Actions building the APK,
       running the tests and publishing a release, signing key secret.
-- [ ] **Phase 1: Log a set.** Starter machine list, add / edit / archive machines, the machine
+- [x] **Phase 1: Log a set.** Starter machine list, add / edit / archive machines, the machine
       screen with "Last time", steppers, **Log set**, **Same again**, edit and undo a set.
       Sessions open and close on their own. Today lists the machines of the open session.
 - [ ] **Phase 2: Routines and progression.** Any number of routines with targets, "in turn"

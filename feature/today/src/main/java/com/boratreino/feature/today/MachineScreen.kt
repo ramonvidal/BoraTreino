@@ -301,12 +301,20 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                         onClick = actions.onSameAgain,
                         modifier = Modifier.weight(1f).heightIn(min = 64.dp),
                     ) {
-                        Text(
-                            stringResource(
-                                R.string.today_same_again,
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                stringResource(R.string.today_same_again),
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
                                 draftText(machine, same.weightKg, same.reps),
-                            ),
-                        )
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
                 // The one green button on the screen.

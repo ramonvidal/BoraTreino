@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -189,16 +188,12 @@ private fun androidx.compose.foundation.lazy.LazyListScope.openSession(session: 
     }
 }
 
-/** The black "add" button the theme keeps apart from the green main action. */
+/** The main action of the screen: filled, in the theme's green. */
 @Composable
 internal fun AddButton(text: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.inverseSurface,
-            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-        ),
     ) {
         Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null, Modifier.size(20.dp))
         Text(text, Modifier.padding(start = 8.dp))
