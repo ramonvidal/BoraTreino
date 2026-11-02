@@ -19,9 +19,19 @@ object LoggingRules {
 
     private fun WorkoutSet.toDraft() = SetDraft(weightKg ?: 0.0, reps ?: DEFAULT_REPS)
 
-    /** Steppers' starting values: this session's last set if any; else last time's first set; else 0 kg x DEFAULT_REPS. */
-    fun prefill(lastTime: List<WorkoutSet>, thisSession: List<WorkoutSet>): SetDraft =
-        (thisSession.lastOrNull() ?: lastTime.firstOrNull())?.toDraft() ?: SetDraft(0.0, DEFAULT_REPS)
+    /**
+     * Steppers' starting values: this session's last set if any; else [suggestion] if any; else last
+     * time's first set; else 0 kg x DEFAULT_REPS.
+     */
+    fun prefill(
+        lastTime: List<WorkoutSet>,
+        thisSession: List<WorkoutSet>,
+        suggestion: Suggestion? = null,
+    ): SetDraft {
+        thisSession.lastOrNull()?.let { return it.toDraft() }
+        suggestion?.let { return SetDraft(it.weightKg, it.reps) }
+        return lastTime.firstOrNull()?.toDraft() ?: SetDraft(0.0, DEFAULT_REPS)
+    }
 
     /** Last time's set at index thisSession.size, as a draft; null when there is none. */
     fun sameAgain(lastTime: List<WorkoutSet>, thisSession: List<WorkoutSet>): SetDraft? =

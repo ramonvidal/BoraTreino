@@ -38,6 +38,10 @@ data class MachineLog(
     val lastTime: List<WorkoutSet>,
     val lastTimeAt: Instant?,
     val thisSession: List<WorkoutSet>,
+    /** This machine's item in the active routine, if any. */
+    val target: RoutineItem? = null,
+    /** Progression suggestion for the next set, if any. */
+    val suggestion: Suggestion? = null,
 )
 
 /** One machine's sets within a session. */
@@ -47,4 +51,4 @@ data class SessionMachine(val machine: Machine, val sets: List<WorkoutSet>)
 data class OpenSession(val session: Session, val machines: List<SessionMachine>)
 
 /** Totals shown after finishing a session. */
-data class SessionSummary(val sessionId: Long, val machineCount: Int, val setCount: Int)
+data class SessionSummary(val sessionId: Long, val machineCount: Int, val setCount: Int, val recordCount: Int = 0)
