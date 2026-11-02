@@ -1,4 +1,56 @@
 <resources>
     <string name="settings_title">Settings</string>
-    <string name="settings_message">Weekly goal, reminders, rest timer and backups. Coming in Phase 4.</string>
+
+    <string name="settings_goal_title">Weekly goal</string>
+    <string name="settings_goal_label">Days per week</string>
+
+    <string name="settings_reminders_title">Training reminders</string>
+    <string name="settings_reminders_switch">Remind me to train</string>
+    <string name="settings_reminders_time">Time</string>
+    <string name="settings_reminders_days">Days</string>
+    <string name="settings_time_picker_title">Reminder time</string>
+
+    <string name="settings_rest_title">Rest timer</string>
+    <string name="settings_rest_switch">Count down after each set</string>
+    <string name="settings_rest_default">Default rest</string>
+    <string name="settings_rest_seconds">%1$d s</string>
+    <string name="settings_rest_hint">Each machine can have its own rest time in its editor.</string>
+
+    <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_notifications_off">Notifications are off</string>
+    <string name="settings_notifications_allow">Allow</string>
+
+    <string name="settings_backup_title">Backup</string>
+    <string name="settings_backup_hint">A file with your whole training history. Settings stay on this phone.</string>
+    <string name="settings_backup_export">Export backup</string>
+    <string name="settings_backup_import">Import backup</string>
+    <string name="settings_backup_saved">Backup saved</string>
+    <string name="settings_backup_imported">Backup imported</string>
+    <string name="settings_backup_invalid">That file isn\'t a Bora pro Treino backup</string>
+    <string name="settings_backup_too_new">That backup is from a newer version of the app</string>
+    <string name="settings_import_title">Import backup</string>
+    <string name="settings_import_message">Replace everything on this phone with this backup? %1$s.</string>
+    <string name="settings_import_message_dates">Replace everything on this phone with this backup? %1$s (%2$s).</string>
+    <string name="settings_import_replace">Replace</string>
+    <string name="settings_import_counts">%1$s, %2$s, %3$s, %4$s</string>
+
+    <plurals name="settings_import_machines">
+        <item quantity="one">%1$s machine</item>
+        <item quantity="other">%1$s machines</item>
+    </plurals>
+    <plurals name="settings_import_routines">
+        <item quantity="one">%1$s routine</item>
+        <item quantity="other">%1$s routines</item>
+    </plurals>
+    <plurals name="settings_import_trainings">
+        <item quantity="one">%1$s training</item>
+        <item quantity="other">%1$s trainings</item>
+    </plurals>
+    <plurals name="settings_import_sets">
+        <item quantity="one">%1$s set</item>
+        <item quantity="other">%1$s sets</item>
+    </plurals>
+
+    <string name="settings_about_title">About</string>
+    <string name="settings_about_version">Bora pro Treino! %1$s</string>
 </resources>
