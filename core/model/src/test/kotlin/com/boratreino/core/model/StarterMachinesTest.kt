@@ -141,21 +141,53 @@ class StarterMachinesTest {
     }
 
     @Test
-    fun `there are about a hundred starters`() {
-        assertTrue("was ${all.size}", all.size in 90..110)
+    fun `there are 103 starters`() {
+        assertEquals(103, all.size)
     }
 
     @Test
-    fun `no starter is cardio`() {
-        assertFalse(all.any { it.muscleGroup == MuscleGroup.CARDIO })
-        assertFalse(all.any { it.kind == MachineKind.CARDIO })
+    fun `there are 8 cardio starters, all in the cardio group with kind cardio and step 1`() {
+        val cardio = all.filter { it.muscleGroup == MuscleGroup.CARDIO }
+
+        assertEquals(8, cardio.size)
+        assertEquals(cardio, all.filter { it.kind == MachineKind.CARDIO })
+        assertTrue(cardio.all { it.stepKg == 1.0 })
+        assertTrue(cardio.all { it.image == null })
     }
 
     @Test
-    fun `every muscle group except cardio has starters`() {
-        MuscleGroup.entries.filter { it != MuscleGroup.CARDIO }.forEach { group ->
+    fun `the cardio starters have the names from the contract`() {
+        val expected = listOf(
+            "Treadmill" to "Esteira",
+            "Stationary bike" to "Bicicleta ergométrica",
+            "Spin bike" to "Bicicleta de spinning",
+            "Elliptical" to "Elíptico",
+            "Rowing machine" to "Remo ergométrico",
+            "Stair climber" to "Escada (simulador)",
+            "Walking (outdoor)" to "Caminhada",
+            "Running (outdoor)" to "Corrida",
+        )
+
+        assertEquals(expected, all.filter { it.kind == MachineKind.CARDIO }.map { it.name to it.namePt })
+    }
+
+    @Test
+    fun `no weight or bodyweight starter is in the cardio group`() {
+        assertTrue(all.filter { it.kind != MachineKind.CARDIO }.none { it.muscleGroup == MuscleGroup.CARDIO })
+    }
+
+    @Test
+    fun `every muscle group has starters`() {
+        MuscleGroup.entries.forEach { group ->
             assertTrue("no starter for $group", all.any { it.muscleGroup == group })
         }
+    }
+
+    @Test
+    fun `cardio starters are found by search in either language`() {
+        assertTrue(StarterMachines.search("esteira").any { it.name == "Treadmill" })
+        assertTrue(StarterMachines.search("treadmill").any { it.name == "Treadmill" })
+        assertTrue(StarterMachines.search("eliptico").any { it.name == "Elliptical" })
     }
 
     @Test
@@ -222,8 +254,11 @@ class StarterMachinesTest {
     }
 
     @Test
-    fun `no starter has a step other than 2, 2_5 or 5 kg`() {
-        assertTrue(all.all { it.stepKg == 2.0 || it.stepKg == 2.5 || it.stepKg == 5.0 })
+    fun `no weight starter has a step other than 2, 2_5 or 5 kg`() {
+        assertTrue(
+            all.filter { it.kind != MachineKind.CARDIO }
+                .all { it.stepKg == 2.0 || it.stepKg == 2.5 || it.stepKg == 5.0 },
+        )
     }
 
     @Test

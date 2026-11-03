@@ -5,10 +5,16 @@ import com.boratreino.core.data.BackupRepository
 import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerSettings
+import com.boratreino.core.health.HealthAvailability
+import com.boratreino.core.health.HealthConnectAccess
+import com.boratreino.core.model.HealthExport
 import com.boratreino.core.notify.ReminderScheduler
 import com.boratreino.core.settings.AppLanguage
+import com.boratreino.core.settings.HealthSettings
 import com.boratreino.core.settings.TrainingSettings
 import android.content.Context
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -67,6 +73,39 @@ class SettingsViewModelTest {
         override suspend fun import(data: BackupData) = Unit
     }
 
+    private class FakeHealthSettings : HealthSettings {
+        val on = MutableStateFlow(false)
+        val synced = MutableStateFlow<Set<Long>>(emptySet())
+        override val enabled: Flow<Boolean> get() = on
+        override suspend fun setEnabled(enabled: Boolean) {
+            on.value = enabled
+        }
+        override val syncedSessionIds: Flow<Set<Long>> get() = synced
+        override suspend fun setSyncedSessionIds(ids: Set<Long>) {
+            synced.value = ids
+        }
+    }
+
+    private class FakeHealthAccess : HealthConnectAccess {
+        var current: HealthAvailability = HealthAvailability.Ready
+        var failure: Exception? = null
+        override suspend fun availability(): HealthAvailability {
+            failure?.let { throw it }
+            return current
+        }
+        override val permissions: Set<String> = setOf("write.exercise", "write.calories", "write.distance")
+        override fun permissionContract(): ActivityResultContract<Set<String>, Set<String>> =
+            object : ActivityResultContract<Set<String>, Set<String>>() {
+                override fun createIntent(context: Context, input: Set<String>): Intent = Intent()
+                override fun parseResult(resultCode: Int, intent: Intent?): Set<String> = emptySet()
+            }
+        override fun installIntent(): Intent = Intent()
+        override suspend fun write(exports: List<HealthExport>) = Unit
+        override suspend fun delete(sessionIds: Set<Long>) = Unit
+    }
+
+    private lateinit var health: FakeHealthSettings
+    private lateinit var access: FakeHealthAccess
     private lateinit var settings: FakeSettings
     private lateinit var scheduler: FakeScheduler
     private lateinit var context: Context
@@ -77,8 +116,10 @@ class SettingsViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         settings = FakeSettings()
         scheduler = FakeScheduler()
+        health = FakeHealthSettings()
+        access = FakeHealthAccess()
         context = RuntimeEnvironment.getApplication()
-        viewModel = SettingsViewModel(settings, FakeBackup(), scheduler, context, Clock.systemUTC())
+        viewModel = SettingsViewModel(settings, FakeBackup(), scheduler, health, access, context, Clock.systemUTC())
     }
 
     @After
@@ -243,5 +284,155 @@ class SettingsViewModelTest {
 
         assertFalse(loaded().notificationsGranted)
         assertTrue(loaded().showNotificationsSection)
+    }
+
+    // Health Connect
+
+    @Test
+    fun `the health card is hidden until Health Connect has been asked`() = runTest {
+        assertEquals(HealthCardState.Hidden, loaded().health)
+    }
+
+    @Test
+    fun `an unsupported phone keeps the card hidden`() = runTest {
+        access.current = HealthAvailability.Unsupported
+        viewModel.refreshHealth()
+
+        assertEquals(HealthCardState.Hidden, loaded().health)
+    }
+
+    @Test
+    fun `a failing availability check hides the card instead of crashing`() = runTest {
+        access.failure = IllegalStateException("boom")
+        viewModel.refreshHealth()
+
+        assertEquals(HealthCardState.Hidden, loaded().health)
+    }
+
+    @Test
+    fun `refreshing reads the availability again`() = runTest {
+        access.current = HealthAvailability.NotInstalled
+        viewModel.refreshHealth()
+        assertEquals(HealthCardState.NeedsInstall, loaded().health)
+
+        access.current = HealthAvailability.Ready
+        viewModel.refreshHealth()
+        assertEquals(HealthCardState.Off, loaded().health)
+    }
+
+    @Test
+    fun `all permissions granted turns sync on`() = runTest {
+        viewModel.refreshHealth()
+
+        viewModel.onHealthPermissionResult(access.permissions)
+
+        assertTrue(health.on.value)
+        assertEquals(HealthCardState.On, loaded().health)
+    }
+
+    @Test
+    fun `more than the asked permissions is still all granted`() = runTest {
+        viewModel.refreshHealth()
+
+        viewModel.onHealthPermissionResult(access.permissions + "something.else")
+
+        assertTrue(health.on.value)
+    }
+
+    @Test
+    fun `a partial grant keeps sync off and shows permission denied`() = runTest {
+        viewModel.refreshHealth()
+
+        viewModel.onHealthPermissionResult(setOf("write.exercise"))
+
+        assertFalse(health.on.value)
+        assertEquals(HealthCardState.PermissionDenied, loaded().health)
+    }
+
+    @Test
+    fun `an empty grant keeps sync off and shows permission denied`() = runTest {
+        viewModel.refreshHealth()
+
+        viewModel.onHealthPermissionResult(emptySet())
+
+        assertFalse(health.on.value)
+        assertEquals(HealthCardState.PermissionDenied, loaded().health)
+    }
+
+    @Test
+    fun `a later full grant clears the denied message and turns sync on`() = runTest {
+        viewModel.refreshHealth()
+        viewModel.onHealthPermissionResult(emptySet())
+
+        viewModel.onHealthPermissionResult(access.permissions)
+
+        assertTrue(health.on.value)
+        assertEquals(HealthCardState.On, loaded().health)
+    }
+
+    @Test
+    fun `turning health off stores off and keeps the synced ids`() = runTest {
+        viewModel.refreshHealth()
+        health.on.value = true
+        health.synced.value = setOf(1L, 2L)
+
+        viewModel.turnHealthOff()
+
+        assertFalse(health.on.value)
+        assertEquals(setOf(1L, 2L), health.synced.value)
+        assertEquals(HealthCardState.Off, loaded().health)
+    }
+
+    @Test
+    fun `turning health off clears the denied message`() = runTest {
+        viewModel.refreshHealth()
+        viewModel.onHealthPermissionResult(emptySet())
+        assertEquals(HealthCardState.PermissionDenied, loaded().health)
+
+        viewModel.turnHealthOff()
+
+        assertEquals(HealthCardState.Off, loaded().health)
+    }
+
+    @Test
+    fun `the view model hands the screen the access permissions`() {
+        assertEquals(access.permissions, viewModel.healthPermissions)
+    }
+
+    // healthCardState: every combination
+
+    @Test
+    fun `healthCardState for every availability, enabled and denied`() {
+        val states = listOf(
+            // availability, enabled, denied, expected
+            listOf(HealthAvailability.Unsupported, false, false, HealthCardState.Hidden),
+            listOf(HealthAvailability.Unsupported, false, true, HealthCardState.Hidden),
+            listOf(HealthAvailability.Unsupported, true, false, HealthCardState.Hidden),
+            listOf(HealthAvailability.Unsupported, true, true, HealthCardState.Hidden),
+            listOf(HealthAvailability.NotInstalled, false, false, HealthCardState.NeedsInstall),
+            listOf(HealthAvailability.NotInstalled, false, true, HealthCardState.NeedsInstall),
+            listOf(HealthAvailability.NotInstalled, true, false, HealthCardState.NeedsInstall),
+            listOf(HealthAvailability.NotInstalled, true, true, HealthCardState.NeedsInstall),
+            listOf(HealthAvailability.NeedsUpdate, false, false, HealthCardState.NeedsInstall),
+            listOf(HealthAvailability.NeedsUpdate, false, true, HealthCardState.NeedsInstall),
+            listOf(HealthAvailability.NeedsUpdate, true, false, HealthCardState.NeedsInstall),
+            listOf(HealthAvailability.NeedsUpdate, true, true, HealthCardState.NeedsInstall),
+            listOf(HealthAvailability.NeedsPermission, false, false, HealthCardState.Off),
+            listOf(HealthAvailability.NeedsPermission, false, true, HealthCardState.PermissionDenied),
+            // Permissions are missing, so sync cannot be on even if the stored choice says so.
+            listOf(HealthAvailability.NeedsPermission, true, false, HealthCardState.Off),
+            listOf(HealthAvailability.NeedsPermission, true, true, HealthCardState.PermissionDenied),
+            listOf(HealthAvailability.Ready, false, false, HealthCardState.Off),
+            listOf(HealthAvailability.Ready, false, true, HealthCardState.PermissionDenied),
+            listOf(HealthAvailability.Ready, true, false, HealthCardState.On),
+            listOf(HealthAvailability.Ready, true, true, HealthCardState.On),
+        )
+        for ((availability, enabled, denied, expected) in states) {
+            assertEquals(
+                "$availability enabled=$enabled denied=$denied",
+                expected,
+                healthCardState(availability as HealthAvailability, enabled as Boolean, denied as Boolean),
+            )
+        }
     }
 }

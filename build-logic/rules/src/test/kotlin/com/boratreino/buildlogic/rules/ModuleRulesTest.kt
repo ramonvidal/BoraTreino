@@ -120,9 +120,27 @@ class ModuleRulesTest {
 
     @Test
     fun `a module that is neither app, feature nor a listed core module fails`() {
-        for (path in listOf(":utils", ":core:health", ":feature:home:extra")) {
+        for (path in listOf(":utils", ":core:unlisted", ":feature:home:extra")) {
             val violations = ModuleRules.violations(valid + Module(path, usesAndroid = true, dependsOn = setOf(":core:model")))
             assertTrue("$path should fail", violations.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `core health may depend on model, data and settings only`() {
+        val allowed = setOf(":core:model", ":core:data", ":core:settings")
+        assertEquals(allowed, ModuleRules.CORE_DEPENDENCIES.getValue(":core:health"))
+        for (dependency in listOf(":core:database", ":core:notify", ":core:ui", ":core:update")) {
+            val violations = ModuleRules.violations(withModule(coreModule(":core:health", allowed + dependency)))
+            assertTrue(":core:health -> $dependency should fail", violations.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `core health is not part of what core data, settings or model may depend on`() {
+        for (path in listOf(":core:model", ":core:database", ":core:data", ":core:settings", ":core:ui", ":core:update")) {
+            val violations = ModuleRules.violations(withModule(coreModule(path, contract.getValue(path) + ":core:health")))
+            assertTrue("$path -> :core:health should fail", violations.isNotEmpty())
         }
     }
 

@@ -60,6 +60,13 @@ class StarterMachineImagesTest {
     }
 
     @Test
+    fun `cardio starters have no picture`() {
+        assertNull(StarterMachines.imageFor("Treadmill"))
+        assertNull(StarterMachines.imageFor("Esteira"))
+        assertTrue(StarterMachines.all.filter { it.kind == MachineKind.CARDIO }.all { it.image == null })
+    }
+
+    @Test
     fun `two starters may share a picture slug`() {
         val biceps = starter("Cable biceps curl")
         val curl = starter("Cable curl")
