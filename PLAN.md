@@ -36,6 +36,10 @@ and no patience, so:
 | Name and icon | The app is called **Bora pro Treino!** (repo and code: BoraTreino, `com.boratreino`). Icon: the guy with the dumbbell, the Salvador church and the palm tree (`docs/icon-original.png`). The icon is the only place with illustration and warm colours; the app itself stays plain |
 | Tab names | **Today, Calendar, Progress, Routines** |
 | Machines | Each machine (or exercise) has a name, a muscle group, a weight **step** (1, 2.5 or 5 kg) and an optional **setup note** ("seat 4, back pad 2") shown every time you open it. Weights are always **kg, as shown on the machine**. A starter list of ~30 common machines in groups (Legs, Chest, Back, Shoulders, Arms, Core) so nothing needs typing on day one. Bodyweight exercises (pull-ups, dips) log reps only, with optional added weight |
+| Your gym first | The **Routines tab starts with the gym's inventory**: every machine and exercise your gym has, grouped by muscle group, with a short explanation ("Register here everything your gym has. Your routines (fichas) are built from this list"). Routines come below it. On a fresh install the starter list is open, so registering the gym is the first thing you do |
+| Starter list | About 100 common machines and exercises (machines, barbell, dumbbell, cable, bodyweight) in groups, searchable (accents ignored), each with an English and a Portuguese name: a machine added while the app is in Baianês gets the Portuguese name ("Supino reto"). Tick several and add them in one tap ("Add 5 selected"). Names already added (in either language) are not offered again |
+| Deleting a machine | A trash icon on each row of the gym list, and **Delete** in the machine editor. A machine **without logged sets** is deleted after a confirmation that names the routines it will leave; a machine **with logged sets** can't be deleted without losing history, so the dialog offers **Archive instead** (hidden from lists, history kept) |
+| Changing a ficha during a training | Not a form, only questions at the moment it matters, never on the logging path: picking a machine that is **not in the active ficha** from "Add machine" asks "Add it to Treino B?" (**Add to ficha** / **Just today**); a ficha machine you haven't started has a close icon: "Skip it today" (this training only) or "Remove from Treino B" (edits the ficha). Both have Undo. Free trainings (no ficha) never ask |
 | Logging a set | The machine screen shows **Last time: 3 × 10 at 40 kg** and today's sets so far. Below: weight stepper, reps stepper (both prefilled from last time) and one big button **Log set**. **Same again** logs last time's next set in one tap. A logged set can be fixed or removed by tapping it (undo snackbar for 5 s) |
 | Session | Starts with the first set, ends after 3 h without a set or with **Done**. Done shows a one-line summary ("6 machines · 18 sets · 3 records") and nothing else to fill in. Sessions can be edited from the Calendar |
 | Routines | Optional, and **any number**: A / B / C, A / B, push / pull / legs, one full-body routine, or anything else. A routine is a named list of machines in order, each with a target (sets × rep range, e.g. 3 × 8–12) |
@@ -143,6 +147,11 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       this month.
 - [x] **Phase 6: Updates and language.** Port `:core:update` and `:feature:update`; README
       with the fixed "latest APK" link; Baianês translation.
+- [ ] **Feedback round 1** (from the first gym use). The Routines tab leads with the gym's
+      inventory and says so; delete a machine (or archive it when it has history); a starter list
+      of about 100 machines and exercises in English and Portuguese with search and multi-select;
+      the questions to update the ficha when a machine is added or skipped during a training; the
+      new launcher icon (`docs/icon-original.png`).
 - [ ] **Phase 7: Cardio.** Cardio machines in the starter list, logging time and/or
       calories (and distance if wanted), weekly minutes and calories in Progress.
 - [ ] **Phase 8: Health Connect.** `:core:health`, the Settings switch and permission,
