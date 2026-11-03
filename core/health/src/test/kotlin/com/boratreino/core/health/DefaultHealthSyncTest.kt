@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -148,8 +147,13 @@ class DefaultHealthSyncTest {
         settle()
     }
 
+    /**
+     * Lets the debounce (3 s of virtual time) and the collectors run. advanceUntilIdle() is not enough:
+     * it ignores work that only lives in backgroundScope, and the sync runs there.
+     */
     private fun TestScope.settle() {
-        advanceUntilIdle()
+        runCurrent()
+        advanceTimeBy(4_000)
         runCurrent()
     }
 
