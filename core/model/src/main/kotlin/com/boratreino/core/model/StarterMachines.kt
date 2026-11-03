@@ -10,6 +10,8 @@ data class StarterMachine(
     val kind: MachineKind,
     val stepKg: Double,
     val namePt: String = name,
+    /** The illustration's file slug (assets are `<slug>-1.webp` and `<slug>-2.webp`), or null when there is none. */
+    val image: String? = null,
 ) {
     /** The Portuguese name when [portuguese], else the English one. */
     fun displayName(portuguese: Boolean): String = if (portuguese) namePt else name
@@ -156,9 +158,20 @@ object StarterMachines {
         }
     }
 
+    /** The picture slug of the first starter that [matches] [machineName]; null when none or it has no picture. */
+    fun imageFor(machineName: String): String? = all.firstOrNull { matches(it, machineName) }?.image
+
     /** True when [machineName] (trimmed, case/accent-insensitive) equals the starter's English or Portuguese name. */
     fun matches(starter: StarterMachine, machineName: String): Boolean {
         val n = normalize(machineName)
         return n == normalize(starter.name) || n == normalize(starter.namePt)
     }
+}
+
+/** Credit for the exercise illustrations. */
+object ExerciseImages {
+    const val AUTHOR = "Greg Priday (Everkinetic)"
+    const val SOURCE_URL = "https://github.com/everkinetic/data"
+    const val LICENSE_NAME = "CC BY-SA 4.0"
+    const val LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
 }
