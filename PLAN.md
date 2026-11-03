@@ -141,7 +141,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       export / import.
 - [x] **Phase 5: Progress.** Per-machine chart and history, records list, most improved
       this month.
-- [ ] **Phase 6: Updates and language.** Port `:core:update` and `:feature:update`; README
+- [x] **Phase 6: Updates and language.** Port `:core:update` and `:feature:update`; README
       with the fixed "latest APK" link; Baianês translation.
 - [ ] **Phase 7: Cardio.** Cardio machines in the starter list, logging time and/or
       calories (and distance if wanted), weekly minutes and calories in Progress.

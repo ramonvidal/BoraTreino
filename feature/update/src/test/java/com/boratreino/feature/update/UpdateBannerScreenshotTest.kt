@@ -1,6 +1,7 @@
 package com.boratreino.feature.update
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -25,7 +26,7 @@ class UpdateBannerScreenshotTest {
         compose.setContent {
             BoraTreinoTheme(darkTheme = dark) {
                 Surface(Modifier.fillMaxSize()) {
-                    UpdateBannerContent(state = state, actions = UpdateActions(), modifier = Modifier.fillMaxSize())
+                    UpdateBannerContent(state = state, actions = UpdateActions(), modifier = Modifier.fillMaxWidth())
                 }
             }
         }
@@ -72,7 +73,7 @@ class UpdateBannerScreenshotTest {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    UpdateBannerContent(state = UpdateUiState(UpdateBannerKind.IDLE), actions = UpdateActions(), modifier = Modifier.fillMaxSize())
+                    UpdateBannerContent(state = UpdateUiState(UpdateBannerKind.IDLE), actions = UpdateActions(), modifier = Modifier.fillMaxWidth())
                 }
             }
         }
