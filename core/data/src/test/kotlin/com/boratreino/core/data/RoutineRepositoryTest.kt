@@ -380,4 +380,117 @@ class RoutineRepositoryTest {
 
         assertEquals(listOf("A"), orderedShortNames())
     }
+
+    // addMachine, removeMachine, restoreItem
+
+    @Test
+    fun `adding a machine appends it with the default target`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val id = save("Treino A", "A", a)
+
+        routines.addMachine(id, b)
+
+        val items = requireNotNull(routines.observeRoutine(id).first()).items
+        assertEquals(listOf(a, b), items.map { it.machineId })
+        assertEquals(listOf(0, 1), items.map { it.position })
+        assertEquals(3, items.last().targetSets)
+        assertEquals(8, items.last().repsMin)
+        assertEquals(12, items.last().repsMax)
+    }
+
+    @Test
+    fun `adding a machine that is already there changes nothing`() = runTest {
+        val a = machine("Leg press")
+        val id = routines.saveRoutine(routine("Treino A", "A"), listOf(item(a, targetSets = 5, repsMin = 6, repsMax = 10)))
+        val before = requireNotNull(routines.observeRoutine(id).first()).items
+
+        routines.addMachine(id, a)
+
+        assertEquals(before, requireNotNull(routines.observeRoutine(id).first()).items)
+    }
+
+    @Test
+    fun `adding a machine to a routine that is gone does nothing`() = runTest {
+        val a = machine("Leg press")
+
+        routines.addMachine(999L, a)
+
+        assertEquals(emptyList<String>(), orderedShortNames())
+        assertNull(routines.observeRoutine(999L).first())
+    }
+
+    @Test
+    fun `removing a machine returns its item and renumbers the rest`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val c = machine("Leg extension")
+        val id = save("Treino A", "A", a, b, c)
+
+        val removed = routines.removeMachine(id, b)
+
+        assertEquals(RoutineItem(id, b, 1, 3, 8, 12), removed)
+        val items = requireNotNull(routines.observeRoutine(id).first()).items
+        assertEquals(listOf(a, c), items.map { it.machineId })
+        assertEquals(listOf(0, 1), items.map { it.position })
+    }
+
+    @Test
+    fun `removing a machine that is not in the routine returns null and changes nothing`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val id = save("Treino A", "A", a)
+
+        assertNull(routines.removeMachine(id, b))
+
+        assertEquals(listOf(a), requireNotNull(routines.observeRoutine(id).first()).items.map { it.machineId })
+    }
+
+    @Test
+    fun `restoring a removed item puts it back at its position with its target`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val c = machine("Leg extension")
+        val id = routines.saveRoutine(
+            routine("Treino A", "A"),
+            listOf(item(a), item(b, targetSets = 5, repsMin = 6, repsMax = 10), item(c)),
+        )
+        val removed = requireNotNull(routines.removeMachine(id, b))
+
+        routines.restoreItem(removed)
+
+        val items = requireNotNull(routines.observeRoutine(id).first()).items
+        assertEquals(listOf(a, b, c), items.map { it.machineId })
+        assertEquals(listOf(0, 1, 2), items.map { it.position })
+        assertEquals(5, items[1].targetSets)
+        assertEquals(6, items[1].repsMin)
+        assertEquals(10, items[1].repsMax)
+    }
+
+    @Test
+    fun `restoring an item does nothing when its routine is gone`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val id = save("Treino A", "A", a, b)
+        val removed = requireNotNull(routines.removeMachine(id, b))
+        routines.deleteRoutine(id)
+
+        routines.restoreItem(removed)
+
+        assertEquals(emptyList<String>(), orderedShortNames())
+        assertNull(routines.observeRoutine(id).first())
+    }
+
+    @Test
+    fun `restoring an item does nothing when its machine is gone`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val id = save("Treino A", "A", a, b)
+        val removed = requireNotNull(routines.removeMachine(id, b))
+        assertTrue(machines.delete(b))
+
+        routines.restoreItem(removed)
+
+        assertEquals(listOf(a), requireNotNull(routines.observeRoutine(id).first()).items.map { it.machineId })
+    }
 }

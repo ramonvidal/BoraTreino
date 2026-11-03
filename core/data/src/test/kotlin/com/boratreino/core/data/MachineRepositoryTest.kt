@@ -3,6 +3,8 @@ package com.boratreino.core.data
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.Routine
+import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.model.StarterMachines
@@ -274,5 +276,161 @@ class MachineRepositoryTest {
         val all = machines.observeMachines(includeArchived = true).first()
         assertEquals(1, all.size)
         assertFalse(all.single().archived)
+    }
+
+    // Usage
+
+    private val routines by lazy { DefaultRoutineRepository(store) }
+
+    /** A routine with the machines, in order; it takes the next position. */
+    private suspend fun routineWith(name: String, shortName: String, vararg machineIds: Long): Long =
+        routines.saveRoutine(
+            Routine(0, 0, name, shortName, 0, emptySet()),
+            machineIds.map { RoutineItem(0, it, 0, 3, 8, 12) },
+        )
+
+    @Test
+    fun `usage counts the logged sets of the machine`() = runTest {
+        val curl = save("Leg curl", MuscleGroup.LEGS)
+        training.logSet(curl, SetDraft(20.0, 10))
+        training.logSet(curl, SetDraft(20.0, 9))
+
+        val usage = machines.usage(curl)
+
+        assertEquals(2, usage.setCount)
+        assertFalse(usage.canDelete)
+    }
+
+    @Test
+    fun `usage lists the routines that contain the machine, by routine position`() = runTest {
+        val curl = save("Leg curl", MuscleGroup.LEGS)
+        val press = save("Leg press", MuscleGroup.LEGS)
+        routineWith("Treino C", "C", curl, press)
+        routineWith("Treino A", "A", press)
+        routineWith("Treino B", "B", curl)
+
+        val usage = machines.usage(curl)
+
+        assertEquals(listOf("Treino C", "Treino B"), usage.routineNames)
+        assertEquals(0, usage.setCount)
+        assertTrue(usage.canDelete)
+    }
+
+    // delete
+
+    @Test
+    fun `deleting a machine without sets takes it out of every routine and deletes it`() = runTest {
+        val curl = save("Leg curl", MuscleGroup.LEGS)
+        val press = save("Leg press", MuscleGroup.LEGS)
+        val a = routineWith("Treino A", "A", press, curl)
+        val b = routineWith("Treino B", "B", curl)
+
+        assertTrue(machines.delete(curl))
+
+        assertNull(machines.observeMachine(curl).first())
+        assertEquals(listOf(press), requireNotNull(routines.observeRoutine(a).first()).items.map { it.machineId })
+        assertEquals(emptyList<Long>(), requireNotNull(routines.observeRoutine(b).first()).items.map { it.machineId })
+    }
+
+    @Test
+    fun `deleting a machine with logged sets is refused and changes nothing`() = runTest {
+        val curl = save("Leg curl", MuscleGroup.LEGS)
+        val a = routineWith("Treino A", "A", curl)
+        training.logSet(curl, SetDraft(20.0, 10))
+
+        assertFalse(machines.delete(curl))
+
+        assertNotNull(machines.observeMachine(curl).first())
+        assertEquals(listOf(curl), requireNotNull(routines.observeRoutine(a).first()).items.map { it.machineId })
+        assertEquals(1, machines.usage(curl).setCount)
+    }
+
+    @Test
+    fun `deleting a machine that doesn't exist returns false`() = runTest {
+        assertFalse(machines.delete(999L))
+    }
+
+    // Starters in either language
+
+    @Test
+    fun `adding a starter in Portuguese stores its Portuguese name`() = runTest {
+        val id = machines.addStarter(starter("Barbell bench press"), portuguese = true)
+
+        assertEquals("Supino reto", requireNotNull(machines.observeMachine(id).first()).name)
+    }
+
+    @Test
+    fun `adding a starter in English stores its English name`() = runTest {
+        val explicit = machines.addStarter(starter("Barbell bench press"), portuguese = false)
+        val byDefault = machines.addStarter(starter("Incline barbell bench press"))
+
+        assertEquals("Barbell bench press", requireNotNull(machines.observeMachine(explicit).first()).name)
+        assertEquals("Incline barbell bench press", requireNotNull(machines.observeMachine(byDefault).first()).name)
+    }
+
+    @Test
+    fun `adding a starter unarchives a stored machine that has its Portuguese name and returns its id`() = runTest {
+        val stored = save("Supino reto", MuscleGroup.CHEST, archived = true)
+
+        val returned = machines.addStarter(starter("Barbell bench press"))
+
+        assertEquals(stored, returned)
+        assertFalse(requireNotNull(machines.observeMachine(stored).first()).archived)
+        assertEquals(1, machines.observeMachines(includeArchived = true).first().size)
+    }
+
+    @Test
+    fun `adding a starter unarchives a stored machine that has its English name and returns its id`() = runTest {
+        val stored = save("Barbell bench press", MuscleGroup.CHEST, archived = true)
+
+        val returned = machines.addStarter(starter("Barbell bench press"), portuguese = true)
+
+        assertEquals(stored, returned)
+        assertFalse(requireNotNull(machines.observeMachine(stored).first()).archived)
+    }
+
+    @Test
+    fun `addStarters adds each one and reuses the machines already stored`() = runTest {
+        val press = save("Leg press", MuscleGroup.LEGS)
+
+        val ids = machines.addStarters(listOf(starter("Leg press"), starter("Barbell bench press")), portuguese = true)
+
+        assertEquals(2, ids.size)
+        assertEquals(press, ids[0])
+        assertEquals("Supino reto", requireNotNull(machines.observeMachine(ids[1]).first()).name)
+        assertEquals(2, machines.observeMachines(includeArchived = true).first().size)
+    }
+
+    @Test
+    fun `addStarters with nothing to add gives nothing`() = runTest {
+        assertEquals(emptyList<Long>(), machines.addStarters(emptyList()))
+    }
+
+    @Test
+    fun `a starter whose Portuguese name is stored is left out of the starters not added`() = runTest {
+        save("Supino reto", MuscleGroup.CHEST)
+
+        val names = machines.observeStartersNotAdded().first().map { it.name }
+
+        assertFalse(names.contains("Barbell bench press"))
+    }
+
+    @Test
+    fun `an archived machine with a starter's name still leaves the starter out`() = runTest {
+        save("Supino reto", MuscleGroup.CHEST, archived = true)
+
+        val names = machines.observeStartersNotAdded().first().map { it.name }
+
+        assertFalse(names.contains("Barbell bench press"))
+    }
+
+    @Test
+    fun `a starter is offered again once its machine is deleted`() = runTest {
+        val id = machines.addStarter(starter("Barbell bench press"), portuguese = true)
+        assertFalse(machines.observeStartersNotAdded().first().map { it.name }.contains("Barbell bench press"))
+
+        assertTrue(machines.delete(id))
+
+        assertTrue(machines.observeStartersNotAdded().first().map { it.name }.contains("Barbell bench press"))
     }
 }

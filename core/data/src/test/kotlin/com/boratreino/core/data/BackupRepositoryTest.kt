@@ -199,4 +199,14 @@ class BackupRepositoryTest {
         assertNull(store.session(open))
         assertNull(store.openSession())
     }
+
+    @Test
+    fun `importing a backup clears the skipped machines`() = runTest {
+        store.replaceAll(seed)
+        training.skipMachineToday(1L)
+
+        repo.import(seed)
+
+        assertEquals(emptySet<Long>(), training.observeTodayPlan().first().skipped)
+    }
 }

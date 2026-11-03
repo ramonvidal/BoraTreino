@@ -4,6 +4,8 @@ import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.Routine
+import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.SetDraft
@@ -338,5 +340,91 @@ class TrainingRepositoryTest {
         training.updateSet(set.copy(weightKg = 57.5, reps = 8))
 
         assertEquals(listOf(set.copy(weightKg = 57.5, reps = 8)), machineLog(lat).thisSession)
+    }
+
+    // Skipping a machine for today
+
+    private val routines by lazy { DefaultRoutineRepository(store) }
+
+    /** A routine (Treino A) with these machines in order: the next one, so the active ficha. */
+    private suspend fun fichaWith(vararg machineIds: Long): Long =
+        routines.saveRoutine(Routine(0, 0, "Treino A", "A", 0, emptySet()), machineIds.map { RoutineItem(0, it, 0, 3, 8, 12) })
+
+    @Test
+    fun `a skipped machine leaves the active ficha and is listed as skipped`() = runTest {
+        val press = machine("Leg press", MuscleGroup.LEGS)
+        val curl = machine("Leg curl", MuscleGroup.LEGS)
+        fichaWith(press, curl)
+
+        training.skipMachineToday(curl)
+
+        val plan = training.observeTodayPlan().first()
+        assertEquals(listOf(press), plan.active?.items?.map { it.machineId })
+        assertEquals(setOf(curl), plan.skipped)
+    }
+
+    @Test
+    fun `unskipping a machine puts it back in the active ficha`() = runTest {
+        val press = machine("Leg press", MuscleGroup.LEGS)
+        val curl = machine("Leg curl", MuscleGroup.LEGS)
+        fichaWith(press, curl)
+        training.skipMachineToday(curl)
+
+        training.unskipMachineToday(curl)
+
+        val plan = training.observeTodayPlan().first()
+        assertEquals(listOf(press, curl), plan.active?.items?.map { it.machineId })
+        assertEquals(emptySet<Long>(), plan.skipped)
+    }
+
+    @Test
+    fun `a skipped machine has no target on its machine screen`() = runTest {
+        val press = machine("Leg press", MuscleGroup.LEGS)
+        val curl = machine("Leg curl", MuscleGroup.LEGS)
+        fichaWith(press, curl)
+        training.skipMachineToday(curl)
+
+        assertNull(machineLog(curl).target)
+    }
+
+    @Test
+    fun `logging a set keeps the skipped machines skipped`() = runTest {
+        val press = machine("Leg press", MuscleGroup.LEGS)
+        val curl = machine("Leg curl", MuscleGroup.LEGS)
+        fichaWith(press, curl)
+        training.skipMachineToday(curl)
+
+        logSet(press, SetDraft(120.0, 12))
+
+        assertEquals(setOf(curl), training.observeTodayPlan().first().skipped)
+    }
+
+    @Test
+    fun `finishing the session clears the skipped machines`() = runTest {
+        val press = machine("Leg press", MuscleGroup.LEGS)
+        val curl = machine("Leg curl", MuscleGroup.LEGS)
+        fichaWith(press, curl)
+        logSet(press, SetDraft(120.0, 12))
+        training.skipMachineToday(curl)
+
+        training.finishSession()
+
+        val plan = training.observeTodayPlan().first()
+        assertEquals(emptySet<Long>(), plan.skipped)
+        assertEquals(listOf(press, curl), plan.active?.items?.map { it.machineId })
+    }
+
+    @Test
+    fun `a session closed as stale clears the skipped machines`() = runTest {
+        val press = machine("Leg press", MuscleGroup.LEGS)
+        val curl = machine("Leg curl", MuscleGroup.LEGS)
+        fichaWith(press, curl)
+        logSet(press, SetDraft(120.0, 12))
+        training.skipMachineToday(curl)
+
+        clock.advance(Duration.ofHours(3))
+        training.closeStaleSession()
+
+        assertEquals(emptySet<Long>(), training.observeTodayPlan().first().skipped)
     }
 }

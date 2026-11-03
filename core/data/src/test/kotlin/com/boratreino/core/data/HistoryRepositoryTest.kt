@@ -573,4 +573,17 @@ class HistoryRepositoryTest {
         assertEquals(1, added.position)
         assertEquals(2, store.allSets().size)
     }
+
+    @Test
+    fun `deleting the open session clears the skipped machines`() = runTest {
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+        val curl = machine("Leg curl", MuscleGroup.LEGS)
+        training.logSet(leg, SetDraft(120.0, 12))
+        training.skipMachineToday(curl)
+        val openId = requireNotNull(store.openSession()).id
+
+        history.deleteSession(openId)
+
+        assertEquals(emptySet<Long>(), training.observeTodayPlan().first().skipped)
+    }
 }

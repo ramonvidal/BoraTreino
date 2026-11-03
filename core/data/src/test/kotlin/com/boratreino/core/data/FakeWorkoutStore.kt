@@ -368,6 +368,28 @@ internal class FakeWorkoutStore : WorkoutStore {
 
     override suspend fun machines(): List<Machine> = machineRows.toList()
 
+    // Deleting machines and editing fichas
+
+    override suspend fun machineSetCount(machineId: Long): Int = sets.count { it.machineId == machineId }
+
+    override suspend fun routineNamesWithMachine(machineId: Long): List<String> {
+        val holding = items.filter { it.machineId == machineId }.map { it.routineId }.toSet()
+        return routinesByPosition().filter { it.id in holding }.map { it.name }
+    }
+
+    /** Foreign keys: the routine items go first, then the machine. Refused (nothing changed) with sets. */
+    override suspend fun deleteMachine(machineId: Long): Boolean {
+        if (machineRows.none { it.id == machineId }) return false
+        if (machineSetCount(machineId) > 0) return false
+        items.removeAll { it.machineId == machineId }
+        machineRows.removeAll { it.id == machineId }
+        changed()
+        return true
+    }
+
+    override suspend fun routineItems(routineId: Long): List<RoutineItem> =
+        items.filter { it.routineId == routineId }.sortedBy { it.position }
+
     // Progress
 
     override fun observeAllSets(): Flow<List<WorkoutSet>> = observe {
