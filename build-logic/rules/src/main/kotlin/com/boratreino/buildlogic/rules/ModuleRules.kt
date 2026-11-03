@@ -24,6 +24,8 @@ object ModuleRules {
         ":core:settings" to setOf(":core:model"),
         // Rest timer notification, training-day reminders.
         ":core:notify" to setOf(":core:model", ":core:data", ":core:settings"),
+        // Writing finished trainings to Health Connect (optional, write-only).
+        ":core:health" to setOf(":core:model", ":core:data", ":core:settings"),
         // Theme, shared composables, strings used by more than one feature, icons.
         ":core:ui" to setOf(":core:model"),
         // Updating the app itself from the GitHub release page.

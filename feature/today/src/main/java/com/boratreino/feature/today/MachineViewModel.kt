@@ -150,20 +150,25 @@ class MachineViewModel @Inject constructor(
 
     private val cardioInput: Flow<CardioInput> = combine(cardioOverride, distanceRevealed, cardioEditor, ::CardioInput)
 
+    private data class Inputs(
+        val override: SetDraft?,
+        val editing: SetEditor?,
+        val padding: NumberPad?,
+        val newRecord: Record?,
+        val cardio: CardioInput,
+    )
+
+    private val inputs: Flow<Inputs> = combine(draftOverride, editor, pad, record, cardioInput, ::Inputs)
+
     private val logState: Flow<MachineUiState> = combine(
         training.observeMachineLog(machineId),
-        draftOverride,
-        editor,
-        pad,
-        record,
-        cardioInput,
-    ) { values ->
-        val log = values[0] as com.boratreino.core.data.MachineLog?
-        val override = values[1] as SetDraft?
-        val editing = values[2] as SetEditor?
-        val padding = values[3] as NumberPad?
-        val newRecord = values[4] as Record?
-        val cardio = values[5] as CardioInput
+        inputs,
+    ) { log, input ->
+        val override = input.override
+        val editing = input.editing
+        val padding = input.padding
+        val newRecord = input.newRecord
+        val cardio = input.cardio
         if (log == null) {
             MachineUiState(loaded = true)
         } else if (log.machine.kind == MachineKind.CARDIO) {
@@ -240,6 +245,79 @@ class MachineViewModel @Inject constructor(
             throw e
         } catch (_: Exception) {
             // The timer is a comfort; the set is already saved.
+        }
+    }
+
+    // Cardio: minutes, calories and (optional) distance steppers. No rest timer, no records.
+
+    internal fun logCardio() {
+        val draft = state.value.cardio
+        if (!CardioRules.canLog(draft)) return
+        write { logCardioDraft(draft) }
+    }
+
+    internal fun logCardioSameAgain() {
+        val draft = state.value.cardioSameAgain ?: return
+        write { logCardioDraft(draft) }
+    }
+
+    private suspend fun logCardioDraft(draft: CardioDraft) {
+        training.logCardio(machineId, draft)
+        cardioOverride.value = null
+        eventChannel.send(MachineEvent.Logged())
+    }
+
+    internal fun stepMinutes(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(minutes = CardioRules.stepMinutes(d.minutes, up))
+    }
+
+    internal fun stepCalories(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(calories = CardioRules.stepCalories(d.calories, up))
+    }
+
+    internal fun stepDistance(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(distanceM = CardioRules.stepDistance(d.distanceM, up))
+    }
+
+    internal fun showDistance() {
+        distanceRevealed.value = true
+    }
+
+    internal fun openCardioSet(set: WorkoutSet) {
+        val number = state.value.sets.indexOfFirst { it.id == set.id } + 1
+        cardioEditor.value = CardioEditor(set, number, CardioRules.toDraft(set))
+    }
+
+    internal fun closeCardioEditor() {
+        cardioEditor.value = null
+    }
+
+    internal fun stepEditorMinutes(up: Boolean) = editCardio { it.copy(minutes = CardioRules.stepMinutes(it.minutes, up)) }
+
+    internal fun stepEditorCalories(up: Boolean) = editCardio { it.copy(calories = CardioRules.stepCalories(it.calories, up)) }
+
+    internal fun stepEditorDistance(up: Boolean) = editCardio { it.copy(distanceM = CardioRules.stepDistance(it.distanceM, up)) }
+
+    private fun editCardio(change: (CardioDraft) -> CardioDraft) {
+        cardioEditor.value = cardioEditor.value?.let { it.copy(draft = change(it.draft)) }
+    }
+
+    internal fun saveCardioEditor() {
+        val e = cardioEditor.value ?: return
+        cardioEditor.value = null
+        val s = e.set
+        write { training.updateSet(CardioRules.toSet(s.id, s.sessionId, s.machineId, s.position, e.draft, s.loggedAt)) }
+    }
+
+    internal fun deleteCardioEditor() {
+        val e = cardioEditor.value ?: return
+        cardioEditor.value = null
+        write {
+            training.deleteSet(e.set)
+            eventChannel.send(MachineEvent.SetRemoved(e.set))
         }
     }
 

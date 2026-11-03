@@ -13,6 +13,7 @@ class ModuleRulesTest {
         ":core:data" to setOf(":core:model", ":core:database"),
         ":core:settings" to setOf(":core:model"),
         ":core:notify" to setOf(":core:model", ":core:data", ":core:settings"),
+        ":core:health" to setOf(":core:model", ":core:data", ":core:settings"),
         ":core:ui" to setOf(":core:model"),
         ":core:update" to setOf(":core:model"),
     )

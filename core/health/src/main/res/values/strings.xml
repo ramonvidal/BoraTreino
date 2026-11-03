@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_rationale_title">Health Connect</string>
+    <string name="health_rationale_text">Bora pro Treino! can send each finished training to Health Connect: the exercise session, and the calories and distance of your cardio. It only writes. It never reads anything from Health Connect, and you can turn it off in Settings or remove the data in Health Connect at any time.</string>
+    <string name="health_privacy_policy">Privacy policy</string>
+</resources>
