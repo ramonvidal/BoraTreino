@@ -345,4 +345,57 @@ class StarterMachinesTest {
         assertFalse(StarterMachines.matches(bench, "Supino inclinado"))
         assertFalse(StarterMachines.matches(bench, "Barbell"))
     }
+
+    // search by language
+
+    @Test
+    fun `English only finds the English names, so sup misses Incline chest press`() {
+        val found = StarterMachines.search("sup", all, portuguese = false).map { it.name }
+
+        assertFalse(found.contains("Incline chest press"))
+        assertEquals(all.filter { it.name.lowercase().contains("sup") }.map { it.name }, found)
+    }
+
+    @Test
+    fun `Portuguese only finds supino in the Portuguese names`() {
+        val found = StarterMachines.search("supino", all, portuguese = true)
+
+        assertTrue(found.any { it.name == "Barbell bench press" })
+        assertTrue(found.any { it.name == "Incline chest press" })
+        assertEquals(all.filter { it.namePt.lowercase().contains("supino") }.map { it.name }, found.map { it.name })
+        assertTrue(found.none { it.name.lowercase().contains("supino") })
+    }
+
+    @Test
+    fun `no language given finds a match in either name`() {
+        val names = StarterMachines.search("sup", all, portuguese = null).map { it.name }
+
+        assertTrue(names.contains("Barbell bench press"))
+        assertTrue(names.contains("Incline chest press"))
+    }
+
+    @Test
+    fun `the default search matches either name as before`() {
+        assertEquals(
+            StarterMachines.search("sup", all, portuguese = null),
+            StarterMachines.search("sup", all),
+        )
+    }
+
+    @Test
+    fun `accents are ignored in Portuguese only mode`() {
+        assertTrue(StarterMachines.search("bulgaro", all, portuguese = true).any { it.name == "Bulgarian split squat" })
+        assertTrue(StarterMachines.search("búlgaro", all, portuguese = true).any { it.name == "Bulgarian split squat" })
+    }
+
+    @Test
+    fun `accents and case are ignored in English only mode`() {
+        assertTrue(StarterMachines.search("BULGÁRIAN", all, portuguese = false).any { it.name == "Bulgarian split squat" })
+        assertTrue(StarterMachines.search("bulgarian", all, portuguese = false).any { it.name == "Bulgarian split squat" })
+    }
+
+    @Test
+    fun `a Portuguese-only search does not find English-only text`() {
+        assertTrue(StarterMachines.search("bulgarian", all, portuguese = true).isEmpty())
+    }
 }

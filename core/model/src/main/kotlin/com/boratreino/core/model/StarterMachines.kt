@@ -140,11 +140,20 @@ object StarterMachines {
             .replace(Regex("\\p{Mn}+"), "")
             .lowercase(Locale.ROOT)
 
-    /** Keeps order. Blank query -> [list] unchanged. Case- and accent-insensitive "contains" over name and namePt (trimmed query). */
-    fun search(query: String, list: List<StarterMachine> = all): List<StarterMachine> {
+    /**
+     * Keeps order. Blank query -> [list] unchanged. Case- and accent-insensitive "contains" (trimmed query) over
+     * the name shown: [portuguese] null matches the English or the Portuguese name, true only namePt, false only name.
+     */
+    fun search(query: String, list: List<StarterMachine> = all, portuguese: Boolean? = null): List<StarterMachine> {
         val q = normalize(query)
         if (q.isEmpty()) return list
-        return list.filter { normalize(it.name).contains(q) || normalize(it.namePt).contains(q) }
+        return list.filter {
+            when (portuguese) {
+                null -> normalize(it.name).contains(q) || normalize(it.namePt).contains(q)
+                true -> normalize(it.namePt).contains(q)
+                false -> normalize(it.name).contains(q)
+            }
+        }
     }
 
     /** True when [machineName] (trimmed, case/accent-insensitive) equals the starter's English or Portuguese name. */

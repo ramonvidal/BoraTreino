@@ -111,7 +111,7 @@ class RoutinesViewModel @Inject constructor(
                 .toSortedMap()
                 .map { (group, list) -> MachineGroup(group, list) },
             archived = all.filter { it.archived },
-            starterGroups = StarterMachines.search(local.search, starters)
+            starterGroups = StarterMachines.search(local.search, starters, portuguese)
                 .groupBy { it.muscleGroup }
                 .toSortedMap()
                 .map { (group, list) -> StarterGroup(group, list) },
