@@ -100,4 +100,26 @@ class RestTimerRulesTest {
         assertEquals("1:00", RestTimerRules.format(60))
         assertEquals("1:12", RestTimerRules.format(72))
     }
+
+    // progress
+
+    @Test
+    fun `progress is the share of the rest left`() {
+        assertEquals(1f, RestTimerRules.progress(90, 90), 0.0001f)
+        assertEquals(0.5f, RestTimerRules.progress(45, 90), 0.0001f)
+        assertEquals(0f, RestTimerRules.progress(0, 90), 0.0001f)
+    }
+
+    @Test
+    fun `progress is zero when there is no duration`() {
+        assertEquals(0f, RestTimerRules.progress(30, 0), 0.0001f)
+        assertEquals(0f, RestTimerRules.progress(0, 0), 0.0001f)
+        assertEquals(0f, RestTimerRules.progress(30, -5), 0.0001f)
+    }
+
+    @Test
+    fun `progress is clamped to 0 and 1`() {
+        assertEquals(1f, RestTimerRules.progress(200, 90), 0.0001f)
+        assertEquals(0f, RestTimerRules.progress(-10, 90), 0.0001f)
+    }
 }

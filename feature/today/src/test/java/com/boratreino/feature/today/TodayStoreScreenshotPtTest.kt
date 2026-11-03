@@ -168,6 +168,7 @@ class TodayStoreScreenshotPtTest {
             target = legPressTarget,
             suggestion = Suggestion.Up(125.0, 8),
             restSeconds = 72,
+            restTotalSeconds = 90,
         )
         shoot("store-pt-2-machine") {
             MachineContent(state = state, actions = MachineActions(), modifier = Modifier.fillMaxSize())

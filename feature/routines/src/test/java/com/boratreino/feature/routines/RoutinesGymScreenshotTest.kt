@@ -27,7 +27,12 @@ class RoutinesGymScreenshotTest {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    RoutinesContent(state = state, callbacks = RoutinesCallbacks(), modifier = Modifier.fillMaxSize())
+                    RoutinesContent(
+                        state = state,
+                        callbacks = RoutinesCallbacks(),
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = RoutinesPage.GYM,
+                    )
                 }
             }
         }

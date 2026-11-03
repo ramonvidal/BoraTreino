@@ -81,10 +81,11 @@ class TodayStoreScreenshotTest {
             target = legPressTarget,
             suggestion = Suggestion.Up(125.0, 8),
             restSeconds = 72,
+            restTotalSeconds = 90,
         )
         shoot("store-en-2-machine") {
             MachineContent(state = state, actions = MachineActions(), modifier = Modifier.fillMaxSize())
         }
-        compose.onNodeWithText("Rest 1:12").assertExists()
+        compose.onNodeWithText("1:12").assertExists()
     }
 }

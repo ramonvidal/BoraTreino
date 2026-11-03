@@ -8,7 +8,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -115,6 +116,7 @@ class RoutinesStoreScreenshotPtTest {
         shoot("store-pt-3-routines") {
             RoutinesContent(state = state, callbacks = RoutinesCallbacks(), modifier = Modifier.fillMaxSize())
         }
-        compose.onNodeWithText("Fichas").assertExists()
+        // The tab title and the Routines segment of the switch both read "Fichas".
+        compose.onAllNodesWithText("Fichas").assertCountEquals(2)
     }
 }

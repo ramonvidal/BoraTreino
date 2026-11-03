@@ -1,6 +1,11 @@
 package com.boratreino.core.notify
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.model.ReminderSettings
+import com.boratreino.core.model.RestTimerSettings
+import com.boratreino.core.settings.TrainingSettings
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -116,6 +121,117 @@ class DefaultRestTimerTest {
         timer.extend(1_000)
 
         assertEquals(clock.instant().plusSeconds(600), timer.state.value.endsAt)
+    }
+
+    // durationSeconds
+
+    @Test
+    fun `start fills the duration with the clamped seconds`() {
+        timer.start(90)
+        assertEquals(90, timer.state.value.durationSeconds)
+
+        timer.start(5)
+        assertEquals(15, timer.state.value.durationSeconds)
+
+        timer.start(9_999)
+        assertEquals(600, timer.state.value.durationSeconds)
+    }
+
+    @Test
+    fun `extend adds the seconds to the duration`() {
+        timer.start(90)
+
+        timer.extend(30)
+
+        assertEquals(120, timer.state.value.durationSeconds)
+        assertEquals(secondsFromStart(120), timer.state.value.endsAt)
+    }
+
+    @Test
+    fun `extend adds only the seconds actually added when capped at 600`() {
+        timer.start(500)
+
+        timer.extend(200)
+
+        assertEquals(secondsFromStart(600), timer.state.value.endsAt)
+        assertEquals(600, timer.state.value.durationSeconds)
+    }
+
+    @Test
+    fun `extend at the cap adds nothing to the duration`() {
+        timer.start(600)
+
+        timer.extend(30)
+
+        assertEquals(600, timer.state.value.durationSeconds)
+    }
+
+    @Test
+    fun `skip and finish reset the duration`() {
+        timer.start(90)
+        timer.skip()
+        assertEquals(0, timer.state.value.durationSeconds)
+
+        timer.start(15)
+        clock.advance(Duration.ofSeconds(15))
+        scope.advanceUntilIdle()
+        scope.runCurrent()
+        assertEquals(RestTimerState(), timer.state.value)
+    }
+
+    // beep
+
+    private class BeepSettings(beep: Boolean) : TrainingSettings {
+        override val weeklyGoal: Flow<Int> = MutableStateFlow(3)
+        override suspend fun setWeeklyGoal(goal: Int) = Unit
+        override val reminders: Flow<ReminderSettings> = MutableStateFlow(ReminderSettings())
+        override suspend fun setReminders(settings: ReminderSettings) = Unit
+        override val restTimer: Flow<RestTimerSettings> = MutableStateFlow(RestTimerSettings(beep = beep))
+        override suspend fun setRestTimer(settings: RestTimerSettings) = Unit
+    }
+
+    private fun finishRest(t: DefaultRestTimer) {
+        t.start(15)
+        clock.advance(Duration.ofSeconds(15))
+        scope.advanceUntilIdle()
+        scope.runCurrent()
+    }
+
+    @Test
+    fun `a rest that ends with no settings does not throw and finishes`() {
+        var finished = 0
+        scope.backgroundScope.launch { timer.finished.collect { finished++ } }
+        scope.runCurrent()
+
+        finishRest(timer)
+
+        assertNull(timer.state.value.endsAt)
+        assertEquals(1, finished)
+    }
+
+    @Test
+    fun `a rest that ends with the beep on does not throw and finishes once`() {
+        val withBeep = DefaultRestTimer(RuntimeEnvironment.getApplication(), clock, scope, BeepSettings(beep = true))
+        var finished = 0
+        scope.backgroundScope.launch { withBeep.finished.collect { finished++ } }
+        scope.runCurrent()
+
+        finishRest(withBeep)
+
+        assertNull(withBeep.state.value.endsAt)
+        assertEquals(1, finished)
+    }
+
+    @Test
+    fun `a rest that ends with the beep off does not throw and finishes once`() {
+        val quiet = DefaultRestTimer(RuntimeEnvironment.getApplication(), clock, scope, BeepSettings(beep = false))
+        var finished = 0
+        scope.backgroundScope.launch { quiet.finished.collect { finished++ } }
+        scope.runCurrent()
+
+        finishRest(quiet)
+
+        assertEquals(1, finished)
     }
 
     // skip

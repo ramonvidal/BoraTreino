@@ -165,7 +165,7 @@ class MachineScreenshotTest {
         ),
     )
 
-    /** A set was just logged: the rest bar with 1:12 left sits above the steppers. */
+    /** A set was just logged: the rest card with 1:12 left sits above the steppers. */
     @Test
     fun `rest running after a set`() {
         shoot(
@@ -182,8 +182,9 @@ class MachineScreenshotTest {
                 reps = 11,
                 sameAgain = SetDraft(120.0, 12),
                 restSeconds = 72,
+                restTotalSeconds = 90,
             ),
         )
-        compose.onNodeWithText("Rest 1:12").assertExists()
+        compose.onNodeWithText("1:12").assertExists()
     }
 }

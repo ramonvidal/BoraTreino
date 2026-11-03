@@ -281,6 +281,169 @@ class RoutineRepositoryTest {
         assertEquals(listOf("A", "B"), orderedShortNames())
     }
 
+    // moveItem
+
+    private suspend fun machineIdsOf(routineId: Long): List<Long> =
+        requireNotNull(routines.observeRoutine(routineId).first()).items.map { it.machineId }
+
+    @Test
+    fun `moving a machine up swaps it with the one above and persists positions`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val c = machine("Pull-ups")
+        val id = save("Treino A", "A", a, b, c)
+
+        routines.moveItem(id, b, up = true)
+
+        assertEquals(listOf(b, a, c), machineIdsOf(id))
+        assertEquals(listOf(0, 1, 2), requireNotNull(routines.observeRoutine(id).first()).items.map { it.position })
+    }
+
+    @Test
+    fun `moving a machine down swaps it with the one below`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val c = machine("Pull-ups")
+        val id = save("Treino A", "A", a, b, c)
+
+        routines.moveItem(id, b, up = false)
+
+        assertEquals(listOf(a, c, b), machineIdsOf(id))
+    }
+
+    @Test
+    fun `moving the first machine up or the last down does nothing`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val id = save("Treino A", "A", a, b)
+
+        routines.moveItem(id, a, up = true)
+        routines.moveItem(id, b, up = false)
+
+        assertEquals(listOf(a, b), machineIdsOf(id))
+    }
+
+    @Test
+    fun `moving a machine keeps its target and leaves other routines alone`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val id = routines.saveRoutine(routine("Treino A", "A"), listOf(item(a, 4, 6, 10), item(b, 2, 12, 15)))
+        val other = save("Treino B", "B", a, b)
+
+        routines.moveItem(id, b, up = true)
+
+        val moved = requireNotNull(routines.observeRoutine(id).first()).items
+        assertEquals(listOf(b, a), moved.map { it.machineId })
+        assertEquals(listOf(2, 4), moved.map { it.targetSets })
+        assertEquals(listOf(12, 6), moved.map { it.repsMin })
+        assertEquals(listOf(a, b), machineIdsOf(other))
+    }
+
+    @Test
+    fun `moving a machine that is not in the routine does nothing`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val id = save("Treino A", "A", a)
+
+        routines.moveItem(id, b, up = true)
+
+        assertEquals(listOf(a), machineIdsOf(id))
+    }
+
+    // duplicateRoutine
+
+    @Test
+    fun `duplicating a routine adds a copy with the same machines at the next position`() = runTest {
+        val a = machine("Leg press")
+        val b = machine("Leg curl")
+        val id = routines.saveRoutine(
+            routine("Treino A", "A", setOf(DayOfWeek.MONDAY)),
+            listOf(item(a, 4, 6, 10), item(b, 2, 12, 15)),
+        )
+        save("Treino B", "B")
+
+        val copyId = routines.duplicateRoutine(id)
+
+        val copy = requireNotNull(routines.observeRoutine(copyId).first())
+        assertTrue(copyId != id && copyId != 0L)
+        assertEquals("Treino A copy", copy.routine.name)
+        assertEquals(2, copy.routine.position)
+        assertEquals(listOf(a, b), copy.items.map { it.machineId })
+        assertEquals(listOf(4, 2), copy.items.map { it.targetSets })
+        assertEquals(listOf(6, 12), copy.items.map { it.repsMin })
+        assertEquals(listOf(10, 15), copy.items.map { it.repsMax })
+        assertEquals(listOf(0, 1), copy.items.map { it.position })
+        assertEquals(copyId, copy.routine.id)
+        assertEquals(3, routines.observePlan().first().routines.size)
+    }
+
+    @Test
+    fun `duplicating leaves the original untouched`() = runTest {
+        val a = machine("Leg press")
+        val id = save("Treino A", "A", a)
+
+        routines.duplicateRoutine(id)
+
+        val original = requireNotNull(routines.observeRoutine(id).first())
+        assertEquals("Treino A", original.routine.name)
+        assertEquals(listOf(a), original.items.map { it.machineId })
+        assertEquals(0, original.routine.position)
+    }
+
+    @Test
+    fun `duplicating a routine that does not exist returns 0 and adds nothing`() = runTest {
+        save("Treino A", "A")
+
+        assertEquals(0L, routines.duplicateRoutine(999L))
+        assertEquals(1, routines.observePlan().first().routines.size)
+    }
+
+    // createRoutine
+
+    @Test
+    fun `creating a routine on an empty plan gives Routine A with no machines`() = runTest {
+        val id = routines.createRoutine()
+
+        val created = requireNotNull(routines.observeRoutine(id).first())
+        assertEquals("Routine A", created.routine.name)
+        assertEquals("A", created.routine.shortName)
+        assertEquals(0, created.routine.position)
+        assertEquals(emptyList<RoutineItem>(), created.items)
+    }
+
+    @Test
+    fun `creating routines takes the next unused letter and the next position`() = runTest {
+        save("Treino A", "A")
+        save("Treino B", "B")
+
+        val id = routines.createRoutine()
+
+        val created = requireNotNull(routines.observeRoutine(id).first()).routine
+        assertEquals("Routine C", created.name)
+        assertEquals("C", created.shortName)
+        assertEquals(2, created.position)
+    }
+
+    @Test
+    fun `creating a routine fills a free letter and ignores case`() = runTest {
+        save("Treino A", "a")
+        save("Treino C", "C")
+
+        val id = routines.createRoutine()
+
+        assertEquals("B", requireNotNull(routines.observeRoutine(id).first()).routine.shortName)
+        assertEquals("Routine B", requireNotNull(routines.observeRoutine(id).first()).routine.name)
+    }
+
+    @Test
+    fun `creating two routines in a row gives two letters`() = runTest {
+        val first = routines.createRoutine()
+        val second = routines.createRoutine()
+
+        assertEquals(listOf("A", "B"), listOf(first, second).map { requireNotNull(routines.observeRoutine(it).first()).routine.shortName })
+        assertEquals(listOf("A" to 0, "B" to 1), positionsOf())
+    }
+
     // deleteRoutine
 
     @Test

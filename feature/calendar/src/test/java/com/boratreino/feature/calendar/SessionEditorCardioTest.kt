@@ -146,6 +146,9 @@ class SessionEditorCardioTest {
         override suspend fun saveRoutine(routine: com.boratreino.core.model.Routine, items: List<com.boratreino.core.model.RoutineItem>): Long = 0L
         override suspend fun deleteRoutine(id: Long) = Unit
         override suspend fun moveRoutine(id: Long, up: Boolean) = Unit
+        override suspend fun moveItem(routineId: Long, machineId: Long, up: Boolean) = Unit
+        override suspend fun duplicateRoutine(id: Long): Long = 0L
+        override suspend fun createRoutine(): Long = 0L
         override suspend fun addMachine(routineId: Long, machineId: Long) = Unit
         override suspend fun removeMachine(routineId: Long, machineId: Long): com.boratreino.core.model.RoutineItem? = null
         override suspend fun restoreItem(item: com.boratreino.core.model.RoutineItem) = Unit

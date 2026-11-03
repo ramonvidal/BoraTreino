@@ -63,9 +63,9 @@ internal object GymSamples {
         Routine(id = id, planId = 1L, name = name, shortName = shortName, position = position, weekdays = emptySet())
 
     val routines: List<RoutineRow> = listOf(
-        RoutineRow(routine(1L, "Treino A", "A", 0), machineCount = 4),
-        RoutineRow(routine(2L, "Treino B", "B", 1), machineCount = 4),
-        RoutineRow(routine(3L, "Treino C", "C", 2), machineCount = 3),
+        RoutineRow(routine(1L, "Treino A", "A", 0), machineCount = 4, machineNames = listOf("Leg press", "Leg extension", "Hack squat", "Leg curl")),
+        RoutineRow(routine(2L, "Treino B", "B", 1), machineCount = 4, machineNames = listOf("Lat pulldown", "Seated row", "Pull-ups", "Cable biceps curl")),
+        RoutineRow(routine(3L, "Treino C", "C", 2), machineCount = 3, machineNames = listOf("Chest press", "Shoulder press", "Pull-ups")),
     )
 
     /** The gym populated, the starter list folded, the routines below. */

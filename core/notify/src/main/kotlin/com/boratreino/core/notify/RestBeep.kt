@@ -18,11 +18,11 @@ internal object RestBeep {
             Handler(Looper.getMainLooper()).postDelayed({
                 try {
                     tone.release()
-                } catch (e: RuntimeException) {
+                } catch (e: Throwable) {
                     // Already released.
                 }
             }, RELEASE_AFTER_MS)
-        } catch (e: RuntimeException) {
+        } catch (e: Throwable) {
             // No audio available: the buzz still happened.
         }
     }

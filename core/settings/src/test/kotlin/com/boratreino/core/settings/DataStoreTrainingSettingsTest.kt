@@ -204,4 +204,29 @@ class DataStoreTrainingSettingsTest {
         assertEquals(RestTimerSettings(enabled = false, defaultSeconds = 60), settings.restTimer.first())
         assertEquals(3, settings.weeklyGoal.first())
     }
+
+    @Test
+    fun `the rest beep is off until it is set`() = runTest {
+        assertEquals(false, newSettings().restTimer.first().beep)
+    }
+
+    @Test
+    fun `the rest beep is read back and the other fields stay`() = runTest {
+        val settings = newSettings()
+        settings.setRestTimer(RestTimerSettings(enabled = false, defaultSeconds = 120, beep = true))
+
+        assertEquals(RestTimerSettings(enabled = false, defaultSeconds = 120, beep = true), settings.restTimer.first())
+
+        settings.setRestTimer(settings.restTimer.first().copy(beep = false))
+
+        assertEquals(RestTimerSettings(enabled = false, defaultSeconds = 120, beep = false), settings.restTimer.first())
+    }
+
+    @Test
+    fun `the rest beep survives a new settings object on the same file`() = runTest {
+        val dataStore = newDataStore()
+        newSettings(dataStore).setRestTimer(RestTimerSettings(beep = true))
+
+        assertEquals(true, newSettings(dataStore).restTimer.first().beep)
+    }
 }

@@ -137,6 +137,91 @@ class RoutineEditRulesTest {
         assertEquals(items, RoutineEditRules.withItemBack(items, item(2L, 0, 5, 1, 2)))
     }
 
+    // moved
+
+    @Test
+    fun `moved up swaps the machine with the one above and renumbers`() {
+        val result = RoutineEditRules.moved(items, 2L, up = true)
+
+        assertEquals(listOf(2L, 1L, 3L), result.map { it.machineId })
+        assertEquals(listOf(0, 1, 2), result.map { it.position })
+    }
+
+    @Test
+    fun `moved down swaps the machine with the one below and renumbers`() {
+        val result = RoutineEditRules.moved(items, 2L, up = false)
+
+        assertEquals(listOf(1L, 3L, 2L), result.map { it.machineId })
+        assertEquals(listOf(0, 1, 2), result.map { it.position })
+    }
+
+    @Test
+    fun `moved keeps the targets of the machines`() {
+        val result = RoutineEditRules.moved(items, 1L, up = false)
+
+        assertEquals(item(2L, 0, 3, 10, 15), result[0])
+        assertEquals(item(1L, 1, 4, 6, 10), result[1])
+    }
+
+    @Test
+    fun `moving the first machine up changes nothing`() {
+        assertEquals(items, RoutineEditRules.moved(items, 1L, up = true))
+    }
+
+    @Test
+    fun `moving the last machine down changes nothing`() {
+        assertEquals(items, RoutineEditRules.moved(items, 3L, up = false))
+    }
+
+    @Test
+    fun `moving an absent machine changes nothing`() {
+        assertEquals(items, RoutineEditRules.moved(items, 9L, up = true))
+        assertEquals(items, RoutineEditRules.moved(items, 9L, up = false))
+        assertEquals(emptyList<RoutineItem>(), RoutineEditRules.moved(emptyList(), 1L, up = true))
+    }
+
+    @Test
+    fun `moved renumbers positions that had gaps`() {
+        val gappy = listOf(item(1L, 0), item(2L, 5), item(3L, 9))
+
+        val result = RoutineEditRules.moved(gappy, 3L, up = true)
+
+        assertEquals(listOf(1L, 3L, 2L), result.map { it.machineId })
+        assertEquals(listOf(0, 1, 2), result.map { it.position })
+    }
+
+    // nextLetter
+
+    @Test
+    fun `nextLetter starts at A`() {
+        assertEquals("A", RoutineEditRules.nextLetter(emptyList()))
+    }
+
+    @Test
+    fun `nextLetter takes the first unused letter`() {
+        assertEquals("C", RoutineEditRules.nextLetter(listOf("A", "B")))
+        assertEquals("B", RoutineEditRules.nextLetter(listOf("A", "C")))
+        assertEquals("A", RoutineEditRules.nextLetter(listOf("B", "C")))
+    }
+
+    @Test
+    fun `nextLetter ignores case and spaces of the used names`() {
+        assertEquals("C", RoutineEditRules.nextLetter(listOf("a", " b ")))
+    }
+
+    @Test
+    fun `nextLetter ignores names that are not letters`() {
+        assertEquals("A", RoutineEditRules.nextLetter(listOf("Push", "")))
+    }
+
+    @Test
+    fun `nextLetter goes to A1 after Z`() {
+        val all = ('A'..'Z').map { it.toString() }
+
+        assertEquals("A1", RoutineEditRules.nextLetter(all))
+        assertEquals("B1", RoutineEditRules.nextLetter(all + "A1"))
+    }
+
     // shouldOfferAdding
 
     private fun ficha(vararg machineIds: Long) = RoutineWithItems(

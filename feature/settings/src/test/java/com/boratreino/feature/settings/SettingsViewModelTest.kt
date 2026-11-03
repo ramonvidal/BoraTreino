@@ -242,6 +242,47 @@ class SettingsViewModelTest {
         assertEquals(120, settings.rest.value.defaultSeconds)
     }
 
+    @Test
+    fun `the rest beep is off by default`() = runTest {
+        assertFalse(loaded().restTimer.beep)
+    }
+
+    @Test
+    fun `turning the beep on keeps the other rest settings and does not reschedule reminders`() = runTest {
+        loaded()
+        viewModel.setRestSeconds(120)
+        viewModel.setRestEnabled(false)
+
+        viewModel.setRestBeep(true)
+
+        assertTrue(settings.rest.value.beep)
+        assertEquals(120, settings.rest.value.defaultSeconds)
+        assertFalse(settings.rest.value.enabled)
+        assertTrue(loaded().restTimer.beep)
+        assertEquals(0, scheduler.calls)
+    }
+
+    @Test
+    fun `turning the beep off again is stored`() = runTest {
+        loaded()
+        viewModel.setRestBeep(true)
+
+        viewModel.setRestBeep(false)
+
+        assertFalse(settings.rest.value.beep)
+    }
+
+    @Test
+    fun `switching the rest timer or its default keeps the beep`() = runTest {
+        loaded()
+        viewModel.setRestBeep(true)
+
+        viewModel.setRestEnabled(false)
+        viewModel.setRestSeconds(60)
+
+        assertTrue(settings.rest.value.beep)
+    }
+
     // About and language
 
     @Test

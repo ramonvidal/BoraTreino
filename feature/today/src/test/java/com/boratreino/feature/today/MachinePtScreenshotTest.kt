@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.Instant
 
-/** The machine screen with "same again" and the rest bar, in Baianês; saved to build/outputs/roborazzi. */
+/** The machine screen with "same again" and the rest card, in Baianês; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "pt-rBR-w411dp-h1600dp")
 class MachinePtScreenshotTest {
@@ -42,6 +42,7 @@ class MachinePtScreenshotTest {
                             reps = 11,
                             sameAgain = SetDraft(120.0, 12),
                             restSeconds = 72,
+                            restTotalSeconds = 90,
                         ),
                         actions = MachineActions(),
                         modifier = Modifier.fillMaxSize(),

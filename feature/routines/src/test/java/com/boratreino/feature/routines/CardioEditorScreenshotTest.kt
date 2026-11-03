@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -109,8 +111,9 @@ class CardioEditorScreenshotTest {
     fun `routine editor row of a cardio machine has no sets x reps`() {
         shootRoutine("routine-editor-cardio", routineWithCardio)
         compose.onNodeWithText("Treadmill").assertExists()
-        // The weight machine's row has the steppers, one set of them in the whole screen.
-        compose.onNodeWithText("Sets").assertExists()
+        // The weight machine's row shows its target; the cardio row shows none (so only one target on screen).
+        compose.onNodeWithText("3 \u00d7 8\u201312").assertExists()
+        compose.onAllNodesWithText("\u00d7", substring = true).assertCountEquals(1)
     }
 
     @Test
@@ -120,6 +123,7 @@ class CardioEditorScreenshotTest {
         compose.onNodeWithText("Sets").assertDoesNotExist()
         compose.onNodeWithText("Reps from").assertDoesNotExist()
         compose.onNodeWithText("Reps to").assertDoesNotExist()
+        compose.onAllNodesWithText("\u00d7", substring = true).assertCountEquals(0)
     }
 
     @Test

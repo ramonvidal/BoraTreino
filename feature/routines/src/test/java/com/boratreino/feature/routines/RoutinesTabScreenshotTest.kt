@@ -26,11 +26,11 @@ class RoutinesTabScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun shoot(name: String, state: RoutinesUiState) {
+    private fun shoot(name: String, state: RoutinesUiState, page: RoutinesPage) {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    RoutinesContent(state = state, callbacks = RoutinesCallbacks(), modifier = Modifier.fillMaxSize())
+                    RoutinesContent(state = state, callbacks = RoutinesCallbacks(), modifier = Modifier.fillMaxSize(), initialPage = page)
                 }
             }
         }
@@ -76,7 +76,9 @@ class RoutinesTabScreenshotTest {
                 MachineGroup(MuscleGroup.ARMS, listOf(cableCurl)),
             ),
             starterGroups = starters,
+            gymCount = 8,
         ),
+        RoutinesPage.ROUTINES,
     )
 
     @Test
@@ -94,7 +96,9 @@ class RoutinesTabScreenshotTest {
             starterGroups = starters,
             archivedExpanded = true,
             startersExpanded = true,
+            gymCount = 8,
         ),
+        RoutinesPage.GYM,
     )
 }
 

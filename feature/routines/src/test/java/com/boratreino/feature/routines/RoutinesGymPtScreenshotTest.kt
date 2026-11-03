@@ -29,6 +29,7 @@ class RoutinesGymPtScreenshotTest {
                         state = GymSamples.populated.copy(portuguese = true),
                         callbacks = RoutinesCallbacks(),
                         modifier = Modifier.fillMaxSize(),
+                        initialPage = RoutinesPage.GYM,
                     )
                 }
             }

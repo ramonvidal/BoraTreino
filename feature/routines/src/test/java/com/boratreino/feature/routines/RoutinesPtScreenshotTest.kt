@@ -63,11 +63,17 @@ class RoutinesPtScreenshotTest {
                 MachineGroup(MuscleGroup.ARMS, listOf(cableCurl)),
             ),
             starterGroups = starters,
+            gymCount = 8,
         )
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    RoutinesContent(state = state, callbacks = RoutinesCallbacks(), modifier = Modifier.fillMaxSize())
+                    RoutinesContent(
+                        state = state,
+                        callbacks = RoutinesCallbacks(),
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = RoutinesPage.ROUTINES,
+                    )
                 }
             }
         }
