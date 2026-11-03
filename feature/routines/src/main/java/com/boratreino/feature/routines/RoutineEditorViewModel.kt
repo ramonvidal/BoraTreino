@@ -7,6 +7,7 @@ import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
@@ -24,7 +25,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** A machine in the routine being edited, with its name for display. */
-internal data class RoutineEditorItem(val machineName: String, val item: RoutineItem)
+internal data class RoutineEditorItem(
+    val machineName: String,
+    val item: RoutineItem,
+    /** Only picks the thumbnail's placeholder; the picture itself is found by name. */
+    val muscleGroup: MuscleGroup = MuscleGroup.LEGS,
+)
 
 /**
  * The routine editor's form. [routineId] is 0 for a new routine. [available] are the
@@ -100,7 +106,7 @@ class RoutineEditorViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val plan = routines.observePlan().first()
-            val names = allMachines.first().associate { it.id to it.name }
+            val known = allMachines.first().associateBy { it.id }
             planId = plan.plan.id
             val showWeekdays = plan.plan.scheduleMode == ScheduleMode.WEEKDAYS
             if (routineId == 0L) {
@@ -124,7 +130,11 @@ class RoutineEditorViewModel @Inject constructor(
                             shortName = found.routine.shortName,
                             weekdays = found.routine.weekdays,
                             showWeekdays = showWeekdays,
-                            items = found.items.map { item -> RoutineEditorItem(names[item.machineId].orEmpty(), item) },
+                            items = found.items.map { item -> RoutineEditorItem(
+                                    machineName = known[item.machineId]?.name.orEmpty(),
+                                    item = item,
+                                    muscleGroup = known[item.machineId]?.muscleGroup ?: MuscleGroup.LEGS,
+                                ) },
                         )
                     }
                 }
@@ -151,7 +161,7 @@ class RoutineEditorViewModel @Inject constructor(
             repsMin = 8,
             repsMax = 12,
         )
-        it.copy(items = it.items + RoutineEditorItem(machine.name, item), pickerOpen = false)
+        it.copy(items = it.items + RoutineEditorItem(machine.name, item, machine.muscleGroup), pickerOpen = false)
     }
 
     internal fun moveItem(index: Int, up: Boolean) = form.update {

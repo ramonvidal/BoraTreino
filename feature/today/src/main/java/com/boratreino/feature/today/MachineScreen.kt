@@ -52,6 +52,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.EmptyState
+import com.boratreino.core.ui.ExercisePreviewDialog
+import com.boratreino.core.ui.MachineThumb
+import com.boratreino.core.model.StarterMachines
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.boratreino.core.ui.NumberPadDialog
 import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.recordText
@@ -237,7 +242,12 @@ private fun InfoCard(machine: Machine, state: MachineUiState) {
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
     ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        val hasPicture = StarterMachines.imageFor(machine.name) != null
+        var preview by remember { mutableStateOf(false) }
+        MachineThumb(machine, size = 56.dp, onClick = if (hasPicture) ({ preview = true }) else null)
+        if (preview) ExercisePreviewDialog(machine, onDismiss = { preview = false })
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (!machine.setupNote.isNullOrBlank()) {
                 Text(
                     machine.setupNote!!,
@@ -276,6 +286,7 @@ private fun InfoCard(machine: Machine, state: MachineUiState) {
                     )
                 }
             }
+        }
         }
     }
 }

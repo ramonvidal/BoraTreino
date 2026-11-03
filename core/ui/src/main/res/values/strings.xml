@@ -36,4 +36,11 @@
     </plurals>
     <string name="weight_label">Weight (kg)</string>
     <string name="added_weight_label">Added weight (kg)</string>
+    <string name="exercise_image_description">Illustration of %1$s</string>
+    <string name="exercise_no_image">No illustration</string>
+    <string name="exercise_start">Start</string>
+    <string name="exercise_end">End</string>
+    <string name="exercise_credit">Exercise illustrations: Everkinetic (Greg Priday), %1$s</string>
+    <string name="exercise_license_name">CC BY-SA 4.0</string>
+    <string name="exercise_close">Close</string>
 </resources>

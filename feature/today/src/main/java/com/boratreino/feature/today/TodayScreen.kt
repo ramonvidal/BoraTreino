@@ -209,6 +209,7 @@ private fun LazyListScope.noSession(
             title = machine.name,
             supporting = machine.muscleGroup.label(),
             onClick = { actions.onOpenMachine(machine.id) },
+            leading = { RowThumb(machine) },
         )
     }
     item(key = "all") {
@@ -259,6 +260,7 @@ private fun LazyListScope.sessionRows(machines: List<SessionMachineUi>, actions:
             title = item.machine.name,
             supporting = item.summary?.let { summaryLabel(item.machine, it) },
             onClick = { actions.onOpenMachine(item.machine.id) },
+            leading = { RowThumb(item.machine) },
         )
     }
 }
@@ -305,6 +307,7 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
             supporting = targetText(row.target),
             onClick = { actions.onOpenMachine(row.machine.id) },
             highlighted = row.highlighted,
+            leading = { RowThumb(row.machine) },
             trailing = {
                 when {
                     row.canSkip -> IconButton(onClick = { actions.onSkipMachine(row.machine.id) }) {

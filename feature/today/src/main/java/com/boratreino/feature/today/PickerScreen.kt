@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.StarterMachine
+import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.label
 import kotlinx.coroutines.launch
 import com.boratreino.core.ui.R as CoreUiR
@@ -100,7 +101,12 @@ internal fun PickerContent(
             for (group in state.groups) {
                 item(key = "gh-${group.group}") { SectionTitle(group.group.label()) }
                 items(group.machines, key = { "m${it.id}" }) { machine ->
-                    MachineRow(machine.name, machine.setupNote, onClick = { actions.onOpenMachine(machine.id) })
+                    MachineRow(
+                        machine.name,
+                        machine.setupNote,
+                        onClick = { actions.onOpenMachine(machine.id) },
+                        leading = { RowThumb(machine) },
+                    )
                 }
             }
             moreSection(state, actions)
@@ -117,7 +123,12 @@ private fun LazyListScope.recentSection(state: PickerUiState, actions: PickerAct
     if (state.recent.isEmpty()) return
     item(key = "recent-h") { SectionTitle(stringResource(R.string.today_recent)) }
     items(state.recent, key = { "r${it.id}" }) { machine ->
-        MachineRow(machine.name, machine.muscleGroup.label(), onClick = { actions.onOpenMachine(machine.id) })
+        MachineRow(
+            machine.name,
+            machine.muscleGroup.label(),
+            onClick = { actions.onOpenMachine(machine.id) },
+            leading = { RowThumb(machine) },
+        )
     }
 }
 
@@ -138,7 +149,12 @@ private fun LazyListScope.moreSection(state: PickerUiState, actions: PickerActio
     for (group in state.starterGroups) {
         item(key = "sh-${group.group}") { SectionTitle(group.group.label()) }
         items(group.starters, key = { "s${it.name}" }) { starter ->
-            MachineRow(starter.displayName(state.portuguese), null, onClick = { actions.onAddStarter(starter) })
+            MachineRow(
+                starter.displayName(state.portuguese),
+                null,
+                onClick = { actions.onAddStarter(starter) },
+                leading = { MachineThumb(starter.name, starter.muscleGroup, size = 44.dp) },
+            )
         }
     }
 }

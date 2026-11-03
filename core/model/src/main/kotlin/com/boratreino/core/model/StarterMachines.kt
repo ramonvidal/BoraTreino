@@ -32,6 +32,64 @@ object StarterMachines {
     private val A = MuscleGroup.ARMS
     private val K = MuscleGroup.CORE
 
+    /** Illustration slug per English starter name (assets `<slug>-1.webp` and `<slug>-2.webp`). */
+    private val images: Map<String, String> = mapOf(
+        "Leg press" to "leg-press",
+        "Leg extension" to "leg-extensions",
+        "Lying leg curl" to "lying-leg-curl-machine",
+        "Seated leg curl" to "seated-leg-curl",
+        "Hip abductor" to "thigh-abductor",
+        "Hip adductor" to "thigh-adductor",
+        "Hack squat" to "hack-squat-machine",
+        "Smith machine squat" to "smith-machine-squats",
+        "Glute kickback" to "one-legged-cable-kickback",
+        "Barbell back squat" to "barbell-squat",
+        "Front squat" to "front-squat-with-barbell",
+        "Walking lunges" to "walking-lunges",
+        "Reverse lunge" to "rear-lunges-with-dumbbell",
+        "Step-up" to "step-ups-with-dumbbells",
+        "Standing leg curl" to "standing-leg-curls",
+        "Romanian deadlift" to "romanian-dead-lift",
+        "Glute bridge" to "bridging",
+        "Standing calf raise" to "standing-calf-raises-using-machine",
+        "Seated calf raise" to "seated-calf-raise-using-machine",
+        "Chest press" to "machine-bench-press",
+        "Cable crossover" to "cable-crossover",
+        "Dips" to "chest-dips",
+        "Barbell bench press" to "bench-press",
+        "Incline barbell bench press" to "incline-bench-press",
+        "Decline bench press" to "decline-barbell-bench-press",
+        "Dumbbell bench press" to "bench-press-dumbbell",
+        "Incline dumbbell press" to "incline-dumbbell-press",
+        "Dumbbell fly" to "dumbbell-flys",
+        "Push-ups" to "push-ups",
+        "Seated row" to "seated-cable-rows",
+        "Back extension" to "hyperextensions",
+        "Pull-ups" to "pull-ups",
+        "Close-grip pulldown" to "v-bar-pull-down",
+        "Straight-arm pulldown" to "straight-arm-push-down",
+        "T-bar row" to "t-bar-rows",
+        "Deadlift" to "barbell-dead-lifts",
+        "Good morning" to "barbell-good-mornings",
+        "Dumbbell lateral raise" to "lateral-dumbbell-raises",
+        "Front raise" to "front-dumbbell-raise",
+        "Biceps curl machine" to "biceps-curl-with-machine",
+        "Cable biceps curl" to "standing-biceps-curl-with-cable",
+        "Triceps pushdown" to "triceps-pushdown-with-cable",
+        "Triceps extension machine" to "triceps-extensions-using-machine",
+        "Barbell curl" to "biceps-curls-with-barbell",
+        "EZ-bar curl" to "ez-bar-curl-with-barbell",
+        "Dumbbell curl" to "biceps-curl-with-dumbbell",
+        "Hammer curl" to "biceps-hammer-curl-with-dumbbell",
+        "Preacher curl" to "preacher-curl-with-barbell",
+        "Concentration curl" to "concentration-curls-with-dumbbell",
+        "Cable curl" to "standing-biceps-curl-with-cable",
+        "Rope triceps pushdown" to "triceps-pushdown-with-rope-and-cable",
+        "Close-grip bench press" to "close-grip-barbell-bench-press",
+        "Bench dips" to "bench-dips",
+        "Crunch" to "crunches",
+    )
+
     val all: List<StarterMachine> = listOf(
         // Legs
         w("Leg press", "Leg press", L, 5.0),
@@ -134,7 +192,7 @@ object StarterMachines {
         w("Russian twist", "Rotação russa", K, 2.0),
         w("Wood chopper", "Lenhador no cabo", K),
         bw("Ab wheel", "Roda abdominal", K),
-    )
+    ).map { it.copy(image = images[it.name]) }
 
     /** Lower case, accents removed, trimmed. */
     private fun normalize(text: String): String =

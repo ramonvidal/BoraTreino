@@ -6,7 +6,7 @@ O QUE VOCÊ TEM
 
 • Registro com um toque: "Repetir" faz a série igual à da última vez, "Registrar série" salva os números da tela.
 
-• Sua academia, cadastrada uma vez: adicione todos os aparelhos e exercícios que ela tem (escolha numa lista com cerca de 100 ou crie o seu) e guarde a regulagem, tipo "banco 4".
+• Sua academia, cadastrada uma vez: adicione todos os aparelhos e exercícios que ela tem (escolha numa lista com cerca de 100, muitos com desenho, ou crie o seu) e guarde a regulagem, tipo "banco 4".
 
 • Fichas: monte a ficha A, B, C e outras com seus aparelhos, com séries e faixa de repetições. O app diz qual ficha é a próxima, seja qual for o dia da semana, então treinar quatro vezes por semana funciona direitinho.
 
@@ -27,3 +27,5 @@ O QUE VOCÊ TEM
 PRIVADO DE FÁBRICA
 
 Tudo fica no seu celular. Não tem conta, não tem anúncio, não tem rastreamento e o app nem pede acesso à internet.
+
+Ilustrações dos exercícios: Everkinetic (everkinetic.com, de Greg Priday), CC BY-SA 4.0.

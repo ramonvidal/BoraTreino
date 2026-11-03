@@ -37,6 +37,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.ScheduleMode
+import com.boratreino.core.model.StarterMachine
+import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
@@ -213,6 +215,7 @@ private fun StartersCard(state: RoutinesUiState, callbacks: RoutinesCallbacks) {
                     )
                     group.starters.forEach { starter ->
                         StarterRow(
+                            starter = starter,
                             name = starter.displayName(state.portuguese),
                             checked = starter.name in state.selectedStarters,
                             onClick = { callbacks.onToggleStarter(starter) },
@@ -235,13 +238,15 @@ private fun StartersCard(state: RoutinesUiState, callbacks: RoutinesCallbacks) {
 }
 
 @Composable
-private fun StarterRow(name: String, checked: Boolean, onClick: () -> Unit) {
+private fun StarterRow(starter: StarterMachine, name: String, checked: Boolean, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.padding(end = 12.dp))
-        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.padding(end = 8.dp))
+        // The picture is looked up by the English name, whichever name is shown.
+        MachineThumb(name = starter.name, muscleGroup = starter.muscleGroup, size = 40.dp)
+        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 12.dp))
     }
 }
 
@@ -367,20 +372,24 @@ private fun FoldHeader(title: String, expanded: Boolean, onClick: () -> Unit) {
 @Composable
 private fun MachineRow(machine: Machine, onClick: () -> Unit, onDelete: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(
+        Row(
             Modifier.weight(1f).defaultMinSize(minHeight = 56.dp).clickable(onClick = onClick)
                 .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(machine.name, style = MaterialTheme.typography.bodyLarge)
-            val note = machine.setupNote
-            if (note != null) {
-                Text(
-                    note,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
+            MachineThumb(machine = machine, size = 40.dp)
+            Column(verticalArrangement = Arrangement.Center) {
+                Text(machine.name, style = MaterialTheme.typography.bodyLarge)
+                val note = machine.setupNote
+                if (note != null) {
+                    Text(
+                        note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
             }
         }
         IconButton(onClick = onDelete) {

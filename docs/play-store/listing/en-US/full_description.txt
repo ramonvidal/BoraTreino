@@ -6,7 +6,7 @@ WHAT YOU GET
 
 • One-tap logging: "Same again" repeats last time's set, "Log set" saves the numbers on the screen.
 
-• Your gym, registered once: add every machine and exercise your gym has (pick from a list of about 100 or create your own) and keep setup notes like "seat 4".
+• Your gym, registered once: add every machine and exercise your gym has (pick from a list of about 100, many with a picture, or create your own) and keep setup notes like "seat 4".
 
 • Routines (fichas): build routine A, B, C and more from your machines, with sets and rep targets. The app tells you which routine is next, whatever day of the week it is, so training four days a week just works.
 
@@ -27,3 +27,5 @@ WHAT YOU GET
 PRIVATE BY DESIGN
 
 Everything stays on your phone. There is no account, no ads, no tracking and the app does not even ask for internet access.
+
+Exercise illustrations: Everkinetic (everkinetic.com, by Greg Priday), CC BY-SA 4.0.

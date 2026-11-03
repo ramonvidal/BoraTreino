@@ -4,6 +4,8 @@ import android.content.res.Resources
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -39,6 +41,7 @@ internal fun MachineRow(
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
     highlighted: Boolean = false,
+    leading: (@Composable () -> Unit)? = null,
 ) {
     Card(
         onClick = onClick,
@@ -50,6 +53,10 @@ internal fun MachineRow(
             Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (leading != null) {
+                leading()
+                Spacer(Modifier.width(12.dp))
+            }
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 if (supporting != null) {
@@ -74,4 +81,10 @@ internal fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/** The row picture for a stored machine; the row's own tap still applies. */
+@Composable
+internal fun RowThumb(machine: Machine) {
+    MachineThumb(machine, size = 44.dp)
 }

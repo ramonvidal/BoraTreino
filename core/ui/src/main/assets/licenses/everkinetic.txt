@@ -1,0 +1,6 @@
+Exercise illustrations: Everkinetic, by Greg Priday, https://github.com/everkinetic/data
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0),
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Changes were made: the pictures were converted to WebP, resized to 360 px and placed on a white
+background; they are otherwise unchanged. The pictures remain under CC BY-SA 4.0.

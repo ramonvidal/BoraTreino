@@ -50,6 +50,13 @@ core/ui,reps_only,one,%d rep,%d repetição
 core/ui,reps_only,other,%d reps,%d repetições
 core/ui,weight_label,,Weight (kg),Peso (kg)
 core/ui,added_weight_label,,Added weight (kg),Peso extra (kg)
+core/ui,exercise_image_description,,Illustration of %1$s,Desenho de %1$s
+core/ui,exercise_no_image,,No illustration,Sem desenho
+core/ui,exercise_start,,Start,Início
+core/ui,exercise_end,,End,Fim
+core/ui,exercise_credit,,"Exercise illustrations: Everkinetic (Greg Priday), %1$s","Desenhos dos exercícios: Everkinetic (Greg Priday), %1$s"
+core/ui,exercise_license_name,,CC BY-SA 4.0,CC BY-SA 4.0
+core/ui,exercise_close,,Close,Fechar
 feature/calendar,calendar_week_progress,,This week: %1$d of %2$d,Semana: %1$d de %2$d
 feature/calendar,calendar_streak,one,Streak: %d week,Sequência: %d semana
 feature/calendar,calendar_streak,other,Streak: %d weeks,Sequência: %d semanas

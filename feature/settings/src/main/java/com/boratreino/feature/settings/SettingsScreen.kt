@@ -62,6 +62,7 @@ import com.boratreino.core.model.BackupSummary
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.notify.NotificationPermission
 import com.boratreino.core.settings.AppLanguage
+import com.boratreino.core.ui.ExerciseCredit
 import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.shortLabel
 import java.text.NumberFormat
@@ -382,6 +383,7 @@ private fun BackupSection(actions: SettingsActions) {
 private fun AboutSection(state: SettingsUiState) {
     SectionCard(stringResource(R.string.settings_about_title)) {
         Text(stringResource(R.string.settings_about, state.installedVersion), style = MaterialTheme.typography.bodyLarge)
+        ExerciseCredit()
     }
 }
 

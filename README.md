@@ -63,6 +63,14 @@ committed. CI writes it to `app/boratreino-upload.keystore` from the secrets
 keystore uses it for the key as well). When both exist, the release also carries `BoraTreino.aab` (also the
 `boratreino-play-aab` artifact); otherwise CI warns and signs with a throwaway key.
 
+## Exercise pictures
+
+Many machines and exercises show a drawing of the movement (start and end position). The illustrations are from
+[Everkinetic](https://github.com/everkinetic/data) by Greg Priday, licensed
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); they were converted to WebP, resized and placed on a white
+background. The pictures are the only part of this repository under that license: see `docs/exercise-images/README.md` for the
+mapping and the full notice. The app shows the credit in Settings and in the picture view.
+
 ## Tests
 
 - App logic: `./gradlew :core:model:test testDebugUnitTest`

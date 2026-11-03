@@ -34,6 +34,13 @@
     <string name="set_summary_uniform_no_weight">%1$d × %2$d</string>
     <string name="weight_label">Peso (kg)</string>
     <string name="added_weight_label">Peso extra (kg)</string>
+    <string name="exercise_image_description">Desenho de %1$s</string>
+    <string name="exercise_no_image">Sem desenho</string>
+    <string name="exercise_start">Início</string>
+    <string name="exercise_end">Fim</string>
+    <string name="exercise_credit">Desenhos dos exercícios: Everkinetic (Greg Priday), %1$s</string>
+    <string name="exercise_license_name">CC BY-SA 4.0</string>
+    <string name="exercise_close">Fechar</string>
     <plurals name="reps_only">
         <item quantity="one">%d repetição</item>
         <item quantity="other">%d repetições</item>

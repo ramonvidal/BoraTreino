@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.SmallStepper
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.shortLabel
@@ -218,7 +219,8 @@ private fun ItemCard(entry: RoutineEditorItem, index: Int, lastIndex: Int, callb
     ) {
         Column(Modifier.padding(start = 16.dp, top = 4.dp, end = 4.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
+                MachineThumb(name = entry.machineName, muscleGroup = entry.muscleGroup, size = 40.dp)
+                Column(Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(entry.machineName, style = MaterialTheme.typography.bodyLarge)
                     Text(
                         targetText(entry.item),
@@ -309,13 +311,16 @@ private fun MachinePickerDialog(state: RoutineEditorUiState, callbacks: RoutineE
                         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
                     )
                     group.machines.forEach { machine ->
-                        Text(
-                            machine.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp)
+                        Row(
+                            Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
                                 .clickable { callbacks.onAddMachine(machine) }
-                                .padding(vertical = 12.dp),
-                        )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            MachineThumb(machine = machine, size = 40.dp)
+                            Text(machine.name, style = MaterialTheme.typography.bodyLarge)
+                        }
                     }
                 }
             }
