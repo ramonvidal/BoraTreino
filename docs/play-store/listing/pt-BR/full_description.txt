@@ -18,6 +18,10 @@ O QUE VOCÊ TEM
 
 • Gráficos de evolução de cada aparelho: sua maior carga em 3 meses, 1 ano ou desde o começo.
 
+• Cardio também: registre minutos, calorias e distância da esteira, bicicleta e mais, e veja sua semana.
+
+• Health Connect opcional: envie cada treino terminado para o Health Connect. Vem desligado e o app nunca lê nada de lá.
+
 • Lembretes de treino que dizem o que vem a seguir.
 
 • Backup e restauração com um arquivo simples, pra levar seu histórico pra um celular novo.
@@ -26,6 +30,6 @@ O QUE VOCÊ TEM
 
 PRIVADO DE FÁBRICA
 
-Tudo fica no seu celular. Não tem conta, não tem anúncio, não tem rastreamento e o app nem pede acesso à internet.
+Tudo fica no seu celular (a opção do Health Connect só escreve no seu próprio Health Connect). Não tem conta, não tem anúncio, não tem rastreamento e o app nem pede acesso à internet.
 
 Ilustrações dos exercícios: Everkinetic (everkinetic.com, de Greg Priday), CC BY-SA 4.0.

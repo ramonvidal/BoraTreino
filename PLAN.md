@@ -108,7 +108,7 @@ core/database/      Room: tables, DAOs, migrations
 core/data/          Repositories over the database, backup export / import (JSON)
 core/settings/      This phone's choices (DataStore): weekly goal, reminders, rest timer, language
 core/notify/        Rest timer notification and training-day reminders (WorkManager, AlarmManager)
-core/health/        Health Connect: permission check, writing sessions (Phase 8)
+core/health/        Health Connect: permission check, writing sessions
 core/ui/            Theme (ChoreMe's), Figtree, steppers, machine row, small charts, shared strings, icons
 core/update/        Updating the app itself from the release page (ported from PodOuvir)
 feature/
@@ -147,16 +147,23 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       this month.
 - [x] **Phase 6: Updates and language.** Port `:core:update` and `:feature:update`; README
       with the fixed "latest APK" link; Baianês translation.
-- [ ] **Feedback round 1** (from the first gym use). The Routines tab leads with the gym's
+- [x] **Feedback round 1** (from the first gym use). The Routines tab leads with the gym's
       inventory and says so; delete a machine (or archive it when it has history); a starter list
       of about 100 machines and exercises in English and Portuguese with search and multi-select;
       the questions to update the ficha when a machine is added or skipped during a training; the
       new launcher icon (`docs/icon-original.png`).
-- [ ] **Phase 7: Cardio.** Cardio machines in the starter list, logging time and/or
+- [x] **Exercise pictures.** Everkinetic illustrations (CC BY-SA 4.0) on matching starter
+      machines, credited in Settings and the README (`docs/exercise-images/`).
+- [x] **Phase 7: Cardio.** Cardio machines in the starter list, logging time and/or
       calories (and distance if wanted), weekly minutes and calories in Progress.
-- [ ] **Phase 8: Health Connect.** `:core:health`, the Settings switch and permission,
+      No database migration: sets already had seconds, calories and distance.
+- [x] **Phase 8: Health Connect.** `:core:health`, the Settings switch and permission,
       writing each finished session (and cardio calories and distance); sessions edited
-      later are updated there too.
+      later are updated there too. There is no `healthConnectId` column: each session is written
+      under a stable client record id (`boratreino-session-<id>`) with a content-hash version, so
+      writing again replaces the record and deleted sessions are removed by id; the ids already
+      sent are kept in `HealthSettings`. Needs the Play Console Health Connect declaration
+      (`docs/PLAY_STORE_GUIDE.md`, step 4b) before rollout.
 - [ ] **Extras (later).** Home-screen widget (opens the next routine), photo of a machine's
       setup, body weight log, reading heart rate from Health Connect, Wear OS tile.
 
@@ -167,8 +174,8 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - **Routines**: the owner trains A / B / C in turn, four days a week; "in turn" is the
   default, "fixed weekdays" is there for others.
 - **Weights**: kg, as shown on the machines.
-- **Cardio**: later (Phase 7), time and/or calories.
-- **Health Connect**: yes, optional, write-only, Phase 8.
+- **Cardio**: done (Phase 7), time and/or calories, distance if wanted.
+- **Health Connect**: yes, optional, write-only, done (Phase 8).
 
 ## Open questions
 

@@ -7,6 +7,17 @@ one is next, and watch the weight go up. No account, no server: everything stays
 See [PLAN.md](PLAN.md) for the roadmap and design decisions, and [CLAUDE.md](CLAUDE.md)
 for the rules every change follows.
 
+## Features
+
+- One-tap logging with "Same again", steppers for weight and reps, no keyboard.
+- Your gym registered once: about 100 starter machines (many with pictures) and your own.
+- Routines (A, B, C...) with the app telling you which one is next; weight suggestions and records.
+- Cardio machines: minutes, calories and optional distance, with weekly totals in Progress.
+- Calendar with a weekly goal, charts per machine, reminders and a rest timer.
+- Optional Health Connect: send each finished training (and cardio calories and distance) to
+  Health Connect from Settings. Write-only, off by default.
+- Backup / restore with a file; English and Baianês.
+
 ## Installing on a phone
 
 Download **[BoraTreino.apk](https://github.com/ramonvidal/BoraTreino/releases/latest/download/BoraTreino.apk)**

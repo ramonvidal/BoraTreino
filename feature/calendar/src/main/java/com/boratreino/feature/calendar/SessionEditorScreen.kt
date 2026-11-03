@@ -1,5 +1,6 @@
 package com.boratreino.feature.calendar
 
+import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.weightLabel
 import com.boratreino.core.ui.draftText
@@ -50,7 +51,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.WorkoutSet
@@ -74,6 +77,9 @@ internal data class SessionEditorActions(
     val onOpenSet: (WorkoutSet) -> Unit = {},
     val onStepEditorWeight: (up: Boolean) -> Unit = {},
     val onStepEditorReps: (up: Boolean) -> Unit = {},
+    val onStepEditorMinutes: (up: Boolean) -> Unit = {},
+    val onStepEditorCalories: (up: Boolean) -> Unit = {},
+    val onStepEditorDistance: (up: Boolean) -> Unit = {},
     val onOpenPad: (PadTarget) -> Unit = {},
     val onConfirmPad: (String) -> Unit = {},
     val onDismissPad: () -> Unit = {},
@@ -119,6 +125,9 @@ internal fun SessionEditorScreen(
             onOpenSet = viewModel::openSet,
             onStepEditorWeight = viewModel::stepEditorWeight,
             onStepEditorReps = viewModel::stepEditorReps,
+            onStepEditorMinutes = viewModel::stepEditorMinutes,
+            onStepEditorCalories = viewModel::stepEditorCalories,
+            onStepEditorDistance = viewModel::stepEditorDistance,
             onOpenPad = viewModel::openPad,
             onConfirmPad = viewModel::confirmPad,
             onDismissPad = viewModel::dismissPad,
@@ -264,7 +273,12 @@ private fun MachineCard(entry: SessionMachine, actions: SessionEditorActions) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        draftText(entry.machine, set.weightKg ?: 0.0, set.reps ?: 0),
+                        if (entry.machine.kind == MachineKind.CARDIO) {
+                            val draft = CardioRules.toDraft(set)
+                            cardioText(draft.minutes, draft.calories, draft.distanceM)
+                        } else {
+                            draftText(entry.machine, set.weightKg ?: 0.0, set.reps ?: 0)
+                        },
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
@@ -335,6 +349,7 @@ private fun MachinePicker(machines: List<Machine>, actions: SessionEditorActions
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
+    val dash = stringResource(R.string.calendar_dash)
     ModalBottomSheet(
         onDismissRequest = actions.onDismissEditor,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -344,22 +359,49 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.calendar_set_number, editor.number), style = MaterialTheme.typography.titleLarge)
-            Stepper(
-                label = weightLabel(editor.machine),
-                value = formatKg(editor.weightKg),
-                onMinus = { actions.onStepEditorWeight(false) },
-                onPlus = { actions.onStepEditorWeight(true) },
-                onValueClick = { actions.onOpenPad(PadTarget.EDIT_WEIGHT) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Stepper(
-                label = stringResource(R.string.calendar_reps),
-                value = editor.reps.toString(),
-                onMinus = { actions.onStepEditorReps(false) },
-                onPlus = { actions.onStepEditorReps(true) },
-                onValueClick = { actions.onOpenPad(PadTarget.EDIT_REPS) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (editor.isCardio) {
+                Stepper(
+                    label = stringResource(R.string.calendar_minutes),
+                    value = if (editor.minutes > 0) editor.minutes.toString() else dash,
+                    onMinus = { actions.onStepEditorMinutes(false) },
+                    onPlus = { actions.onStepEditorMinutes(true) },
+                    onValueClick = {},
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Stepper(
+                    label = stringResource(R.string.calendar_calories),
+                    value = if (editor.calories > 0) editor.calories.toString() else dash,
+                    onMinus = { actions.onStepEditorCalories(false) },
+                    onPlus = { actions.onStepEditorCalories(true) },
+                    onValueClick = {},
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Stepper(
+                    label = stringResource(R.string.calendar_distance_km),
+                    value = if (editor.distanceM > 0) formatKg(editor.distanceM / 1000.0) else dash,
+                    onMinus = { actions.onStepEditorDistance(false) },
+                    onPlus = { actions.onStepEditorDistance(true) },
+                    onValueClick = {},
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                Stepper(
+                    label = weightLabel(editor.machine),
+                    value = formatKg(editor.weightKg),
+                    onMinus = { actions.onStepEditorWeight(false) },
+                    onPlus = { actions.onStepEditorWeight(true) },
+                    onValueClick = { actions.onOpenPad(PadTarget.EDIT_WEIGHT) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Stepper(
+                    label = stringResource(R.string.calendar_reps),
+                    value = editor.reps.toString(),
+                    onMinus = { actions.onStepEditorReps(false) },
+                    onPlus = { actions.onStepEditorReps(true) },
+                    onValueClick = { actions.onOpenPad(PadTarget.EDIT_REPS) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = actions.onDeleteEditor,
@@ -371,6 +413,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                 }
                 Button(
                     onClick = actions.onSaveEditor,
+                    enabled = editor.canSave,
                     modifier = Modifier.weight(1f).heightIn(min = 56.dp),
                 ) {
                     Text(stringResource(CoreUiR.string.save))

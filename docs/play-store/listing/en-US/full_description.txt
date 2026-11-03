@@ -18,6 +18,10 @@ WHAT YOU GET
 
 • Progress charts for every machine: your top weight over 3 months, 1 year or all time.
 
+• Cardio too: log minutes, calories and distance for the treadmill, bike and more, and see your week.
+
+• Optional Health Connect: send each finished training to Health Connect. It is off by default and the app never reads from it.
+
 • Training reminders that tell you what is next.
 
 • Backup and restore with a simple file, to move your history to a new phone.
@@ -26,6 +30,6 @@ WHAT YOU GET
 
 PRIVATE BY DESIGN
 
-Everything stays on your phone. There is no account, no ads, no tracking and the app does not even ask for internet access.
+Everything stays on your phone (the Health Connect option only writes to your own Health Connect). There is no account, no ads, no tracking and the app does not even ask for internet access.
 
 Exercise illustrations: Everkinetic (everkinetic.com, by Greg Priday), CC BY-SA 4.0.

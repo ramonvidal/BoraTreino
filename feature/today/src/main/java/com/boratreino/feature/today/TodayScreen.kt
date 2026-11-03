@@ -1,5 +1,6 @@
 package com.boratreino.feature.today
 
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.ui.summaryLabel
 import com.boratreino.core.ui.showUndo
 import androidx.compose.foundation.layout.Arrangement
@@ -304,7 +305,11 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
     items(routines.machines, key = { "rm${it.machine.id}" }) { row ->
         MachineRow(
             title = row.machine.name,
-            supporting = targetText(row.target),
+            supporting = if (row.machine.kind == MachineKind.CARDIO) {
+                row.cardioSummary?.let { summaryLabel(row.machine, it) }
+            } else {
+                targetText(row.target)
+            },
             onClick = { actions.onOpenMachine(row.machine.id) },
             highlighted = row.highlighted,
             leading = { RowThumb(row.machine) },
@@ -322,7 +327,7 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
                         contentDescription = stringResource(R.string.today_machine_done),
                         tint = MaterialTheme.colorScheme.primary,
                     )
-                    row.setCount > 0 -> Text(
+                    row.setCount > 0 && row.machine.kind != MachineKind.CARDIO -> Text(
                         stringResource(R.string.today_progress, row.setCount, row.target.targetSets),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

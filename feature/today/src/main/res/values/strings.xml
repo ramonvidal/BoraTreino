@@ -70,6 +70,11 @@
     <string name="today_reps">Reps</string>
     <string name="today_same_again">Same again</string>
     <string name="today_log_set">Log set</string>
+    <string name="today_log">Log</string>
+    <string name="today_minutes">Minutes</string>
+    <string name="today_calories">Calories</string>
+    <string name="today_distance">Distance (km)</string>
+    <string name="today_add_distance">Add distance</string>
     <string name="today_delete">Delete</string>
     <string name="today_set_removed">Set removed</string>
 </resources>

@@ -7,8 +7,11 @@ import com.boratreino.core.data.HistoryRepository
 import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.TrainingRepository
+import com.boratreino.core.model.CardioDraft
+import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SetDraft
@@ -36,7 +39,18 @@ internal data class SetEdit(
     val number: Int,
     val weightKg: Double,
     val reps: Int,
-)
+    /** Cardio machines edit these instead of [weightKg] and [reps]; 0 = not logged. */
+    val minutes: Int = 0,
+    val calories: Int = 0,
+    val distanceM: Int = 0,
+) {
+    val isCardio: Boolean get() = machine.kind == MachineKind.CARDIO
+
+    val cardioDraft: CardioDraft get() = CardioDraft(minutes, calories, distanceM)
+
+    /** A cardio set with nothing logged is not a set; Save waits until there is something. */
+    val canSave: Boolean get() = !isCardio || CardioRules.canLog(cardioDraft)
+}
 
 /** Which value the number pad is editing. */
 internal enum class PadTarget { EDIT_WEIGHT, EDIT_REPS }
@@ -121,9 +135,8 @@ class SessionEditorViewModel @Inject constructor(
     /** A copy of the machine's last set in this session. */
     internal fun addSet(machineId: Long) {
         val sets = setsOf(machineId)
-        val draft = LoggingRules.prefill(lastTime = emptyList(), thisSession = sets)
         write {
-            history.addSet(sessionId, machineId, draft)
+            addPrefilledSet(machineId, lastTime = emptyList(), sets = sets)
             eventChannel.send(SessionEditorEvent.SetAdded)
         }
     }
@@ -141,10 +154,21 @@ class SessionEditorViewModel @Inject constructor(
         val sets = setsOf(machineId)
         write {
             val lastTime = history.lastTimeBefore(sessionId, machineId)
-            val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets)
-            history.addSet(sessionId, machineId, draft)
+            addPrefilledSet(machineId, lastTime, sets)
             picking.value = false
             eventChannel.send(SessionEditorEvent.SetAdded)
+        }
+    }
+
+    /** Writes the next set of [machineId]: a cardio draft for cardio machines, a weight draft otherwise. */
+    private suspend fun addPrefilledSet(machineId: Long, lastTime: List<WorkoutSet>, sets: List<WorkoutSet>) {
+        val machine = state.value.detail?.machines?.firstOrNull { it.machine.id == machineId }?.machine
+            ?: state.value.machines.firstOrNull { it.id == machineId }
+        if (machine?.kind == MachineKind.CARDIO) {
+            history.addCardioSet(sessionId, machineId, CardioRules.prefill(lastTime, sets))
+        } else {
+            val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets)
+            history.addSet(sessionId, machineId, draft)
         }
     }
 
@@ -156,7 +180,17 @@ class SessionEditorViewModel @Inject constructor(
     internal fun openSet(set: WorkoutSet) {
         val entry = state.value.detail?.machines?.firstOrNull { it.machine.id == set.machineId } ?: return
         val number = entry.sets.indexOfFirst { it.id == set.id } + 1
-        editor.value = SetEdit(set, entry.machine, number, set.weightKg ?: 0.0, set.reps ?: LoggingRules.DEFAULT_REPS)
+        val cardio = CardioRules.toDraft(set)
+        editor.value = SetEdit(
+            set = set,
+            machine = entry.machine,
+            number = number,
+            weightKg = set.weightKg ?: 0.0,
+            reps = set.reps ?: LoggingRules.DEFAULT_REPS,
+            minutes = cardio.minutes,
+            calories = cardio.calories,
+            distanceM = cardio.distanceM,
+        )
     }
 
     internal fun closeEditor() {
@@ -174,10 +208,29 @@ class SessionEditorViewModel @Inject constructor(
         editor.value = editor.value?.let { it.copy(reps = LoggingRules.stepReps(it.reps, up)) }
     }
 
+    internal fun stepEditorMinutes(up: Boolean) {
+        editor.value = editor.value?.let { it.copy(minutes = CardioRules.stepMinutes(it.minutes, up)) }
+    }
+
+    internal fun stepEditorCalories(up: Boolean) {
+        editor.value = editor.value?.let { it.copy(calories = CardioRules.stepCalories(it.calories, up)) }
+    }
+
+    internal fun stepEditorDistance(up: Boolean) {
+        editor.value = editor.value?.let { it.copy(distanceM = CardioRules.stepDistance(it.distanceM, up)) }
+    }
+
     internal fun saveEditor() {
         val e = editor.value ?: return
+        if (!e.canSave) return
         editor.value = null
-        write { training.updateSet(e.set.copy(weightKg = e.weightKg, reps = e.reps)) }
+        val updated = if (e.isCardio) {
+            val s = e.set
+            CardioRules.toSet(s.id, s.sessionId, s.machineId, s.position, e.cardioDraft, s.loggedAt)
+        } else {
+            e.set.copy(weightKg = e.weightKg, reps = e.reps)
+        }
+        write { training.updateSet(updated) }
     }
 
     internal fun deleteEditor() {

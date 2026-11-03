@@ -47,4 +47,8 @@
     <string name="calendar_set_removed">Set removed</string>
     <string name="calendar_set_number">Set %1$d</string>
     <string name="calendar_reps">Reps</string>
+    <string name="calendar_minutes">Minutes</string>
+    <string name="calendar_calories">Calories</string>
+    <string name="calendar_distance_km">Distance (km)</string>
+    <string name="calendar_dash">-</string>
 </resources>

@@ -71,6 +71,14 @@ Dashboard > **Set up your app** > **App content**. Every answer is spelled out i
 (privacy policy URL, app access, ads, content rating, target audience, data safety, health apps, advertising ID...).
 The short version: no ads, no account, no data collected or shared, rating "Everyone", target audience 18+.
 
+## 4b. Declare Health Connect permissions (YOU, 10 minutes, BEFORE rolling out)
+
+The app can write finished trainings to Health Connect (optional, off by default), so its manifest asks for three Health Connect
+permissions: exercise, active calories burned and distance (write only). In Play Console go to **Policy and programs > App content >
+Health apps** (Health Connect) and fill in the declaration exactly as in the "Health Connect declaration" section of
+`docs/play-store/console-answers.md`, and update the data safety form as described there. **Google blocks the release until this
+declaration is filled in and approved**, so do it before you roll out (internal testing can start earlier, but production cannot).
+
 ## 5. Store listing (YOU, 20 minutes)
 
 **Grow > Store presence > Main store listing** (English):
@@ -121,8 +129,9 @@ Play updates the phones by itself. (The GitHub APK keeps updating itself through
 - **Target API level**: new apps must target Android 16 (API 36) since 31 Aug 2026. The project targets 36.
 - **No self-updating outside Play**: the Play build contains no updater and no install-packages permission; CI fails if its manifest
   ever contains `INTERNET` or `REQUEST_INSTALL_PACKAGES`.
-- **Data safety and privacy policy**: nothing is collected, nothing is shared, no internet permission; the policy page says so.
-- **Permissions**: only notifications (training reminders and the rest timer) and vibration. The notification permission is asked in
+- **Data safety and privacy policy**: nothing is collected, nothing is shared, no internet permission; the policy page says so (including its Health Connect section).
+- **Health Connect**: write-only permissions for exercise, active calories and distance, declared in step 4b; the release is blocked until that is done.
+- **Permissions**: notifications (training reminders and the rest timer), vibration and the optional Health Connect write permissions. The notification permission is asked in
   Settings, not at first launch.
 - **Languages**: the in-app English/Portuguese choice works because the bundle is built without language splits.
 

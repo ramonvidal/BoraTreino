@@ -1,5 +1,6 @@
 package com.boratreino.feature.today
 
+import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.weightLabel
 import com.boratreino.core.ui.summaryLabel
@@ -49,7 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boratreino.core.model.CardioDraft
+import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.ExercisePreviewDialog
@@ -90,6 +94,19 @@ internal data class MachineActions(
     val onDismissEditor: () -> Unit = {},
     val onSkipRest: () -> Unit = {},
     val onExtendRest: () -> Unit = {},
+    val onStepMinutes: (up: Boolean) -> Unit = {},
+    val onStepCalories: (up: Boolean) -> Unit = {},
+    val onStepDistance: (up: Boolean) -> Unit = {},
+    val onShowDistance: () -> Unit = {},
+    val onLogCardio: () -> Unit = {},
+    val onCardioSameAgain: () -> Unit = {},
+    val onOpenCardioSet: (WorkoutSet) -> Unit = {},
+    val onStepEditorMinutes: (up: Boolean) -> Unit = {},
+    val onStepEditorCalories: (up: Boolean) -> Unit = {},
+    val onStepEditorDistance: (up: Boolean) -> Unit = {},
+    val onSaveCardioEditor: () -> Unit = {},
+    val onDeleteCardioEditor: () -> Unit = {},
+    val onDismissCardioEditor: () -> Unit = {},
 )
 
 @Composable
@@ -157,6 +174,19 @@ internal fun MachineScreen(
             onDismissEditor = viewModel::closeEditor,
             onSkipRest = viewModel::skipRest,
             onExtendRest = viewModel::extendRest,
+            onStepMinutes = viewModel::stepMinutes,
+            onStepCalories = viewModel::stepCalories,
+            onStepDistance = viewModel::stepDistance,
+            onShowDistance = viewModel::showDistance,
+            onLogCardio = viewModel::logCardio,
+            onCardioSameAgain = viewModel::logCardioSameAgain,
+            onOpenCardioSet = viewModel::openCardioSet,
+            onStepEditorMinutes = viewModel::stepEditorMinutes,
+            onStepEditorCalories = viewModel::stepEditorCalories,
+            onStepEditorDistance = viewModel::stepEditorDistance,
+            onSaveCardioEditor = viewModel::saveCardioEditor,
+            onDeleteCardioEditor = viewModel::deleteCardioEditor,
+            onDismissCardioEditor = viewModel::closeCardioEditor,
         ),
         snackbarHostState = snackbar,
     )
@@ -172,6 +202,7 @@ internal fun MachineContent(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val machine = state.machine
+    val isCardio = machine?.kind == MachineKind.CARDIO
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
@@ -207,9 +238,9 @@ internal fun MachineContent(
                 ) {
                     InfoCard(machine, state)
                     state.record?.let { RecordCard(recordText(it)) }
-                    SetsCard(machine, state.sets, actions.onOpenSet)
+                    SetsCard(machine, state.sets, if (isCardio) actions.onOpenCardioSet else actions.onOpenSet)
                 }
-                LogPanel(machine, state, actions)
+                if (isCardio) CardioLogPanel(state, actions) else LogPanel(machine, state, actions)
             }
         }
     }
@@ -217,6 +248,10 @@ internal fun MachineContent(
     val editor = state.editor
     if (machine != null && editor != null) {
         EditSetSheet(machine, editor, actions)
+    }
+    val cardioEditor = state.cardioEditor
+    if (machine != null && cardioEditor != null) {
+        EditCardioSheet(cardioEditor, actions)
     }
     val pad = state.pad
     if (machine != null && pad != null) {
@@ -315,7 +350,12 @@ private fun SetsCard(machine: Machine, sets: List<WorkoutSet>, onOpenSet: (Worko
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    draftText(machine, set.weightKg ?: 0.0, set.reps ?: 0),
+                    if (machine.kind == MachineKind.CARDIO) {
+                        val d = CardioRules.toDraft(set)
+                        cardioText(d.minutes, d.calories, d.distanceM)
+                    } else {
+                        draftText(machine, set.weightKg ?: 0.0, set.reps ?: 0)
+                    },
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
@@ -382,6 +422,157 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                     modifier = Modifier.weight(1f).heightIn(min = 64.dp),
                 ) {
                     Text(stringResource(R.string.today_log_set), style = MaterialTheme.typography.titleMedium)
+                }
+            }
+        }
+    }
+}
+
+/** A stepper value for cardio: "-" when 0 (not logged). */
+private fun cardioValue(value: Int, format: (Int) -> String = { it.toString() }): String =
+    if (value > 0) format(value) else "-"
+
+private fun kmValue(distanceM: Int): String = cardioValue(distanceM) { formatKg(it / 1000.0) }
+
+/** The minutes, calories and (when [showDistance]) distance steppers. Shared by the log panel and the editor. */
+@Composable
+private fun CardioSteppers(
+    draft: CardioDraft,
+    showDistance: Boolean,
+    onShowDistance: () -> Unit,
+    onMinutes: (up: Boolean) -> Unit,
+    onCalories: (up: Boolean) -> Unit,
+    onDistance: (up: Boolean) -> Unit,
+) {
+    Stepper(
+        label = stringResource(R.string.today_minutes),
+        value = cardioValue(draft.minutes),
+        onMinus = { onMinutes(false) },
+        onPlus = { onMinutes(true) },
+        onValueClick = {},
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Stepper(
+        label = stringResource(R.string.today_calories),
+        value = cardioValue(draft.calories),
+        onMinus = { onCalories(false) },
+        onPlus = { onCalories(true) },
+        onValueClick = {},
+        modifier = Modifier.fillMaxWidth(),
+    )
+    if (showDistance) {
+        Stepper(
+            label = stringResource(R.string.today_distance),
+            value = kmValue(draft.distanceM),
+            onMinus = { onDistance(false) },
+            onPlus = { onDistance(true) },
+            onValueClick = {},
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else {
+        TextButton(onClick = onShowDistance, modifier = Modifier.heightIn(min = 48.dp)) {
+            Text(stringResource(R.string.today_add_distance))
+        }
+    }
+}
+
+/** The cardio bottom half: minutes / calories / distance steppers, then Same again and Log. No rest timer. */
+@Composable
+private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        tonalElevation = 0.dp,
+        shadowElevation = 4.dp,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CardioSteppers(
+                draft = state.cardio,
+                showDistance = state.cardioDistanceShown,
+                onShowDistance = actions.onShowDistance,
+                onMinutes = actions.onStepMinutes,
+                onCalories = actions.onStepCalories,
+                onDistance = actions.onStepDistance,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val same = state.cardioSameAgain
+                if (same != null) {
+                    OutlinedButton(
+                        onClick = actions.onCardioSameAgain,
+                        modifier = Modifier.weight(1f).heightIn(min = 64.dp),
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                stringResource(R.string.today_same_again),
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                cardioText(same.minutes, same.calories, same.distanceM),
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+                Button(
+                    onClick = actions.onLogCardio,
+                    enabled = CardioRules.canLog(state.cardio),
+                    modifier = Modifier.weight(1f).heightIn(min = 64.dp),
+                ) {
+                    Text(stringResource(R.string.today_log), style = MaterialTheme.typography.titleMedium)
+                }
+            }
+        }
+    }
+}
+
+/** Fix or delete a logged cardio set: the same steppers, Save and Delete. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditCardioSheet(editor: CardioEditor, actions: MachineActions) {
+    ModalBottomSheet(
+        onDismissRequest = actions.onDismissCardioEditor,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(stringResource(R.string.today_set_number, editor.number), style = MaterialTheme.typography.titleLarge)
+            var distanceShown by remember { mutableStateOf(editor.draft.distanceM > 0) }
+            CardioSteppers(
+                draft = editor.draft,
+                showDistance = distanceShown,
+                onShowDistance = { distanceShown = true },
+                onMinutes = actions.onStepEditorMinutes,
+                onCalories = actions.onStepEditorCalories,
+                onDistance = actions.onStepEditorDistance,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = actions.onDeleteCardioEditor,
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Icon(painterResource(CoreUiR.drawable.ic_delete), contentDescription = null)
+                    Text(stringResource(R.string.today_delete), Modifier.padding(start = 8.dp))
+                }
+                Button(
+                    onClick = actions.onSaveCardioEditor,
+                    enabled = CardioRules.canLog(editor.draft),
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.inverseSurface,
+                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    ),
+                ) {
+                    Text(stringResource(CoreUiR.string.save))
                 }
             }
         }

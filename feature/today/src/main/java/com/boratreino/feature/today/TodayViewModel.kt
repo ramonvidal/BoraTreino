@@ -6,6 +6,7 @@ import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,8 @@ internal data class RoutineMachineUi(
     val highlighted: Boolean,
     /** No sets yet: the row offers skipping or removing it. */
     val canSkip: Boolean = false,
+    /** This session's totals on a cardio machine (shown instead of the sets x reps target); null otherwise. */
+    val cardioSummary: SetSummary? = null,
 )
 
 /** "Skip [machine] today?" for the active routine [routineName]. */
@@ -110,6 +113,7 @@ class TodayViewModel @Inject constructor(
         } else {
             val active = plan.active
             val setCounts = open?.machines.orEmpty().associate { it.machine.id to it.sets.size }
+            val setsByMachine = open?.machines.orEmpty().associate { it.machine.id to it.sets }
             val itemIds = active?.items?.map { it.machineId }.orEmpty().toSet()
             var highlightedGiven = false
             val rows = active?.items.orEmpty().mapNotNull { item ->
@@ -118,7 +122,11 @@ class TodayViewModel @Inject constructor(
                 val done = count >= item.targetSets
                 val highlight = !done && !highlightedGiven
                 if (highlight) highlightedGiven = true
-                RoutineMachineUi(machine, item, count, done, highlight, canSkip = count == 0)
+                RoutineMachineUi(
+                    machine, item, count, done, highlight,
+                    canSkip = count == 0,
+                    cardioSummary = if (machine.kind == MachineKind.CARDIO) setsByMachine[machine.id]?.let { SetSummary.of(it) } else null,
+                )
             }
             RoutineUi(
                 chips = plan.routines.map { RoutineChipUi(it.id, it.shortName, it.id == active?.routine?.id) },
