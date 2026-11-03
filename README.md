@@ -12,7 +12,21 @@ for the rules every change follows.
 Download **[BoraTreino.apk](https://github.com/ramonvidal/BoraTreino/releases/latest/download/BoraTreino.apk)**
 on the phone and open it (allow installing from unknown sources). That link always points
 at the newest build and needs no GitHub account. Each build installs over the previous one.
-Updates from inside the app come in Phase 6.
+
+### Updates
+
+After that first install, the app checks for new builds itself (every few hours, or right away
+from **Settings → App updates → Check for updates**) and offers to install them: tap **Install**
+on the banner at the top of the screen and confirm. The first time, Android asks you to allow
+Bora pro Treino! to install apps.
+
+### Languages
+
+English by default, with **Baianês** (Brazilian Portuguese with Bahia slang) as an option under
+**Settings → Language**, or in Android's own per-app language settings. The texts live in
+[translations/baianes.csv](translations/baianes.csv); `python3 translations/i18n.py check` verifies
+that nothing is missing and that placeholders match (CI runs it), and `apply` regenerates each
+module's `values-pt-rBR` from the table.
 
 ## Tech stack
 
