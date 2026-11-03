@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -156,9 +154,9 @@ fun ExercisePreviewDialog(machine: Machine, onDismiss: () -> Unit) {
         title = { Text(machine.name) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Frame(slug, 1, stringResource(R.string.exercise_start), description, Modifier.weight(1f))
-                    Frame(slug, 2, stringResource(R.string.exercise_end), description, Modifier.weight(1f))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
+                    Frame(slug, 1, stringResource(R.string.exercise_start), description)
+                    Frame(slug, 2, stringResource(R.string.exercise_end), description)
                 }
                 ExerciseCredit(style = MaterialTheme.typography.bodySmall)
             }
@@ -170,9 +168,9 @@ fun ExercisePreviewDialog(machine: Machine, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun Frame(slug: String?, frame: Int, label: String, description: String, modifier: Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        ExerciseTile(slug, frame, 150.dp, description, Modifier.widthIn(max = 150.dp).fillMaxWidth().aspectRatio(1f))
+private fun Frame(slug: String?, frame: Int, label: String, description: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        ExerciseTile(slug, frame, 130.dp, description, Modifier.size(130.dp))
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
