@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -29,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -58,6 +61,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.BackupSummary
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.notify.NotificationPermission
+import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.shortLabel
 import java.text.NumberFormat
@@ -86,6 +90,8 @@ internal data class SettingsActions(
     val onImport: () -> Unit = {},
     val onConfirmImport: () -> Unit = {},
     val onDismissImport: () -> Unit = {},
+    val onCheckForUpdates: () -> Unit = {},
+    val onChooseLanguage: (AppLanguage) -> Unit = {},
 )
 
 @Composable
@@ -98,15 +104,8 @@ internal fun SettingsScreen(
     val stored by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
-    val versionName = remember(context) {
-        try {
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
-        } catch (e: Exception) {
-            ""
-        }
-    }
     val is24Hour = remember(context) { DateFormat.is24HourFormat(context) }
-    val state = stored.copy(versionName = versionName, is24Hour = is24Hour)
+    val state = stored.copy(is24Hour = is24Hour)
 
     val savedText = stringResource(R.string.settings_backup_saved)
     val importedText = stringResource(R.string.settings_backup_imported)
@@ -166,6 +165,8 @@ internal fun SettingsScreen(
             onImport = { openDocument.launch(arrayOf("*/*")) },
             onConfirmImport = viewModel::confirmImport,
             onDismissImport = viewModel::dismissImport,
+            onCheckForUpdates = viewModel::checkForUpdates,
+            onChooseLanguage = viewModel::chooseLanguage,
         ),
         snackbarHostState = snackbar,
     )
@@ -212,7 +213,8 @@ internal fun SettingsContent(
                 item { RestTimerSection(state, actions) }
                 if (state.showNotificationsSection) item { NotificationsSection(actions) }
                 item { BackupSection(actions) }
-                item { AboutSection(state) }
+                item { UpdatesSection(state, actions) }
+                item { LanguageSection(state, actions) }
             }
         }
     }
@@ -375,12 +377,46 @@ private fun BackupSection(actions: SettingsActions) {
 }
 
 @Composable
-private fun AboutSection(state: SettingsUiState) {
-    SectionCard(stringResource(R.string.settings_about_title)) {
+private fun UpdatesSection(state: SettingsUiState, actions: SettingsActions) {
+    val status = when (val s = state.updateStatus) {
+        UpdateStatus.Idle, UpdateStatus.Checking -> null
+        UpdateStatus.UpToDate -> stringResource(R.string.settings_updates_up_to_date)
+        is UpdateStatus.Available -> stringResource(R.string.settings_updates_available, s.version)
+        UpdateStatus.Unreachable -> stringResource(R.string.settings_updates_unreachable)
+    }
+    SectionCard(stringResource(R.string.settings_updates_title)) {
         Text(
-            stringResource(R.string.settings_about_version, state.versionName).trim(),
+            stringResource(R.string.settings_updates_version, state.installedVersion),
             style = MaterialTheme.typography.bodyLarge,
         )
+        OutlinedButton(
+            onClick = actions.onCheckForUpdates,
+            enabled = state.updateStatus != UpdateStatus.Checking,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) { Text(stringResource(R.string.settings_updates_check)) }
+        if (status != null) Hint(status)
+    }
+}
+
+@Composable
+private fun LanguageSection(state: SettingsUiState, actions: SettingsActions) {
+    SectionCard(stringResource(R.string.settings_language_title)) {
+        Column(Modifier.selectableGroup()) {
+            AppLanguage.entries.forEach { option ->
+                val selected = option == state.language
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .selectable(selected = selected, role = Role.RadioButton) { actions.onChooseLanguage(option) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    RadioButton(selected = selected, onClick = null)
+                    Text(option.label, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
     }
 }
 

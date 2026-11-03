@@ -51,6 +51,12 @@
         <item quantity="other">%1$s sets</item>
     </plurals>
 
-    <string name="settings_about_title">About</string>
-    <string name="settings_about_version">Bora pro Treino! %1$s</string>
+    <string name="settings_updates_title">App updates</string>
+    <string name="settings_updates_version">Bora pro Treino! %1$s</string>
+    <string name="settings_updates_check">Check for updates</string>
+    <string name="settings_updates_up_to_date">You\'re up to date</string>
+    <string name="settings_updates_available">Version %1$s is available</string>
+    <string name="settings_updates_unreachable">Couldn\'t reach the update page</string>
+
+    <string name="settings_language_title">Language</string>
 </resources>

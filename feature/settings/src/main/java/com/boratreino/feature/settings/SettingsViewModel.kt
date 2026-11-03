@@ -13,7 +13,9 @@ import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.model.WeekGoalRules
 import com.boratreino.core.notify.ReminderScheduler
+import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.settings.TrainingSettings
+import com.boratreino.core.update.UpdateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.DayOfWeek
@@ -48,10 +50,21 @@ internal data class SettingsUiState(
     val timePickerOpen: Boolean = false,
     val is24Hour: Boolean = true,
     val importConfirm: BackupSummary? = null,
-    val versionName: String = "",
+    val installedVersion: String = "",
+    val updateStatus: UpdateStatus = UpdateStatus.Idle,
+    val language: AppLanguage = AppLanguage.ENGLISH,
 ) {
     val showNotificationsSection: Boolean
         get() = (reminders.enabled || restTimer.enabled) && !notificationsGranted
+}
+
+/** The quiet line under "Check for updates". */
+internal sealed interface UpdateStatus {
+    data object Idle : UpdateStatus
+    data object Checking : UpdateStatus
+    data object UpToDate : UpdateStatus
+    data class Available(val version: String) : UpdateStatus
+    data object Unreachable : UpdateStatus
 }
 
 internal sealed interface SettingsEvent {
@@ -67,6 +80,8 @@ private data class Overlay(
     val notificationsGranted: Boolean = true,
     val timePickerOpen: Boolean = false,
     val importConfirm: BackupSummary? = null,
+    val updateStatus: UpdateStatus = UpdateStatus.Idle,
+    val language: AppLanguage = AppLanguage.current(),
 )
 
 @HiltViewModel
@@ -74,6 +89,7 @@ class SettingsViewModel @Inject constructor(
     private val settings: TrainingSettings,
     private val backup: BackupRepository,
     private val reminderScheduler: ReminderScheduler,
+    private val updates: UpdateRepository,
     @Suppress("unused") private val clock: Clock,
 ) : ViewModel() {
 
@@ -81,6 +97,12 @@ class SettingsViewModel @Inject constructor(
     internal val events: Flow<SettingsEvent> = eventChannel.receiveAsFlow()
 
     private val overlay = MutableStateFlow(Overlay())
+
+    private val installedVersion: String = try {
+        updates.installedVersion
+    } catch (e: Exception) {
+        ""
+    }
 
     /** The parsed backup behind the confirm dialog. */
     private var pendingImport: BackupData? = null
@@ -99,8 +121,32 @@ class SettingsViewModel @Inject constructor(
             notificationsGranted = overlay.notificationsGranted,
             timePickerOpen = overlay.timePickerOpen,
             importConfirm = overlay.importConfirm,
+            installedVersion = installedVersion,
+            updateStatus = overlay.updateStatus,
+            language = overlay.language,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+
+    /** Asks the release page right away; the banner shows a found version wherever it is. */
+    fun checkForUpdates() {
+        overlay.update { it.copy(updateStatus = UpdateStatus.Checking) }
+        viewModelScope.launch {
+            val status = try {
+                val found = updates.checkNow()
+                if (found == null) UpdateStatus.UpToDate else UpdateStatus.Available(found.versionName)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                UpdateStatus.Unreachable
+            }
+            overlay.update { it.copy(updateStatus = status) }
+        }
+    }
+
+    fun chooseLanguage(language: AppLanguage) {
+        overlay.update { it.copy(language = language) }
+        AppLanguage.choose(language)
+    }
 
     fun suggestedFileName(): String = backup.suggestedFileName()
 

@@ -13,6 +13,7 @@ android {
 dependencies {
     api(projects.core.model)
 
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
 
