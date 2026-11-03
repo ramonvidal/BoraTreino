@@ -6,7 +6,10 @@ import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.notify.ReminderScheduler
+import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.settings.TrainingSettings
+import com.boratreino.core.update.UpdateRepository
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,10 +24,15 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalTime
 
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [34])
 class SettingsViewModelTest {
     private class FakeSettings : TrainingSettings {
         val goal = MutableStateFlow(4)
@@ -61,6 +69,7 @@ class SettingsViewModelTest {
 
     private lateinit var settings: FakeSettings
     private lateinit var scheduler: FakeScheduler
+    private lateinit var updates: UpdateRepository
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -68,7 +77,8 @@ class SettingsViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         settings = FakeSettings()
         scheduler = FakeScheduler()
-        viewModel = SettingsViewModel(settings, FakeBackup(), scheduler, Clock.systemUTC())
+        updates = UpdateRepository(RuntimeEnvironment.getApplication())
+        viewModel = SettingsViewModel(settings, FakeBackup(), scheduler, updates, Clock.systemUTC())
     }
 
     @After
@@ -189,6 +199,31 @@ class SettingsViewModelTest {
 
         assertFalse(settings.rest.value.enabled)
         assertEquals(120, settings.rest.value.defaultSeconds)
+    }
+
+    // App updates and language
+
+    @Test
+    fun `the installed version is the one the update repository reports`() = runTest {
+        val state = loaded()
+
+        assertEquals(updates.installedVersion, state.installedVersion)
+    }
+
+    @Test
+    fun `no update check has run until one is asked for`() = runTest {
+        assertEquals(UpdateStatus.Idle, loaded().updateStatus)
+    }
+
+    @Test
+    fun `choosing a language changes the language in the state`() = runTest {
+        loaded()
+
+        viewModel.chooseLanguage(AppLanguage.BAIANES)
+        assertEquals(AppLanguage.BAIANES, loaded().language)
+
+        viewModel.chooseLanguage(AppLanguage.ENGLISH)
+        assertEquals(AppLanguage.ENGLISH, loaded().language)
     }
 
     // Notifications section

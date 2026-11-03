@@ -15,6 +15,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.boratreino.core.model.BackupSummary
 import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerSettings
+import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import org.junit.Rule
 import org.junit.Test
@@ -47,7 +48,8 @@ class SettingsScreenshotTest {
         restTimer = RestTimerSettings(enabled = true, defaultSeconds = 90),
         notificationsGranted = true,
         is24Hour = true,
-        versionName = "0.4",
+        installedVersion = "0.40",
+        updateStatus = UpdateStatus.UpToDate,
     )
 
     private fun shoot(name: String, state: SettingsUiState, dark: Boolean = false, fontScale: Float = 1f) {
@@ -109,6 +111,27 @@ class SettingsScreenshotTest {
         ).assertExists()
         compose.onNode(isDialog()).captureRoboImage("build/outputs/roborazzi/settings-import-confirm.png")
     }
+
+    @Test
+    fun `settings with an update available`() = shoot(
+        "settings-update-available",
+        main.copy(updateStatus = UpdateStatus.Available("0.41")),
+    )
+
+    @Test
+    fun `settings with the update page unreachable`() = shoot(
+        "settings-update-unreachable",
+        main.copy(updateStatus = UpdateStatus.Unreachable),
+    )
+
+    @Test
+    fun `settings updates up to date`() = shoot("settings-updates", main)
+
+    @Test
+    fun `settings with Baianes chosen`() = shoot(
+        "settings-language",
+        main.copy(language = AppLanguage.BAIANES),
+    )
 
     @Test
     fun `time picker dialog`() {
