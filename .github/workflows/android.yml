@@ -36,15 +36,15 @@ jobs:
       # - SIGNING_KEYSTORE_BASE64 signs the GitHub APK (flavor "sideload"). Without it every build
       #   would get a new random key, Android would refuse to update over the installed app, and
       #   reinstalling would wipe people's training history.
-      # - SIGNING_UPLOAD_KEYSTORE_BASE64 (+ UPLOAD_STORE_PASSWORD, UPLOAD_KEY_PASSWORD, alias
-      #   "upload") signs the Google Play bundle (flavor "play"). Without all three the bundle is
-      #   signed with a throwaway debug key and is not attached to the release.
+      # - SIGNING_UPLOAD_KEYSTORE_BASE64 (+ UPLOAD_STORE_PASSWORD, alias "upload"; a PKCS12
+      #   key uses the store password for the key too) signs the Google Play bundle (flavor "play").
+      #   Without both secrets the bundle is signed with a throwaway debug key and is not attached
+      #   to the release.
       - name: Add the signing keys
         env:
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
           SIGNING_UPLOAD_KEYSTORE_BASE64: ${{ secrets.SIGNING_UPLOAD_KEYSTORE_BASE64 }}
           UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
-          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
         run: |
           if [ -n "$SIGNING_KEYSTORE_BASE64" ]; then
             printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 -d > app/boratreino-release.keystore
@@ -52,11 +52,11 @@ jobs:
           else
             echo "::warning::SIGNING_KEYSTORE_BASE64 is not set: builds use a throwaway key and no release is published."
           fi
-          if [ -n "$SIGNING_UPLOAD_KEYSTORE_BASE64" ] && [ -n "$UPLOAD_STORE_PASSWORD" ] && [ -n "$UPLOAD_KEY_PASSWORD" ]; then
+          if [ -n "$SIGNING_UPLOAD_KEYSTORE_BASE64" ] && [ -n "$UPLOAD_STORE_PASSWORD" ]; then
             printf '%s' "$SIGNING_UPLOAD_KEYSTORE_BASE64" | base64 -d > app/boratreino-upload.keystore
             echo "Upload key added"
           else
-            echo "::warning::SIGNING_UPLOAD_KEYSTORE_BASE64, UPLOAD_STORE_PASSWORD or UPLOAD_KEY_PASSWORD is not set: the Google Play bundle is signed with a throwaway key and not attached to the release."
+            echo "::warning::SIGNING_UPLOAD_KEYSTORE_BASE64 or UPLOAD_STORE_PASSWORD is not set: the Google Play bundle is signed with a throwaway key and not attached to the release."
           fi
 
       - name: Translations are complete
@@ -102,7 +102,6 @@ jobs:
       - name: Build the APK and the bundle
         env:
           UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
-          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
         run: ./gradlew assembleSideloadDebug assembleSideloadRelease assemblePlayDebug bundlePlayRelease
 
       # Google Play forbids apps that update themselves or that don't need the network from asking

@@ -59,8 +59,8 @@ choice still works. Build them with `./gradlew assembleSideloadRelease bundlePla
 
 The bundle is signed with an upload key (alias `upload`), kept apart from the APK key and never
 committed. CI writes it to `app/boratreino-upload.keystore` from the secrets
-`SIGNING_UPLOAD_KEYSTORE_BASE64` (the keystore, base64-encoded), `UPLOAD_STORE_PASSWORD` and
-`UPLOAD_KEY_PASSWORD`. When all three exist, the release also carries `BoraTreino.aab` (also the
+`SIGNING_UPLOAD_KEYSTORE_BASE64` (the keystore, base64-encoded) and `UPLOAD_STORE_PASSWORD` (a PKCS12
+keystore uses it for the key as well). When both exist, the release also carries `BoraTreino.aab` (also the
 `boratreino-play-aab` artifact); otherwise CI warns and signs with a throwaway key.
 
 ## Tests

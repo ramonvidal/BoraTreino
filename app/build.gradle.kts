@@ -41,16 +41,16 @@ android {
     // The Google Play upload key: Play re-signs what we upload with its own app signing key.
     val uploadKeystore = file("boratreino-upload.keystore")
     val uploadStorePassword = providers.environmentVariable("UPLOAD_STORE_PASSWORD").orNull
-    val uploadKeyPassword = providers.environmentVariable("UPLOAD_KEY_PASSWORD").orNull
-    if (uploadKeystore.exists() && uploadStorePassword != null && uploadKeyPassword != null) {
+    // A PKCS12 keystore protects its key with the store password, so one password serves both.
+    if (uploadKeystore.exists() && uploadStorePassword != null) {
         signingConfigs.create("upload") {
             storeFile = uploadKeystore
             storePassword = uploadStorePassword
             keyAlias = "upload"
-            keyPassword = uploadKeyPassword
+            keyPassword = uploadStorePassword
         }
     } else {
-        logger.warn("Upload key or its passwords are missing: the play variant is signed with the debug key and must not be published.")
+        logger.warn("Upload key or its password is missing: the play variant is signed with the debug key and must not be published.")
     }
     val playSigning = signingConfigs.findByName("upload") ?: signingConfigs.getByName("debug")
 

@@ -40,15 +40,17 @@ Google requires a public privacy policy URL. The page is `docs/privacy-policy.ht
 ## 2. Give GitHub the upload key (YOU, 5 minutes)
 
 CI signs the bundle with a **separate upload key** (not the key of your GitHub APK). In GitHub > **Settings > Secrets and variables > Actions
-> New repository secret** create three secrets, copying each value from the files in the `signing/play/` folder you received:
+> New repository secret** create two secrets, copying each value from the files in the `signing/play/` folder you received:
 
 | Secret name | Value (file) |
 |---|---|
 | `SIGNING_UPLOAD_KEYSTORE_BASE64` | the whole text of `UPLOAD_KEYSTORE_BASE64.txt` |
 | `UPLOAD_STORE_PASSWORD` | `UPLOAD_STORE_PASSWORD.txt` |
-| `UPLOAD_KEY_PASSWORD` | `UPLOAD_KEY_PASSWORD.txt` |
 
-**Keep a safe copy of `boratreino-upload.keystore` and the two passwords** (password manager, private drive). If you ever lose
+(`UPLOAD_KEY_PASSWORD.txt` is not needed: this kind of keystore protects the key with the store password. If you already created a secret
+with that name, it is simply ignored. Make sure `UPLOAD_STORE_PASSWORD` holds `UPLOAD_STORE_PASSWORD.txt`, not the other file.)
+
+**Keep a safe copy of `boratreino-upload.keystore` and its password** (password manager, private drive). If you ever lose
 the upload key you can ask Google to reset it (Play Console > App integrity), but it is a slow process. Never commit these files.
 
 Then trigger a build **with a push** (a push to the branch is what attaches the bundle to a release; "Run workflow" only builds
