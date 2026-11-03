@@ -108,9 +108,10 @@ class TodayViewModel @Inject constructor(
         machines.observeRecentMachines(),
         training.observeTodayPlan(),
         machines.observeMachines(includeArchived = true),
-        skipDialog,
-        editing,
-    ) { open, recent, plan, allMachines, dialog, editRequested ->
+        // combine() takes at most five flows with a typed lambda: the two UI-only flows go in as one.
+        combine(skipDialog, editing) { dialog, editRequested -> dialog to editRequested },
+    ) { open, recent, plan, allMachines, uiOnly ->
+        val (dialog, editRequested) = uiOnly
         val byId = allMachines.associateBy { it.id }
         val routines = if (plan.routines.isEmpty()) {
             null
