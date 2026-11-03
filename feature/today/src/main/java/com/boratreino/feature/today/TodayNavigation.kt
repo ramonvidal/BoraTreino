@@ -15,6 +15,9 @@ internal const val MACHINE_ROUTE = "today/machine/{$MACHINE_ID_ARG}"
 
 internal fun machineRoute(machineId: Long): String = "today/machine/$machineId"
 
+/** True on the machine screen, which draws the big rest card itself (`:app` hides its rest banner there). */
+fun isMachineRoute(route: String?): Boolean = route == MACHINE_ROUTE
+
 /**
  * The Today tab, the machine picker and the machine screen.
  * [navController] is only used for this feature's own screens; the editor is opened through
@@ -22,15 +25,15 @@ internal fun machineRoute(machineId: Long): String = "today/machine/$machineId"
  */
 fun NavGraphBuilder.todayGraph(
     navController: NavController,
-    onOpenSettings: () -> Unit,
     onEditMachine: (machineId: Long) -> Unit,
     onNewMachine: () -> Unit,
+    onEditRoutine: (routineId: Long) -> Unit,
 ) {
     composable(TODAY_ROUTE) {
         TodayScreen(
             onOpenMachine = { navController.navigate(machineRoute(it)) },
             onAllMachines = { navController.navigate(PICKER_ROUTE) },
-            onOpenSettings = onOpenSettings,
+            onEditRoutine = onEditRoutine,
         )
     }
     composable(PICKER_ROUTE) {

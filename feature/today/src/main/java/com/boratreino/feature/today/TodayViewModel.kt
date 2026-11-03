@@ -74,6 +74,8 @@ internal data class TodayUiState(
     val recent: List<Machine> = emptyList(),
     val routines: RoutineUi? = null,
     val skipDialog: SkipDialog? = null,
+    /** The training card is in edit mode (reorder / remove ficha machines). Only true with an active ficha. */
+    val editing: Boolean = false,
 )
 
 internal sealed interface TodayEvent {
@@ -99,6 +101,7 @@ class TodayViewModel @Inject constructor(
     internal val events: Flow<TodayEvent> = eventChannel.receiveAsFlow()
 
     private val skipDialog = MutableStateFlow<SkipDialog?>(null)
+    private val editing = MutableStateFlow(false)
 
     internal val state: StateFlow<TodayUiState> = combine(
         training.observeOpenSession(),
@@ -106,7 +109,8 @@ class TodayViewModel @Inject constructor(
         training.observeTodayPlan(),
         machines.observeMachines(includeArchived = true),
         skipDialog,
-    ) { open, recent, plan, allMachines, dialog ->
+        editing,
+    ) { open, recent, plan, allMachines, dialog, editRequested ->
         val byId = allMachines.associateBy { it.id }
         val routines = if (plan.routines.isEmpty()) {
             null
@@ -143,6 +147,7 @@ class TodayViewModel @Inject constructor(
         TodayUiState(
             routines = routines,
             skipDialog = dialog,
+            editing = editRequested && open != null && plan.active != null,
             loaded = true,
             session = open?.let { s ->
                 SessionUi(
@@ -200,6 +205,31 @@ class TodayViewModel @Inject constructor(
         }
     }
 
+    internal fun startEditing() {
+        if (state.value.routines?.activeId != null) editing.value = true
+    }
+
+    internal fun finishEditing() {
+        editing.value = false
+    }
+
+    /** Moves a machine one place up or down in the active ficha; saved at once. */
+    internal fun moveMachine(machineId: Long, up: Boolean) {
+        val routineId = state.value.routines?.activeId ?: return
+        launchSafely { routineRepository.moveItem(routineId, machineId, up) }
+    }
+
+    /** Edit mode's remove (x): takes the machine out of the ficha at once; the screen offers Undo. */
+    internal fun removeMachine(machineId: Long) {
+        val routines = state.value.routines ?: return
+        val routineId = routines.activeId ?: return
+        val name = routines.activeName.orEmpty()
+        launchSafely {
+            val item = routineRepository.removeMachine(routineId, machineId) ?: return@launchSafely
+            eventChannel.send(TodayEvent.Removed(name, item))
+        }
+    }
+
     internal fun restoreItem(item: RoutineItem) = launchSafely { routineRepository.restoreItem(item) }
 
     private fun launchSafely(block: suspend () -> Unit) {
@@ -215,6 +245,7 @@ class TodayViewModel @Inject constructor(
     }
 
     internal fun choose(choice: RoutineChoice) {
+        editing.value = false
         viewModelScope.launch {
             try {
                 training.chooseRoutine(choice)
@@ -227,6 +258,7 @@ class TodayViewModel @Inject constructor(
     }
 
     internal fun finish() {
+        editing.value = false
         viewModelScope.launch {
             try {
                 try {

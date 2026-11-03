@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,6 +31,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -42,6 +44,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.RoutineChoice
+import com.boratreino.core.ui.MoveButtons
 import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.targetText
 import androidx.compose.foundation.clickable
@@ -61,7 +64,12 @@ internal data class TodayActions(
     val onAllMachines: () -> Unit = {},
     val onAddMachine: () -> Unit = {},
     val onDone: () -> Unit = {},
-    val onOpenSettings: () -> Unit = {},
+    val onStartEditing: () -> Unit = {},
+    val onFinishEditing: () -> Unit = {},
+    val onMoveMachine: (machineId: Long, up: Boolean) -> Unit = { _, _ -> },
+    val onRemoveMachine: (machineId: Long) -> Unit = {},
+    /** Opens the full editor of the active ficha (Edit sets and reps). */
+    val onEditRoutine: () -> Unit = {},
     val onChooseRoutine: (RoutineChoice) -> Unit = {},
     val onSkipMachine: (machineId: Long) -> Unit = {},
     val onSkipToday: () -> Unit = {},
@@ -73,7 +81,7 @@ internal data class TodayActions(
 internal fun TodayScreen(
     onOpenMachine: (Long) -> Unit,
     onAllMachines: () -> Unit,
-    onOpenSettings: () -> Unit,
+    onEditRoutine: (Long) -> Unit,
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -81,6 +89,9 @@ internal fun TodayScreen(
     val resources = LocalContext.current.resources
     val undoLabel = stringResource(CoreUiR.string.undo)
     val failedText = stringResource(CoreUiR.string.error_generic)
+
+    // Leaving the screen ends edit mode.
+    DisposableEffect(viewModel) { onDispose { viewModel.finishEditing() } }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -112,7 +123,16 @@ internal fun TodayScreen(
             onAllMachines = onAllMachines,
             onAddMachine = onAllMachines,
             onDone = viewModel::finish,
-            onOpenSettings = onOpenSettings,
+            onStartEditing = viewModel::startEditing,
+            onFinishEditing = viewModel::finishEditing,
+            onMoveMachine = viewModel::moveMachine,
+            onRemoveMachine = viewModel::removeMachine,
+            onEditRoutine = {
+                state.routines?.activeId?.let {
+                    viewModel.finishEditing()
+                    onEditRoutine(it)
+                }
+            },
             onChooseRoutine = viewModel::choose,
             onSkipMachine = viewModel::askSkip,
             onSkipToday = viewModel::skipToday,
@@ -138,14 +158,6 @@ internal fun TodayContent(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.today_app_name)) },
-                actions = {
-                    IconButton(onClick = actions.onOpenSettings) {
-                        Icon(
-                            painter = painterResource(CoreUiR.drawable.ic_settings),
-                            contentDescription = stringResource(R.string.today_open_settings),
-                        )
-                    }
-                },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -226,7 +238,13 @@ private fun LazyListScope.openSession(session: SessionUi, actions: TodayActions)
     }
 }
 
-private fun LazyListScope.sessionHeader(session: SessionUi, actions: TodayActions, routineName: String?) {
+private fun LazyListScope.sessionHeader(
+    session: SessionUi,
+    actions: TodayActions,
+    routineName: String?,
+    canEdit: Boolean = false,
+    editing: Boolean = false,
+) {
     item(key = "header") {
         val resources = LocalContext.current.resources
         val counts = resources.machinesAndSets(session.machineCount, session.setCount)
@@ -235,20 +253,53 @@ private fun LazyListScope.sessionHeader(session: SessionUi, actions: TodayAction
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    if (routineName == null) {
-                        stringResource(R.string.today_training_now, counts)
-                    } else {
-                        stringResource(R.string.today_training_now_routine, routineName, counts)
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                FilledTonalButton(
-                    onClick = actions.onDone,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                ) {
-                    Icon(painterResource(CoreUiR.drawable.ic_check), contentDescription = null, Modifier.size(20.dp))
-                    Text(stringResource(R.string.today_done), Modifier.padding(start = 8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (routineName == null) {
+                            stringResource(R.string.today_training_now, counts)
+                        } else {
+                            stringResource(R.string.today_training_now_routine, routineName, counts)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (canEdit && !editing) {
+                        IconButton(onClick = actions.onStartEditing) {
+                            Icon(
+                                painterResource(CoreUiR.drawable.ic_edit),
+                                contentDescription = stringResource(R.string.today_edit_ficha),
+                            )
+                        }
+                    }
+                }
+                if (editing) {
+                    Text(
+                        stringResource(R.string.today_edit_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    FilledTonalButton(
+                        onClick = actions.onFinishEditing,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    ) {
+                        Icon(painterResource(CoreUiR.drawable.ic_check), contentDescription = null, Modifier.size(20.dp))
+                        Text(stringResource(R.string.today_done), Modifier.padding(start = 8.dp))
+                    }
+                    OutlinedButton(
+                        onClick = actions.onEditRoutine,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) {
+                        Icon(painterResource(CoreUiR.drawable.ic_edit), contentDescription = null, Modifier.size(20.dp))
+                        Text(stringResource(R.string.today_edit_sets_reps), Modifier.padding(start = 8.dp))
+                    }
+                } else {
+                    FilledTonalButton(
+                        onClick = actions.onDone,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    ) {
+                        Icon(painterResource(CoreUiR.drawable.ic_check), contentDescription = null, Modifier.size(20.dp))
+                        Text(stringResource(R.string.today_done), Modifier.padding(start = 8.dp))
+                    }
                 }
             }
         }
@@ -288,21 +339,21 @@ private fun LazyListScope.withRoutines(state: TodayUiState, routines: RoutineUi,
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
             )
         }
-        routineRows(routines, actions)
+        routineRows(routines, actions, editing = false)
         item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
     } else {
-        sessionHeader(session, actions, routineName = active)
-        routineRows(routines, actions)
-        if (routines.alsoThisSession.isNotEmpty()) {
+        sessionHeader(session, actions, routineName = active, canEdit = routines.activeId != null, editing = state.editing)
+        routineRows(routines, actions, state.editing)
+        if (routines.alsoThisSession.isNotEmpty() && !state.editing) {
             item(key = "also") { SectionTitle(stringResource(R.string.today_also_this_session)) }
             sessionRows(routines.alsoThisSession, actions)
         }
-        item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
+        if (!state.editing) item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
     }
 }
 
-private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions) {
-    items(routines.machines, key = { "rm${it.machine.id}" }) { row ->
+private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions, editing: Boolean) {
+    itemsIndexed(routines.machines, key = { _, row -> "rm${row.machine.id}" }) { index, row ->
         MachineRow(
             title = row.machine.name,
             supporting = if (row.machine.kind == MachineKind.CARDIO) {
@@ -310,11 +361,26 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
             } else {
                 targetText(row.target)
             },
-            onClick = { actions.onOpenMachine(row.machine.id) },
-            highlighted = row.highlighted,
+            onClick = { if (!editing) actions.onOpenMachine(row.machine.id) },
+            highlighted = row.highlighted && !editing,
             leading = { RowThumb(row.machine) },
             trailing = {
                 when {
+                    editing -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        MoveButtons(
+                            canMoveUp = index > 0,
+                            canMoveDown = index < routines.machines.lastIndex,
+                            onUp = { actions.onMoveMachine(row.machine.id, true) },
+                            onDown = { actions.onMoveMachine(row.machine.id, false) },
+                        )
+                        IconButton(onClick = { actions.onRemoveMachine(row.machine.id) }) {
+                            Icon(
+                                painterResource(CoreUiR.drawable.ic_close),
+                                contentDescription = stringResource(R.string.today_remove_machine, row.machine.name),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                     row.canSkip -> IconButton(onClick = { actions.onSkipMachine(row.machine.id) }) {
                         Icon(
                             painterResource(CoreUiR.drawable.ic_close),

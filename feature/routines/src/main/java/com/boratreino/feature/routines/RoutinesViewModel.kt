@@ -28,7 +28,12 @@ internal data class MachineGroup(val muscleGroup: MuscleGroup, val machines: Lis
 internal data class StarterGroup(val muscleGroup: MuscleGroup, val starters: List<StarterMachine>)
 
 /** One routine in the tab's list: its badge and name, and how many machines it holds. */
-internal data class RoutineRow(val routine: Routine, val machineCount: Int)
+internal data class RoutineRow(
+    val routine: Routine,
+    val machineCount: Int,
+    /** The machines' names in routine order, for the grey line on the card. */
+    val machineNames: List<String> = emptyList(),
+)
 
 /** The question shown when the owner starts deleting a machine. */
 internal sealed interface DeleteDialog {
@@ -56,7 +61,11 @@ internal data class RoutinesUiState(
     val selectedStarters: Set<String> = emptySet(),
     val gymCount: Int = 0,
     val deleteDialog: DeleteDialog? = null,
+    /** The routine the owner is about to delete (confirm dialog), if any. */
+    val routineDelete: Routine? = null,
     val portuguese: Boolean = false,
+    /** False until the database has answered once, so the tab does not flash the wrong page. */
+    val loaded: Boolean = true,
 ) {
     val isEmpty: Boolean get() = machineGroups.isEmpty() && archived.isEmpty()
 }
@@ -69,6 +78,10 @@ internal data class RoutinesCallbacks(
     val onNewRoutine: () -> Unit = {},
     val onOpenRoutine: (routineId: Long) -> Unit = {},
     val onMoveRoutine: (routineId: Long, up: Boolean) -> Unit = { _, _ -> },
+    val onDuplicateRoutine: (routineId: Long) -> Unit = {},
+    val onDeleteRoutine: (routineId: Long) -> Unit = {},
+    val onConfirmDeleteRoutine: () -> Unit = {},
+    val onDismissDeleteRoutine: () -> Unit = {},
     val onScheduleModeChange: (ScheduleMode) -> Unit = {},
     val onSearchStarters: (String) -> Unit = {},
     val onToggleStarter: (StarterMachine) -> Unit = {},
@@ -87,6 +100,7 @@ private data class Local(
     val search: String = "",
     val selected: Set<String> = emptySet(),
     val dialog: DeleteDialog? = null,
+    val routineDelete: Routine? = null,
 )
 
 @HiltViewModel
@@ -104,8 +118,15 @@ class RoutinesViewModel @Inject constructor(
         routines.observePlan(),
     ) { all, starters, local, plan ->
         val active = all.filter { !it.archived }
+        val names = all.associate { it.id to it.name }
         RoutinesUiState(
-            routines = plan.routines.map { RoutineRow(it.routine, it.items.size) },
+            routines = plan.routines.map { r ->
+                RoutineRow(
+                    routine = r.routine,
+                    machineCount = r.items.size,
+                    machineNames = r.items.mapNotNull { item -> names[item.machineId] },
+                )
+            },
             scheduleMode = plan.plan.scheduleMode,
             machineGroups = active.groupBy { it.muscleGroup }
                 .toSortedMap()
@@ -121,9 +142,10 @@ class RoutinesViewModel @Inject constructor(
             selectedStarters = local.selected,
             gymCount = active.size,
             deleteDialog = local.dialog,
+            routineDelete = local.routineDelete,
             portuguese = portuguese,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RoutinesUiState(portuguese = portuguese))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RoutinesUiState(portuguese = portuguese, loaded = false))
 
     internal fun toggleArchived() = local.update { it.copy(archivedOpen = !it.archivedOpen) }
 
@@ -177,6 +199,28 @@ class RoutinesViewModel @Inject constructor(
     internal fun moveRoutine(id: Long, up: Boolean) {
         viewModelScope.launch { routines.moveRoutine(id, up) }
     }
+
+    /** Creates a routine right away (never an empty, unsaved one) and hands its id to [onCreated]. */
+    internal fun createRoutine(onCreated: (Long) -> Unit) {
+        viewModelScope.launch { onCreated(routines.createRoutine()) }
+    }
+
+    internal fun duplicateRoutine(id: Long) {
+        viewModelScope.launch { routines.duplicateRoutine(id) }
+    }
+
+    internal fun requestDeleteRoutine(id: Long) {
+        val routine = uiState.value.routines.firstOrNull { it.routine.id == id }?.routine ?: return
+        local.update { it.copy(routineDelete = routine) }
+    }
+
+    internal fun confirmDeleteRoutine() {
+        val routine = local.value.routineDelete ?: return
+        local.update { it.copy(routineDelete = null) }
+        viewModelScope.launch { routines.deleteRoutine(routine.id) }
+    }
+
+    internal fun dismissDeleteRoutine() = local.update { it.copy(routineDelete = null) }
 
     internal fun setScheduleMode(mode: ScheduleMode) {
         viewModelScope.launch { routines.setScheduleMode(mode) }
