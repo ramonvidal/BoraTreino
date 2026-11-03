@@ -2,6 +2,7 @@
 plugins {
     id("boratreino.android.library")
     id("boratreino.android.compose")
+    id("boratreino.android.compose.tests")
 }
 
 android {
