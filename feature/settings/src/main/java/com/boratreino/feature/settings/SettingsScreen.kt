@@ -28,8 +28,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
@@ -51,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -78,7 +75,6 @@ import com.boratreino.core.ui.R as CoreUiR
 
 /** What the Settings screen can ask for. */
 internal data class SettingsActions(
-    val onBack: () -> Unit = {},
     val onStepGoal: (up: Boolean) -> Unit = {},
     val onRemindersEnabled: (Boolean) -> Unit = {},
     val onToggleWeekday: (DayOfWeek) -> Unit = {},
@@ -87,6 +83,7 @@ internal data class SettingsActions(
     val onSetReminderTime: (LocalTime) -> Unit = {},
     val onRestEnabled: (Boolean) -> Unit = {},
     val onRestSeconds: (Int) -> Unit = {},
+    val onRestBeep: (Boolean) -> Unit = {},
     val onAllowNotifications: () -> Unit = {},
     val onExport: () -> Unit = {},
     val onImport: () -> Unit = {},
@@ -99,7 +96,6 @@ internal data class SettingsActions(
 
 @Composable
 internal fun SettingsScreen(
-    onBack: () -> Unit,
     updatesCard: (@Composable () -> Unit)? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -157,7 +153,6 @@ internal fun SettingsScreen(
         state = state,
         updatesCard = updatesCard,
         actions = SettingsActions(
-            onBack = onBack,
             onStepGoal = viewModel::stepGoal,
             onRemindersEnabled = viewModel::setRemindersEnabled,
             onToggleWeekday = viewModel::toggleWeekday,
@@ -166,6 +161,7 @@ internal fun SettingsScreen(
             onSetReminderTime = viewModel::setReminderTime,
             onRestEnabled = viewModel::setRestEnabled,
             onRestSeconds = viewModel::setRestSeconds,
+            onRestBeep = viewModel::setRestBeep,
             onAllowNotifications = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     requestPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -207,14 +203,6 @@ internal fun SettingsContent(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = actions.onBack) {
-                        Icon(
-                            painter = painterResource(CoreUiR.drawable.ic_back),
-                            contentDescription = stringResource(CoreUiR.string.back),
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -349,6 +337,7 @@ private fun RestTimerSection(state: SettingsUiState, actions: SettingsActions) {
     SectionCard(stringResource(R.string.settings_rest_title)) {
         SwitchRow(stringResource(R.string.settings_rest_switch), state.restTimer.enabled, actions.onRestEnabled)
         if (state.restTimer.enabled) {
+            SwitchRow(stringResource(R.string.settings_rest_beep), state.restTimer.beep, actions.onRestBeep)
             Text(
                 stringResource(R.string.settings_rest_default),
                 style = MaterialTheme.typography.labelLarge,

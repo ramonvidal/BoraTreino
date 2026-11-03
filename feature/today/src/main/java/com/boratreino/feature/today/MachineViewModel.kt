@@ -82,6 +82,8 @@ internal data class MachineUiState(
     val cardioEditor: CardioEditor? = null,
     /** Whole seconds of rest left; null = no timer running. */
     val restSeconds: Int? = null,
+    /** Length of the running rest in seconds (for the progress bar); 0 when unknown. */
+    val restTotalSeconds: Int = 0,
 )
 
 internal sealed interface MachineEvent {
@@ -123,8 +125,9 @@ class MachineViewModel @Inject constructor(
 
     /** The seconds left, ticking once a second while a timer runs. */
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val restSeconds: Flow<Int?> = restTimer.state.flatMapLatest { timer ->
+    private val restSeconds: Flow<Pair<Int, Int>?> = restTimer.state.flatMapLatest { timer ->
         val endsAt = timer.endsAt
+        val total = timer.durationSeconds
         if (endsAt == null) {
             flowOf(null)
         } else {
@@ -135,7 +138,7 @@ class MachineViewModel @Inject constructor(
                         emit(null)
                         break
                     }
-                    emit(left)
+                    emit(left to maxOf(total, left))
                     delay(1_000)
                 }
             }
@@ -206,7 +209,7 @@ class MachineViewModel @Inject constructor(
     }
 
     internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds) { ui, rest ->
-        ui.copy(restSeconds = rest)
+        ui.copy(restSeconds = rest?.first, restTotalSeconds = rest?.second ?: 0)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MachineUiState())
 
     // Logging: the write finishes first, then the event (haptic) and the fresh prefill.

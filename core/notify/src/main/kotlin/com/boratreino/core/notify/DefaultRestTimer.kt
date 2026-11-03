@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.boratreino.core.model.RestTimerRules
+import com.boratreino.core.settings.TrainingSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.Instant
@@ -30,11 +32,12 @@ internal class DefaultRestTimer internal constructor(
     private val context: Context,
     private val clock: Clock,
     private val scope: CoroutineScope,
+    private val settings: TrainingSettings? = null,
 ) : RestTimer {
 
     @Inject
-    constructor(@ApplicationContext context: Context, clock: Clock) :
-        this(context, clock, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
+    constructor(@ApplicationContext context: Context, clock: Clock, settings: TrainingSettings) :
+        this(context, clock, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate), settings)
 
     private val _state = MutableStateFlow(RestTimerState())
     override val state: StateFlow<RestTimerState> = _state.asStateFlow()
@@ -48,7 +51,7 @@ internal class DefaultRestTimer internal constructor(
     override fun start(seconds: Int) {
         val clamped = seconds.coerceIn(RestTimerRules.MIN_SECONDS, RestTimerRules.MAX_SECONDS)
         Notifications.cancel(context, Notifications.REST_OVER_ID)
-        run(clock.instant().plusSeconds(clamped.toLong()))
+        run(clock.instant().plusSeconds(clamped.toLong()), clamped)
     }
 
     @Synchronized
@@ -56,7 +59,9 @@ internal class DefaultRestTimer internal constructor(
         val endsAt = _state.value.endsAt ?: return
         val extended = endsAt.plusSeconds(seconds.toLong())
         val longest = clock.instant().plusSeconds(RestTimerRules.MAX_SECONDS.toLong())
-        run(if (extended.isAfter(longest)) longest else extended)
+        val newEnd = if (extended.isAfter(longest)) longest else extended
+        val added = (newEnd.epochSecond - endsAt.epochSecond).toInt().coerceAtLeast(0)
+        run(newEnd, _state.value.durationSeconds + added)
     }
 
     @Synchronized
@@ -69,9 +74,9 @@ internal class DefaultRestTimer internal constructor(
         Notifications.cancel(context, Notifications.REST_OVER_ID)
     }
 
-    private fun run(endsAt: Instant) {
+    private fun run(endsAt: Instant, durationSeconds: Int) {
         job?.cancel()
-        _state.value = RestTimerState(endsAt)
+        _state.value = RestTimerState(endsAt, durationSeconds)
         Notifications.postRestOngoing(context, endsAt)
         setAlarm(endsAt)
         val wait = (endsAt.toEpochMilli() - clock.millis()).coerceAtLeast(0L)
@@ -90,6 +95,15 @@ internal class DefaultRestTimer internal constructor(
         cancelAlarm()
         Notifications.postRestOver(context)
         _finished.tryEmit(Unit)
+        scope.launch {
+            // The alarm is cancelled above, so this is the only beep for this rest.
+            val beep = try {
+                settings?.restTimer?.first()?.beep == true
+            } catch (e: Exception) {
+                false
+            }
+            if (beep) RestBeep.play()
+        }
     }
 
     private fun alarmIntent(): PendingIntent = PendingIntent.getBroadcast(

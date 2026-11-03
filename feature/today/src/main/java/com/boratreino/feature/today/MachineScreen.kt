@@ -66,13 +66,13 @@ import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.recordText
 import com.boratreino.core.ui.suggestionText
 import com.boratreino.core.ui.targetText
-import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.model.Suggestion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.boratreino.core.ui.RestCard
 import com.boratreino.core.ui.R as CoreUiR
 
 /** What the machine screen can ask for. */
@@ -376,7 +376,7 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
             Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.restSeconds?.let { RestBar(it, actions.onExtendRest, actions.onSkipRest) }
+            state.restSeconds?.let { RestCard(it, state.restTotalSeconds, actions.onExtendRest, actions.onSkipRest) }
             Stepper(
                 label = weightLabel(machine),
                 value = formatKg(state.weightKg),
@@ -649,24 +649,6 @@ private fun RecordCard(text: String) {
         ) {
             Icon(painterResource(CoreUiR.drawable.ic_emoji_events), contentDescription = null)
             Text(text, style = MaterialTheme.typography.titleMedium)
-        }
-    }
-}
-
-/** The slim rest countdown above the steppers: time left, +30 s and Skip. Shown only while a timer runs. */
-@Composable
-private fun RestBar(seconds: Int, onExtend: () -> Unit, onSkip: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(R.string.today_rest, RestTimerRules.format(seconds)),
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleMedium,
-        )
-        TextButton(onClick = onExtend, modifier = Modifier.heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.today_rest_extend, RestTimerRules.EXTEND_SECONDS))
-        }
-        TextButton(onClick = onSkip, modifier = Modifier.heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.today_rest_skip))
         }
     }
 }

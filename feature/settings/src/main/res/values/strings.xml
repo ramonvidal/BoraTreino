@@ -12,6 +12,7 @@
 
     <string name="settings_rest_title">Rest timer</string>
     <string name="settings_rest_switch">Count down after each set</string>
+    <string name="settings_rest_beep">Beep when rest ends</string>
     <string name="settings_rest_default">Default rest</string>
     <string name="settings_rest_seconds">%1$d s</string>
     <string name="settings_rest_hint">Each machine can have its own rest time in its editor.</string>

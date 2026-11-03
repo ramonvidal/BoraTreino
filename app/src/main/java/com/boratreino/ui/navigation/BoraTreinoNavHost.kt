@@ -2,7 +2,9 @@ package com.boratreino.ui.navigation
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -16,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -23,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.boratreino.R
+import com.boratreino.core.ui.RestBanner
 import com.boratreino.core.ui.R as CoreUiR
 import com.boratreino.feature.calendar.CALENDAR_ROUTE
 import com.boratreino.feature.calendar.calendarGraph
@@ -37,7 +42,9 @@ import com.boratreino.feature.routines.routinesScreen
 import com.boratreino.feature.settings.SETTINGS_ROUTE
 import com.boratreino.feature.settings.settingsScreen
 import com.boratreino.feature.today.TODAY_ROUTE
+import com.boratreino.feature.today.isMachineRoute
 import com.boratreino.feature.today.todayGraph
+import com.boratreino.ui.rest.RestBannerViewModel
 import com.boratreino.ui.updates.UpdateBannerSlot
 import com.boratreino.ui.updates.updatesCardSlot
 
@@ -50,9 +57,10 @@ enum class TopLevelDestination(
     Calendar(CALENDAR_ROUTE, R.string.nav_calendar, CoreUiR.drawable.ic_calendar),
     Progress(PROGRESS_ROUTE, R.string.nav_progress, CoreUiR.drawable.ic_progress),
     Routines(ROUTINES_ROUTE, R.string.nav_routines, CoreUiR.drawable.ic_routines),
+    Settings(SETTINGS_ROUTE, R.string.nav_settings, CoreUiR.drawable.ic_settings),
 }
 
-/** The four tabs; Settings, the machine editor and Today's picker and machine screens are full screens above them with the bottom bar hidden. */
+/** The five tabs; the machine editor and Today's picker and machine screens are full screens above them with the bottom bar hidden. */
 @Composable
 fun BoraTreinoNavHost() {
     val navController = rememberNavController()
@@ -62,8 +70,27 @@ fun BoraTreinoNavHost() {
         currentDestination?.hierarchy?.any { it.route == destination.route } == true
     }
 
+    val restViewModel: RestBannerViewModel = hiltViewModel()
+    val rest by restViewModel.state.collectAsStateWithLifecycle()
+    // The machine screen has its own big rest card.
+    val restShown = rest != null && !isMachineRoute(currentDestination?.route)
+
     Scaffold(
-        topBar = { UpdateBannerSlot() },
+        topBar = {
+            // Padding the column keeps both banners clear of the status bar (the update banner's own padding is then consumed).
+            Column(if (restShown) Modifier.statusBarsPadding() else Modifier) {
+                UpdateBannerSlot()
+                val banner = rest
+                if (restShown && banner != null) {
+                    RestBanner(
+                        remainingSeconds = banner.remainingSeconds,
+                        totalSeconds = banner.totalSeconds,
+                        onExtend = restViewModel::extend,
+                        onSkip = restViewModel::skip,
+                    )
+                }
+            }
+        },
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
@@ -93,9 +120,9 @@ fun BoraTreinoNavHost() {
         ) {
             todayGraph(
                 navController = navController,
-                onOpenSettings = { navController.navigate(SETTINGS_ROUTE) { launchSingleTop = true } },
                 onEditMachine = { machineId -> navController.navigate(machineEditorRoute(machineId)) },
                 onNewMachine = { navController.navigate(machineEditorRoute(null)) },
+                onEditRoutine = { routineId -> navController.navigate(routineEditorRoute(routineId)) },
             )
             calendarGraph(navController)
             progressGraph(navController)
@@ -105,7 +132,7 @@ fun BoraTreinoNavHost() {
             )
             routineEditorScreen(onDone = { navController.popBackStack() })
             machineEditorScreen(onDone = { navController.popBackStack() })
-            settingsScreen(onBack = { navController.popBackStack() }, updatesCard = updatesCardSlot)
+            settingsScreen(updatesCard = updatesCardSlot)
         }
     }
 }

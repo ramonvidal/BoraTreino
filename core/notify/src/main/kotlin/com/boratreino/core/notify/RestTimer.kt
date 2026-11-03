@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.Instant
 
-/** [endsAt] is null when no rest is running. */
-data class RestTimerState(val endsAt: Instant? = null) {
+/** [endsAt] is null when no rest is running; [durationSeconds] is the whole rest so far (start plus extensions). */
+data class RestTimerState(val endsAt: Instant? = null, val durationSeconds: Int = 0) {
     val isRunning: Boolean get() = endsAt != null
 }
 

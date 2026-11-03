@@ -97,6 +97,47 @@ internal class DefaultRoutineRepository @Inject constructor(
         }
     }
 
+    override suspend fun moveItem(routineId: Long, machineId: Long, up: Boolean) {
+        store.inTransaction {
+            val items = store.routineItems(routineId)
+            val updated = RoutineEditRules.moved(items, machineId, up)
+            if (updated != items) store.replaceRoutineItems(routineId, updated)
+        }
+    }
+
+    override suspend fun duplicateRoutine(id: Long): Long =
+        store.inTransaction {
+            val plan = store.ensurePlan()
+            val source = store.routines(plan.id).firstOrNull { it.id == id } ?: return@inTransaction 0L
+            val newId = store.insertRoutine(
+                source.copy(
+                    id = 0,
+                    name = "${source.name} copy",
+                    position = store.routines(plan.id).size,
+                ),
+            )
+            val items = store.routineItems(id)
+            store.replaceRoutineItems(newId, items.map { it.copy(routineId = newId) })
+            newId
+        }
+
+    override suspend fun createRoutine(): Long =
+        store.inTransaction {
+            val plan = store.ensurePlan()
+            val existing = store.routines(plan.id)
+            val letter = RoutineEditRules.nextLetter(existing.map { it.shortName })
+            store.insertRoutine(
+                Routine(
+                    id = 0,
+                    planId = plan.id,
+                    name = "Routine $letter",
+                    shortName = letter,
+                    position = existing.size,
+                    weekdays = emptySet(),
+                ),
+            )
+        }
+
     override suspend fun addMachine(routineId: Long, machineId: Long) {
         store.inTransaction {
             if (store.allRoutines().none { it.id == routineId }) return@inTransaction

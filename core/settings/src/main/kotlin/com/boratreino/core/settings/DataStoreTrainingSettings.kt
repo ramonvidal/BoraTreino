@@ -62,6 +62,7 @@ internal class DataStoreTrainingSettings(
             RestTimerSettings(
                 enabled = prefs[REST_ENABLED] ?: defaults.enabled,
                 defaultSeconds = clampRest(prefs[REST_DEFAULT_SECONDS] ?: defaults.defaultSeconds),
+                beep = prefs[REST_BEEP] ?: defaults.beep,
             )
         }
         .distinctUntilChanged()
@@ -70,6 +71,7 @@ internal class DataStoreTrainingSettings(
         dataStore.edit { prefs ->
             prefs[REST_ENABLED] = settings.enabled
             prefs[REST_DEFAULT_SECONDS] = clampRest(settings.defaultSeconds)
+            prefs[REST_BEEP] = settings.beep
         }
     }
 
@@ -87,6 +89,7 @@ internal class DataStoreTrainingSettings(
         val REMINDER_WEEKDAYS = stringPreferencesKey("reminder_weekdays")
         val REMINDER_MINUTE_OF_DAY = intPreferencesKey("reminder_minute_of_day")
         val REST_ENABLED = booleanPreferencesKey("rest_timer_enabled")
+        val REST_BEEP = booleanPreferencesKey("rest_timer_beep")
         val REST_DEFAULT_SECONDS = intPreferencesKey("rest_timer_default_seconds")
     }
 }

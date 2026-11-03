@@ -37,6 +37,28 @@ object RoutineEditRules {
         return renumbered(list)
     }
 
+    /** Swaps the machine with its neighbour; positions renumbered. First up / last down / absent returns [items] unchanged. */
+    fun moved(items: List<RoutineItem>, machineId: Long, up: Boolean): List<RoutineItem> {
+        val index = items.indexOfFirst { it.machineId == machineId }
+        val other = if (up) index - 1 else index + 1
+        if (index < 0 || other !in items.indices) return items
+        val list = items.toMutableList().apply { add(other, removeAt(index)) }
+        return renumbered(list)
+    }
+
+    /** The first of A, B, C... (then A1, B1...) not used by [usedShortNames], ignoring case. */
+    fun nextLetter(usedShortNames: Collection<String>): String {
+        val used = usedShortNames.map { it.trim().uppercase() }.toSet()
+        var round = 0
+        while (true) {
+            for (c in 'A'..'Z') {
+                val candidate = if (round == 0) c.toString() else "$c$round"
+                if (candidate !in used) return candidate
+            }
+            round++
+        }
+    }
+
     /** True when a ficha is active and neither it nor [skipped] contains the machine: the "Add to ficha?" question applies. */
     fun shouldOfferAdding(active: RoutineWithItems?, skipped: Set<Long>, machineId: Long): Boolean =
         active != null && !contains(active.items, machineId) && machineId !in skipped

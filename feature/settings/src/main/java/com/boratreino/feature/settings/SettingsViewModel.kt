@@ -214,6 +214,10 @@ class SettingsViewModel @Inject constructor(
         settings.setRestTimer(settings.restTimer.first().copy(enabled = enabled))
     }
 
+    fun setRestBeep(beep: Boolean) = save {
+        settings.setRestTimer(settings.restTimer.first().copy(beep = beep))
+    }
+
     fun setRestSeconds(seconds: Int) = save {
         settings.setRestTimer(
             settings.restTimer.first().copy(

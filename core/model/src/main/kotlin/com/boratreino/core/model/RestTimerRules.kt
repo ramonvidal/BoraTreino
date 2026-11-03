@@ -7,6 +7,8 @@ import java.time.Instant
 data class RestTimerSettings(
     val enabled: Boolean = true,
     val defaultSeconds: Int = RestTimerRules.DEFAULT_SECONDS,
+    /** A short beep when the rest ends (the buzz is always on). Off by default. */
+    val beep: Boolean = false,
 )
 
 object RestTimerRules {
@@ -25,6 +27,12 @@ object RestTimerRules {
         val millis = Duration.between(now, endsAt).toMillis()
         if (millis <= 0) return 0
         return ((millis + 999) / 1000).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    }
+
+    /** Share of the rest still left: 1f = just started, 0f = over or no duration. */
+    fun progress(remainingSeconds: Int, durationSeconds: Int): Float {
+        if (durationSeconds <= 0) return 0f
+        return (remainingSeconds.toFloat() / durationSeconds).coerceIn(0f, 1f)
     }
 
     /** "1:30", "0:05", "10:00". */
