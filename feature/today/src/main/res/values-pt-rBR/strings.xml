@@ -23,6 +23,10 @@
     <string name="today_rest">Descanso %1$s</string>
     <string name="today_rest_extend">+%1$d s</string>
     <string name="today_rest_skip">Pular</string>
+    <string name="today_edit_ficha">Editar essa ficha</string>
+    <string name="today_edit_hint">Mude a ordem dos aparelhos ou tire algum. Salva na hora.</string>
+    <string name="today_edit_sets_reps">Editar séries e repetições</string>
+    <string name="today_remove_machine">Tirar %1$s da ficha</string>
     <string name="today_ficha_add_title">Adicionar %1$s a %2$s?</string>
     <string name="today_ficha_add_text">Da próxima vez ele fará parte desta ficha.</string>
     <string name="today_ficha_add">Adicionar à ficha</string>

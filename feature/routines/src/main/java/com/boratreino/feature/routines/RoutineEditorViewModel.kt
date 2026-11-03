@@ -9,21 +9,29 @@ import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
-import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.ScheduleMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** A machine in the routine being edited, with its name for display. */
 internal data class RoutineEditorItem(
@@ -36,9 +44,10 @@ internal data class RoutineEditorItem(
 )
 
 /**
- * The routine editor's form. [routineId] is 0 for a new routine. [available] are the
- * machines (not archived) that can still be added, by muscle group. [done] turns true once
- * a save or delete has been written; the screen then leaves.
+ * The routine editor's form. Every change is saved at once, so there is no Save state.
+ * [available] are the machines (not archived) that can still be added, by muscle group.
+ * [targetMachineId] is the machine whose sets / reps sheet is open. [done] turns true once
+ * the screen should leave (back, duplicate, delete, or the routine is gone).
  */
 internal data class RoutineEditorUiState(
     val loading: Boolean = true,
@@ -51,14 +60,10 @@ internal data class RoutineEditorUiState(
     val items: List<RoutineEditorItem> = emptyList(),
     val available: List<MachineGroup> = emptyList(),
     val pickerOpen: Boolean = false,
+    val targetMachineId: Long? = null,
     val confirmDelete: Boolean = false,
-    val nameTouched: Boolean = false,
     val done: Boolean = false,
-) {
-    val isNew: Boolean get() = routineId == 0L
-    val nameError: Boolean get() = nameTouched && name.isBlank()
-    val canSave: Boolean get() = !loading && name.isNotBlank() && shortName.isNotBlank()
-}
+)
 
 internal data class RoutineEditorCallbacks(
     val onBack: () -> Unit = {},
@@ -70,28 +75,52 @@ internal data class RoutineEditorCallbacks(
     val onAddMachine: (Machine) -> Unit = {},
     val onMoveItem: (index: Int, up: Boolean) -> Unit = { _, _ -> },
     val onRemoveItem: (index: Int) -> Unit = {},
+    val onOpenTarget: (machineId: Long) -> Unit = {},
+    val onCloseTarget: () -> Unit = {},
     val onSetsStep: (index: Int, up: Boolean) -> Unit = { _, _ -> },
     val onRepsMinStep: (index: Int, up: Boolean) -> Unit = { _, _ -> },
     val onRepsMaxStep: (index: Int, up: Boolean) -> Unit = { _, _ -> },
-    val onSave: () -> Unit = {},
+    val onDuplicate: () -> Unit = {},
     val onDelete: () -> Unit = {},
     val onConfirmDelete: () -> Unit = {},
     val onDismissDelete: () -> Unit = {},
 )
 
 private const val MAX_TARGET_SETS = 10
+private const val SAVE_DELAY_MS = 400L
 
+/** What gets stored; two equal drafts mean there is nothing new to save. */
+private data class Draft(
+    val name: String,
+    val shortName: String,
+    val weekdays: Set<DayOfWeek>,
+    val items: List<RoutineItem>,
+)
+
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class RoutineEditorViewModel @Inject constructor(
     private val routines: RoutineRepository,
     machines: MachineRepository,
-    savedState: SavedStateHandle,
+    private val savedState: SavedStateHandle,
 ) : ViewModel() {
-    private val routineId: Long = savedState.get<Long>(ROUTINE_ID_ARG)?.takeIf { it != NEW_ROUTINE } ?: 0L
+    /** 0 only for a caller that opened the editor without an id: a routine is then created first. */
+    private var routineId: Long = savedState.get<Long>(ROUTINE_ID_ARG)?.takeIf { it != NEW_ROUTINE } ?: 0L
 
-    /** The stored routine, kept so Save carries over its plan and position. */
+    /** The stored routine, kept so a save carries over its plan and position. */
     private var planId = 0L
     private var position = 0
+
+    /** The last name / short name that were not blank: a blank field never reaches the database. */
+    private var goodName = ""
+    private var goodShortName = ""
+
+    private var lastSaved: Draft? = null
+    private var deleted = false
+    private val saveLock = Mutex()
+
+    /** Survives this view model: the last save, when the screen is already gone, must finish. */
+    private val flushScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val form = MutableStateFlow(RoutineEditorUiState(loading = true, routineId = routineId))
     private val allMachines = machines.observeMachines(includeArchived = true)
@@ -108,45 +137,87 @@ class RoutineEditorViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            if (routineId == 0L) {
+                routineId = routines.createRoutine()
+                savedState[ROUTINE_ID_ARG] = routineId
+            }
             val plan = routines.observePlan().first()
             val known = allMachines.first().associateBy { it.id }
             planId = plan.plan.id
             val showWeekdays = plan.plan.scheduleMode == ScheduleMode.WEEKDAYS
-            if (routineId == 0L) {
+            val found = routines.observeRoutine(routineId).first()
+            if (found == null) {
+                deleted = true
+                form.update { it.copy(loading = false, done = true) }
+            } else {
+                position = found.routine.position
+                goodName = found.routine.name
+                goodShortName = found.routine.shortName
                 form.update {
                     it.copy(
                         loading = false,
-                        shortName = NextRoutineRules.nextShortName(plan.routines.map { r -> r.routine }),
+                        routineId = routineId,
+                        name = found.routine.name,
+                        shortName = found.routine.shortName,
+                        weekdays = found.routine.weekdays,
                         showWeekdays = showWeekdays,
+                        items = found.items.map { item ->
+                            RoutineEditorItem(
+                                machineName = known[item.machineId]?.name.orEmpty(),
+                                item = item,
+                                muscleGroup = known[item.machineId]?.muscleGroup ?: MuscleGroup.LEGS,
+                                kind = known[item.machineId]?.kind ?: MachineKind.WEIGHT_REPS,
+                            )
+                        },
                     )
                 }
-            } else {
-                val found = routines.observeRoutine(routineId).first()
-                if (found == null) {
-                    form.update { it.copy(loading = false, done = true) }
-                } else {
-                    position = found.routine.position
-                    form.update {
-                        it.copy(
-                            loading = false,
-                            name = found.routine.name,
-                            shortName = found.routine.shortName,
-                            weekdays = found.routine.weekdays,
-                            showWeekdays = showWeekdays,
-                            items = found.items.map { item -> RoutineEditorItem(
-                                    machineName = known[item.machineId]?.name.orEmpty(),
-                                    item = item,
-                                    muscleGroup = known[item.machineId]?.muscleGroup ?: MuscleGroup.LEGS,
-                                    kind = known[item.machineId]?.kind ?: MachineKind.WEIGHT_REPS,
-                                ) },
-                        )
-                    }
-                }
+                lastSaved = draftOf(form.value)
+                startAutoSave()
             }
         }
     }
 
-    internal fun setName(value: String) = form.update { it.copy(name = value, nameTouched = true) }
+    /** Saves ~400 ms after the last change. */
+    private fun startAutoSave() {
+        viewModelScope.launch {
+            form.filter { !it.loading }
+                .map { draftOf(it) }
+                .debounce(SAVE_DELAY_MS)
+                .collect { save() }
+        }
+    }
+
+    private fun draftOf(s: RoutineEditorUiState) = Draft(
+        name = s.name.trim().ifBlank { goodName },
+        shortName = s.shortName.trim().ifBlank { goodShortName },
+        weekdays = s.weekdays,
+        items = s.items.mapIndexed { i, entry -> entry.item.copy(routineId = routineId, position = i) },
+    )
+
+    /** Writes the form if it differs from what is stored. A blank name keeps the last good one. */
+    private suspend fun save() {
+        saveLock.withLock {
+            if (deleted) return
+            val s = form.value
+            if (s.loading) return
+            if (s.name.isNotBlank()) goodName = s.name.trim()
+            if (s.shortName.isNotBlank()) goodShortName = s.shortName.trim()
+            val draft = draftOf(s)
+            if (draft == lastSaved) return
+            val routine = Routine(
+                id = routineId,
+                planId = planId,
+                name = draft.name,
+                shortName = draft.shortName,
+                position = position,
+                weekdays = draft.weekdays,
+            )
+            routines.saveRoutine(routine, draft.items)
+            lastSaved = draft
+        }
+    }
+
+    internal fun setName(value: String) = form.update { it.copy(name = value) }
     internal fun setShortName(value: String) = form.update { it.copy(shortName = value.take(3)) }
 
     internal fun toggleWeekday(day: DayOfWeek) =
@@ -155,10 +226,13 @@ class RoutineEditorViewModel @Inject constructor(
     internal fun openPicker() = form.update { it.copy(pickerOpen = true) }
     internal fun closePicker() = form.update { it.copy(pickerOpen = false) }
 
+    internal fun openTarget(machineId: Long) = form.update { it.copy(targetMachineId = machineId) }
+    internal fun closeTarget() = form.update { it.copy(targetMachineId = null) }
+
     /** Adds [machine] at the end with the default target 3 x 8-12. */
     internal fun addMachine(machine: Machine) = form.update {
         val item = RoutineItem(
-            routineId = it.routineId,
+            routineId = routineId,
             machineId = machine.id,
             position = it.items.size,
             targetSets = 3,
@@ -209,37 +283,37 @@ class RoutineEditorViewModel @Inject constructor(
     private fun List<RoutineEditorItem>.renumbered() =
         mapIndexed { i, entry -> entry.copy(item = entry.item.copy(position = i)) }
 
-    internal fun save() {
-        val s = form.value
-        val routine = try {
-            Routine(
-                id = s.routineId,
-                planId = planId,
-                name = s.name.trim(),
-                shortName = s.shortName.trim(),
-                position = position,
-                weekdays = s.weekdays,
-            )
-        } catch (e: IllegalArgumentException) {
-            // The model's own rules (blank name) say no: show the inline error instead of crashing.
-            form.update { it.copy(nameTouched = true) }
-            return
-        }
-        val items = s.items.mapIndexed { i, entry -> entry.item.copy(routineId = s.routineId, position = i) }
+    /** The back arrow: writes anything pending, then leaves. */
+    internal fun back() {
         viewModelScope.launch {
-            routines.saveRoutine(routine, items)
+            save()
             form.update { it.copy(done = true) }
         }
     }
 
-    internal fun requestDelete() = form.update { if (it.isNew) it else it.copy(confirmDelete = true) }
+    /** Writes anything pending, makes "<name> copy" and leaves; the copy shows in the list. */
+    internal fun duplicate() {
+        viewModelScope.launch {
+            save()
+            routines.duplicateRoutine(routineId)
+            form.update { it.copy(done = true) }
+        }
+    }
+
+    internal fun requestDelete() = form.update { it.copy(confirmDelete = true) }
     internal fun dismissDelete() = form.update { it.copy(confirmDelete = false) }
 
     internal fun confirmDelete() {
-        if (routineId == 0L) return
         viewModelScope.launch {
+            saveLock.withLock { deleted = true }
             routines.deleteRoutine(routineId)
             form.update { it.copy(confirmDelete = false, done = true) }
         }
+    }
+
+    override fun onCleared() {
+        // System back or swipe: the debounce may still be waiting, so write it now.
+        flushScope.launch { save() }
+        super.onCleared()
     }
 }

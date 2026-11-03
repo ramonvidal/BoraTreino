@@ -76,4 +76,18 @@
     <string name="delete_archive">Archive</string>
     <string name="routine_picker_title">From your gym\'s list</string>
     <string name="routine_picker_note">Missing one? Add it first in Machines and exercises.</string>
+    <string name="routines_page_routines">Routines</string>
+    <string name="routines_page_gym">Gym</string>
+    <string name="routines_hint">A routine is one workout, like Legs or Push. Tap one to choose its machines, sets and reps.</string>
+    <string name="routines_empty_title">No routines yet</string>
+    <string name="routines_empty_body">Make your first routine, then add machines from your gym.</string>
+    <string name="routines_menu">More options for %1$s</string>
+    <string name="routines_menu_edit">Edit</string>
+    <string name="routines_menu_move_up">Move up</string>
+    <string name="routines_menu_move_down">Move down</string>
+    <string name="routines_menu_duplicate">Duplicate</string>
+    <string name="routines_menu_delete">Delete</string>
+    <string name="routines_next_title">Which routine is next</string>
+    <string name="routine_more">More options</string>
+    <string name="routine_close">Close</string>
 </resources>

@@ -44,6 +44,12 @@
     <string name="exercise_credit">Desenhos dos exercícios: Everkinetic (Greg Priday), %1$s</string>
     <string name="exercise_license_name">CC BY-SA 4.0</string>
     <string name="exercise_close">Fechar</string>
+    <string name="rest_banner_title">Descanso %1$s</string>
+    <string name="rest_card_title">Descanso</string>
+    <string name="rest_extend">+%1$d s</string>
+    <string name="rest_skip">Pular</string>
+    <string name="move_up">Subir</string>
+    <string name="move_down">Descer</string>
     <plurals name="reps_only">
         <item quantity="one">%d repetição</item>
         <item quantity="other">%d repetições</item>

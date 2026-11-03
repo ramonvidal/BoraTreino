@@ -11,6 +11,7 @@
     <string name="settings_time_picker_title">Hora do lembrete</string>
     <string name="settings_rest_title">Descanso</string>
     <string name="settings_rest_switch">Contar depois de cada série</string>
+    <string name="settings_rest_beep">Apitar quando o descanso acabar</string>
     <string name="settings_rest_default">Descanso padrão</string>
     <string name="settings_rest_seconds">%1$d s</string>
     <string name="settings_rest_hint">Cada aparelho pode ter seu próprio descanso, no editor dele.</string>

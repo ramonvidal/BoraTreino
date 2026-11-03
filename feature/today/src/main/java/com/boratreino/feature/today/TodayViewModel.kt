@@ -74,7 +74,7 @@ internal data class TodayUiState(
     val recent: List<Machine> = emptyList(),
     val routines: RoutineUi? = null,
     val skipDialog: SkipDialog? = null,
-    /** The training card is in edit mode (reorder / remove ficha machines). Only true with an active ficha. */
+    /** The training card is in edit mode (reorder / remove ficha machines). True only while a ficha is active (with or without an open session). */
     val editing: Boolean = false,
 )
 
@@ -147,7 +147,7 @@ class TodayViewModel @Inject constructor(
         TodayUiState(
             routines = routines,
             skipDialog = dialog,
-            editing = editRequested && open != null && plan.active != null,
+            editing = editRequested && plan.active != null,
             loaded = true,
             session = open?.let { s ->
                 SessionUi(

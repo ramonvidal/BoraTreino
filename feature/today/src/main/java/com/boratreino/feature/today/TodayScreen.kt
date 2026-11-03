@@ -333,14 +333,25 @@ private fun LazyListScope.withRoutines(state: TodayUiState, routines: RoutineUi,
     }
     if (session == null) {
         item(key = "title") {
-            Text(
-                stringResource(R.string.today_next_up, active),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.today_next_up, active),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f).padding(start = 4.dp, bottom = 4.dp),
+                )
+                if (routines.activeId != null && !state.editing) {
+                    IconButton(onClick = actions.onStartEditing) {
+                        Icon(
+                            painterResource(CoreUiR.drawable.ic_edit),
+                            contentDescription = stringResource(R.string.today_edit_ficha),
+                        )
+                    }
+                }
+            }
         }
-        routineRows(routines, actions, editing = false)
-        item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
+        if (state.editing) item(key = "editbar") { EditBar(actions) }
+        routineRows(routines, actions, state.editing)
+        if (!state.editing) item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
     } else {
         sessionHeader(session, actions, routineName = active, canEdit = routines.activeId != null, editing = state.editing)
         routineRows(routines, actions, state.editing)
@@ -349,6 +360,37 @@ private fun LazyListScope.withRoutines(state: TodayUiState, routines: RoutineUi,
             sessionRows(routines.alsoThisSession, actions)
         }
         if (!state.editing) item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
+    }
+}
+
+/** Edit mode's card: hint, Done and Edit sets and reps (used when there is no open session). */
+@Composable
+private fun EditBar(actions: TodayActions) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                stringResource(R.string.today_edit_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FilledTonalButton(
+                onClick = actions.onFinishEditing,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            ) {
+                Icon(painterResource(CoreUiR.drawable.ic_check), contentDescription = null, Modifier.size(20.dp))
+                Text(stringResource(R.string.today_done), Modifier.padding(start = 8.dp))
+            }
+            OutlinedButton(
+                onClick = actions.onEditRoutine,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) {
+                Icon(painterResource(CoreUiR.drawable.ic_edit), contentDescription = null, Modifier.size(20.dp))
+                Text(stringResource(R.string.today_edit_sets_reps), Modifier.padding(start = 8.dp))
+            }
+        }
     }
 }
 

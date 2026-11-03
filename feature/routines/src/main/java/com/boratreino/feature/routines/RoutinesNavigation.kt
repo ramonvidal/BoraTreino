@@ -29,7 +29,8 @@ fun machineEditorRoute(machineId: Long?): String =
 
 /**
  * The Routines tab. [onOpenEditor] gets a machine id to edit, or null for a new machine;
- * [onOpenRoutine] a routine id to edit, or null for a new routine.
+ * [onOpenRoutine] a routine id to edit. The tab creates a new routine itself before opening
+ * its editor, so the id is never null in practice (the type is kept for the existing wiring).
  */
 fun NavGraphBuilder.routinesScreen(
     onOpenEditor: (machineId: Long?) -> Unit,
@@ -51,7 +52,7 @@ fun NavGraphBuilder.machineEditorScreen(onDone: () -> Unit) {
     ) { MachineEditorScreen(onDone = onDone) }
 }
 
-/** The routine editor; [onDone] is called after Save, Delete, or the back arrow. */
+/** The routine editor; [onDone] is called after the back arrow, Duplicate or Delete (changes are saved as they are made). */
 fun NavGraphBuilder.routineEditorScreen(onDone: () -> Unit) {
     composable(
         route = ROUTINE_EDITOR_ROUTE,

@@ -4,6 +4,7 @@ app,nav_today,,Today,Treino
 app,nav_calendar,,Calendar,Agenda
 app,nav_progress,,Progress,Evolução
 app,nav_routines,,Routines,Fichas
+app,nav_settings,,Settings,Ajustes
 core/health,health_rationale_title,,Health Connect,Health Connect
 core/health,health_rationale_text,,"Bora pro Treino! can send each finished training to Health Connect: the exercise session, and the calories and distance of your cardio. It only writes. It never reads anything from Health Connect, and you can turn it off in Settings or remove the data in Health Connect at any time.","O Bora pro Treino! pode enviar cada treino terminado ao Health Connect: a sessão de exercício e as calorias e a distância do seu cardio. Ele só escreve. Nunca lê nada do Health Connect, e você pode desligar em Ajustes ou apagar os dados no Health Connect quando quiser."
 core/health,health_privacy_policy,,Privacy policy,Política de privacidade
@@ -63,6 +64,12 @@ core/ui,exercise_end,,End,Fim
 core/ui,exercise_credit,,"Exercise illustrations: Everkinetic (Greg Priday), %1$s","Desenhos dos exercícios: Everkinetic (Greg Priday), %1$s"
 core/ui,exercise_license_name,,CC BY-SA 4.0,CC BY-SA 4.0
 core/ui,exercise_close,,Close,Fechar
+core/ui,rest_banner_title,,Rest %1$s,Descanso %1$s
+core/ui,rest_card_title,,Rest,Descanso
+core/ui,rest_extend,,+%1$d s,+%1$d s
+core/ui,rest_skip,,Skip,Pular
+core/ui,move_up,,Move up,Subir
+core/ui,move_down,,Move down,Descer
 feature/calendar,calendar_week_progress,,This week: %1$d of %2$d,Semana: %1$d de %2$d
 feature/calendar,calendar_streak,one,Streak: %d week,Sequência: %d semana
 feature/calendar,calendar_streak,other,Streak: %d weeks,Sequência: %d semanas
@@ -226,6 +233,20 @@ feature/routines,delete_archive_advice,,Archive it instead: it disappears from y
 feature/routines,delete_archive,,Archive,Arquivar
 feature/routines,routine_picker_title,,From your gym's list,Da lista da sua academia
 feature/routines,routine_picker_note,,Missing one? Add it first in Machines and exercises.,Faltou algum? Adicione antes em Aparelhos e exercícios.
+feature/routines,routines_page_routines,,Routines,Fichas
+feature/routines,routines_page_gym,,Gym,Academia
+feature/routines,routines_hint,,"A routine is one workout, like Legs or Push. Tap one to choose its machines, sets and reps.","Uma ficha é um treino, tipo Pernas ou Empurrar. Toque numa pra escolher os aparelhos, séries e repetições."
+feature/routines,routines_empty_title,,No routines yet,Nenhuma ficha ainda
+feature/routines,routines_empty_body,,"Make your first routine, then add machines from your gym.",Faça sua primeira ficha e depois ponha os aparelhos da sua academia.
+feature/routines,routines_menu,,More options for %1$s,Mais opções de %1$s
+feature/routines,routines_menu_edit,,Edit,Editar
+feature/routines,routines_menu_move_up,,Move up,Subir
+feature/routines,routines_menu_move_down,,Move down,Descer
+feature/routines,routines_menu_duplicate,,Duplicate,Duplicar
+feature/routines,routines_menu_delete,,Delete,Excluir
+feature/routines,routines_next_title,,Which routine is next,Qual ficha vem agora
+feature/routines,routine_more,,More options,Mais opções
+feature/routines,routine_close,,Close,Fechar
 feature/settings,settings_title,,Settings,Ajustes
 feature/settings,settings_goal_title,,Weekly goal,Meta semanal
 feature/settings,settings_goal_label,,Days per week,Dias por semana
@@ -236,6 +257,7 @@ feature/settings,settings_reminders_days,,Days,Dias
 feature/settings,settings_time_picker_title,,Reminder time,Hora do lembrete
 feature/settings,settings_rest_title,,Rest timer,Descanso
 feature/settings,settings_rest_switch,,Count down after each set,Contar depois de cada série
+feature/settings,settings_rest_beep,,Beep when rest ends,Apitar quando o descanso acabar
 feature/settings,settings_rest_default,,Default rest,Descanso padrão
 feature/settings,settings_rest_seconds,,%1$d s,%1$d s
 feature/settings,settings_rest_hint,,Each machine can have its own rest time in its editor.,"Cada aparelho pode ter seu próprio descanso, no editor dele."
@@ -300,6 +322,10 @@ feature/today,today_missed_twice,,Missed the lowest reps twice,Abaixo do mínimo
 feature/today,today_rest,,Rest %1$s,Descanso %1$s
 feature/today,today_rest_extend,,+%1$d s,+%1$d s
 feature/today,today_rest_skip,,Skip,Pular
+feature/today,today_edit_ficha,,Edit this ficha,Editar essa ficha
+feature/today,today_edit_hint,,Move machines or remove them. Changes are saved at once.,Mude a ordem dos aparelhos ou tire algum. Salva na hora.
+feature/today,today_edit_sets_reps,,Edit sets and reps,Editar séries e repetições
+feature/today,today_remove_machine,,Remove %1$s from the ficha,Tirar %1$s da ficha
 feature/today,today_ficha_add_title,,Add %1$s to %2$s?,Adicionar %1$s a %2$s?
 feature/today,today_ficha_add_text,,Next time it will be part of this ficha.,Da próxima vez ele fará parte desta ficha.
 feature/today,today_ficha_add,,Add to ficha,Adicionar à ficha

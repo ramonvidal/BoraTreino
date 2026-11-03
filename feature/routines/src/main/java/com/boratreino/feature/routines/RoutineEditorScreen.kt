@@ -2,6 +2,7 @@ package com.boratreino.feature.routines
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -18,22 +20,32 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -42,6 +54,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.ui.MachineThumb
+import com.boratreino.core.ui.MoveButtons
 import com.boratreino.core.ui.SmallStepper
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.shortLabel
@@ -61,7 +74,7 @@ internal fun RoutineEditorScreen(
     RoutineEditorContent(
         state = state,
         callbacks = RoutineEditorCallbacks(
-            onBack = onDone,
+            onBack = viewModel::back,
             onNameChange = viewModel::setName,
             onShortNameChange = viewModel::setShortName,
             onToggleWeekday = viewModel::toggleWeekday,
@@ -73,7 +86,9 @@ internal fun RoutineEditorScreen(
             onSetsStep = viewModel::stepSets,
             onRepsMinStep = viewModel::stepRepsMin,
             onRepsMaxStep = viewModel::stepRepsMax,
-            onSave = viewModel::save,
+            onOpenTarget = viewModel::openTarget,
+            onCloseTarget = viewModel::closeTarget,
+            onDuplicate = viewModel::duplicate,
             onDelete = viewModel::requestDelete,
             onConfirmDelete = viewModel::confirmDelete,
             onDismissDelete = viewModel::dismissDelete,
@@ -81,7 +96,10 @@ internal fun RoutineEditorScreen(
     )
 }
 
-/** The routine editor, drawn from its state alone, so screenshot tests can render it. */
+/**
+ * The routine editor, drawn from its state alone, so screenshot tests can render it. There is
+ * no Save: every change is stored at once. The name is edited right in the title.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun RoutineEditorContent(
@@ -89,12 +107,34 @@ internal fun RoutineEditorContent(
     callbacks: RoutineEditorCallbacks,
     modifier: Modifier = Modifier,
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(if (state.isNew) R.string.routine_title_new else R.string.routine_title_edit))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextField(
+                            value = state.name,
+                            onValueChange = callbacks.onNameChange,
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text(stringResource(R.string.routine_name)) },
+                            textStyle = MaterialTheme.typography.titleLarge,
+                            singleLine = true,
+                            colors = titleFieldColors(),
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                        )
+                        TextField(
+                            value = state.shortName,
+                            onValueChange = callbacks.onShortNameChange,
+                            modifier = Modifier.width(72.dp),
+                            placeholder = { Text(stringResource(R.string.routine_short_name)) },
+                            textStyle = MaterialTheme.typography.titleMedium,
+                            singleLine = true,
+                            colors = titleFieldColors(),
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = callbacks.onBack) {
@@ -104,38 +144,35 @@ internal fun RoutineEditorContent(
                         )
                     }
                 },
+                actions = {
+                    Box {
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_more_vert),
+                                contentDescription = stringResource(R.string.routine_more),
+                            )
+                        }
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.routines_menu_duplicate)) },
+                                onClick = { menuOpen = false; callbacks.onDuplicate() },
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(stringResource(R.string.routines_menu_delete), color = MaterialTheme.colorScheme.error)
+                                },
+                                onClick = { menuOpen = false; callbacks.onDelete() },
+                            )
+                        }
+                    }
+                },
             )
         },
     ) { innerPadding ->
         Column(
             Modifier.padding(innerPadding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = state.name,
-                    onValueChange = callbacks.onNameChange,
-                    modifier = Modifier.weight(1f),
-                    label = { Text(stringResource(R.string.routine_name)) },
-                    singleLine = true,
-                    isError = state.nameError,
-                    supportingText = if (state.nameError) {
-                        { Text(stringResource(R.string.routine_name_error)) }
-                    } else {
-                        null
-                    },
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                )
-                OutlinedTextField(
-                    value = state.shortName,
-                    onValueChange = callbacks.onShortNameChange,
-                    modifier = Modifier.weight(0.5f),
-                    label = { Text(stringResource(R.string.routine_short_name)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                )
-            }
-
             if (state.showWeekdays) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
@@ -163,8 +200,16 @@ internal fun RoutineEditorContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            state.items.forEachIndexed { index, entry ->
-                ItemCard(entry, index, lastIndex = state.items.lastIndex, callbacks = callbacks)
+            if (state.items.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                ) {
+                    state.items.forEachIndexed { index, entry ->
+                        if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        ItemRow(entry, index, lastIndex = state.items.lastIndex, callbacks = callbacks)
+                    }
+                }
             }
             OutlinedButton(
                 onClick = callbacks.onOpenPicker,
@@ -173,27 +218,15 @@ internal fun RoutineEditorContent(
                 Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null, modifier = Modifier.size(20.dp))
                 Text(stringResource(R.string.routine_add_machine), modifier = Modifier.padding(start = 8.dp))
             }
-
-            Button(
-                onClick = callbacks.onSave,
-                enabled = state.canSave,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            ) {
-                Text(stringResource(CoreUiR.string.save))
-            }
-            if (!state.isNew) {
-                OutlinedButton(
-                    onClick = callbacks.onDelete,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                ) {
-                    Text(stringResource(R.string.routine_delete), color = MaterialTheme.colorScheme.error)
-                }
-            }
         }
     }
 
     if (state.pickerOpen) {
         MachinePickerDialog(state, callbacks)
+    }
+    val targetIndex = state.items.indexOfFirst { it.item.machineId == state.targetMachineId }
+    if (targetIndex >= 0) {
+        SetsRepsSheet(entry = state.items[targetIndex], index = targetIndex, callbacks = callbacks)
     }
     if (state.confirmDelete) {
         AlertDialog(
@@ -213,70 +246,103 @@ internal fun RoutineEditorContent(
 }
 
 @Composable
-private fun ItemCard(entry: RoutineEditorItem, index: Int, lastIndex: Int, callbacks: RoutineEditorCallbacks) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-    ) {
-        Column(Modifier.padding(start = 16.dp, top = 4.dp, end = 4.dp, bottom = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                MachineThumb(name = entry.machineName, muscleGroup = entry.muscleGroup, size = 40.dp)
-                Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text(entry.machineName, style = MaterialTheme.typography.bodyLarge)
-                    if (entry.kind != MachineKind.CARDIO) {
-                        Text(
-                            targetText(entry.item),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                IconButton(onClick = { callbacks.onMoveItem(index, true) }, enabled = index > 0) {
-                    Icon(
-                        painterResource(CoreUiR.drawable.ic_arrow_upward),
-                        contentDescription = stringResource(R.string.routine_move_up, entry.machineName),
-                    )
-                }
-                IconButton(onClick = { callbacks.onMoveItem(index, false) }, enabled = index < lastIndex) {
-                    Icon(
-                        painterResource(CoreUiR.drawable.ic_arrow_downward),
-                        contentDescription = stringResource(R.string.routine_move_down, entry.machineName),
-                    )
-                }
-                IconButton(onClick = { callbacks.onRemoveItem(index) }) {
-                    Icon(
-                        painterResource(CoreUiR.drawable.ic_close),
-                        contentDescription = stringResource(R.string.routine_remove, entry.machineName),
-                    )
-                }
-            }
-            if (entry.kind != MachineKind.CARDIO) {
-                FlowRow(
-                    Modifier.padding(end = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    LabelledStepper(
-                        label = stringResource(R.string.routine_sets),
-                        value = entry.item.targetSets.toString(),
-                        onMinus = { callbacks.onSetsStep(index, false) },
-                        onPlus = { callbacks.onSetsStep(index, true) },
-                    )
-                    LabelledStepper(
-                        label = stringResource(R.string.routine_reps_min),
-                        value = entry.item.repsMin.toString(),
-                        onMinus = { callbacks.onRepsMinStep(index, false) },
-                        onPlus = { callbacks.onRepsMinStep(index, true) },
-                    )
-                    LabelledStepper(
-                        label = stringResource(R.string.routine_reps_max),
-                        value = entry.item.repsMax.toString(),
-                        onMinus = { callbacks.onRepsMaxStep(index, false) },
-                        onPlus = { callbacks.onRepsMaxStep(index, true) },
+private fun titleFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = Color.Transparent,
+    unfocusedContainerColor = Color.Transparent,
+    disabledContainerColor = Color.Transparent,
+)
+
+/** One compact machine row: thumb, name, "3 x 8-12"; tap opens the sets / reps sheet. */
+@Composable
+private fun ItemRow(entry: RoutineEditorItem, index: Int, lastIndex: Int, callbacks: RoutineEditorCallbacks) {
+    val cardio = entry.kind == MachineKind.CARDIO
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.weight(1f).defaultMinSize(minHeight = 56.dp)
+                .then(if (cardio) Modifier else Modifier.clickable { callbacks.onOpenTarget(entry.item.machineId) })
+                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            MachineThumb(name = entry.machineName, muscleGroup = entry.muscleGroup, size = 40.dp)
+            Column(Modifier.weight(1f)) {
+                Text(entry.machineName, style = MaterialTheme.typography.bodyLarge)
+                if (!cardio) {
+                    Text(
+                        targetText(entry.item),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
         }
+        MoveButtons(
+            canMoveUp = index > 0,
+            canMoveDown = index < lastIndex,
+            onUp = { callbacks.onMoveItem(index, true) },
+            onDown = { callbacks.onMoveItem(index, false) },
+        )
+        IconButton(onClick = { callbacks.onRemoveItem(index) }) {
+            Icon(
+                painterResource(CoreUiR.drawable.ic_close),
+                contentDescription = stringResource(R.string.routine_remove, entry.machineName),
+            )
+        }
+    }
+}
+
+/** The bottom sheet with the three steppers for one machine's target. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SetsRepsSheet(entry: RoutineEditorItem, index: Int, callbacks: RoutineEditorCallbacks) {
+    ModalBottomSheet(
+        onDismissRequest = callbacks.onCloseTarget,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        SetsRepsSheetContent(entry, index, callbacks)
+    }
+}
+
+/** What is inside the sets / reps sheet, apart from the sheet itself, so it can be tested alone. */
+@Composable
+internal fun SetsRepsSheetContent(entry: RoutineEditorItem, index: Int, callbacks: RoutineEditorCallbacks) {
+    Column(
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(entry.machineName, style = MaterialTheme.typography.titleLarge)
+        Text(
+            targetText(entry.item),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            LabelledStepper(
+                label = stringResource(R.string.routine_sets),
+                value = entry.item.targetSets.toString(),
+                onMinus = { callbacks.onSetsStep(index, false) },
+                onPlus = { callbacks.onSetsStep(index, true) },
+            )
+            LabelledStepper(
+                label = stringResource(R.string.routine_reps_min),
+                value = entry.item.repsMin.toString(),
+                onMinus = { callbacks.onRepsMinStep(index, false) },
+                onPlus = { callbacks.onRepsMinStep(index, true) },
+            )
+            LabelledStepper(
+                label = stringResource(R.string.routine_reps_max),
+                value = entry.item.repsMax.toString(),
+                onMinus = { callbacks.onRepsMaxStep(index, false) },
+                onPlus = { callbacks.onRepsMaxStep(index, true) },
+            )
+        }
+        Button(
+            onClick = callbacks.onCloseTarget,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        ) { Text(stringResource(R.string.routine_close)) }
     }
 }
 
