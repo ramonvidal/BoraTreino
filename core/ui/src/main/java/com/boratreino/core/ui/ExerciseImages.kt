@@ -35,14 +35,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.ExerciseImages
@@ -194,15 +192,9 @@ fun ExerciseCredit(
             append(full)
         } else {
             append(full.substring(0, start))
-            withLink(
-                LinkAnnotation.Clickable(
-                    tag = "license",
-                    styles = TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
-                    linkInteractionListener = { uriHandler.openUri(ExerciseImages.LICENSE_URL) },
-                ),
-            ) { append(license) }
+            withStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)) { append(license) }
             append(full.substring(start + license.length))
         }
     }
-    Text(text, modifier = modifier, style = style.copy(color = MaterialTheme.colorScheme.onSurfaceVariant), textAlign = TextAlign.Start)
+    Text(text, modifier = modifier.clickable { uriHandler.openUri(ExerciseImages.LICENSE_URL) }, style = style.copy(color = MaterialTheme.colorScheme.onSurfaceVariant), textAlign = TextAlign.Start)
 }
