@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="notify_rest_channel">Descanso</string>
+    <string name="notify_rest_channel_description">Contagem entre as séries e o aviso quando acabar</string>
+    <string name="notify_reminders_channel">Lembretes de treino</string>
+    <string name="notify_reminders_channel_description">Um empurrãozinho nos seus dias de treino</string>
+    <string name="notify_rest">Descanso</string>
+    <string name="notify_rest_over">Descanso acabou</string>
+    <string name="notify_next_set">Próxima série</string>
+    <string name="notify_reminder_next_up">Academia hoje? Próxima: %1$s</string>
+    <string name="notify_reminder_time_to_train">Academia hoje? Bora treinar.</string>
+    <string name="notify_reminder_behind_goal">Academia hoje? %1$d de %2$d na semana, treine hoje pra bater a meta.</string>
+    <string name="notify_reminder_next_routine">Próxima: %1$s</string>
+</resources>

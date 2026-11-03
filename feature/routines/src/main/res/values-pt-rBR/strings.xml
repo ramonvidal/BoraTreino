@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="routines_title">Fichas</string>
+    <string name="routines_new_routine">Nova ficha</string>
+    <string name="routines_next_routine">Próxima ficha</string>
+    <string name="routines_mode_in_turn">Em rodízio</string>
+    <string name="routines_mode_weekdays">Por dia da semana</string>
+    <string name="routines_move_up">Subir %1$s</string>
+    <string name="routines_move_down">Descer %1$s</string>
+    <string name="routines_machines">Aparelhos</string>
+    <string name="routines_empty_title">Nenhum aparelho ainda</string>
+    <string name="routines_empty_body">Adicione um da lista abaixo, ou crie o seu.</string>
+    <string name="routines_new_machine">Novo aparelho</string>
+    <string name="routines_archived">Arquivados</string>
+    <string name="routines_add_from_list">Adicionar da lista</string>
+    <string name="routines_add_starter">Adicionar %1$s</string>
+    <string name="routines_expand">Mostrar</string>
+    <string name="routines_collapse">Ocultar</string>
+    <string name="editor_title_new">Novo aparelho</string>
+    <string name="editor_title_edit">Editar aparelho</string>
+    <string name="editor_name">Nome</string>
+    <string name="editor_name_error">Dê um nome ao aparelho.</string>
+    <string name="editor_muscle_group">Grupo muscular</string>
+    <string name="editor_kind">Tipo</string>
+    <string name="editor_kind_weights">Com carga</string>
+    <string name="editor_kind_bodyweight">Peso do corpo</string>
+    <string name="editor_step">Passo da carga</string>
+    <string name="editor_step_value">%1$s kg</string>
+    <string name="editor_rest">Descanso após cada série</string>
+    <string name="editor_rest_default">Padrão</string>
+    <string name="editor_rest_value">%1$d s</string>
+    <string name="editor_setup_note">Regulagem</string>
+    <string name="editor_setup_note_hint">Banco 4, apoio das costas 2</string>
+    <string name="editor_archive">Arquivar</string>
+    <string name="editor_unarchive">Desarquivar</string>
+    <string name="routine_title_new">Nova ficha</string>
+    <string name="routine_title_edit">Editar ficha</string>
+    <string name="routine_name">Nome</string>
+    <string name="routine_name_error">Dê um nome à ficha.</string>
+    <string name="routine_short_name">Nome curto</string>
+    <string name="routine_weekdays">Dias da semana</string>
+    <string name="routine_machines">Aparelhos</string>
+    <string name="routine_no_machines">Nenhum aparelho ainda.</string>
+    <string name="routine_add_machine">Adicionar aparelho</string>
+    <string name="routine_add_machine_empty">Todos os seus aparelhos já estão nesta ficha.</string>
+    <string name="routine_sets">Séries</string>
+    <string name="routine_reps_min">Repetições de</string>
+    <string name="routine_reps_max">Repetições até</string>
+    <string name="routine_move_up">Subir %1$s</string>
+    <string name="routine_move_down">Descer %1$s</string>
+    <string name="routine_remove">Remover %1$s</string>
+    <string name="routine_delete">Apagar ficha</string>
+    <string name="routine_delete_title">Apagar esta ficha?</string>
+    <string name="routine_delete_body">As séries que você registrou continuam guardadas.</string>
+    <string name="routine_delete_confirm">Apagar</string>
+    <plurals name="routines_machine_count">
+        <item quantity="one">%1$d aparelho</item>
+        <item quantity="other">%1$d aparelhos</item>
+    </plurals>
+</resources>

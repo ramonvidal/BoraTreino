@@ -45,6 +45,9 @@ jobs:
             echo "::warning::SIGNING_KEYSTORE_BASE64 is not set: builds use a throwaway key and no release is published."
           fi
 
+      - name: Translations are complete
+        run: python3 translations/i18n.py check
+
       - name: Module structure rules tests
         run: ./gradlew -p build-logic :rules:test
 

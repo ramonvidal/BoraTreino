@@ -1,0 +1,280 @@
+module,key,quantity,english,baianes
+app,app_name,,Bora pro Treino!,Bora pro Treino!
+app,nav_today,,Today,Treino
+app,nav_calendar,,Calendar,Agenda
+app,nav_progress,,Progress,Evolução
+app,nav_routines,,Routines,Fichas
+core/notify,notify_rest_channel,,Rest timer,Descanso
+core/notify,notify_rest_channel_description,,Countdown between sets and the buzz when it is over,Contagem entre as séries e o aviso quando acabar
+core/notify,notify_reminders_channel,,Training reminders,Lembretes de treino
+core/notify,notify_reminders_channel_description,,A nudge on your training days,Um empurrãozinho nos seus dias de treino
+core/notify,notify_rest,,Rest,Descanso
+core/notify,notify_rest_over,,Rest over,Descanso acabou
+core/notify,notify_next_set,,Next set,Próxima série
+core/notify,notify_reminder_next_up,,Gym today? Next up: %1$s,Academia hoje? Próxima: %1$s
+core/notify,notify_reminder_time_to_train,,Gym today? Time to train.,Academia hoje? Bora treinar.
+core/notify,notify_reminder_behind_goal,,"Gym today? %1$d of %2$d this week, train today to stay on your goal.","Academia hoje? %1$d de %2$d na semana, treine hoje pra bater a meta."
+core/notify,notify_reminder_next_routine,,Next up: %1$s,Próxima: %1$s
+core/ui,cancel,,Cancel,Cancelar
+core/ui,save,,Save,Salvar
+core/ui,undo,,Undo,Desfazer
+core/ui,back,,Back,Voltar
+core/ui,error_generic,,Something went wrong. Please try again.,Algo deu errado. Tente de novo.
+core/ui,done,,Done,Concluir
+core/ui,ok,,OK,OK
+core/ui,delete,,Delete,Apagar
+core/ui,unit_kg,,kg,kg
+core/ui,stepper_minus,,Decrease %1$s,Diminuir %1$s
+core/ui,stepper_plus,,Increase %1$s,Aumentar %1$s
+core/ui,number_pad_delete_digit,,Delete last digit,Apagar último dígito
+core/ui,number_pad_decimal_separator,,.,.
+core/ui,weight_kg,,%1$s kg,%1$s kg
+core/ui,set_text,,%1$s kg × %2$d,%1$s kg × %2$d
+core/ui,set_summary_uniform,,%1$d × %2$d at %3$s kg,%1$d × %2$d com %3$s kg
+core/ui,set_summary_same_weight,,%1$s kg: %2$s,%1$s kg: %2$s
+core/ui,set_summary_separator,,", ",", "
+core/ui,muscle_group_legs,,Legs,Pernas
+core/ui,muscle_group_chest,,Chest,Peito
+core/ui,muscle_group_back,,Back,Costas
+core/ui,muscle_group_shoulders,,Shoulders,Ombros
+core/ui,muscle_group_arms,,Arms,Braços
+core/ui,muscle_group_core,,Core,Abdômen
+core/ui,muscle_group_cardio,,Cardio,Cardio
+core/ui,suggestion_try,,Try %1$s kg,Tente %1$s kg
+core/ui,record_heaviest,,New record: %1$s kg,Recorde novo: %1$s kg
+core/ui,record_most_reps,,New record: %1$d reps at %2$s kg,Recorde novo: %1$d reps com %2$s kg
+core/ui,target_text,,%1$d × %2$d–%3$d,%1$d × %2$d–%3$d
+core/ui,target_text_fixed,,%1$d × %2$d,%1$d × %2$d
+core/ui,set_summary_uniform_no_weight,,%1$d × %2$d,%1$d × %2$d
+core/ui,reps_only,one,%d rep,%d repetição
+core/ui,reps_only,other,%d reps,%d repetições
+core/ui,weight_label,,Weight (kg),Peso (kg)
+core/ui,added_weight_label,,Added weight (kg),Peso extra (kg)
+feature/calendar,calendar_week_progress,,This week: %1$d of %2$d,Semana: %1$d de %2$d
+feature/calendar,calendar_streak,one,Streak: %d week,Sequência: %d semana
+feature/calendar,calendar_streak,other,Streak: %d weeks,Sequência: %d semanas
+feature/calendar,calendar_streak_start,one,Train %d day this week to start a streak,Treine %d dia nesta semana pra começar uma sequência
+feature/calendar,calendar_streak_start,other,Train %d days this week to start a streak,Treine %d dias nesta semana pra começar uma sequência
+feature/calendar,calendar_goal_title,,Weekly goal,Meta semanal
+feature/calendar,calendar_goal_label,,Training days per week,Dias de treino por semana
+feature/calendar,calendar_previous_month,,Previous month,Mês anterior
+feature/calendar,calendar_next_month,,Next month,Próximo mês
+feature/calendar,calendar_free_training,,Free training,Treino livre
+feature/calendar,calendar_session_summary,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
+feature/calendar,calendar_time_range,,%1$s–%2$s,%1$s–%2$s
+feature/calendar,calendar_time_open,,"%1$s, training now","%1$s, treinando agora"
+feature/calendar,calendar_edit,,Edit,Editar
+feature/calendar,calendar_delete,,Delete,Apagar
+feature/calendar,calendar_nothing_logged,,Nothing logged,Nada registrado
+feature/calendar,calendar_add_training,,Add a training,Adicionar treino
+feature/calendar,calendar_delete_title,,Delete this training?,Apagar este treino?
+feature/calendar,calendar_delete_message,,The training and all its sets will be removed.,O treino e todas as séries dele serão removidos.
+feature/calendar,calendar_deleted,,Training deleted,Treino apagado
+feature/calendar,calendar_machines,one,%d machine,%d aparelho
+feature/calendar,calendar_machines,other,%d machines,%d aparelhos
+feature/calendar,calendar_sets,one,%d set,%d série
+feature/calendar,calendar_sets,other,%d sets,%d séries
+feature/calendar,calendar_free,,Free,Livre
+feature/calendar,calendar_no_sets,,No sets yet. Add a machine to start.,Nenhuma série ainda. Adicione um aparelho pra começar.
+feature/calendar,calendar_add_set,,Add set,Adicionar série
+feature/calendar,calendar_add_machine,,Add machine,Adicionar aparelho
+feature/calendar,calendar_pick_machine,,Pick a machine,Escolha um aparelho
+feature/calendar,calendar_no_machines,,No machines yet,Nenhum aparelho ainda
+feature/calendar,calendar_session_not_found,,This training no longer exists,Esse treino não existe mais
+feature/calendar,calendar_edit_set,,Edit set,Editar série
+feature/calendar,calendar_set_removed,,Set removed,Série removida
+feature/calendar,calendar_set_number,,Set %1$d,Série %1$d
+feature/calendar,calendar_reps,,Reps,Repetições
+feature/progress,progress_title,,Progress,Evolução
+feature/progress,progress_empty,,Log a training to see your progress.,Registre um treino pra ver sua evolução. Bora!
+feature/progress,progress_summary,,This month: %1$s · %2$s,Neste mês: %1$s · %2$s
+feature/progress,progress_trainings,one,%d training,%d treino
+feature/progress,progress_trainings,other,%d trainings,%d treinos
+feature/progress,progress_records,one,%d record,%d recorde
+feature/progress,progress_records,other,%d records,%d recordes
+feature/progress,progress_most_improved,,Most improved this month,Maiores evoluções do mês
+feature/progress,progress_machines,,Machines,Aparelhos
+feature/progress,progress_from_to_kg,,%1$s → %2$s kg,%1$s → %2$s kg
+feature/progress,progress_from_to_reps,,%1$s → %2$s reps,%1$s → %2$s reps
+feature/progress,progress_best_kg,,Best %1$s kg,Melhor: %1$s kg
+feature/progress,progress_best_reps,one,Best %d rep,Melhor: %d rep
+feature/progress,progress_best_reps,other,Best %d reps,Melhor: %d reps
+feature/progress,progress_last_trained,,Last: %1$s,Último: %1$s
+feature/progress,progress_delta_reps,one,%1$s rep,%1$s rep
+feature/progress,progress_delta_reps,other,%1$s reps,%1$s reps
+feature/progress,progress_sets,one,%d set,%d série
+feature/progress,progress_sets,other,%d sets,%d séries
+feature/progress,progress_detail,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
+feature/progress,progress_detail_pair,,%1$s · %2$s,%1$s · %2$s
+feature/progress,progress_trend_weight,,Trend: %1$s to %2$s kg,Tendência: %1$s a %2$s kg
+feature/progress,progress_trend_reps,,Trend: %1$s to %2$s reps,Tendência: %1$s a %2$s reps
+feature/progress,progress_machine_not_found,,This machine was not found.,Esse aparelho não foi encontrado.
+feature/progress,progress_tile_best,,Best,Melhor
+feature/progress,progress_tile_change,,Change,Variação
+feature/progress,progress_no_change,,No change,Sem variação
+feature/progress,progress_dash,,-,-
+feature/progress,progress_change_needs_two,,Needs 2 sessions,Precisa de 2 treinos
+feature/progress,progress_range_3m,,3 months,3 meses
+feature/progress,progress_range_1y,,1 year,1 ano
+feature/progress,progress_range_all,,All,Tudo
+feature/progress,progress_chart_title_weight,,Top weight (kg),Maior carga (kg)
+feature/progress,progress_chart_title_reps,,Top reps,Mais repetições
+feature/progress,progress_chart_not_enough,,Not enough sessions in this range,Treinos insuficientes neste período
+feature/progress,progress_chart_description_weight,,Top weight from %1$s kg on %2$s to %3$s kg on %4$s; best %5$s kg,Maior carga de %1$s kg em %2$s até %3$s kg em %4$s; melhor %5$s kg
+feature/progress,progress_chart_description_reps,,Top reps from %1$s on %2$s to %3$s on %4$s; best %5$s,Mais repetições de %1$s em %2$s até %3$s em %4$s; melhor %5$s
+feature/progress,progress_chart_description_one_weight,,Top weight %1$s kg on %2$s,Maior carga %1$s kg em %2$s
+feature/progress,progress_chart_description_one_reps,,Top reps %1$s on %2$s,Mais repetições %1$s em %2$s
+feature/progress,progress_sessions,,Sessions,Treinos
+feature/progress,progress_show_all,,Show all,Ver tudo
+feature/routines,routines_title,,Routines,Fichas
+feature/routines,routines_new_routine,,New routine,Nova ficha
+feature/routines,routines_next_routine,,Next routine,Próxima ficha
+feature/routines,routines_mode_in_turn,,In turn,Em rodízio
+feature/routines,routines_mode_weekdays,,On weekdays,Por dia da semana
+feature/routines,routines_move_up,,Move %1$s up,Subir %1$s
+feature/routines,routines_move_down,,Move %1$s down,Descer %1$s
+feature/routines,routines_machine_count,one,%1$d machine,%1$d aparelho
+feature/routines,routines_machine_count,other,%1$d machines,%1$d aparelhos
+feature/routines,routines_machines,,Machines,Aparelhos
+feature/routines,routines_empty_title,,No machines yet,Nenhum aparelho ainda
+feature/routines,routines_empty_body,,"Add one from the list below, or make your own.","Adicione um da lista abaixo, ou crie o seu."
+feature/routines,routines_new_machine,,New machine,Novo aparelho
+feature/routines,routines_archived,,Archived,Arquivados
+feature/routines,routines_add_from_list,,Add from the list,Adicionar da lista
+feature/routines,routines_add_starter,,Add %1$s,Adicionar %1$s
+feature/routines,routines_expand,,Show,Mostrar
+feature/routines,routines_collapse,,Hide,Ocultar
+feature/routines,editor_title_new,,New machine,Novo aparelho
+feature/routines,editor_title_edit,,Edit machine,Editar aparelho
+feature/routines,editor_name,,Name,Nome
+feature/routines,editor_name_error,,Give the machine a name.,Dê um nome ao aparelho.
+feature/routines,editor_muscle_group,,Muscle group,Grupo muscular
+feature/routines,editor_kind,,Kind,Tipo
+feature/routines,editor_kind_weights,,Weights,Com carga
+feature/routines,editor_kind_bodyweight,,Bodyweight,Peso do corpo
+feature/routines,editor_step,,Weight step,Passo da carga
+feature/routines,editor_step_value,,%1$s kg,%1$s kg
+feature/routines,editor_rest,,Rest after each set,Descanso após cada série
+feature/routines,editor_rest_default,,Default,Padrão
+feature/routines,editor_rest_value,,%1$d s,%1$d s
+feature/routines,editor_setup_note,,Setup note,Regulagem
+feature/routines,editor_setup_note_hint,,"Seat 4, back pad 2","Banco 4, apoio das costas 2"
+feature/routines,editor_archive,,Archive,Arquivar
+feature/routines,editor_unarchive,,Unarchive,Desarquivar
+feature/routines,routine_title_new,,New routine,Nova ficha
+feature/routines,routine_title_edit,,Edit routine,Editar ficha
+feature/routines,routine_name,,Name,Nome
+feature/routines,routine_name_error,,Give the routine a name.,Dê um nome à ficha.
+feature/routines,routine_short_name,,Short name,Nome curto
+feature/routines,routine_weekdays,,Weekdays,Dias da semana
+feature/routines,routine_machines,,Machines,Aparelhos
+feature/routines,routine_no_machines,,No machines yet.,Nenhum aparelho ainda.
+feature/routines,routine_add_machine,,Add machine,Adicionar aparelho
+feature/routines,routine_add_machine_empty,,All your machines are already in this routine.,Todos os seus aparelhos já estão nesta ficha.
+feature/routines,routine_sets,,Sets,Séries
+feature/routines,routine_reps_min,,Reps from,Repetições de
+feature/routines,routine_reps_max,,Reps to,Repetições até
+feature/routines,routine_move_up,,Move %1$s up,Subir %1$s
+feature/routines,routine_move_down,,Move %1$s down,Descer %1$s
+feature/routines,routine_remove,,Remove %1$s,Remover %1$s
+feature/routines,routine_delete,,Delete routine,Apagar ficha
+feature/routines,routine_delete_title,,Delete this routine?,Apagar esta ficha?
+feature/routines,routine_delete_body,,Your logged sets are kept.,As séries que você registrou continuam guardadas.
+feature/routines,routine_delete_confirm,,Delete,Apagar
+feature/settings,settings_title,,Settings,Ajustes
+feature/settings,settings_goal_title,,Weekly goal,Meta semanal
+feature/settings,settings_goal_label,,Days per week,Dias por semana
+feature/settings,settings_reminders_title,,Training reminders,Lembretes de treino
+feature/settings,settings_reminders_switch,,Remind me to train,Me lembrar de treinar
+feature/settings,settings_reminders_time,,Time,Hora
+feature/settings,settings_reminders_days,,Days,Dias
+feature/settings,settings_time_picker_title,,Reminder time,Hora do lembrete
+feature/settings,settings_rest_title,,Rest timer,Descanso
+feature/settings,settings_rest_switch,,Count down after each set,Contar depois de cada série
+feature/settings,settings_rest_default,,Default rest,Descanso padrão
+feature/settings,settings_rest_seconds,,%1$d s,%1$d s
+feature/settings,settings_rest_hint,,Each machine can have its own rest time in its editor.,"Cada aparelho pode ter seu próprio descanso, no editor dele."
+feature/settings,settings_notifications_title,,Notifications,Notificações
+feature/settings,settings_notifications_off,,Notifications are off,As notificações estão desligadas
+feature/settings,settings_notifications_allow,,Allow,Permitir
+feature/settings,settings_backup_title,,Backup,Backup
+feature/settings,settings_backup_hint,,A file with your whole training history. Settings stay on this phone.,Um arquivo com todo o seu histórico de treino. Os ajustes ficam neste celular.
+feature/settings,settings_backup_export,,Export backup,Exportar backup
+feature/settings,settings_backup_import,,Import backup,Importar backup
+feature/settings,settings_backup_saved,,Backup saved,Backup salvo
+feature/settings,settings_backup_imported,,Backup imported,Backup importado
+feature/settings,settings_backup_invalid,,That file isn't a Bora pro Treino backup,Esse arquivo não é um backup do Bora pro Treino!
+feature/settings,settings_backup_too_new,,That backup is from a newer version of the app,Esse backup é de uma versão mais nova do app
+feature/settings,settings_import_title,,Import backup,Importar backup
+feature/settings,settings_import_message,,Replace everything on this phone with this backup? %1$s.,Trocar tudo neste celular por este backup? %1$s.
+feature/settings,settings_import_message_dates,,Replace everything on this phone with this backup? %1$s (%2$s).,Trocar tudo neste celular por este backup? %1$s (%2$s).
+feature/settings,settings_import_replace,,Replace,Trocar
+feature/settings,settings_import_counts,,"%1$s, %2$s, %3$s, %4$s","%1$s, %2$s, %3$s, %4$s"
+feature/settings,settings_import_machines,one,%1$s machine,%1$s aparelho
+feature/settings,settings_import_machines,other,%1$s machines,%1$s aparelhos
+feature/settings,settings_import_routines,one,%1$s routine,%1$s ficha
+feature/settings,settings_import_routines,other,%1$s routines,%1$s fichas
+feature/settings,settings_import_trainings,one,%1$s training,%1$s treino
+feature/settings,settings_import_trainings,other,%1$s trainings,%1$s treinos
+feature/settings,settings_import_sets,one,%1$s set,%1$s série
+feature/settings,settings_import_sets,other,%1$s sets,%1$s séries
+feature/settings,settings_updates_title,,App updates,Atualizações do app
+feature/settings,settings_updates_version,,Bora pro Treino! %1$s,Bora pro Treino! %1$s
+feature/settings,settings_updates_check,,Check for updates,Procurar atualização
+feature/settings,settings_updates_up_to_date,,You're up to date,Tá tudo atualizado
+feature/settings,settings_updates_available,,Version %1$s is available,A versão %1$s está disponível
+feature/settings,settings_updates_unreachable,,Couldn't reach the update page,Não deu pra acessar a página de atualização
+feature/settings,settings_language_title,,Language,Idioma
+feature/today,today_app_name,,Bora pro Treino!,Bora pro Treino!
+feature/today,today_open_settings,,Settings,Ajustes
+feature/today,today_pick_to_start,,Pick a machine to start,Escolha um aparelho pra começar
+feature/today,today_all_machines,,All machines,Todos os aparelhos
+feature/today,today_add_machine,,Add machine,Adicionar aparelho
+feature/today,today_done,,Done,Concluir
+feature/today,today_machines_and_sets,,%1$s · %2$s,%1$s · %2$s
+feature/today,today_training_now,,Training now · %1$s,Treinando agora · %1$s
+feature/today,today_done_snackbar,,Done: %1$s,Feito: %1$s
+feature/today,today_machines,one,%d machine,%d aparelho
+feature/today,today_machines,other,%d machines,%d aparelhos
+feature/today,today_sets,one,%d set,%d série
+feature/today,today_sets,other,%d sets,%d séries
+feature/today,today_free,,Free,Livre
+feature/today,today_next_up,,Next up: %1$s,Próxima: %1$s
+feature/today,today_training_now_routine,,Training now · %1$s · %2$s,Treinando agora · %1$s · %2$s
+feature/today,today_rest_day,,Rest day,Dia de descanso
+feature/today,today_also_this_session,,Also this session,Também neste treino
+feature/today,today_progress,,%1$d of %2$d,%1$d de %2$d
+feature/today,today_machine_done,,Done,Feito
+feature/today,today_summary_with_records,,%1$s · %2$s,%1$s · %2$s
+feature/today,today_records,one,%d record,%d recorde
+feature/today,today_records,other,%d records,%d recordes
+feature/today,today_target,,Target %1$s,Meta %1$s
+feature/today,today_missed_twice,,Missed the lowest reps twice,Abaixo do mínimo duas vezes seguidas
+feature/today,today_rest,,Rest %1$s,Descanso %1$s
+feature/today,today_rest_extend,,+%1$d s,+%1$d s
+feature/today,today_rest_skip,,Skip,Pular
+feature/today,today_picker_title,,Pick a machine,Escolha um aparelho
+feature/today,today_recent,,Recent,Recentes
+feature/today,today_more_machines,,More machines,Mais aparelhos
+feature/today,today_new_machine,,New machine,Novo aparelho
+feature/today,today_edit_machine,,Edit machine,Editar aparelho
+feature/today,today_machine_not_found,,This machine was not found,Esse aparelho não foi encontrado
+feature/today,today_first_time,,First time on this machine,Primeira vez neste aparelho
+feature/today,today_last_time,,Last time: %1$s,Da última vez: %1$s
+feature/today,today_last_time_on,,Last time: %1$s · %2$s,Da última vez: %1$s · %2$s
+feature/today,today_this_session,,This session,Este treino
+feature/today,today_edit_set,,Edit set,Editar série
+feature/today,today_set_number,,Set %1$d,Série %1$d
+feature/today,today_reps,,Reps,Repetições
+feature/today,today_same_again,,Same again,Repetir
+feature/today,today_log_set,,Log set,Registrar série
+feature/today,today_delete,,Delete,Apagar
+feature/today,today_set_removed,,Set removed,Série removida
+feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível
+feature/update,update_install,,Install,Instalar
+feature/update,update_later,,Later,Depois
+feature/update,update_allow,,"To update, allow Bora pro Treino! to install apps (only needed once).","Pra atualizar, permita que o Bora pro Treino! instale apps (só uma vez)."
+feature/update,update_allow_button,,Allow,Permitir
+feature/update,update_downloading,,Downloading…,Baixando…
+feature/update,update_failed,,The update couldn't be downloaded. Check your connection.,Não deu pra baixar a atualização. Veja sua conexão.
+feature/update,update_retry,,Try again,Tentar de novo

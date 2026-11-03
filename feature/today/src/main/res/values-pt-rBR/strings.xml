@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="today_app_name">Bora pro Treino!</string>
+    <string name="today_open_settings">Ajustes</string>
+    <string name="today_pick_to_start">Escolha um aparelho pra começar</string>
+    <string name="today_all_machines">Todos os aparelhos</string>
+    <string name="today_add_machine">Adicionar aparelho</string>
+    <string name="today_done">Concluir</string>
+    <string name="today_machines_and_sets">%1$s · %2$s</string>
+    <string name="today_training_now">Treinando agora · %1$s</string>
+    <string name="today_done_snackbar">Feito: %1$s</string>
+    <string name="today_free">Livre</string>
+    <string name="today_next_up">Próxima: %1$s</string>
+    <string name="today_training_now_routine">Treinando agora · %1$s · %2$s</string>
+    <string name="today_rest_day">Dia de descanso</string>
+    <string name="today_also_this_session">Também neste treino</string>
+    <string name="today_progress">%1$d de %2$d</string>
+    <string name="today_machine_done">Feito</string>
+    <string name="today_summary_with_records">%1$s · %2$s</string>
+    <string name="today_target">Meta %1$s</string>
+    <string name="today_missed_twice">Abaixo do mínimo duas vezes seguidas</string>
+    <string name="today_rest">Descanso %1$s</string>
+    <string name="today_rest_extend">+%1$d s</string>
+    <string name="today_rest_skip">Pular</string>
+    <string name="today_picker_title">Escolha um aparelho</string>
+    <string name="today_recent">Recentes</string>
+    <string name="today_more_machines">Mais aparelhos</string>
+    <string name="today_new_machine">Novo aparelho</string>
+    <string name="today_edit_machine">Editar aparelho</string>
+    <string name="today_machine_not_found">Esse aparelho não foi encontrado</string>
+    <string name="today_first_time">Primeira vez neste aparelho</string>
+    <string name="today_last_time">Da última vez: %1$s</string>
+    <string name="today_last_time_on">Da última vez: %1$s · %2$s</string>
+    <string name="today_this_session">Este treino</string>
+    <string name="today_edit_set">Editar série</string>
+    <string name="today_set_number">Série %1$d</string>
+    <string name="today_reps">Repetições</string>
+    <string name="today_same_again">Repetir</string>
+    <string name="today_log_set">Registrar série</string>
+    <string name="today_delete">Apagar</string>
+    <string name="today_set_removed">Série removida</string>
+    <plurals name="today_machines">
+        <item quantity="one">%d aparelho</item>
+        <item quantity="other">%d aparelhos</item>
+    </plurals>
+    <plurals name="today_sets">
+        <item quantity="one">%d série</item>
+        <item quantity="other">%d séries</item>
+    </plurals>
+    <plurals name="today_records">
+        <item quantity="one">%d recorde</item>
+        <item quantity="other">%d recordes</item>
+    </plurals>
+</resources>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="progress_title">Evolução</string>
+    <string name="progress_empty">Registre um treino pra ver sua evolução. Bora!</string>
+    <string name="progress_summary">Neste mês: %1$s · %2$s</string>
+    <string name="progress_most_improved">Maiores evoluções do mês</string>
+    <string name="progress_machines">Aparelhos</string>
+    <string name="progress_from_to_kg">%1$s → %2$s kg</string>
+    <string name="progress_from_to_reps">%1$s → %2$s reps</string>
+    <string name="progress_best_kg">Melhor: %1$s kg</string>
+    <string name="progress_last_trained">Último: %1$s</string>
+    <string name="progress_detail">%1$s · %2$s · %3$s</string>
+    <string name="progress_detail_pair">%1$s · %2$s</string>
+    <string name="progress_trend_weight">Tendência: %1$s a %2$s kg</string>
+    <string name="progress_trend_reps">Tendência: %1$s a %2$s reps</string>
+    <string name="progress_machine_not_found">Esse aparelho não foi encontrado.</string>
+    <string name="progress_tile_best">Melhor</string>
+    <string name="progress_tile_change">Variação</string>
+    <string name="progress_no_change">Sem variação</string>
+    <string name="progress_dash">-</string>
+    <string name="progress_change_needs_two">Precisa de 2 treinos</string>
+    <string name="progress_range_3m">3 meses</string>
+    <string name="progress_range_1y">1 ano</string>
+    <string name="progress_range_all">Tudo</string>
+    <string name="progress_chart_title_weight">Maior carga (kg)</string>
+    <string name="progress_chart_title_reps">Mais repetições</string>
+    <string name="progress_chart_not_enough">Treinos insuficientes neste período</string>
+    <string name="progress_chart_description_weight">Maior carga de %1$s kg em %2$s até %3$s kg em %4$s; melhor %5$s kg</string>
+    <string name="progress_chart_description_reps">Mais repetições de %1$s em %2$s até %3$s em %4$s; melhor %5$s</string>
+    <string name="progress_chart_description_one_weight">Maior carga %1$s kg em %2$s</string>
+    <string name="progress_chart_description_one_reps">Mais repetições %1$s em %2$s</string>
+    <string name="progress_sessions">Treinos</string>
+    <string name="progress_show_all">Ver tudo</string>
+    <plurals name="progress_trainings">
+        <item quantity="one">%d treino</item>
+        <item quantity="other">%d treinos</item>
+    </plurals>
+    <plurals name="progress_records">
+        <item quantity="one">%d recorde</item>
+        <item quantity="other">%d recordes</item>
+    </plurals>
+    <plurals name="progress_best_reps">
+        <item quantity="one">Melhor: %d rep</item>
+        <item quantity="other">Melhor: %d reps</item>
+    </plurals>
+    <plurals name="progress_delta_reps">
+        <item quantity="one">%1$s rep</item>
+        <item quantity="other">%1$s reps</item>
+    </plurals>
+    <plurals name="progress_sets">
+        <item quantity="one">%d série</item>
+        <item quantity="other">%d séries</item>
+    </plurals>
+</resources>

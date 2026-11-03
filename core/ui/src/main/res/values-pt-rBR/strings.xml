@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="cancel">Cancelar</string>
+    <string name="save">Salvar</string>
+    <string name="undo">Desfazer</string>
+    <string name="back">Voltar</string>
+    <string name="error_generic">Algo deu errado. Tente de novo.</string>
+    <string name="done">Concluir</string>
+    <string name="ok">OK</string>
+    <string name="delete">Apagar</string>
+    <string name="unit_kg">kg</string>
+    <string name="stepper_minus">Diminuir %1$s</string>
+    <string name="stepper_plus">Aumentar %1$s</string>
+    <string name="number_pad_delete_digit">Apagar último dígito</string>
+    <string name="number_pad_decimal_separator">.</string>
+    <string name="weight_kg">%1$s kg</string>
+    <string name="set_text">%1$s kg × %2$d</string>
+    <string name="set_summary_uniform">%1$d × %2$d com %3$s kg</string>
+    <string name="set_summary_same_weight">%1$s kg: %2$s</string>
+    <string name="set_summary_separator">", "</string>
+    <string name="muscle_group_legs">Pernas</string>
+    <string name="muscle_group_chest">Peito</string>
+    <string name="muscle_group_back">Costas</string>
+    <string name="muscle_group_shoulders">Ombros</string>
+    <string name="muscle_group_arms">Braços</string>
+    <string name="muscle_group_core">Abdômen</string>
+    <string name="muscle_group_cardio">Cardio</string>
+    <string name="suggestion_try">Tente %1$s kg</string>
+    <string name="record_heaviest">Recorde novo: %1$s kg</string>
+    <string name="record_most_reps">Recorde novo: %1$d reps com %2$s kg</string>
+    <string name="target_text">%1$d × %2$d–%3$d</string>
+    <string name="target_text_fixed">%1$d × %2$d</string>
+    <string name="set_summary_uniform_no_weight">%1$d × %2$d</string>
+    <string name="weight_label">Peso (kg)</string>
+    <string name="added_weight_label">Peso extra (kg)</string>
+    <plurals name="reps_only">
+        <item quantity="one">%d repetição</item>
+        <item quantity="other">%d repetições</item>
+    </plurals>
+</resources>

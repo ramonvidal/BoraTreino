@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="app_name">Bora pro Treino!</string>
+    <string name="nav_today">Treino</string>
+    <string name="nav_calendar">Agenda</string>
+    <string name="nav_progress">Evolução</string>
+    <string name="nav_routines">Fichas</string>
+</resources>

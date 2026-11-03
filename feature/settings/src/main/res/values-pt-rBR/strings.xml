@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_goal_title">Meta semanal</string>
+    <string name="settings_goal_label">Dias por semana</string>
+    <string name="settings_reminders_title">Lembretes de treino</string>
+    <string name="settings_reminders_switch">Me lembrar de treinar</string>
+    <string name="settings_reminders_time">Hora</string>
+    <string name="settings_reminders_days">Dias</string>
+    <string name="settings_time_picker_title">Hora do lembrete</string>
+    <string name="settings_rest_title">Descanso</string>
+    <string name="settings_rest_switch">Contar depois de cada série</string>
+    <string name="settings_rest_default">Descanso padrão</string>
+    <string name="settings_rest_seconds">%1$d s</string>
+    <string name="settings_rest_hint">Cada aparelho pode ter seu próprio descanso, no editor dele.</string>
+    <string name="settings_notifications_title">Notificações</string>
+    <string name="settings_notifications_off">As notificações estão desligadas</string>
+    <string name="settings_notifications_allow">Permitir</string>
+    <string name="settings_backup_title">Backup</string>
+    <string name="settings_backup_hint">Um arquivo com todo o seu histórico de treino. Os ajustes ficam neste celular.</string>
+    <string name="settings_backup_export">Exportar backup</string>
+    <string name="settings_backup_import">Importar backup</string>
+    <string name="settings_backup_saved">Backup salvo</string>
+    <string name="settings_backup_imported">Backup importado</string>
+    <string name="settings_backup_invalid">Esse arquivo não é um backup do Bora pro Treino!</string>
+    <string name="settings_backup_too_new">Esse backup é de uma versão mais nova do app</string>
+    <string name="settings_import_title">Importar backup</string>
+    <string name="settings_import_message">Trocar tudo neste celular por este backup? %1$s.</string>
+    <string name="settings_import_message_dates">Trocar tudo neste celular por este backup? %1$s (%2$s).</string>
+    <string name="settings_import_replace">Trocar</string>
+    <string name="settings_import_counts">%1$s, %2$s, %3$s, %4$s</string>
+    <string name="settings_updates_title">Atualizações do app</string>
+    <string name="settings_updates_version">Bora pro Treino! %1$s</string>
+    <string name="settings_updates_check">Procurar atualização</string>
+    <string name="settings_updates_up_to_date">Tá tudo atualizado</string>
+    <string name="settings_updates_available">A versão %1$s está disponível</string>
+    <string name="settings_updates_unreachable">Não deu pra acessar a página de atualização</string>
+    <string name="settings_language_title">Idioma</string>
+    <plurals name="settings_import_machines">
+        <item quantity="one">%1$s aparelho</item>
+        <item quantity="other">%1$s aparelhos</item>
+    </plurals>
+    <plurals name="settings_import_routines">
+        <item quantity="one">%1$s ficha</item>
+        <item quantity="other">%1$s fichas</item>
+    </plurals>
+    <plurals name="settings_import_trainings">
+        <item quantity="one">%1$s treino</item>
+        <item quantity="other">%1$s treinos</item>
+    </plurals>
+    <plurals name="settings_import_sets">
+        <item quantity="one">%1$s série</item>
+        <item quantity="other">%1$s séries</item>
+    </plurals>
+</resources>

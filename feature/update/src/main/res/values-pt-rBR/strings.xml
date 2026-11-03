@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="update_available">Bora pro Treino! %1$s está disponível</string>
+    <string name="update_install">Instalar</string>
+    <string name="update_later">Depois</string>
+    <string name="update_allow">Pra atualizar, permita que o Bora pro Treino! instale apps (só uma vez).</string>
+    <string name="update_allow_button">Permitir</string>
+    <string name="update_downloading">Baixando…</string>
+    <string name="update_failed">Não deu pra baixar a atualização. Veja sua conexão.</string>
+    <string name="update_retry">Tentar de novo</string>
+</resources>

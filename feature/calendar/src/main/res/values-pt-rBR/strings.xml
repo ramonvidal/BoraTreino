@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="calendar_week_progress">Semana: %1$d de %2$d</string>
+    <string name="calendar_goal_title">Meta semanal</string>
+    <string name="calendar_goal_label">Dias de treino por semana</string>
+    <string name="calendar_previous_month">Mês anterior</string>
+    <string name="calendar_next_month">Próximo mês</string>
+    <string name="calendar_free_training">Treino livre</string>
+    <string name="calendar_session_summary">%1$s · %2$s · %3$s</string>
+    <string name="calendar_time_range">%1$s–%2$s</string>
+    <string name="calendar_time_open">%1$s, treinando agora</string>
+    <string name="calendar_edit">Editar</string>
+    <string name="calendar_delete">Apagar</string>
+    <string name="calendar_nothing_logged">Nada registrado</string>
+    <string name="calendar_add_training">Adicionar treino</string>
+    <string name="calendar_delete_title">Apagar este treino?</string>
+    <string name="calendar_delete_message">O treino e todas as séries dele serão removidos.</string>
+    <string name="calendar_deleted">Treino apagado</string>
+    <string name="calendar_free">Livre</string>
+    <string name="calendar_no_sets">Nenhuma série ainda. Adicione um aparelho pra começar.</string>
+    <string name="calendar_add_set">Adicionar série</string>
+    <string name="calendar_add_machine">Adicionar aparelho</string>
+    <string name="calendar_pick_machine">Escolha um aparelho</string>
+    <string name="calendar_no_machines">Nenhum aparelho ainda</string>
+    <string name="calendar_session_not_found">Esse treino não existe mais</string>
+    <string name="calendar_edit_set">Editar série</string>
+    <string name="calendar_set_removed">Série removida</string>
+    <string name="calendar_set_number">Série %1$d</string>
+    <string name="calendar_reps">Repetições</string>
+    <plurals name="calendar_streak">
+        <item quantity="one">Sequência: %d semana</item>
+        <item quantity="other">Sequência: %d semanas</item>
+    </plurals>
+    <plurals name="calendar_streak_start">
+        <item quantity="one">Treine %d dia nesta semana pra começar uma sequência</item>
+        <item quantity="other">Treine %d dias nesta semana pra começar uma sequência</item>
+    </plurals>
+    <plurals name="calendar_machines">
+        <item quantity="one">%d aparelho</item>
+        <item quantity="other">%d aparelhos</item>
+    </plurals>
+    <plurals name="calendar_sets">
+        <item quantity="one">%d série</item>
+        <item quantity="other">%d séries</item>
+    </plurals>
+</resources>
