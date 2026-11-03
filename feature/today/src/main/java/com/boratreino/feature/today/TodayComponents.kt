@@ -17,6 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.boratreino.core.model.Machine
+import com.boratreino.core.ui.MachineThumb
 
 /** "3 machines · 9 sets", with the right singular forms. */
 internal fun Resources.machinesAndSets(machines: Int, sets: Int, records: Int = 0): String {
