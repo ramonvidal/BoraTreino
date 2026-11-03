@@ -22,8 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +31,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -52,43 +51,55 @@ import com.boratreino.core.model.ExerciseImages
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.StarterMachines
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
-/** Decodes exercise pictures from the app's assets, keeping about 60 of them in memory. */
+/** The pictures are square, this many pixels on a side. */
+private const val SOURCE_PX = 360
+
+/**
+ * Exercise pictures from the app's assets, decoded synchronously (they are small WebP files) and kept
+ * in an in-memory cache of about 60 bitmaps keyed by picture, frame and sample size.
+ */
 private object ExerciseBitmaps {
     private val cache = LruCache<String, Bitmap>(60)
 
-    /** Frame 1 (start) or 2 (end) of [slug]; null when the file is missing or cannot be decoded. */
-    suspend fun load(context: Context, slug: String, frame: Int): ImageBitmap? {
-        val key = "$slug-$frame"
+    /** Frame 1 (start) or 2 (end) of [slug] at 1/[sampleSize] scale; null when missing or undecodable. */
+    fun load(context: Context, slug: String, frame: Int, sampleSize: Int): ImageBitmap? {
+        val key = "$slug-$frame@$sampleSize"
         cache.get(key)?.let { return it.asImageBitmap() }
-        val decoded = withContext(Dispatchers.IO) { decode(context, key) }
-        if (decoded == null) return null
+        val decoded = decode(context, "$slug-$frame", sampleSize) ?: return null
         cache.put(key, decoded)
         return decoded.asImageBitmap()
     }
+
+    /** The largest power of two that still leaves at least [targetPx] pixels. */
+    fun sampleSizeFor(targetPx: Int): Int {
+        var sample = 1
+        while (SOURCE_PX / (sample * 2) >= targetPx) sample *= 2
+        return sample
+    }
 }
 
-private fun decode(context: Context, key: String): Bitmap? =
+private fun decode(context: Context, name: String, sampleSize: Int): Bitmap? =
     try {
-        context.assets.open("exercises/$key.webp").use { BitmapFactory.decodeStream(it) }
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        context.assets.open("exercises/$name.webp").use { BitmapFactory.decodeStream(it, null, options) }
     } catch (_: Exception) {
         null
     }
 
-/** A white square with one frame of an exercise picture; the placeholder icon while loading or on failure. */
+/** A white square with one frame of an exercise picture; the placeholder icon when there is none. */
 @Composable
-private fun ExerciseTile(slug: String?, frame: Int, description: String, modifier: Modifier) {
+private fun ExerciseTile(slug: String?, frame: Int, targetSize: Dp, description: String, modifier: Modifier) {
     val context = LocalContext.current
-    val bitmap by produceState<ImageBitmap?>(initialValue = null, slug, frame) {
-        value = if (slug == null) null else ExerciseBitmaps.load(context, slug, frame)
+    val targetPx = with(LocalDensity.current) { targetSize.roundToPx() }
+    val sampleSize = ExerciseBitmaps.sampleSizeFor(targetPx)
+    val bitmap = remember(slug, frame, sampleSize) {
+        if (slug == null) null else ExerciseBitmaps.load(context, slug, frame, sampleSize)
     }
     val shape = RoundedCornerShape(10.dp)
-    val loaded = bitmap
-    if (loaded != null) {
+    if (bitmap != null) {
         Box(modifier.clip(shape).background(Color.White).semantics { contentDescription = description }) {
-            Image(bitmap = loaded, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.matchParentSize())
+            Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.matchParentSize())
         }
     } else {
         Box(
@@ -121,7 +132,7 @@ fun MachineThumb(
     val slug = remember(name) { StarterMachines.imageFor(name) }
     val description = if (slug != null) stringResource(R.string.exercise_image_description, name) else stringResource(R.string.exercise_no_image)
     val clickable = if (slug != null && onClick != null) Modifier.clickable(onClick = onClick) else Modifier
-    ExerciseTile(slug, frame = 1, description = description, modifier = modifier.size(size).then(clickable))
+    ExerciseTile(slug, frame = 1, targetSize = size, description = description, modifier = modifier.size(size).then(clickable))
 }
 
 /** [MachineThumb] for a stored machine. */
@@ -161,7 +172,7 @@ fun ExercisePreviewDialog(machine: Machine, onDismiss: () -> Unit) {
 @Composable
 private fun Frame(slug: String?, frame: Int, label: String, description: String, modifier: Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        ExerciseTile(slug, frame, description, Modifier.widthIn(max = 150.dp).fillMaxWidth().aspectRatio(1f))
+        ExerciseTile(slug, frame, 150.dp, description, Modifier.widthIn(max = 150.dp).fillMaxWidth().aspectRatio(1f))
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
