@@ -16,27 +16,28 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.platform.LocalContext
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.ui.RoutineBadge
-import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
 
@@ -52,19 +53,29 @@ internal fun RoutinesScreen(
         callbacks = RoutinesCallbacks(
             onNewMachine = { onOpenEditor(null) },
             onEditMachine = { onOpenEditor(it) },
-            onAddStarter = viewModel::addStarter,
             onToggleArchived = viewModel::toggleArchived,
             onToggleStarters = viewModel::toggleStarters,
             onNewRoutine = { onOpenRoutine(null) },
             onOpenRoutine = { onOpenRoutine(it) },
             onMoveRoutine = viewModel::moveRoutine,
             onScheduleModeChange = viewModel::setScheduleMode,
+            onSearchStarters = viewModel::searchStarters,
+            onToggleStarter = viewModel::toggleStarter,
+            onAddSelectedStarters = viewModel::addSelectedStarters,
+            onDeleteMachine = viewModel::deleteMachine,
+            onConfirmDelete = viewModel::confirmDelete,
+            onArchiveInstead = viewModel::archiveInstead,
+            onDismissDelete = viewModel::dismissDelete,
         ),
         modifier = Modifier.fillMaxSize(),
     )
 }
 
-/** The Routines tab, drawn from its state alone, so screenshot tests can render it. */
+/**
+ * The Routines tab, drawn from its state alone, so screenshot tests can render it. Top to
+ * bottom: the intro card, your gym's machines, the starter list, New machine and Archived,
+ * then the routines (hidden until the gym has a machine).
+ */
 @Composable
 internal fun RoutinesContent(
     state: RoutinesUiState,
@@ -79,34 +90,24 @@ internal fun RoutinesContent(
         item {
             Text(stringResource(R.string.routines_title), style = MaterialTheme.typography.headlineMedium)
         }
-        item { RoutinesSection(state, callbacks) }
+        item { IntroCard() }
         item {
-            SectionTitle(stringResource(R.string.routines_machines))
-        }
-        if (state.isEmpty) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(stringResource(R.string.routines_empty_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.routines_empty_body),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
+            SectionTitle(stringResource(R.string.routines_gym_heading, state.gymCount))
         }
         items(state.machineGroups, key = { "g-" + it.muscleGroup.name }) { group ->
             GroupCard(title = group.muscleGroup.label()) {
                 group.machines.forEachIndexed { index, machine ->
                     if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    MachineRow(machine, onClick = { callbacks.onEditMachine(machine.id) })
+                    MachineRow(
+                        machine = machine,
+                        onClick = { callbacks.onEditMachine(machine.id) },
+                        onDelete = { callbacks.onDeleteMachine(machine) },
+                    )
                 }
             }
+        }
+        if (state.starterGroups.isNotEmpty() || state.startersSearch.isNotBlank()) {
+            item { StartersCard(state, callbacks) }
         }
         item {
             Button(
@@ -130,31 +131,117 @@ internal fun RoutinesContent(
                     GroupCard(title = null) {
                         state.archived.forEachIndexed { index, machine ->
                             if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                            MachineRow(machine, onClick = { callbacks.onEditMachine(machine.id) })
+                            MachineRow(
+                                machine = machine,
+                                onClick = { callbacks.onEditMachine(machine.id) },
+                                onDelete = { callbacks.onDeleteMachine(machine) },
+                            )
                         }
                     }
                 }
             }
         }
-        if (state.starterGroups.isNotEmpty()) {
+        if (state.gymCount > 0) {
             item {
-                FoldHeader(
-                    title = stringResource(R.string.routines_add_from_list),
-                    expanded = state.startersExpanded,
-                    onClick = callbacks.onToggleStarters,
-                )
+                SectionTitle(stringResource(R.string.routines_section))
             }
+            item { RoutinesSection(state, callbacks) }
+        }
+    }
+
+    DeleteMachineDialog(
+        dialog = state.deleteDialog,
+        onConfirm = callbacks.onConfirmDelete,
+        onArchiveInstead = callbacks.onArchiveInstead,
+        onDismiss = callbacks.onDismissDelete,
+    )
+}
+
+/** "Your gym": says where every machine and exercise gets registered. */
+@Composable
+private fun IntroCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.routines_intro_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.routines_intro_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** "Add from the list": folded card with search, checkbox rows and "Add N selected". */
+@Composable
+private fun StartersCard(state: RoutinesUiState, callbacks: RoutinesCallbacks) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FoldHeader(
+                title = stringResource(R.string.routines_add_from_list),
+                expanded = state.startersExpanded,
+                onClick = callbacks.onToggleStarters,
+            )
             if (state.startersExpanded) {
-                items(state.starterGroups, key = { "s-" + it.muscleGroup.name }) { group ->
-                    GroupCard(title = group.muscleGroup.label()) {
-                        group.starters.forEachIndexed { index, starter ->
-                            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                            StarterRow(starter, onClick = { callbacks.onAddStarter(starter) })
-                        }
+                OutlinedTextField(
+                    value = state.startersSearch,
+                    onValueChange = callbacks.onSearchStarters,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.routines_search)) },
+                    singleLine = true,
+                )
+                if (state.starterGroups.isEmpty()) {
+                    Text(
+                        stringResource(R.string.routines_no_matches),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+                state.starterGroups.forEach { group ->
+                    Text(
+                        group.muscleGroup.label(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    group.starters.forEach { starter ->
+                        StarterRow(
+                            name = starter.displayName(state.portuguese),
+                            checked = starter.name in state.selectedStarters,
+                            onClick = { callbacks.onToggleStarter(starter) },
+                        )
                     }
                 }
+                val count = state.selectedStarters.size
+                if (count > 0) {
+                    val label = LocalContext.current.resources
+                        .getQuantityString(R.plurals.routines_add_selected, count, count)
+                    Button(
+                        onClick = callbacks.onAddSelectedStarters,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    ) { Text(label) }
+                }
+                androidx.compose.foundation.layout.Spacer(Modifier.size(4.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun StarterRow(name: String, checked: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.padding(end = 12.dp))
+        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
     }
 }
 
@@ -278,41 +365,30 @@ private fun FoldHeader(title: String, expanded: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun MachineRow(machine: Machine, onClick: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(machine.name, style = MaterialTheme.typography.bodyLarge)
-        val note = machine.setupNote
-        if (note != null) {
-            Text(
-                note,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
+private fun MachineRow(machine: Machine, onClick: () -> Unit, onDelete: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            Modifier.weight(1f).defaultMinSize(minHeight = 56.dp).clickable(onClick = onClick)
+                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(machine.name, style = MaterialTheme.typography.bodyLarge)
+            val note = machine.setupNote
+            if (note != null) {
+                Text(
+                    note,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
+        IconButton(onClick = onDelete) {
+            Icon(
+                painter = painterResource(CoreUiR.drawable.ic_delete),
+                contentDescription = stringResource(R.string.routines_delete_machine, machine.name),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-@Composable
-private fun StarterRow(starter: StarterMachine, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            starter.name,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f),
-        )
-        Icon(
-            painter = painterResource(CoreUiR.drawable.ic_add),
-            contentDescription = stringResource(R.string.routines_add_starter, starter.name),
-            modifier = Modifier.size(20.dp),
-        )
     }
 }

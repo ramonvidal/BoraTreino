@@ -10,13 +10,9 @@
         <item quantity="one">%1$d machine</item>
         <item quantity="other">%1$d machines</item>
     </plurals>
-    <string name="routines_machines">Machines</string>
-    <string name="routines_empty_title">No machines yet</string>
-    <string name="routines_empty_body">Add one from the list below, or make your own.</string>
     <string name="routines_new_machine">New machine</string>
     <string name="routines_archived">Archived</string>
     <string name="routines_add_from_list">Add from the list</string>
-    <string name="routines_add_starter">Add %1$s</string>
     <string name="routines_expand">Show</string>
     <string name="routines_collapse">Hide</string>
     <string name="editor_title_new">New machine</string>
@@ -56,4 +52,27 @@
     <string name="routine_delete_title">Delete this routine?</string>
     <string name="routine_delete_body">Your logged sets are kept.</string>
     <string name="routine_delete_confirm">Delete</string>
+    <string name="routines_intro_title">Your gym</string>
+    <string name="routines_intro_body">Register every machine and exercise your gym has. Your routines (fichas) are built from this list.</string>
+    <string name="routines_gym_heading">Machines and exercises \u00b7 %1$d</string>
+    <string name="routines_section">Routines</string>
+    <string name="routines_search">Search</string>
+    <string name="routines_no_matches">No matches.</string>
+    <string name="routines_delete_machine">Delete %1$s</string>
+    <plurals name="routines_add_selected">
+        <item quantity="one">Add %1$d selected</item>
+        <item quantity="other">Add %1$d selected</item>
+    </plurals>
+    <string name="editor_delete">Delete</string>
+    <string name="delete_title">Delete %1$s?</string>
+    <string name="delete_also_removed">It will also be removed from: %1$s.</string>
+    <string name="delete_confirm">Delete</string>
+    <plurals name="delete_has_sets">
+        <item quantity="one">%1$s has %2$d logged set, so deleting it would erase that history.</item>
+        <item quantity="other">%1$s has %2$d logged sets, so deleting it would erase that history.</item>
+    </plurals>
+    <string name="delete_archive_advice">Archive it instead: it disappears from your lists and keeps its history.</string>
+    <string name="delete_archive">Archive</string>
+    <string name="routine_picker_title">From your gym\'s list</string>
+    <string name="routine_picker_note">Missing one? Add it first in Machines and exercises.</string>
 </resources>

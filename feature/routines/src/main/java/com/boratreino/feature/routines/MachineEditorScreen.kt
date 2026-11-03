@@ -61,6 +61,10 @@ internal fun MachineEditorScreen(
             onRestChange = viewModel::setRest,
             onSave = viewModel::save,
             onToggleArchived = viewModel::toggleArchived,
+            onDelete = viewModel::requestDelete,
+            onConfirmDelete = viewModel::confirmDelete,
+            onArchiveInstead = viewModel::archiveInstead,
+            onDismissDelete = viewModel::dismissDelete,
         ),
     )
 }
@@ -211,9 +215,23 @@ internal fun MachineEditorContent(
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
+                OutlinedButton(
+                    onClick = callbacks.onDelete,
+                    enabled = !state.loading,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                ) {
+                    Text(stringResource(R.string.editor_delete), color = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }
+
+    DeleteMachineDialog(
+        dialog = state.deleteDialog,
+        onConfirm = callbacks.onConfirmDelete,
+        onArchiveInstead = callbacks.onArchiveInstead,
+        onDismiss = callbacks.onDismissDelete,
+    )
 }
 
 @Composable

@@ -286,9 +286,14 @@ private fun LabelledStepper(label: String, value: String, onMinus: () -> Unit, o
 private fun MachinePickerDialog(state: RoutineEditorUiState, callbacks: RoutineEditorCallbacks) {
     AlertDialog(
         onDismissRequest = callbacks.onClosePicker,
-        title = { Text(stringResource(R.string.routine_add_machine)) },
+        title = { Text(stringResource(R.string.routine_picker_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    stringResource(R.string.routine_picker_note),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if (state.available.isEmpty()) {
                     Text(
                         stringResource(R.string.routine_add_machine_empty),

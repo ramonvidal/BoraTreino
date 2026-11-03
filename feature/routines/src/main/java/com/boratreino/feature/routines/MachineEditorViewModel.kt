@@ -33,6 +33,7 @@ internal data class MachineEditorUiState(
     /** True once the name has been edited (or a save was tried), so the error doesn't show on an untouched new form. */
     val nameTouched: Boolean = false,
     val done: Boolean = false,
+    val deleteDialog: DeleteDialog? = null,
 ) {
     val isNew: Boolean get() = machineId == 0L
     val nameBlank: Boolean get() = name.isBlank()
@@ -50,6 +51,10 @@ internal data class MachineEditorCallbacks(
     val onRestChange: (Int?) -> Unit = {},
     val onSave: () -> Unit = {},
     val onToggleArchived: () -> Unit = {},
+    val onDelete: () -> Unit = {},
+    val onConfirmDelete: () -> Unit = {},
+    val onArchiveInstead: () -> Unit = {},
+    val onDismissDelete: () -> Unit = {},
 )
 
 @HiltViewModel
@@ -131,4 +136,40 @@ class MachineEditorViewModel @Inject constructor(
             _uiState.update { it.copy(archived = !s.archived, done = true) }
         }
     }
+
+    /** Looks at the machine's history first and decides which question to ask. */
+    internal fun requestDelete() {
+        val s = _uiState.value
+        if (s.isNew) return
+        val machine = original ?: return
+        viewModelScope.launch {
+            val usage = machines.usage(machine.id)
+            val dialog = if (usage.canDelete) {
+                DeleteDialog.Confirm(machine, usage.routineNames)
+            } else {
+                DeleteDialog.ArchiveInstead(machine, usage.setCount)
+            }
+            _uiState.update { it.copy(deleteDialog = dialog) }
+        }
+    }
+
+    internal fun confirmDelete() {
+        val dialog = _uiState.value.deleteDialog as? DeleteDialog.Confirm ?: return
+        _uiState.update { it.copy(deleteDialog = null) }
+        viewModelScope.launch {
+            machines.delete(dialog.machine.id)
+            _uiState.update { it.copy(done = true) }
+        }
+    }
+
+    internal fun archiveInstead() {
+        val dialog = _uiState.value.deleteDialog as? DeleteDialog.ArchiveInstead ?: return
+        _uiState.update { it.copy(deleteDialog = null) }
+        viewModelScope.launch {
+            machines.setArchived(dialog.machine.id, true)
+            _uiState.update { it.copy(archived = true, done = true) }
+        }
+    }
+
+    internal fun dismissDelete() = _uiState.update { it.copy(deleteDialog = null) }
 }
