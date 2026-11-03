@@ -8,13 +8,9 @@
     <string name="routines_mode_weekdays">Por dia da semana</string>
     <string name="routines_move_up">Subir %1$s</string>
     <string name="routines_move_down">Descer %1$s</string>
-    <string name="routines_machines">Aparelhos</string>
-    <string name="routines_empty_title">Nenhum aparelho ainda</string>
-    <string name="routines_empty_body">Adicione um da lista abaixo, ou crie o seu.</string>
     <string name="routines_new_machine">Novo aparelho</string>
     <string name="routines_archived">Arquivados</string>
     <string name="routines_add_from_list">Adicionar da lista</string>
-    <string name="routines_add_starter">Adicionar %1$s</string>
     <string name="routines_expand">Mostrar</string>
     <string name="routines_collapse">Ocultar</string>
     <string name="editor_title_new">Novo aparelho</string>
@@ -54,8 +50,31 @@
     <string name="routine_delete_title">Apagar esta ficha?</string>
     <string name="routine_delete_body">As séries que você registrou continuam guardadas.</string>
     <string name="routine_delete_confirm">Apagar</string>
+    <string name="routines_intro_title">Sua academia</string>
+    <string name="routines_intro_body">Cadastre cada aparelho e exercício da sua academia. Suas fichas são montadas a partir dessa lista.</string>
+    <string name="routines_gym_heading">Aparelhos e exercícios · %1$d</string>
+    <string name="routines_section">Fichas</string>
+    <string name="routines_search">Buscar</string>
+    <string name="routines_no_matches">Nada encontrado.</string>
+    <string name="routines_delete_machine">Apagar %1$s</string>
+    <string name="editor_delete">Apagar</string>
+    <string name="delete_title">Apagar %1$s?</string>
+    <string name="delete_also_removed">Ele também será removido de: %1$s.</string>
+    <string name="delete_confirm">Apagar</string>
+    <string name="delete_archive_advice">Arquive em vez disso: ele some das suas listas e mantém o histórico.</string>
+    <string name="delete_archive">Arquivar</string>
+    <string name="routine_picker_title">Da lista da sua academia</string>
+    <string name="routine_picker_note">Faltou algum? Adicione antes em Aparelhos e exercícios.</string>
     <plurals name="routines_machine_count">
         <item quantity="one">%1$d aparelho</item>
         <item quantity="other">%1$d aparelhos</item>
+    </plurals>
+    <plurals name="routines_add_selected">
+        <item quantity="one">Adicionar %1$d selecionado</item>
+        <item quantity="other">Adicionar %1$d selecionados</item>
+    </plurals>
+    <plurals name="delete_has_sets">
+        <item quantity="one">%1$s tem %2$d série registrada, então apagar vai eliminar esse histórico.</item>
+        <item quantity="other">%1$s tem %2$d séries registradas, então apagar vai eliminar esse histórico.</item>
     </plurals>
 </resources>

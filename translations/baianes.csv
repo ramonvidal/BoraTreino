@@ -135,13 +135,9 @@ feature/routines,routines_move_up,,Move %1$s up,Subir %1$s
 feature/routines,routines_move_down,,Move %1$s down,Descer %1$s
 feature/routines,routines_machine_count,one,%1$d machine,%1$d aparelho
 feature/routines,routines_machine_count,other,%1$d machines,%1$d aparelhos
-feature/routines,routines_machines,,Machines,Aparelhos
-feature/routines,routines_empty_title,,No machines yet,Nenhum aparelho ainda
-feature/routines,routines_empty_body,,"Add one from the list below, or make your own.","Adicione um da lista abaixo, ou crie o seu."
 feature/routines,routines_new_machine,,New machine,Novo aparelho
 feature/routines,routines_archived,,Archived,Arquivados
 feature/routines,routines_add_from_list,,Add from the list,Adicionar da lista
-feature/routines,routines_add_starter,,Add %1$s,Adicionar %1$s
 feature/routines,routines_expand,,Show,Mostrar
 feature/routines,routines_collapse,,Hide,Ocultar
 feature/routines,editor_title_new,,New machine,Novo aparelho
@@ -181,6 +177,25 @@ feature/routines,routine_delete,,Delete routine,Apagar ficha
 feature/routines,routine_delete_title,,Delete this routine?,Apagar esta ficha?
 feature/routines,routine_delete_body,,Your logged sets are kept.,As séries que você registrou continuam guardadas.
 feature/routines,routine_delete_confirm,,Delete,Apagar
+feature/routines,routines_intro_title,,Your gym,Sua academia
+feature/routines,routines_intro_body,,Register every machine and exercise your gym has. Your routines (fichas) are built from this list.,Cadastre cada aparelho e exercício da sua academia. Suas fichas são montadas a partir dessa lista.
+feature/routines,routines_gym_heading,,Machines and exercises \u00b7 %1$d,Aparelhos e exercícios · %1$d
+feature/routines,routines_section,,Routines,Fichas
+feature/routines,routines_search,,Search,Buscar
+feature/routines,routines_no_matches,,No matches.,Nada encontrado.
+feature/routines,routines_delete_machine,,Delete %1$s,Apagar %1$s
+feature/routines,routines_add_selected,one,Add %1$d selected,Adicionar %1$d selecionado
+feature/routines,routines_add_selected,other,Add %1$d selected,Adicionar %1$d selecionados
+feature/routines,editor_delete,,Delete,Apagar
+feature/routines,delete_title,,Delete %1$s?,Apagar %1$s?
+feature/routines,delete_also_removed,,It will also be removed from: %1$s.,Ele também será removido de: %1$s.
+feature/routines,delete_confirm,,Delete,Apagar
+feature/routines,delete_has_sets,one,"%1$s has %2$d logged set, so deleting it would erase that history.","%1$s tem %2$d série registrada, então apagar vai eliminar esse histórico."
+feature/routines,delete_has_sets,other,"%1$s has %2$d logged sets, so deleting it would erase that history.","%1$s tem %2$d séries registradas, então apagar vai eliminar esse histórico."
+feature/routines,delete_archive_advice,,Archive it instead: it disappears from your lists and keeps its history.,Arquive em vez disso: ele some das suas listas e mantém o histórico.
+feature/routines,delete_archive,,Archive,Arquivar
+feature/routines,routine_picker_title,,From your gym's list,Da lista da sua academia
+feature/routines,routine_picker_note,,Missing one? Add it first in Machines and exercises.,Faltou algum? Adicione antes em Aparelhos e exercícios.
 feature/settings,settings_title,,Settings,Ajustes
 feature/settings,settings_goal_title,,Weekly goal,Meta semanal
 feature/settings,settings_goal_label,,Days per week,Dias por semana
@@ -253,6 +268,16 @@ feature/today,today_missed_twice,,Missed the lowest reps twice,Abaixo do mínimo
 feature/today,today_rest,,Rest %1$s,Descanso %1$s
 feature/today,today_rest_extend,,+%1$d s,+%1$d s
 feature/today,today_rest_skip,,Skip,Pular
+feature/today,today_ficha_add_title,,Add %1$s to %2$s?,Adicionar %1$s a %2$s?
+feature/today,today_ficha_add_text,,Next time it will be part of this ficha.,Da próxima vez ele fará parte desta ficha.
+feature/today,today_ficha_add,,Add to ficha,Adicionar à ficha
+feature/today,today_ficha_just_today,,Just today,Só hoje
+feature/today,today_skip_title,,Skip %1$s today?,Pular %1$s hoje?
+feature/today,today_skip_today,,Skip today,Pular hoje
+feature/today,today_remove_from,,Remove from %1$s,Remover de %1$s
+feature/today,today_skip_or_remove,,Skip or remove %1$s,Pular ou remover %1$s
+feature/today,today_skipped,,%1$s skipped,%1$s pulado
+feature/today,today_removed_from,,Removed from %1$s,Removido de %1$s
 feature/today,today_picker_title,,Pick a machine,Escolha um aparelho
 feature/today,today_recent,,Recent,Recentes
 feature/today,today_more_machines,,More machines,Mais aparelhos

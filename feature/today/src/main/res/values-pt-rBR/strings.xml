@@ -23,6 +23,16 @@
     <string name="today_rest">Descanso %1$s</string>
     <string name="today_rest_extend">+%1$d s</string>
     <string name="today_rest_skip">Pular</string>
+    <string name="today_ficha_add_title">Adicionar %1$s a %2$s?</string>
+    <string name="today_ficha_add_text">Da próxima vez ele fará parte desta ficha.</string>
+    <string name="today_ficha_add">Adicionar à ficha</string>
+    <string name="today_ficha_just_today">Só hoje</string>
+    <string name="today_skip_title">Pular %1$s hoje?</string>
+    <string name="today_skip_today">Pular hoje</string>
+    <string name="today_remove_from">Remover de %1$s</string>
+    <string name="today_skip_or_remove">Pular ou remover %1$s</string>
+    <string name="today_skipped">%1$s pulado</string>
+    <string name="today_removed_from">Removido de %1$s</string>
     <string name="today_picker_title">Escolha um aparelho</string>
     <string name="today_recent">Recentes</string>
     <string name="today_more_machines">Mais aparelhos</string>
