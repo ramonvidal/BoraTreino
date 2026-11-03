@@ -124,7 +124,11 @@ internal class DefaultHealthConnectAccess @Inject constructor(
         } else {
             null
         }
-        return listOfNotNull(session, calories, distance)
+        val records = ArrayList<androidx.health.connect.client.records.Record>(3)
+        records.add(session)
+        if (calories != null) records.add(calories)
+        if (distance != null) records.add(distance)
+        return records
     }
 
     private fun offsetAt(instant: Instant): ZoneOffset = ZoneId.systemDefault().rules.getOffset(instant)
