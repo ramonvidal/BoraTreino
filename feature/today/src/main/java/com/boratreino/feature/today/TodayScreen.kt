@@ -11,7 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,6 +62,10 @@ internal data class TodayActions(
     val onDone: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onChooseRoutine: (RoutineChoice) -> Unit = {},
+    val onSkipMachine: (machineId: Long) -> Unit = {},
+    val onSkipToday: () -> Unit = {},
+    val onRemoveFromRoutine: () -> Unit = {},
+    val onDismissSkip: () -> Unit = {},
 )
 
 @Composable
@@ -83,6 +91,14 @@ internal fun TodayScreen(
                     )
                     if (snackbar.showUndo(text, undoLabel)) viewModel.reopen(event.summary.sessionId)
                 }
+                is TodayEvent.Skipped -> launch {
+                    val text = resources.getString(R.string.today_skipped, event.machine.name)
+                    if (snackbar.showUndo(text, undoLabel)) viewModel.unskip(event.machine.id)
+                }
+                is TodayEvent.Removed -> launch {
+                    val text = resources.getString(R.string.today_removed_from, event.routineName)
+                    if (snackbar.showUndo(text, undoLabel)) viewModel.restoreItem(event.item)
+                }
                 TodayEvent.Failed -> launch { snackbar.showSnackbar(failedText) }
             }
         }
@@ -97,6 +113,10 @@ internal fun TodayScreen(
             onDone = viewModel::finish,
             onOpenSettings = onOpenSettings,
             onChooseRoutine = viewModel::choose,
+            onSkipMachine = viewModel::askSkip,
+            onSkipToday = viewModel::skipToday,
+            onRemoveFromRoutine = viewModel::removeFromRoutine,
+            onDismissSkip = viewModel::dismissSkip,
         ),
         snackbarHostState = snackbar,
     )
@@ -146,6 +166,30 @@ internal fun TodayContent(
             }
         }
     }
+
+    state.skipDialog?.let { SkipMachineDialog(it, actions) }
+}
+
+/** "Skip Pull-ups today?": skip for this training, take it out of the ficha, or cancel. */
+@Composable
+private fun SkipMachineDialog(dialog: SkipDialog, actions: TodayActions) {
+    AlertDialog(
+        onDismissRequest = actions.onDismissSkip,
+        title = { Text(stringResource(R.string.today_skip_title, dialog.machine.name)) },
+        text = {
+            OutlinedButton(
+                onClick = actions.onRemoveFromRoutine,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) { Text(stringResource(R.string.today_remove_from, dialog.routineName)) }
+        },
+        confirmButton = {
+            TextButton(onClick = actions.onSkipToday) { Text(stringResource(R.string.today_skip_today)) }
+        },
+        dismissButton = {
+            TextButton(onClick = actions.onDismissSkip) { Text(stringResource(CoreUiR.string.cancel)) }
+        },
+    )
 }
 
 private fun LazyListScope.noSession(
@@ -263,6 +307,13 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
             highlighted = row.highlighted,
             trailing = {
                 when {
+                    row.canSkip -> IconButton(onClick = { actions.onSkipMachine(row.machine.id) }) {
+                        Icon(
+                            painterResource(CoreUiR.drawable.ic_close),
+                            contentDescription = stringResource(R.string.today_skip_or_remove, row.machine.name),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     row.done -> Icon(
                         painterResource(CoreUiR.drawable.ic_check),
                         contentDescription = stringResource(R.string.today_machine_done),

@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +36,8 @@ internal data class PickerActions(
     val onAddStarter: (StarterMachine) -> Unit = {},
     val onToggleMore: () -> Unit = {},
     val onNewMachine: () -> Unit = {},
+    val onFichaAdd: () -> Unit = {},
+    val onFichaJustToday: () -> Unit = {},
 )
 
 @Composable
@@ -49,9 +53,16 @@ internal fun PickerScreen(
         state = state,
         actions = PickerActions(
             onBack = onBack,
-            onOpenMachine = onOpenMachine,
+            onOpenMachine = { id -> scope.launch { if (!viewModel.requestOpen(id)) onOpenMachine(id) } },
             // Added first, then opened: one tap from the list to the machine screen.
-            onAddStarter = { starter -> scope.launch { onOpenMachine(viewModel.addStarter(starter)) } },
+            onAddStarter = { starter ->
+                scope.launch {
+                    val id = viewModel.addStarter(starter)
+                    if (!viewModel.requestOpen(id)) onOpenMachine(id)
+                }
+            },
+            onFichaAdd = { scope.launch { viewModel.answerPrompt(addToFicha = true)?.let(onOpenMachine) } },
+            onFichaJustToday = { scope.launch { viewModel.answerPrompt(addToFicha = false)?.let(onOpenMachine) } },
             onToggleMore = viewModel::toggleMore,
             onNewMachine = onNewMachine,
         ),
@@ -98,6 +109,8 @@ internal fun PickerContent(
             }
         }
     }
+
+    state.fichaPrompt?.let { FichaPromptDialog(it, actions) }
 }
 
 private fun LazyListScope.recentSection(state: PickerUiState, actions: PickerActions) {
@@ -125,7 +138,23 @@ private fun LazyListScope.moreSection(state: PickerUiState, actions: PickerActio
     for (group in state.starterGroups) {
         item(key = "sh-${group.group}") { SectionTitle(group.group.label()) }
         items(group.starters, key = { "s${it.name}" }) { starter ->
-            MachineRow(starter.name, null, onClick = { actions.onAddStarter(starter) })
+            MachineRow(starter.displayName(state.portuguese), null, onClick = { actions.onAddStarter(starter) })
         }
     }
+}
+
+/** "Add Leg curl to Treino B?" Dismissing counts as Just today. */
+@Composable
+private fun FichaPromptDialog(prompt: FichaPrompt, actions: PickerActions) {
+    AlertDialog(
+        onDismissRequest = actions.onFichaJustToday,
+        title = { Text(stringResource(R.string.today_ficha_add_title, prompt.machine.name, prompt.routineName)) },
+        text = { Text(stringResource(R.string.today_ficha_add_text)) },
+        confirmButton = {
+            TextButton(onClick = actions.onFichaAdd) { Text(stringResource(R.string.today_ficha_add)) }
+        },
+        dismissButton = {
+            TextButton(onClick = actions.onFichaJustToday) { Text(stringResource(R.string.today_ficha_just_today)) }
+        },
+    )
 }

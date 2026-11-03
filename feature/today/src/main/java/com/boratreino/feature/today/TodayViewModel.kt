@@ -3,10 +3,12 @@ package com.boratreino.feature.today
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.MachineRepository
+import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.model.SetSummary
@@ -38,7 +40,12 @@ internal data class RoutineMachineUi(
     val setCount: Int,
     val done: Boolean,
     val highlighted: Boolean,
+    /** No sets yet: the row offers skipping or removing it. */
+    val canSkip: Boolean = false,
 )
+
+/** "Skip [machine] today?" for the active routine [routineName]. */
+internal data class SkipDialog(val machine: Machine, val routineName: String)
 
 /**
  * What Today adds when the owner has routines; [TodayUiState.routines] is null without any, and
@@ -51,6 +58,8 @@ internal data class RoutineUi(
     val freeSelected: Boolean,
     val activeName: String? = null,
     val restDay: Boolean = false,
+    /** The active routine's id; needed to remove a machine from it. */
+    val activeId: Long? = null,
     val machines: List<RoutineMachineUi> = emptyList(),
     val alsoThisSession: List<SessionMachineUi> = emptyList(),
 )
@@ -61,11 +70,17 @@ internal data class TodayUiState(
     val session: SessionUi? = null,
     val recent: List<Machine> = emptyList(),
     val routines: RoutineUi? = null,
+    val skipDialog: SkipDialog? = null,
 )
 
 internal sealed interface TodayEvent {
     /** Done was tapped and the session closed; the screen offers Undo. */
     data class Finished(val summary: SessionSummary) : TodayEvent
+    /** Skipped for this training; the screen offers Undo. */
+    data class Skipped(val machine: Machine) : TodayEvent
+
+    /** Taken out of the ficha [routineName]; Undo puts [item] back. */
+    data class Removed(val routineName: String, val item: RoutineItem) : TodayEvent
     data object Failed : TodayEvent
 }
 
@@ -73,18 +88,22 @@ internal sealed interface TodayEvent {
 class TodayViewModel @Inject constructor(
     private val training: TrainingRepository,
     machines: MachineRepository,
+    private val routineRepository: RoutineRepository,
     private val restTimer: RestTimer,
 ) : ViewModel() {
 
     private val eventChannel = Channel<TodayEvent>(Channel.BUFFERED)
     internal val events: Flow<TodayEvent> = eventChannel.receiveAsFlow()
 
+    private val skipDialog = MutableStateFlow<SkipDialog?>(null)
+
     internal val state: StateFlow<TodayUiState> = combine(
         training.observeOpenSession(),
         machines.observeRecentMachines(),
         training.observeTodayPlan(),
         machines.observeMachines(includeArchived = true),
-    ) { open, recent, plan, allMachines ->
+        skipDialog,
+    ) { open, recent, plan, allMachines, dialog ->
         val byId = allMachines.associateBy { it.id }
         val routines = if (plan.routines.isEmpty()) {
             null
@@ -99,13 +118,14 @@ class TodayViewModel @Inject constructor(
                 val done = count >= item.targetSets
                 val highlight = !done && !highlightedGiven
                 if (highlight) highlightedGiven = true
-                RoutineMachineUi(machine, item, count, done, highlight)
+                RoutineMachineUi(machine, item, count, done, highlight, canSkip = count == 0)
             }
             RoutineUi(
                 chips = plan.routines.map { RoutineChipUi(it.id, it.shortName, it.id == active?.routine?.id) },
                 freeSelected = active == null && (!plan.restDay || plan.choice is RoutineChoice.Free),
                 activeName = active?.routine?.name,
                 restDay = plan.restDay,
+                activeId = active?.routine?.id,
                 machines = rows,
                 alsoThisSession = open?.machines.orEmpty()
                     .filter { it.machine.id !in itemIds }
@@ -114,6 +134,7 @@ class TodayViewModel @Inject constructor(
         }
         TodayUiState(
             routines = routines,
+            skipDialog = dialog,
             loaded = true,
             session = open?.let { s ->
                 SessionUi(
@@ -134,6 +155,53 @@ class TodayViewModel @Inject constructor(
                 throw e
             } catch (_: Exception) {
                 // Nothing to show: the session just stays open until the next try.
+            }
+        }
+    }
+
+    internal fun askSkip(machineId: Long) {
+        val routines = state.value.routines ?: return
+        val row = routines.machines.firstOrNull { it.machine.id == machineId } ?: return
+        skipDialog.value = SkipDialog(row.machine, routines.activeName.orEmpty())
+    }
+
+    internal fun dismissSkip() {
+        skipDialog.value = null
+    }
+
+    /** Hides the machine for this training only. */
+    internal fun skipToday() {
+        val machine = skipDialog.value?.machine ?: return
+        skipDialog.value = null
+        launchSafely {
+            training.skipMachineToday(machine.id)
+            eventChannel.send(TodayEvent.Skipped(machine))
+        }
+    }
+
+    internal fun unskip(machineId: Long) = launchSafely { training.unskipMachineToday(machineId) }
+
+    /** Takes the machine out of the ficha itself. */
+    internal fun removeFromRoutine() {
+        val dialog = skipDialog.value ?: return
+        val routineId = state.value.routines?.activeId ?: return
+        skipDialog.value = null
+        launchSafely {
+            val item = routineRepository.removeMachine(routineId, dialog.machine.id) ?: return@launchSafely
+            eventChannel.send(TodayEvent.Removed(dialog.routineName, item))
+        }
+    }
+
+    internal fun restoreItem(item: RoutineItem) = launchSafely { routineRepository.restoreItem(item) }
+
+    private fun launchSafely(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                eventChannel.send(TodayEvent.Failed)
             }
         }
     }

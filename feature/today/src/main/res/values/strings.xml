@@ -40,6 +40,18 @@
     <string name="today_rest_extend">+%1$d s</string>
     <string name="today_rest_skip">Skip</string>
 
+    <!-- Updating the ficha -->
+    <string name="today_ficha_add_title">Add %1$s to %2$s?</string>
+    <string name="today_ficha_add_text">Next time it will be part of this ficha.</string>
+    <string name="today_ficha_add">Add to ficha</string>
+    <string name="today_ficha_just_today">Just today</string>
+    <string name="today_skip_title">Skip %1$s today?</string>
+    <string name="today_skip_today">Skip today</string>
+    <string name="today_remove_from">Remove from %1$s</string>
+    <string name="today_skip_or_remove">Skip or remove %1$s</string>
+    <string name="today_skipped">%1$s skipped</string>
+    <string name="today_removed_from">Removed from %1$s</string>
+
     <!-- Picker -->
     <string name="today_picker_title">Pick a machine</string>
     <string name="today_recent">Recent</string>
