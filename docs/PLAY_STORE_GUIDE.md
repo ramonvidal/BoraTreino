@@ -51,8 +51,10 @@ CI signs the bundle with a **separate upload key** (not the key of your GitHub A
 **Keep a safe copy of `boratreino-upload.keystore` and the two passwords** (password manager, private drive). If you ever lose
 the upload key you can ask Google to reset it (Play Console > App integrity), but it is a slow process. Never commit these files.
 
-Then trigger a build: push anything, or open **Actions > Android build > Run workflow**. When it is green, open the repository's
-**Releases** page: the newest release has **`BoraTreino.aab`** next to `BoraTreino.apk`. Download the `.aab`.
+Then trigger a build **with a push** (a push to the branch is what attaches the bundle to a release; "Run workflow" only builds
+it as an Actions artifact). Releases made *before* the secrets existed never contain the `.aab`: wait for the first build that ran after you
+added them. When it is green, open the repository's **Releases** page: the newest release has **`BoraTreino.aab`** next to
+`BoraTreino.apk`. Download the `.aab`.
 
 ## 3. Create the app entry (YOU, 5 minutes; skip what you already did)
 
