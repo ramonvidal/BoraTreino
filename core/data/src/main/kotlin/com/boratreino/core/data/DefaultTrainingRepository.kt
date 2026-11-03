@@ -16,6 +16,7 @@ import com.boratreino.core.model.SessionRules
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.TodayPlan
+import com.boratreino.core.model.withoutMachines
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -40,9 +41,21 @@ internal class DefaultTrainingRepository @Inject constructor(
     /** The owner's pick for today's training; in memory only, back to Suggested when a session ends. */
     private val choice = MutableStateFlow<RoutineChoice>(RoutineChoice.Suggested)
 
-    /** Back to Suggested; used when a session ends in some other way (deleted from the calendar). */
+    /** Machines hidden from today's ficha for this training; in memory, cleared with the choice. */
+    private val skipped = MutableStateFlow<Set<Long>>(emptySet())
+
+    /** Back to Suggested with nothing skipped; used wherever a session ends or is replaced. */
     internal fun resetChoice() {
         choice.value = RoutineChoice.Suggested
+        skipped.value = emptySet()
+    }
+
+    override suspend fun skipMachineToday(machineId: Long) {
+        skipped.value = skipped.value + machineId
+    }
+
+    override suspend fun unskipMachineToday(machineId: Long) {
+        skipped.value = skipped.value - machineId
     }
 
     private fun today() = LocalDate.now(clock).dayOfWeek
@@ -53,7 +66,8 @@ internal class DefaultTrainingRepository @Inject constructor(
             store.observeLastRoutineId(),
             store.observeOpenSession(),
             choice,
-        ) { plan, lastRoutineId, open, choice ->
+            skipped,
+        ) { plan, lastRoutineId, open, choice, skippedIds ->
             val all = plan.routines.map { it.routine }
             val mode = plan.plan.scheduleMode
             val suggested = NextRoutineRules.next(mode, all, lastRoutineId, today())
@@ -72,8 +86,11 @@ internal class DefaultTrainingRepository @Inject constructor(
                 routines = all,
                 suggested = suggested,
                 choice = choice,
-                active = activeId?.let { id -> plan.routines.firstOrNull { it.routine.id == id } },
+                active = activeId
+                    ?.let { id -> plan.routines.firstOrNull { it.routine.id == id } }
+                    ?.withoutMachines(skippedIds),
                 restDay = mode == ScheduleMode.WEEKDAYS && suggested == null && all.isNotEmpty(),
+                skipped = skippedIds,
             )
         }
 
@@ -207,7 +224,7 @@ internal class DefaultTrainingRepository @Inject constructor(
     override suspend fun finishSession(): SessionSummary? = store.inTransaction {
         val open = store.openSession() ?: return@inTransaction null
         store.setSessionEnd(open.id, Instant.now(clock))
-        choice.value = RoutineChoice.Suggested
+        resetChoice()
         val sessionSets = store.sessionSets(open.id)
         val earlier = store.machinesSetsBefore(sessionSets.map { it.machineId }.distinct(), open.startedAt)
         store.summary(open.id).copy(recordCount = RecordRules.countRecords(sessionSets, earlier))
@@ -225,7 +242,7 @@ internal class DefaultTrainingRepository @Inject constructor(
         val lastSetAt = store.lastSetAt(open.id)
         if (SessionRules.isStale(open, lastSetAt, now)) {
             store.setSessionEnd(open.id, SessionRules.closeTime(open, lastSetAt))
-            choice.value = RoutineChoice.Suggested
+            resetChoice()
         }
     }
 

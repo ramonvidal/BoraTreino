@@ -37,4 +37,7 @@ interface TrainingRepository {
     suspend fun finishSession(): SessionSummary?
     /** Undo of finish: endedAt = null, only if no other session is open. */
     suspend fun reopenSession(sessionId: Long)
+    /** Hides the machine from today's ficha for this training only (kept in memory). */
+    suspend fun skipMachineToday(machineId: Long)
+    suspend fun unskipMachineToday(machineId: Long)
 }

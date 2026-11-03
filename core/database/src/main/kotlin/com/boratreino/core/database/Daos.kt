@@ -11,6 +11,12 @@ internal interface MachineDao {
     @Query("SELECT * FROM machines WHERE :includeArchived = 1 OR archived = 0 ORDER BY name COLLATE NOCASE ASC, id ASC")
     fun observeAll(includeArchived: Boolean): Flow<List<MachineEntity>>
 
+    @Query("SELECT COUNT(*) FROM machines WHERE id = :id")
+    suspend fun count(id: Long): Int
+
+    @Query("DELETE FROM machines WHERE id = :id")
+    suspend fun delete(id: Long)
+
     @Query("SELECT * FROM machines")
     suspend fun allNow(): List<MachineEntity>
 
@@ -152,6 +158,9 @@ internal interface WorkoutSetDao {
     @Query("SELECT * FROM workout_sets WHERE sessionId = :sessionId ORDER BY loggedAt ASC, id ASC")
     suspend fun forSession(sessionId: Long): List<WorkoutSetEntity>
 
+    @Query("SELECT COUNT(*) FROM workout_sets WHERE machineId = :machineId")
+    suspend fun countAllForMachine(machineId: Long): Int
+
     @Query("SELECT COUNT(*) FROM workout_sets WHERE sessionId = :sessionId AND machineId = :machineId")
     suspend fun countForMachine(sessionId: Long, machineId: Long): Int
 
@@ -220,6 +229,20 @@ internal interface RoutineDao {
 
     @Query("SELECT * FROM routine_items WHERE routineId = :routineId ORDER BY position ASC")
     fun observeItems(routineId: Long): Flow<List<RoutineItemEntity>>
+
+    @Query("SELECT * FROM routine_items WHERE routineId = :routineId ORDER BY position ASC")
+    suspend fun items(routineId: Long): List<RoutineItemEntity>
+
+    /** Names of the routines that contain the machine, by routine position. */
+    @Query(
+        "SELECT routines.name FROM routines " +
+            "INNER JOIN routine_items ON routine_items.routineId = routines.id " +
+            "WHERE routine_items.machineId = :machineId ORDER BY routines.position ASC, routines.id ASC",
+    )
+    suspend fun routineNamesWithMachine(machineId: Long): List<String>
+
+    @Query("DELETE FROM routine_items WHERE machineId = :machineId")
+    suspend fun deleteItemsOfMachine(machineId: Long)
 
     @Query("DELETE FROM routine_items WHERE routineId = :routineId")
     suspend fun deleteItems(routineId: Long)

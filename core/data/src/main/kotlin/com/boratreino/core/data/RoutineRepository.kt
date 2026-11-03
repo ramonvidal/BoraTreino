@@ -21,4 +21,10 @@ interface RoutineRepository {
     suspend fun deleteRoutine(id: Long)
     /** Swaps positions with the neighbour; no-op at the ends. */
     suspend fun moveRoutine(id: Long, up: Boolean)
+    /** Appends the machine with the default target; no-op when it is already there or the routine is gone. */
+    suspend fun addMachine(routineId: Long, machineId: Long)
+    /** Removes the machine from the routine; returns the removed item (for Undo) or null. */
+    suspend fun removeMachine(routineId: Long, machineId: Long): RoutineItem?
+    /** Undo of [removeMachine]: puts the item back at its old position. */
+    suspend fun restoreItem(item: RoutineItem)
 }

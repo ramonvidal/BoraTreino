@@ -128,6 +128,20 @@ interface WorkoutStore {
     /** Every machine, archived included. */
     suspend fun machines(): List<Machine>
 
+    // Deleting machines and editing fichas
+
+    /** How many sets were ever logged on the machine. */
+    suspend fun machineSetCount(machineId: Long): Int
+    /** Names of the routines that contain the machine, by routine position. */
+    suspend fun routineNamesWithMachine(machineId: Long): List<String>
+    /**
+     * Removes the machine from every routine and deletes it, in one transaction. Returns false,
+     * changing nothing, when it has logged sets or doesn't exist.
+     */
+    suspend fun deleteMachine(machineId: Long): Boolean
+    /** One routine's items by position. */
+    suspend fun routineItems(routineId: Long): List<RoutineItem>
+
     // Progress
 
     /** Every set ever logged, by logged time. */

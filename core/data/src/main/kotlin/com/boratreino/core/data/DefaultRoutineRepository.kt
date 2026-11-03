@@ -2,6 +2,7 @@ package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
 import com.boratreino.core.model.Routine
+import com.boratreino.core.model.RoutineEditRules
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.RoutinePlanWithRoutines
 import com.boratreino.core.model.RoutineWithItems
@@ -93,6 +94,33 @@ internal class DefaultRoutineRepository @Inject constructor(
             // Renumber so ties or gaps can't make the swap a no-op.
             val moved = ordered.toMutableList().apply { add(other, removeAt(index)) }
             moved.forEachIndexed { i, r -> if (r.position != i) store.setRoutinePosition(r.id, i) }
+        }
+    }
+
+    override suspend fun addMachine(routineId: Long, machineId: Long) {
+        store.inTransaction {
+            if (store.allRoutines().none { it.id == routineId }) return@inTransaction
+            val items = store.routineItems(routineId)
+            val updated = RoutineEditRules.withMachine(routineId, items, machineId)
+            if (updated != items) store.replaceRoutineItems(routineId, updated)
+        }
+    }
+
+    override suspend fun removeMachine(routineId: Long, machineId: Long): RoutineItem? =
+        store.inTransaction {
+            val items = store.routineItems(routineId)
+            val removed = items.firstOrNull { it.machineId == machineId } ?: return@inTransaction null
+            store.replaceRoutineItems(routineId, RoutineEditRules.withoutMachine(items, machineId))
+            removed
+        }
+
+    override suspend fun restoreItem(item: RoutineItem) {
+        store.inTransaction {
+            // The routine or the machine may be gone since; a foreign key would refuse the item.
+            if (store.allRoutines().none { it.id == item.routineId }) return@inTransaction
+            if (store.machines().none { it.id == item.machineId }) return@inTransaction
+            val items = store.routineItems(item.routineId)
+            store.replaceRoutineItems(item.routineId, RoutineEditRules.withItemBack(items, item))
         }
     }
 }

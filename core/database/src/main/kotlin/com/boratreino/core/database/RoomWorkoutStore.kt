@@ -213,6 +213,24 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
 
     override suspend fun machines(): List<Machine> = machineDao.allNow().map { it.toModel() }
 
+    override suspend fun machineSetCount(machineId: Long): Int = setDao.countAllForMachine(machineId)
+
+    override suspend fun routineNamesWithMachine(machineId: Long): List<String> =
+        routineDao.routineNamesWithMachine(machineId)
+
+    override suspend fun deleteMachine(machineId: Long): Boolean = db.withTransaction {
+        if (machineDao.count(machineId) == 0 || setDao.countAllForMachine(machineId) > 0) {
+            false
+        } else {
+            routineDao.deleteItemsOfMachine(machineId)
+            machineDao.delete(machineId)
+            true
+        }
+    }
+
+    override suspend fun routineItems(routineId: Long): List<RoutineItem> =
+        routineDao.items(routineId).map { it.toModel() }
+
     override fun observeAllSets(): Flow<List<WorkoutSet>> =
         setDao.observeAll().map { list -> list.map { it.toModel() } }
 
