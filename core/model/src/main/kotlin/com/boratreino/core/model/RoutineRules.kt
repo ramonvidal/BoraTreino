@@ -31,6 +31,8 @@ data class TodayPlan(
     val active: RoutineWithItems?,
     /** WEEKDAYS mode, nothing suggested, and there are routines. */
     val restDay: Boolean,
+    /** Machines hidden from the active routine for this training only. */
+    val skipped: Set<Long> = emptySet(),
 )
 
 object NextRoutineRules {
