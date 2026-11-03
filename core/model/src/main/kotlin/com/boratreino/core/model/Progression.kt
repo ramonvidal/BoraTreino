@@ -38,12 +38,13 @@ object ProgressionRules {
      *     have reps >= repsMax -> Up(W + stepKg, repsMin).
      * Down: in each of the two most recent sessions, the first targetSets sets share one weight W (the same W
      *     in both) and at least one has reps < repsMin -> Down(max(0, W - stepKg), repsMin).
-     * Otherwise null. Null when target is null or history is empty. Weights rounded like LoggingRules.stepWeight.
+     * Otherwise null. Null when target is null, history is empty or the sets are cardio. Weights rounded like LoggingRules.stepWeight.
      */
     fun suggest(target: RoutineItem?, stepKg: Double, history: List<List<WorkoutSet>>): Suggestion? {
         if (target == null || history.isEmpty()) return null
         val n = target.targetSets
         val latest = firstSets(history[0], n) ?: return null
+        if (latest.any { CardioRules.isCardio(it) }) return null
         val w1 = sharedWeight(latest) ?: return null
 
         if (latest.all { it.r() >= target.repsMax }) {

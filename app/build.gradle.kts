@@ -97,6 +97,7 @@ dependencies {
     implementation(projects.core.model)
     implementation(projects.core.ui)
     implementation(projects.core.notify)
+    implementation(projects.core.health)
     // Hilt needs the data and database modules on the app's classpath to find their bindings.
     implementation(projects.core.data)
     implementation(projects.core.database)

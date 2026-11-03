@@ -14,6 +14,12 @@
     <string name="settings_rest_default">Descanso padrão</string>
     <string name="settings_rest_seconds">%1$d s</string>
     <string name="settings_rest_hint">Cada aparelho pode ter seu próprio descanso, no editor dele.</string>
+    <string name="settings_health_title">Health Connect</string>
+    <string name="settings_health_hint">Envia cada treino terminado para o Health Connect (sessões de exercício, e calorias e distância no cardio). Nada é lido.</string>
+    <string name="settings_health_switch">Enviar treinos para o Health Connect</string>
+    <string name="settings_health_missing">O Health Connect não está instalado ou precisa de atualização.</string>
+    <string name="settings_health_get">Instalar o Health Connect</string>
+    <string name="settings_health_denied">Permissão não concedida</string>
     <string name="settings_notifications_title">Notificações</string>
     <string name="settings_notifications_off">As notificações estão desligadas</string>
     <string name="settings_notifications_allow">Permitir</string>

@@ -14,12 +14,26 @@ sealed interface SetSummary {
     /** Different weights: "40 kg x 10, 42.5 kg x 8". */
     data class Mixed(val sets: List<SetDraft>) : SetSummary
 
+    /** Cardio sets: [count] sets with their totals; 0 = not logged. */
+    data class Cardio(val count: Int, val minutes: Int, val calories: Int, val distanceM: Int) : SetSummary
+
     companion object {
         private const val EPSILON = 0.001
 
-        /** Null when [sets] is empty. Sets are taken in position order; weights equal within 0.001. */
+        /**
+         * Null when [sets] is empty. All cardio sets -> Cardio (totals). Otherwise sets are taken in position
+         * order; weights equal within 0.001.
+         */
         fun of(sets: List<WorkoutSet>): SetSummary? {
             if (sets.isEmpty()) return null
+            if (sets.all { CardioRules.isCardio(it) }) {
+                return Cardio(
+                    count = sets.size,
+                    minutes = CardioRules.minutesOf(sets.sumOf { it.seconds ?: 0 }),
+                    calories = sets.sumOf { it.calories ?: 0 },
+                    distanceM = sets.sumOf { it.distanceM ?: 0 },
+                )
+            }
             val drafts = sets.sortedBy { it.position }.map { SetDraft(it.weightKg ?: 0.0, it.reps ?: 0) }
             val first = drafts.first()
             if (drafts.any { abs(it.weightKg - first.weightKg) > EPSILON }) return Mixed(drafts)

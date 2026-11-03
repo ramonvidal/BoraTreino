@@ -26,4 +26,9 @@ internal object SettingsModule {
     @Singleton
     fun provideTrainingSettings(dataStore: DataStore<Preferences>): TrainingSettings =
         DataStoreTrainingSettings(dataStore)
+
+    @Provides
+    @Singleton
+    fun provideHealthSettings(dataStore: DataStore<Preferences>): HealthSettings =
+        DataStoreHealthSettings(dataStore)
 }

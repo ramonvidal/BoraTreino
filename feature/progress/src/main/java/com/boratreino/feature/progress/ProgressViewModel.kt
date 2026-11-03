@@ -3,6 +3,7 @@ package com.boratreino.feature.progress
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.ProgressRepository
+import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.Improvement
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.ProgressMetric
@@ -42,6 +43,8 @@ internal data class ProgressUiState(
     val recordsThisMonth: Int = 0,
     val improved: List<ImprovedRow> = emptyList(),
     val machines: List<MachineRow> = emptyList(),
+    /** This week's cardio totals; null when there is nothing to show. */
+    val cardioThisWeek: CardioWeek? = null,
 )
 
 internal const val MOST_IMPROVED_COUNT = 5
@@ -76,6 +79,7 @@ internal fun buildProgressState(overview: ProgressOverview, today: LocalDate): P
         recordsThisMonth = overview.recordsThisMonth,
         improved = improved,
         machines = machines,
+        cardioThisWeek = overview.cardioThisWeek?.takeIf { it.minutes > 0 || it.calories > 0 },
     )
 }
 

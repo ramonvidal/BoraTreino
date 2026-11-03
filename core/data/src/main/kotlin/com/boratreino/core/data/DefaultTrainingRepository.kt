@@ -1,8 +1,11 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
+import com.boratreino.core.model.CardioDraft
+import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.LoggedSet
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.OpenSession
@@ -173,7 +176,7 @@ internal class DefaultTrainingRepository @Inject constructor(
                             lastTimeAt = lastTime.maxOfOrNull { it.loggedAt },
                             thisSession = current,
                             target = target,
-                            suggestion = ProgressionRules.suggest(target, machine.stepKg, history),
+                            suggestion = if (machine.kind == MachineKind.CARDIO) null else ProgressionRules.suggest(target, machine.stepKg, history),
                         )
                     }
                 }
@@ -206,6 +209,26 @@ internal class DefaultTrainingRepository @Inject constructor(
             // Earlier sets of this machine, this session's included; read before the insert.
             val record = RecordRules.recordFor(set, store.machineSets(machineId))
             LoggedSet(set.copy(id = store.insertSet(set)), record)
+        }
+    }
+
+    override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet {
+        val now = Instant.now(clock)
+        return store.inTransaction {
+            closeIfStale(now)
+            val sessionId = store.openSession()?.id
+                ?: store.insertSession(
+                    Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null),
+                )
+            val set = CardioRules.toSet(
+                id = 0,
+                sessionId = sessionId,
+                machineId = machineId,
+                position = store.setCount(sessionId, machineId),
+                draft = draft,
+                loggedAt = now,
+            )
+            LoggedSet(set.copy(id = store.insertSet(set)), null)
         }
     }
 

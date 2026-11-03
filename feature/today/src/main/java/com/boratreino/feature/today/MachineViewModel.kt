@@ -4,7 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.TrainingRepository
+import com.boratreino.core.model.CardioDraft
+import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.Record
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.notify.RestTimer
@@ -39,6 +42,9 @@ import kotlinx.coroutines.launch
 /** The set being fixed in the bottom sheet, with its own stepper values. [number] is its row number (1-based). */
 internal data class SetEditor(val set: WorkoutSet, val number: Int, val weightKg: Double, val reps: Int)
 
+/** A logged cardio set being fixed in the bottom sheet; [draft] is the stepper values. */
+internal data class CardioEditor(val set: WorkoutSet, val number: Int, val draft: CardioDraft)
+
 /** Which value the number pad is editing. */
 internal enum class PadTarget { WEIGHT, REPS, EDIT_WEIGHT, EDIT_REPS }
 
@@ -67,6 +73,13 @@ internal data class MachineUiState(
     val suggestion: Suggestion? = null,
     /** The record just set, shown for a few seconds. */
     val record: Record? = null,
+    /** Cardio machines: the steppers' current values (minutes, calories, distance). */
+    val cardio: CardioDraft = CardioDraft(CardioRules.DEFAULT_MINUTES, 0, 0),
+    /** Cardio: last time's matching set, or null (no button). */
+    val cardioSameAgain: CardioDraft? = null,
+    /** Cardio: the distance stepper is shown (last time had a distance, or "Add distance" was tapped). */
+    val cardioDistanceShown: Boolean = false,
+    val cardioEditor: CardioEditor? = null,
     /** Whole seconds of rest left; null = no timer running. */
     val restSeconds: Int? = null,
 )
@@ -99,6 +112,9 @@ class MachineViewModel @Inject constructor(
     /** What the user dialled in; null = follow [LoggingRules.prefill]. Cleared after each logged set. */
     private val draftOverride = MutableStateFlow<SetDraft?>(null)
     private val editor = MutableStateFlow<SetEditor?>(null)
+    private val cardioOverride = MutableStateFlow<CardioDraft?>(null)
+    private val distanceRevealed = MutableStateFlow(false)
+    private val cardioEditor = MutableStateFlow<CardioEditor?>(null)
     private val pad = MutableStateFlow<NumberPad?>(null)
     private val record = MutableStateFlow<Record?>(null)
 
@@ -126,15 +142,44 @@ class MachineViewModel @Inject constructor(
         }
     }
 
+    private data class CardioInput(
+        val override: CardioDraft?,
+        val revealed: Boolean,
+        val editor: CardioEditor?,
+    )
+
+    private val cardioInput: Flow<CardioInput> = combine(cardioOverride, distanceRevealed, cardioEditor, ::CardioInput)
+
     private val logState: Flow<MachineUiState> = combine(
         training.observeMachineLog(machineId),
         draftOverride,
         editor,
         pad,
         record,
-    ) { log, override, editing, padding, newRecord ->
+        cardioInput,
+    ) { values ->
+        val log = values[0] as com.boratreino.core.data.MachineLog?
+        val override = values[1] as SetDraft?
+        val editing = values[2] as SetEditor?
+        val padding = values[3] as NumberPad?
+        val newRecord = values[4] as Record?
+        val cardio = values[5] as CardioInput
         if (log == null) {
             MachineUiState(loaded = true)
+        } else if (log.machine.kind == MachineKind.CARDIO) {
+            val prefill = CardioRules.prefill(log.lastTime, log.thisSession)
+            MachineUiState(
+                loaded = true,
+                machine = log.machine,
+                lastTime = SetSummary.of(log.lastTime),
+                lastTimeAt = log.lastTimeAt,
+                sets = log.thisSession,
+                target = log.target,
+                cardio = cardio.override ?: prefill,
+                cardioSameAgain = CardioRules.sameAgain(log.lastTime, log.thisSession),
+                cardioDistanceShown = cardio.revealed || prefill.distanceM > 0,
+                cardioEditor = cardio.editor,
+            )
         } else {
             val draft = override ?: LoggingRules.prefill(log.lastTime, log.thisSession, log.suggestion)
             MachineUiState(

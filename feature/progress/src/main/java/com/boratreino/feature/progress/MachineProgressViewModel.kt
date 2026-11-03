@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.ProgressRepository
 import com.boratreino.core.model.ChartRules
+import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.ChartScale
 import com.boratreino.core.model.MachineProgress
 import com.boratreino.core.model.ProgressMetric
@@ -41,6 +42,8 @@ internal data class MachineProgressUiState(
     val axisEnd: LocalDate = LocalDate.of(2000, 1, 1),
     val selectedIndex: Int? = null,
     val showAll: Boolean = false,
+    /** The last 12 weeks, oldest first; only cardio machines have them. */
+    val weeks: List<CardioWeek> = emptyList(),
 )
 
 /** The detail state for [progress] (null = machine missing) in [range] as of [today]. */
@@ -74,6 +77,7 @@ internal fun buildMachineState(
         axisEnd = end,
         selectedIndex = selected?.takeIf { it in inRange.indices },
         showAll = showAll,
+        weeks = progress.weeks,
     )
 }
 

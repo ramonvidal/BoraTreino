@@ -1,7 +1,9 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
+import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineProgress
 import com.boratreino.core.model.ProgressOverview
 import com.boratreino.core.model.ProgressRules
@@ -14,6 +16,8 @@ import kotlinx.coroutines.flow.flowOn
 import java.time.Clock
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.WeekFields
+import java.util.Locale
 import javax.inject.Inject
 
 internal class DefaultProgressRepository @Inject constructor(
@@ -40,6 +44,7 @@ internal class DefaultProgressRepository @Inject constructor(
                 machines = progress,
                 trainingsThisMonth = ProgressRules.trainingDaysInMonth(dates.values, month),
                 recordsThisMonth = ProgressRules.recordsInMonth(sets, dates, month),
+                cardioThisWeek = CardioRules.thisWeek(datedCardio(sets, dates), LocalDate.now(clock), firstDayOfWeek()),
             )
         }.flowOn(Dispatchers.Default)
 
@@ -58,6 +63,25 @@ internal class DefaultProgressRepository @Inject constructor(
     private fun progressFor(machine: Machine, allSets: List<WorkoutSet>, dates: Map<Long, LocalDate>): MachineProgress {
         val own = allSets.filter { it.machineId == machine.id }
         val metric = ProgressRules.metricFor(machine, own)
-        return MachineProgress(machine, metric, ProgressRules.points(own, dates, metric))
+        val weeks = if (machine.kind == MachineKind.CARDIO) {
+            CardioRules.weeks(datedCardio(own, dates), LocalDate.now(clock), firstDayOfWeek(), WEEKS)
+        } else {
+            emptyList()
+        }
+        return MachineProgress(machine, metric, ProgressRules.points(own, dates, metric), weeks = weeks)
+    }
+
+    /** Cardio sets paired with the date of their session. */
+    private fun datedCardio(sets: List<WorkoutSet>, dates: Map<Long, LocalDate>): List<Pair<LocalDate, WorkoutSet>> =
+        sets.mapNotNull { set ->
+            val date = dates[set.sessionId] ?: return@mapNotNull null
+            if (CardioRules.isCardio(set)) date to set else null
+        }
+
+    /** Same source the Calendar uses. */
+    private fun firstDayOfWeek() = WeekFields.of(Locale.getDefault()).firstDayOfWeek
+
+    private companion object {
+        const val WEEKS = 12
     }
 }

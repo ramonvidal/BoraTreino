@@ -32,12 +32,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.ProgressRange
 import com.boratreino.core.model.SessionPoint
 import com.boratreino.core.ui.EmptyState
+import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.R as CoreUiR
+import java.time.LocalDate
 
 /** Sessions listed before "Show all". */
 internal const val SESSIONS_SHOWN = 15
@@ -111,6 +114,9 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
         item(key = "tiles") { Tiles(state) }
         item(key = "ranges") { RangeChips(state.range, actions.onSelectRange) }
         item(key = "chart") { ChartCard(state, actions.onSelectPoint) }
+        if (state.metric == ProgressMetric.MINUTES && state.weeks.isNotEmpty()) {
+            item(key = "weeks") { WeeksCard(state.weeks, state.today) }
+        }
         if (state.points.isNotEmpty()) {
             item(key = "sessions-header") {
                 Text(
@@ -208,6 +214,7 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
     val title = when (state.metric) {
         ProgressMetric.WEIGHT -> stringResource(R.string.progress_chart_title_weight)
         ProgressMetric.REPS -> stringResource(R.string.progress_chart_title_reps)
+        ProgressMetric.MINUTES -> stringResource(R.string.progress_chart_title_minutes)
     }
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -255,16 +262,24 @@ private fun chartDescription(state: MachineProgressUiState): String {
     val first = points.first()
     val last = points.last()
     val best = points.maxOf { it.value }
-    val weight = state.metric == ProgressMetric.WEIGHT
+    val metric = state.metric
     return if (points.size < 2) {
         stringResource(
-            if (weight) R.string.progress_chart_description_one_weight else R.string.progress_chart_description_one_reps,
+            when (metric) {
+                ProgressMetric.WEIGHT -> R.string.progress_chart_description_one_weight
+                ProgressMetric.REPS -> R.string.progress_chart_description_one_reps
+                ProgressMetric.MINUTES -> R.string.progress_chart_description_one_minutes
+            },
             formatKg(last.value),
             formatShortDate(last.date, state.today),
         )
     } else {
         stringResource(
-            if (weight) R.string.progress_chart_description_weight else R.string.progress_chart_description_reps,
+            when (metric) {
+                ProgressMetric.WEIGHT -> R.string.progress_chart_description_weight
+                ProgressMetric.REPS -> R.string.progress_chart_description_reps
+                ProgressMetric.MINUTES -> R.string.progress_chart_description_minutes
+            },
             formatKg(first.value),
             formatShortDate(first.date, state.today),
             formatKg(last.value),
@@ -291,4 +306,39 @@ private fun SessionRow(state: MachineProgressUiState, point: SessionPoint) {
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 14.dp),
         )
     }
+}
+
+/** "Minutes per week": 12 bars, then a row per week that had cardio, newest first. */
+@Composable
+private fun WeeksCard(weeks: List<CardioWeek>, today: LocalDate) {
+    val currentStart = weeks.last().weekStart
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.progress_weeks_title), style = MaterialTheme.typography.titleMedium)
+            WeeklyBars(weeks, description = weeksDescription(weeks))
+            for (week in weeks.asReversed()) {
+                if (week.minutes == 0 && week.calories == 0 && week.distanceM == 0) continue
+                val label = if (week.weekStart == currentStart) {
+                    stringResource(R.string.progress_week_this)
+                } else {
+                    stringResource(R.string.progress_week_of, formatShortDate(week.weekStart, today))
+                }
+                Text(
+                    stringResource(R.string.progress_detail_pair, label, cardioText(week.minutes, week.calories, week.distanceM)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(vertical = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun weeksDescription(weeks: List<CardioWeek>): String {
+    val total = weeks.sumOf { it.minutes }
+    val best = weeks.maxOf { it.minutes }
+    return stringResource(R.string.progress_weeks_description, weeks.size, total, best)
 }

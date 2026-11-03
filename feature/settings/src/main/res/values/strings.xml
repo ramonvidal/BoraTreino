@@ -16,6 +16,13 @@
     <string name="settings_rest_seconds">%1$d s</string>
     <string name="settings_rest_hint">Each machine can have its own rest time in its editor.</string>
 
+    <string name="settings_health_title">Health Connect</string>
+    <string name="settings_health_hint">Send each finished training to Health Connect (exercise sessions, and calories and distance for cardio). Nothing is read.</string>
+    <string name="settings_health_switch">Send trainings to Health Connect</string>
+    <string name="settings_health_missing">Health Connect is not installed or needs an update.</string>
+    <string name="settings_health_get">Get Health Connect</string>
+    <string name="settings_health_denied">Permission not granted</string>
+
     <string name="settings_notifications_title">Notifications</string>
     <string name="settings_notifications_off">Notifications are off</string>
     <string name="settings_notifications_allow">Allow</string>

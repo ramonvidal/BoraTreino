@@ -4,7 +4,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 /** What a machine's progress chart measures. */
-enum class ProgressMetric { WEIGHT, REPS }
+enum class ProgressMetric { WEIGHT, REPS, MINUTES }
 
 /** One point per session for one machine; [topSet] is the set that gave [value]. */
 data class SessionPoint(
@@ -27,29 +27,37 @@ enum class ProgressRange { THREE_MONTHS, ONE_YEAR, ALL }
 data class ChartScale(val min: Double, val max: Double, val ticks: List<Double>)
 
 /** A machine's whole history as chart points, ascending. */
-data class MachineProgress(val machine: Machine, val metric: ProgressMetric, val points: List<SessionPoint>)
+data class MachineProgress(
+    val machine: Machine,
+    val metric: ProgressMetric,
+    val points: List<SessionPoint>,
+    /** The last 12 weeks, oldest first; only for cardio machines. */
+    val weeks: List<CardioWeek> = emptyList(),
+)
 
 data class ProgressOverview(
     /** Machines with at least one point, last trained first (ties: name). */
     val machines: List<MachineProgress>,
     val trainingsThisMonth: Int,
     val recordsThisMonth: Int,
+    /** This week's cardio totals; null when not computed. */
+    val cardioThisWeek: CardioWeek? = null,
 )
 
 object ProgressRules {
-    /** BODYWEIGHT_REPS machine with no set whose weight > 0 -> REPS; everything else -> WEIGHT. */
-    fun metricFor(machine: Machine, sets: List<WorkoutSet>): ProgressMetric =
-        if (machine.kind == MachineKind.BODYWEIGHT_REPS && sets.none { (it.weightKg ?: 0.0) > 0.0 }) {
-            ProgressMetric.REPS
-        } else {
-            ProgressMetric.WEIGHT
-        }
+    /** CARDIO machine -> MINUTES; BODYWEIGHT_REPS machine with no set whose weight > 0 -> REPS; else WEIGHT. */
+    fun metricFor(machine: Machine, sets: List<WorkoutSet>): ProgressMetric = when {
+        machine.kind == MachineKind.CARDIO -> ProgressMetric.MINUTES
+        machine.kind == MachineKind.BODYWEIGHT_REPS && sets.none { (it.weightKg ?: 0.0) > 0.0 } -> ProgressMetric.REPS
+        else -> ProgressMetric.WEIGHT
+    }
 
     /**
      * One point per session that has at least one of this machine's sets, ascending by date then session id.
      * [sessionDates] maps session id -> its local date; sets whose session is missing are ignored.
      * WEIGHT: topSet = heaviest weight (null counts 0), ties -> more reps, then later position. REPS: topSet = most
-     * reps, ties -> heavier, then later position. value = that set's weight or reps.
+     * reps, ties -> heavier, then later position. value = that set's weight or reps. MINUTES: value = total minutes
+     * of the session's sets; topSet = the longest set, ties -> later position.
      */
     fun points(
         sets: List<WorkoutSet>,
@@ -59,6 +67,7 @@ object ProgressRules {
         val order: Comparator<WorkoutSet> = when (metric) {
             ProgressMetric.WEIGHT -> compareBy<WorkoutSet>({ it.weightKg ?: 0.0 }, { it.reps ?: 0 }, { it.position })
             ProgressMetric.REPS -> compareBy<WorkoutSet>({ it.reps ?: 0 }, { it.weightKg ?: 0.0 }, { it.position })
+            ProgressMetric.MINUTES -> compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.position })
         }
         return sets
             .filter { it.sessionId in sessionDates }
@@ -68,6 +77,7 @@ object ProgressRules {
                 val value = when (metric) {
                     ProgressMetric.WEIGHT -> top.weightKg ?: 0.0
                     ProgressMetric.REPS -> (top.reps ?: 0).toDouble()
+                    ProgressMetric.MINUTES -> CardioRules.minutesOf(group.sumOf { it.seconds ?: 0 }).toDouble()
                 }
                 SessionPoint(sessionId, sessionDates.getValue(sessionId), value, top, group.size)
             }

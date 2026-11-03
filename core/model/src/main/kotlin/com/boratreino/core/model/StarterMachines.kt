@@ -17,13 +17,16 @@ data class StarterMachine(
     fun displayName(portuguese: Boolean): String = if (portuguese) namePt else name
 }
 
-/** The built-in list of common gym machines and exercises (no cardio yet). */
+/** The built-in list of common gym machines and exercises (strength and cardio). */
 object StarterMachines {
     private fun w(name: String, pt: String, group: MuscleGroup, step: Double = 2.5) =
         StarterMachine(name, group, MachineKind.WEIGHT_REPS, step, pt)
 
     private fun bw(name: String, pt: String, group: MuscleGroup) =
         StarterMachine(name, group, MachineKind.BODYWEIGHT_REPS, 2.5, pt)
+
+    private fun cardio(name: String, pt: String) =
+        StarterMachine(name, MuscleGroup.CARDIO, MachineKind.CARDIO, 1.0, pt)
 
     private val L = MuscleGroup.LEGS
     private val C = MuscleGroup.CHEST
@@ -192,6 +195,15 @@ object StarterMachines {
         w("Russian twist", "Rotação russa", K, 2.0),
         w("Wood chopper", "Lenhador no cabo", K),
         bw("Ab wheel", "Roda abdominal", K),
+        // Cardio
+        cardio("Treadmill", "Esteira"),
+        cardio("Stationary bike", "Bicicleta ergométrica"),
+        cardio("Spin bike", "Bicicleta de spinning"),
+        cardio("Elliptical", "Elíptico"),
+        cardio("Rowing machine", "Remo ergométrico"),
+        cardio("Stair climber", "Escada (simulador)"),
+        cardio("Walking (outdoor)", "Caminhada"),
+        cardio("Running (outdoor)", "Corrida"),
     ).map { it.copy(image = images[it.name]) }
 
     /** Lower case, accents removed, trimmed. */

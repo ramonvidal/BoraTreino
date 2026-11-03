@@ -23,6 +23,7 @@
     <string name="editor_kind">Kind</string>
     <string name="editor_kind_weights">Weights</string>
     <string name="editor_kind_bodyweight">Bodyweight</string>
+    <string name="editor_kind_cardio">Cardio</string>
     <string name="editor_step">Weight step</string>
     <string name="editor_step_value">%1$s kg</string>
     <string name="editor_rest">Rest after each set</string>

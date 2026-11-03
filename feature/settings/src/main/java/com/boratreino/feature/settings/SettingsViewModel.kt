@@ -13,11 +13,15 @@ import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.model.WeekGoalRules
+import com.boratreino.core.health.HealthAvailability
+import com.boratreino.core.health.HealthConnectAccess
 import com.boratreino.core.notify.ReminderScheduler
 import com.boratreino.core.settings.AppLanguage
+import com.boratreino.core.settings.HealthSettings
 import com.boratreino.core.settings.TrainingSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Intent
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -53,9 +57,28 @@ internal data class SettingsUiState(
     val importConfirm: BackupSummary? = null,
     val installedVersion: String = "",
     val language: AppLanguage = AppLanguage.ENGLISH,
+    val health: HealthCardState = HealthCardState.Hidden,
 ) {
     val showNotificationsSection: Boolean
         get() = (reminders.enabled || restTimer.enabled) && !notificationsGranted
+}
+
+/** What the Health Connect card shows. */
+internal sealed interface HealthCardState {
+    /** Health Connect is not supported on this phone: no card. */
+    data object Hidden : HealthCardState
+
+    /** Health Connect is missing or too old: a button to get it. */
+    data object NeedsInstall : HealthCardState
+
+    /** Available, sync is off. */
+    data object Off : HealthCardState
+
+    /** Available, sync is on. */
+    data object On : HealthCardState
+
+    /** Sync is off because the permission request was refused. */
+    data object PermissionDenied : HealthCardState
 }
 
 internal sealed interface SettingsEvent {
@@ -72,6 +95,8 @@ private data class Overlay(
     val timePickerOpen: Boolean = false,
     val importConfirm: BackupSummary? = null,
     val language: AppLanguage = AppLanguage.current(),
+    val healthAvailability: HealthAvailability = HealthAvailability.Unsupported,
+    val healthDenied: Boolean = false,
 )
 
 @HiltViewModel
@@ -79,6 +104,8 @@ class SettingsViewModel @Inject constructor(
     private val settings: TrainingSettings,
     private val backup: BackupRepository,
     private val reminderScheduler: ReminderScheduler,
+    private val healthSettings: HealthSettings,
+    private val healthAccess: HealthConnectAccess,
     @ApplicationContext private val context: Context,
     @Suppress("unused") private val clock: Clock,
 ) : ViewModel() {
@@ -101,8 +128,9 @@ class SettingsViewModel @Inject constructor(
         settings.weeklyGoal,
         settings.reminders,
         settings.restTimer,
+        healthSettings.enabled,
         overlay,
-    ) { goal, reminders, restTimer, overlay ->
+    ) { goal, reminders, restTimer, healthEnabled, overlay ->
         SettingsUiState(
             loaded = true,
             weeklyGoal = goal,
@@ -113,12 +141,45 @@ class SettingsViewModel @Inject constructor(
             importConfirm = overlay.importConfirm,
             installedVersion = installedVersion,
             language = overlay.language,
+            health = healthCardState(overlay.healthAvailability, healthEnabled, overlay.healthDenied),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun chooseLanguage(language: AppLanguage) {
         overlay.update { it.copy(language = language) }
         AppLanguage.choose(language)
+    }
+
+    /** Asks Health Connect what it can do right now; the screen calls it on resume. */
+    fun refreshHealth() {
+        viewModelScope.launch {
+            val availability = try {
+                healthAccess.availability()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                HealthAvailability.Unsupported
+            }
+            overlay.update { it.copy(healthAvailability = availability) }
+        }
+    }
+
+    internal fun healthPermissionContract() = healthAccess.permissionContract()
+
+    internal val healthPermissions: Set<String> get() = healthAccess.permissions
+
+    internal fun healthInstallIntent(): Intent = healthAccess.installIntent()
+
+    /** The result of the permission request: sync turns on only when everything was granted. */
+    fun onHealthPermissionResult(granted: Set<String>) {
+        val all = granted.containsAll(healthAccess.permissions)
+        overlay.update { it.copy(healthDenied = !all) }
+        if (all) save { healthSettings.setEnabled(true) }
+    }
+
+    fun turnHealthOff() {
+        overlay.update { it.copy(healthDenied = false) }
+        save { healthSettings.setEnabled(false) }
     }
 
     fun suggestedFileName(): String = backup.suggestedFileName()
@@ -239,5 +300,21 @@ class SettingsViewModel @Inject constructor(
                 eventChannel.trySend(SettingsEvent.Failed)
             }
         }
+    }
+}
+
+/** Pure mapping from what Health Connect offers and what the user chose to the card. */
+internal fun healthCardState(
+    availability: HealthAvailability,
+    enabled: Boolean,
+    denied: Boolean,
+): HealthCardState = when (availability) {
+    HealthAvailability.Unsupported -> HealthCardState.Hidden
+    HealthAvailability.NotInstalled, HealthAvailability.NeedsUpdate -> HealthCardState.NeedsInstall
+    HealthAvailability.NeedsPermission -> if (denied) HealthCardState.PermissionDenied else HealthCardState.Off
+    HealthAvailability.Ready -> when {
+        enabled -> HealthCardState.On
+        denied -> HealthCardState.PermissionDenied
+        else -> HealthCardState.Off
     }
 }

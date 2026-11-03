@@ -30,8 +30,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.ui.EmptyState
+import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
@@ -71,6 +73,9 @@ internal fun ProgressContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item(key = "summary") { SummaryCard(state) }
+                state.cardioThisWeek?.let { week ->
+                    item(key = "cardio-week") { CardioWeekCard(week) }
+                }
                 if (state.improved.isNotEmpty()) {
                     item(key = "improved-header") { SectionTitle(stringResource(R.string.progress_most_improved)) }
                     item(key = "improved") { ImprovedCard(state.improved, actions.onOpenMachine) }
@@ -109,6 +114,18 @@ private fun SummaryCard(state: ProgressUiState) {
     SoftCard {
         Text(
             stringResource(R.string.progress_summary, trainings, records),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(16.dp),
+        )
+    }
+}
+
+/** "Cardio this week: 45 min · 320 kcal". */
+@Composable
+private fun CardioWeekCard(week: CardioWeek) {
+    SoftCard {
+        Text(
+            stringResource(R.string.progress_cardio_week, cardioText(week.minutes, week.calories, week.distanceM)),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(16.dp),
         )
@@ -158,6 +175,7 @@ private fun ImprovedRowItem(row: ImprovedRow, onOpen: (Long) -> Unit) {
                 text = when (row.metric) {
                     ProgressMetric.WEIGHT -> stringResource(R.string.progress_from_to_kg, from, to)
                     ProgressMetric.REPS -> stringResource(R.string.progress_from_to_reps, from, to)
+                    ProgressMetric.MINUTES -> stringResource(R.string.progress_from_to_minutes, from, to)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -172,6 +190,7 @@ private fun MachineRowCard(row: MachineRow, state: ProgressUiState, onOpen: (Lon
     val best = when (row.metric) {
         ProgressMetric.WEIGHT -> stringResource(R.string.progress_best_kg, formatKg(row.best))
         ProgressMetric.REPS -> row.best.toInt().let { pluralStringResource(R.plurals.progress_best_reps, it, it) }
+        ProgressMetric.MINUTES -> stringResource(R.string.progress_best_minutes, row.best.toInt())
     }
     val last = stringResource(R.string.progress_last_trained, formatShortDate(row.lastTrained, state.today))
     Card(

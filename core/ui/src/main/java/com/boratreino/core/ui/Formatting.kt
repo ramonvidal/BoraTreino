@@ -31,7 +31,19 @@ fun setSummaryText(summary: SetSummary): String {
             stringResource(R.string.set_summary_same_weight, formatKg(summary.weightKg), summary.reps.joinToString(separator))
         is SetSummary.Mixed ->
             summary.sets.map { setText(it.weightKg, it.reps) }.joinToString(separator)
+        is SetSummary.Cardio -> cardioText(summary.minutes, summary.calories, summary.distanceM)
     }
+}
+
+/** "20 min · 150 kcal · 3.2 km"; a part that is 0 (not logged) is left out, and nothing logged reads "-". */
+@Composable
+fun cardioText(minutes: Int, calories: Int, distanceM: Int): String {
+    val parts = buildList {
+        if (minutes > 0) add(stringResource(R.string.cardio_minutes, minutes))
+        if (calories > 0) add(stringResource(R.string.cardio_calories, calories))
+        if (distanceM > 0) add(stringResource(R.string.cardio_km, formatKg(distanceM / 1000.0)))
+    }
+    return if (parts.isEmpty()) "-" else parts.joinToString(" · ")
 }
 
 /** The group's name for the UI: Legs, Chest, Back, Shoulders, Arms, Core, Cardio. */

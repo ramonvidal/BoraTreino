@@ -16,6 +16,9 @@
     <string name="set_text">%1$s kg × %2$d</string>
     <string name="set_summary_uniform">%1$d × %2$d at %3$s kg</string>
     <string name="set_summary_same_weight">%1$s kg: %2$s</string>
+    <string name="cardio_minutes">%1$d min</string>
+    <string name="cardio_calories">%1$d kcal</string>
+    <string name="cardio_km">%1$s km</string>
     <string name="set_summary_separator">", "</string>
     <string name="muscle_group_legs">Legs</string>
     <string name="muscle_group_chest">Chest</string>

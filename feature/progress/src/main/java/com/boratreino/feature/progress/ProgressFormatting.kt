@@ -5,6 +5,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.SessionPoint
+import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -32,6 +33,7 @@ internal fun signed(delta: Double): String =
 internal fun valueText(metric: ProgressMetric, value: Double): String = when (metric) {
     ProgressMetric.WEIGHT -> stringResource(CoreUiR.string.weight_kg, formatKg(value))
     ProgressMetric.REPS -> value.roundToInt().let { pluralStringResource(CoreUiR.plurals.reps_only, it, it) }
+    ProgressMetric.MINUTES -> cardioText(value.roundToInt(), 0, 0)
 }
 
 /** "+10 kg", "-5 kg" or "+3 reps". */
@@ -39,6 +41,7 @@ internal fun valueText(metric: ProgressMetric, value: Double): String = when (me
 internal fun deltaText(metric: ProgressMetric, delta: Double): String = when (metric) {
     ProgressMetric.WEIGHT -> stringResource(CoreUiR.string.weight_kg, signed(delta))
     ProgressMetric.REPS -> pluralStringResource(R.plurals.progress_delta_reps, abs(delta).roundToInt(), signed(delta))
+    ProgressMetric.MINUTES -> stringResource(R.string.progress_delta_minutes, signed(delta))
 }
 
 /** "125 kg × 8" (or "12 reps" when charting reps): the set that gave the session's value. */
@@ -49,7 +52,7 @@ internal fun topText(metric: ProgressMetric, point: SessionPoint): String = when
         val reps = point.topSet.reps
         if (reps == null) stringResource(CoreUiR.string.weight_kg, weight) else stringResource(CoreUiR.string.set_text, weight, reps)
     }
-    ProgressMetric.REPS -> valueText(metric, point.value)
+    ProgressMetric.REPS, ProgressMetric.MINUTES -> valueText(metric, point.value)
 }
 
 /** "3 sets". */

@@ -97,8 +97,25 @@ class MachineEditorViewModel @Inject constructor(
     }
 
     internal fun setName(value: String) = _uiState.update { it.copy(name = value, nameTouched = true) }
-    internal fun setMuscleGroup(value: MuscleGroup) = _uiState.update { it.copy(muscleGroup = value) }
-    internal fun setKind(value: MachineKind) = _uiState.update { it.copy(kind = value) }
+
+    /** Cardio is both a group and a kind: picking one picks the other, and leaving it falls back to weights. */
+    internal fun setMuscleGroup(value: MuscleGroup) = _uiState.update {
+        val kind = when {
+            value == MuscleGroup.CARDIO -> MachineKind.CARDIO
+            it.kind == MachineKind.CARDIO -> MachineKind.WEIGHT_REPS
+            else -> it.kind
+        }
+        it.copy(muscleGroup = value, kind = kind)
+    }
+
+    internal fun setKind(value: MachineKind) = _uiState.update {
+        val group = when {
+            value == MachineKind.CARDIO -> MuscleGroup.CARDIO
+            it.muscleGroup == MuscleGroup.CARDIO -> MuscleGroup.LEGS
+            else -> it.muscleGroup
+        }
+        it.copy(kind = value, muscleGroup = group)
+    }
     internal fun setStep(value: Double) = _uiState.update { it.copy(stepKg = value) }
     internal fun setSetupNote(value: String) = _uiState.update { it.copy(setupNote = value) }
     internal fun setRest(value: Int?) = _uiState.update { it.copy(restSeconds = value) }

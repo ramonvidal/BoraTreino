@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.SmallStepper
 import com.boratreino.core.ui.label
@@ -222,11 +223,13 @@ private fun ItemCard(entry: RoutineEditorItem, index: Int, lastIndex: Int, callb
                 MachineThumb(name = entry.machineName, muscleGroup = entry.muscleGroup, size = 40.dp)
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(entry.machineName, style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        targetText(entry.item),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    if (entry.kind != MachineKind.CARDIO) {
+                        Text(
+                            targetText(entry.item),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 IconButton(onClick = { callbacks.onMoveItem(index, true) }, enabled = index > 0) {
                     Icon(
@@ -247,29 +250,31 @@ private fun ItemCard(entry: RoutineEditorItem, index: Int, lastIndex: Int, callb
                     )
                 }
             }
-            FlowRow(
-                Modifier.padding(end = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                LabelledStepper(
-                    label = stringResource(R.string.routine_sets),
-                    value = entry.item.targetSets.toString(),
-                    onMinus = { callbacks.onSetsStep(index, false) },
-                    onPlus = { callbacks.onSetsStep(index, true) },
-                )
-                LabelledStepper(
-                    label = stringResource(R.string.routine_reps_min),
-                    value = entry.item.repsMin.toString(),
-                    onMinus = { callbacks.onRepsMinStep(index, false) },
-                    onPlus = { callbacks.onRepsMinStep(index, true) },
-                )
-                LabelledStepper(
-                    label = stringResource(R.string.routine_reps_max),
-                    value = entry.item.repsMax.toString(),
-                    onMinus = { callbacks.onRepsMaxStep(index, false) },
-                    onPlus = { callbacks.onRepsMaxStep(index, true) },
-                )
+            if (entry.kind != MachineKind.CARDIO) {
+                FlowRow(
+                    Modifier.padding(end = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    LabelledStepper(
+                        label = stringResource(R.string.routine_sets),
+                        value = entry.item.targetSets.toString(),
+                        onMinus = { callbacks.onSetsStep(index, false) },
+                        onPlus = { callbacks.onSetsStep(index, true) },
+                    )
+                    LabelledStepper(
+                        label = stringResource(R.string.routine_reps_min),
+                        value = entry.item.repsMin.toString(),
+                        onMinus = { callbacks.onRepsMinStep(index, false) },
+                        onPlus = { callbacks.onRepsMinStep(index, true) },
+                    )
+                    LabelledStepper(
+                        label = stringResource(R.string.routine_reps_max),
+                        value = entry.item.repsMax.toString(),
+                        onMinus = { callbacks.onRepsMaxStep(index, false) },
+                        onPlus = { callbacks.onRepsMaxStep(index, true) },
+                    )
+                }
             }
         }
     }

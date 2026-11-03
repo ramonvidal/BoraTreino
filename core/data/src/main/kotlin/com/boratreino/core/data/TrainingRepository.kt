@@ -5,6 +5,7 @@ import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.OpenSession
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.SessionSummary
+import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.WorkoutSet
@@ -29,6 +30,8 @@ interface TrainingRepository {
      * set, if any. A newly opened session gets the routine of the current choice. One transaction.
      */
     suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet
+    /** Same as [logSet] for a cardio machine: seconds / calories / distance instead of weight and reps; `record` is null. */
+    suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet
     suspend fun updateSet(set: WorkoutSet)
     suspend fun deleteSet(set: WorkoutSet)
     /** Undo of delete: re-inserts the set with its id. */

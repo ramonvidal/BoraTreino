@@ -116,8 +116,7 @@ internal fun MachineEditorContent(
 
             Section(stringResource(R.string.editor_muscle_group)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Cardio stays hidden until Phase 7.
-                    MuscleGroup.entries.filter { it != MuscleGroup.CARDIO }.forEach { group ->
+                    MuscleGroup.entries.forEach { group ->
                         FilterChip(
                             selected = state.muscleGroup == group,
                             onClick = { callbacks.onMuscleGroupChange(group) },
@@ -139,43 +138,51 @@ internal fun MachineEditorContent(
                         onClick = { callbacks.onKindChange(MachineKind.BODYWEIGHT_REPS) },
                         label = { Text(stringResource(R.string.editor_kind_bodyweight)) },
                     )
-                }
-            }
-
-            Section(stringResource(R.string.editor_step)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // A machine saved with another step keeps it as a fourth choice.
-                    val steps = if (state.stepKg in StepChoices) StepChoices else (StepChoices + state.stepKg).sorted()
-                    steps.forEach { step ->
-                        FilterChip(
-                            selected = state.stepKg == step,
-                            onClick = { callbacks.onStepChange(step) },
-                            label = { Text(stringResource(R.string.editor_step_value, formatKg(step))) },
-                        )
-                    }
-                }
-            }
-
-            Section(stringResource(R.string.editor_rest)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
-                        selected = state.restSeconds == null,
-                        onClick = { callbacks.onRestChange(null) },
-                        label = { Text(stringResource(R.string.editor_rest_default)) },
+                        selected = state.kind == MachineKind.CARDIO,
+                        onClick = { callbacks.onKindChange(MachineKind.CARDIO) },
+                        label = { Text(stringResource(R.string.editor_kind_cardio)) },
                     )
-                    // A stored value outside the options keeps its own chip.
-                    val stored = state.restSeconds
-                    val options = if (stored == null || stored in RestTimerRules.OPTIONS) {
-                        RestTimerRules.OPTIONS
-                    } else {
-                        (RestTimerRules.OPTIONS + stored).sorted()
+                }
+            }
+
+            // Weight step and rest timer don't apply to cardio.
+            if (state.kind != MachineKind.CARDIO) {
+                Section(stringResource(R.string.editor_step)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // A machine saved with another step keeps it as a fourth choice.
+                        val steps = if (state.stepKg in StepChoices) StepChoices else (StepChoices + state.stepKg).sorted()
+                        steps.forEach { step ->
+                            FilterChip(
+                                selected = state.stepKg == step,
+                                onClick = { callbacks.onStepChange(step) },
+                                label = { Text(stringResource(R.string.editor_step_value, formatKg(step))) },
+                            )
+                        }
                     }
-                    options.forEach { seconds ->
+                }
+
+                Section(stringResource(R.string.editor_rest)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
-                            selected = state.restSeconds == seconds,
-                            onClick = { callbacks.onRestChange(seconds) },
-                            label = { Text(stringResource(R.string.editor_rest_value, seconds)) },
+                            selected = state.restSeconds == null,
+                            onClick = { callbacks.onRestChange(null) },
+                            label = { Text(stringResource(R.string.editor_rest_default)) },
                         )
+                        // A stored value outside the options keeps its own chip.
+                        val stored = state.restSeconds
+                        val options = if (stored == null || stored in RestTimerRules.OPTIONS) {
+                            RestTimerRules.OPTIONS
+                        } else {
+                            (RestTimerRules.OPTIONS + stored).sorted()
+                        }
+                        options.forEach { seconds ->
+                            FilterChip(
+                                selected = state.restSeconds == seconds,
+                                onClick = { callbacks.onRestChange(seconds) },
+                                label = { Text(stringResource(R.string.editor_rest_value, seconds)) },
+                            )
+                        }
                     }
                 }
             }

@@ -21,6 +21,7 @@
     <string name="editor_kind">Tipo</string>
     <string name="editor_kind_weights">Com carga</string>
     <string name="editor_kind_bodyweight">Peso do corpo</string>
+    <string name="editor_kind_cardio">Cardio</string>
     <string name="editor_step">Passo da carga</string>
     <string name="editor_step_value">%1$s kg</string>
     <string name="editor_rest">Descanso após cada série</string>

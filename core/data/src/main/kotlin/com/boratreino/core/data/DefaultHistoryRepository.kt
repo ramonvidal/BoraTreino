@@ -2,6 +2,10 @@ package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
 import com.boratreino.core.model.CalendarRules
+import com.boratreino.core.model.CardioDraft
+import com.boratreino.core.model.CardioRules
+import com.boratreino.core.model.HealthExport
+import com.boratreino.core.model.HealthExportRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.Session
@@ -123,6 +127,54 @@ internal class DefaultHistoryRepository @Inject constructor(
             if (endedAt != null && loggedAt > endedAt) store.setSessionEnd(sessionId, loggedAt)
             saved
         }
+
+    override suspend fun addCardioSet(sessionId: Long, machineId: Long, draft: CardioDraft): WorkoutSet =
+        store.inTransaction {
+            val session = store.session(sessionId) ?: throw IllegalArgumentException("No session $sessionId")
+            val loggedAt = store.lastSetAt(sessionId)?.plusSeconds(60) ?: session.startedAt
+            val set = CardioRules.toSet(
+                id = 0,
+                sessionId = sessionId,
+                machineId = machineId,
+                position = store.setCount(sessionId, machineId),
+                draft = draft,
+                loggedAt = loggedAt,
+            )
+            val saved = set.copy(id = store.insertSet(set))
+            val endedAt = session.endedAt
+            if (endedAt != null && loggedAt > endedAt) store.setSessionEnd(sessionId, loggedAt)
+            saved
+        }
+
+    override fun observeClosedSessionExports(sinceDays: Int): Flow<List<HealthExport>> {
+        val since = LocalDate.now(clock).minusDays(sinceDays.toLong()).startInstant()
+        val until = LocalDate.now(clock).plusDays(1).startInstant()
+        return combine(
+            store.observeSessionsStartedBetween(since, until),
+            store.observeSetsOfSessionsStartedBetween(since, until),
+            store.observeMachines(includeArchived = true),
+            store.observeAllRoutines(),
+        ) { sessions, sets, machines, routines ->
+            val setsBySession = sets.groupBy { it.sessionId }
+            val machineById = machines.associateBy { it.id }
+            val routineById = routines.associateBy { it.id }
+            sessions
+                .filter { it.endedAt != null }
+                .mapNotNull { session ->
+                    HealthExportRules.export(
+                        session,
+                        setsBySession[session.id].orEmpty(),
+                        machineById,
+                        session.routineId?.let(routineById::get)?.name,
+                    )
+                }
+        }.distinctUntilChanged()
+    }
+
+    override fun observeSessionIds(): Flow<Set<Long>> =
+        store.observeSessions()
+            .map { sessions -> sessions.mapTo(HashSet()) { it.id } as Set<Long> }
+            .distinctUntilChanged()
 
     override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> =
         store.lastTimeBefore(sessionId, machineId)

@@ -7,6 +7,7 @@ import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.Routine
@@ -30,6 +31,8 @@ internal data class RoutineEditorItem(
     val item: RoutineItem,
     /** Only picks the thumbnail's placeholder; the picture itself is found by name. */
     val muscleGroup: MuscleGroup = MuscleGroup.LEGS,
+    /** Cardio machines have no sets x reps target. */
+    val kind: MachineKind = MachineKind.WEIGHT_REPS,
 )
 
 /**
@@ -134,6 +137,7 @@ class RoutineEditorViewModel @Inject constructor(
                                     machineName = known[item.machineId]?.name.orEmpty(),
                                     item = item,
                                     muscleGroup = known[item.machineId]?.muscleGroup ?: MuscleGroup.LEGS,
+                                    kind = known[item.machineId]?.kind ?: MachineKind.WEIGHT_REPS,
                                 ) },
                         )
                     }
@@ -161,7 +165,7 @@ class RoutineEditorViewModel @Inject constructor(
             repsMin = 8,
             repsMax = 12,
         )
-        it.copy(items = it.items + RoutineEditorItem(machine.name, item, machine.muscleGroup), pickerOpen = false)
+        it.copy(items = it.items + RoutineEditorItem(machine.name, item, machine.muscleGroup, machine.kind), pickerOpen = false)
     }
 
     internal fun moveItem(index: Int, up: Boolean) = form.update {

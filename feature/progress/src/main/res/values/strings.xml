@@ -51,4 +51,16 @@
     <string name="progress_chart_description_one_reps">Top reps %1$s on %2$s</string>
     <string name="progress_sessions">Sessions</string>
     <string name="progress_show_all">Show all</string>
+    <string name="progress_cardio_week">Cardio this week: %1$s</string>
+    <string name="progress_from_to_minutes">%1$s → %2$s min</string>
+    <string name="progress_best_minutes">Best %1$d min</string>
+    <string name="progress_delta_minutes">%1$s min</string>
+    <string name="progress_trend_minutes">Trend: %1$s to %2$s min</string>
+    <string name="progress_chart_title_minutes">Minutes per session</string>
+    <string name="progress_chart_description_minutes">Minutes from %1$s on %2$s to %3$s on %4$s; best %5$s</string>
+    <string name="progress_chart_description_one_minutes">Minutes %1$s on %2$s</string>
+    <string name="progress_weeks_title">Minutes per week</string>
+    <string name="progress_weeks_description">Minutes per week over %1$d weeks: %2$d in total, best week %3$d</string>
+    <string name="progress_week_this">This week</string>
+    <string name="progress_week_of">Week of %1$s</string>
 </resources>

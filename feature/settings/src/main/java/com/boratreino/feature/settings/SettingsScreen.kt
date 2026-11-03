@@ -1,6 +1,7 @@
 package com.boratreino.feature.settings
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.os.Build
 import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -92,6 +93,8 @@ internal data class SettingsActions(
     val onConfirmImport: () -> Unit = {},
     val onDismissImport: () -> Unit = {},
     val onChooseLanguage: (AppLanguage) -> Unit = {},
+    val onHealthChange: (Boolean) -> Unit = {},
+    val onGetHealthConnect: () -> Unit = {},
 )
 
 @Composable
@@ -140,8 +143,13 @@ internal fun SettingsScreen(
         ActivityResultContracts.RequestPermission(),
     ) { viewModel.setNotificationsGranted(NotificationPermission.isGranted(context)) }
 
+    val healthPermission = rememberLauncherForActivityResult(viewModel.healthPermissionContract()) { granted ->
+        viewModel.onHealthPermissionResult(granted)
+    }
+
     // The permission can change in the system settings while we are away.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshHealth()
         viewModel.setNotificationsGranted(NotificationPermission.isGranted(context))
     }
 
@@ -168,6 +176,16 @@ internal fun SettingsScreen(
             onConfirmImport = viewModel::confirmImport,
             onDismissImport = viewModel::dismissImport,
             onChooseLanguage = viewModel::chooseLanguage,
+            onHealthChange = { on ->
+                if (on) healthPermission.launch(viewModel.healthPermissions) else viewModel.turnHealthOff()
+            },
+            onGetHealthConnect = {
+                try {
+                    context.startActivity(viewModel.healthInstallIntent())
+                } catch (e: ActivityNotFoundException) {
+                    // No store on this phone: nothing to open.
+                }
+            },
         ),
         snackbarHostState = snackbar,
     )
@@ -213,6 +231,7 @@ internal fun SettingsContent(
                 item { GoalSection(state, actions) }
                 item { RemindersSection(state, actions) }
                 item { RestTimerSection(state, actions) }
+                if (state.health != HealthCardState.Hidden) item { HealthSection(state.health, actions) }
                 if (state.showNotificationsSection) item { NotificationsSection(actions) }
                 item { BackupSection(actions) }
                 if (updatesCard != null) item { updatesCard() }
@@ -345,6 +364,37 @@ private fun RestTimerSection(state: SettingsUiState, actions: SettingsActions) {
             }
         }
         Hint(stringResource(R.string.settings_rest_hint))
+    }
+}
+
+@Composable
+private fun HealthSection(health: HealthCardState, actions: SettingsActions) {
+    SectionCard(stringResource(R.string.settings_health_title)) {
+        Hint(stringResource(R.string.settings_health_hint))
+        when (health) {
+            HealthCardState.Hidden -> Unit
+            HealthCardState.NeedsInstall -> {
+                Hint(stringResource(R.string.settings_health_missing))
+                Button(
+                    onClick = actions.onGetHealthConnect,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text(stringResource(R.string.settings_health_get)) }
+            }
+            HealthCardState.Off, HealthCardState.PermissionDenied, HealthCardState.On -> {
+                SwitchRow(
+                    stringResource(R.string.settings_health_switch),
+                    health == HealthCardState.On,
+                    actions.onHealthChange,
+                )
+                if (health == HealthCardState.PermissionDenied) {
+                    Text(
+                        stringResource(R.string.settings_health_denied),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
     }
 }
 

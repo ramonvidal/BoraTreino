@@ -25,6 +25,7 @@ internal fun trendDescription(metric: ProgressMetric, values: List<Double>): Str
     return when (metric) {
         ProgressMetric.WEIGHT -> stringResource(R.string.progress_trend_weight, from, to)
         ProgressMetric.REPS -> stringResource(R.string.progress_trend_reps, from, to)
+        ProgressMetric.MINUTES -> stringResource(R.string.progress_trend_minutes, from, to)
     }
 }
 
