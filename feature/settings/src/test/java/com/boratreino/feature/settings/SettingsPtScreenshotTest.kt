@@ -39,7 +39,6 @@ class SettingsPtScreenshotTest {
             notificationsGranted = true,
             is24Hour = true,
             installedVersion = "0.40",
-            updateStatus = UpdateStatus.Available("0.41"),
             language = AppLanguage.BAIANES,
         )
         compose.setContent {

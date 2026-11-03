@@ -8,7 +8,7 @@ import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.notify.ReminderScheduler
 import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.settings.TrainingSettings
-import com.boratreino.core.update.UpdateRepository
+import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -69,7 +69,7 @@ class SettingsViewModelTest {
 
     private lateinit var settings: FakeSettings
     private lateinit var scheduler: FakeScheduler
-    private lateinit var updates: UpdateRepository
+    private lateinit var context: Context
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -77,8 +77,8 @@ class SettingsViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         settings = FakeSettings()
         scheduler = FakeScheduler()
-        updates = UpdateRepository(RuntimeEnvironment.getApplication())
-        viewModel = SettingsViewModel(settings, FakeBackup(), scheduler, updates, Clock.systemUTC())
+        context = RuntimeEnvironment.getApplication()
+        viewModel = SettingsViewModel(settings, FakeBackup(), scheduler, context, Clock.systemUTC())
     }
 
     @After
@@ -201,18 +201,13 @@ class SettingsViewModelTest {
         assertEquals(120, settings.rest.value.defaultSeconds)
     }
 
-    // App updates and language
+    // About and language
 
     @Test
-    fun `the installed version is the one the update repository reports`() = runTest {
-        val state = loaded()
+    fun `the installed version is the one the package manager reports`() = runTest {
+        val expected = context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
 
-        assertEquals(updates.installedVersion, state.installedVersion)
-    }
-
-    @Test
-    fun `no update check has run until one is asked for`() = runTest {
-        assertEquals(UpdateStatus.Idle, loaded().updateStatus)
+        assertEquals(expected, loaded().installedVersion)
     }
 
     @Test

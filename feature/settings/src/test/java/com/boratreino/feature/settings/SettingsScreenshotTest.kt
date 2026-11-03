@@ -1,7 +1,13 @@
 package com.boratreino.feature.settings
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -10,6 +16,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.boratreino.core.model.BackupSummary
@@ -49,8 +56,19 @@ class SettingsScreenshotTest {
         notificationsGranted = true,
         is24Hour = true,
         installedVersion = "0.40",
-        updateStatus = UpdateStatus.UpToDate,
     )
+
+    /** Stands in for the updates card a build may put in the slot. */
+    @Composable
+    private fun UpdatesSlotPlaceholder() {
+        Card(Modifier.fillMaxWidth()) {
+            Text(
+                "Updates card slot",
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+    }
 
     private fun shoot(name: String, state: SettingsUiState, dark: Boolean = false, fontScale: Float = 1f) {
         compose.setContent {
@@ -113,19 +131,28 @@ class SettingsScreenshotTest {
     }
 
     @Test
-    fun `settings with an update available`() = shoot(
-        "settings-update-available",
-        main.copy(updateStatus = UpdateStatus.Available("0.41")),
-    )
+    fun `settings with something in the updates slot`() {
+        compose.setContent {
+            BoraTreinoTheme {
+                Surface(Modifier.fillMaxSize()) {
+                    SettingsContent(
+                        state = main,
+                        actions = SettingsActions(),
+                        modifier = Modifier.fillMaxSize(),
+                        updatesCard = { UpdatesSlotPlaceholder() },
+                    )
+                }
+            }
+        }
+        compose.onNodeWithText("Updates card slot").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/settings-with-updates-slot.png")
+    }
 
     @Test
-    fun `settings with the update page unreachable`() = shoot(
-        "settings-update-unreachable",
-        main.copy(updateStatus = UpdateStatus.Unreachable),
-    )
-
-    @Test
-    fun `settings updates up to date`() = shoot("settings-updates", main)
+    fun `settings about shows the installed version`() {
+        shoot("settings-about", main)
+        compose.onNodeWithText("Bora pro Treino! 0.40").assertExists()
+    }
 
     @Test
     fun `settings with Baianes chosen`() = shoot(
