@@ -1,6 +1,7 @@
 package com.boratreino.feature.settings
 
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,8 +16,8 @@ import com.boratreino.core.model.WeekGoalRules
 import com.boratreino.core.notify.ReminderScheduler
 import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.settings.TrainingSettings
-import com.boratreino.core.update.UpdateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -51,20 +52,10 @@ internal data class SettingsUiState(
     val is24Hour: Boolean = true,
     val importConfirm: BackupSummary? = null,
     val installedVersion: String = "",
-    val updateStatus: UpdateStatus = UpdateStatus.Idle,
     val language: AppLanguage = AppLanguage.ENGLISH,
 ) {
     val showNotificationsSection: Boolean
         get() = (reminders.enabled || restTimer.enabled) && !notificationsGranted
-}
-
-/** The quiet line under "Check for updates". */
-internal sealed interface UpdateStatus {
-    data object Idle : UpdateStatus
-    data object Checking : UpdateStatus
-    data object UpToDate : UpdateStatus
-    data class Available(val version: String) : UpdateStatus
-    data object Unreachable : UpdateStatus
 }
 
 internal sealed interface SettingsEvent {
@@ -80,7 +71,6 @@ private data class Overlay(
     val notificationsGranted: Boolean = true,
     val timePickerOpen: Boolean = false,
     val importConfirm: BackupSummary? = null,
-    val updateStatus: UpdateStatus = UpdateStatus.Idle,
     val language: AppLanguage = AppLanguage.current(),
 )
 
@@ -89,7 +79,7 @@ class SettingsViewModel @Inject constructor(
     private val settings: TrainingSettings,
     private val backup: BackupRepository,
     private val reminderScheduler: ReminderScheduler,
-    private val updates: UpdateRepository,
+    @ApplicationContext private val context: Context,
     @Suppress("unused") private val clock: Clock,
 ) : ViewModel() {
 
@@ -99,7 +89,7 @@ class SettingsViewModel @Inject constructor(
     private val overlay = MutableStateFlow(Overlay())
 
     private val installedVersion: String = try {
-        updates.installedVersion
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
     } catch (e: Exception) {
         ""
     }
@@ -122,26 +112,9 @@ class SettingsViewModel @Inject constructor(
             timePickerOpen = overlay.timePickerOpen,
             importConfirm = overlay.importConfirm,
             installedVersion = installedVersion,
-            updateStatus = overlay.updateStatus,
             language = overlay.language,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
-
-    /** Asks the release page right away; the banner shows a found version wherever it is. */
-    fun checkForUpdates() {
-        overlay.update { it.copy(updateStatus = UpdateStatus.Checking) }
-        viewModelScope.launch {
-            val status = try {
-                val found = updates.checkNow()
-                if (found == null) UpdateStatus.UpToDate else UpdateStatus.Available(found.versionName)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                UpdateStatus.Unreachable
-            }
-            overlay.update { it.copy(updateStatus = status) }
-        }
-    }
 
     fun chooseLanguage(language: AppLanguage) {
         overlay.update { it.copy(language = language) }

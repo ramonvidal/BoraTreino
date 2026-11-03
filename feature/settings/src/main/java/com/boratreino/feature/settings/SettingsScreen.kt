@@ -90,13 +90,13 @@ internal data class SettingsActions(
     val onImport: () -> Unit = {},
     val onConfirmImport: () -> Unit = {},
     val onDismissImport: () -> Unit = {},
-    val onCheckForUpdates: () -> Unit = {},
     val onChooseLanguage: (AppLanguage) -> Unit = {},
 )
 
 @Composable
 internal fun SettingsScreen(
     onBack: () -> Unit,
+    updatesCard: (@Composable () -> Unit)? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -146,6 +146,7 @@ internal fun SettingsScreen(
 
     SettingsContent(
         state = state,
+        updatesCard = updatesCard,
         actions = SettingsActions(
             onBack = onBack,
             onStepGoal = viewModel::stepGoal,
@@ -165,7 +166,6 @@ internal fun SettingsScreen(
             onImport = { openDocument.launch(arrayOf("*/*")) },
             onConfirmImport = viewModel::confirmImport,
             onDismissImport = viewModel::dismissImport,
-            onCheckForUpdates = viewModel::checkForUpdates,
             onChooseLanguage = viewModel::chooseLanguage,
         ),
         snackbarHostState = snackbar,
@@ -180,6 +180,7 @@ internal fun SettingsContent(
     actions: SettingsActions,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    updatesCard: (@Composable () -> Unit)? = null,
 ) {
     Scaffold(
         modifier = modifier,
@@ -213,8 +214,9 @@ internal fun SettingsContent(
                 item { RestTimerSection(state, actions) }
                 if (state.showNotificationsSection) item { NotificationsSection(actions) }
                 item { BackupSection(actions) }
-                item { UpdatesSection(state, actions) }
+                if (updatesCard != null) item { updatesCard() }
                 item { LanguageSection(state, actions) }
+                item { AboutSection(state) }
             }
         }
     }
@@ -377,24 +379,9 @@ private fun BackupSection(actions: SettingsActions) {
 }
 
 @Composable
-private fun UpdatesSection(state: SettingsUiState, actions: SettingsActions) {
-    val status = when (val s = state.updateStatus) {
-        UpdateStatus.Idle, UpdateStatus.Checking -> null
-        UpdateStatus.UpToDate -> stringResource(R.string.settings_updates_up_to_date)
-        is UpdateStatus.Available -> stringResource(R.string.settings_updates_available, s.version)
-        UpdateStatus.Unreachable -> stringResource(R.string.settings_updates_unreachable)
-    }
-    SectionCard(stringResource(R.string.settings_updates_title)) {
-        Text(
-            stringResource(R.string.settings_updates_version, state.installedVersion),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        OutlinedButton(
-            onClick = actions.onCheckForUpdates,
-            enabled = state.updateStatus != UpdateStatus.Checking,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) { Text(stringResource(R.string.settings_updates_check)) }
-        if (status != null) Hint(status)
+private fun AboutSection(state: SettingsUiState) {
+    SectionCard(stringResource(R.string.settings_about_title)) {
+        Text(stringResource(R.string.settings_about, state.installedVersion), style = MaterialTheme.typography.bodyLarge)
     }
 }
 

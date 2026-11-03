@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The GitHub APK build. INTERNET and REQUEST_INSTALL_PACKAGES for the in-app updater come from
+    :core:update, which only this flavor depends on, so nothing needs to be declared here.
+-->
+<manifest />

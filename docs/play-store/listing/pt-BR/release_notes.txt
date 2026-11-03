@@ -1,0 +1,1 @@
+Primeira versão no Google Play: registro de série com um toque, fichas que dizem qual é a próxima, gráficos de evolução, agenda com meta semanal, descanso, lembretes, backup e restauração, em português e inglês.

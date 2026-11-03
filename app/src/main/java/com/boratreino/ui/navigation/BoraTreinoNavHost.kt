@@ -38,7 +38,8 @@ import com.boratreino.feature.settings.SETTINGS_ROUTE
 import com.boratreino.feature.settings.settingsScreen
 import com.boratreino.feature.today.TODAY_ROUTE
 import com.boratreino.feature.today.todayGraph
-import com.boratreino.feature.update.UpdateBanner
+import com.boratreino.ui.updates.UpdateBannerSlot
+import com.boratreino.ui.updates.updatesCardSlot
 
 enum class TopLevelDestination(
     val route: String,
@@ -62,7 +63,7 @@ fun BoraTreinoNavHost() {
     }
 
     Scaffold(
-        topBar = { UpdateBanner() },
+        topBar = { UpdateBannerSlot() },
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
@@ -104,7 +105,7 @@ fun BoraTreinoNavHost() {
             )
             routineEditorScreen(onDone = { navController.popBackStack() })
             machineEditorScreen(onDone = { navController.popBackStack() })
-            settingsScreen(onBack = { navController.popBackStack() })
+            settingsScreen(onBack = { navController.popBackStack() }, updatesCard = updatesCardSlot)
         }
     }
 }

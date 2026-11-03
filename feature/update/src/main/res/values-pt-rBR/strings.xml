@@ -9,4 +9,10 @@
     <string name="update_downloading">Baixando…</string>
     <string name="update_failed">Não deu pra baixar a atualização. Veja sua conexão.</string>
     <string name="update_retry">Tentar de novo</string>
+    <string name="updates_card_title">Atualizações do app</string>
+    <string name="updates_card_version">Bora pro Treino! %1$s</string>
+    <string name="updates_card_check">Procurar atualização</string>
+    <string name="updates_card_up_to_date">Tá tudo atualizado</string>
+    <string name="updates_card_available">A versão %1$s está disponível</string>
+    <string name="updates_card_unreachable">Não deu pra acessar a página de atualização</string>
 </resources>

@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      # Publishing the APK as a release.
+      # Publishing the APK (and the Play bundle) as a release.
       contents: write
     steps:
       - uses: actions/checkout@v4
@@ -32,17 +32,31 @@ jobs:
           key: robolectric-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: robolectric-
 
-      # The fixed signing key: without it every build would get a new random key, Android would
-      # refuse to update over the installed app, and reinstalling would wipe people's training history.
-      - name: Add the signing key
+      # The two fixed signing keys:
+      # - SIGNING_KEYSTORE_BASE64 signs the GitHub APK (flavor "sideload"). Without it every build
+      #   would get a new random key, Android would refuse to update over the installed app, and
+      #   reinstalling would wipe people's training history.
+      # - SIGNING_UPLOAD_KEYSTORE_BASE64 (+ UPLOAD_STORE_PASSWORD, UPLOAD_KEY_PASSWORD, alias
+      #   "upload") signs the Google Play bundle (flavor "play"). Without all three the bundle is
+      #   signed with a throwaway debug key and is not attached to the release.
+      - name: Add the signing keys
         env:
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_UPLOAD_KEYSTORE_BASE64: ${{ secrets.SIGNING_UPLOAD_KEYSTORE_BASE64 }}
+          UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
         run: |
           if [ -n "$SIGNING_KEYSTORE_BASE64" ]; then
             printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 -d > app/boratreino-release.keystore
             echo "Signing key added"
           else
             echo "::warning::SIGNING_KEYSTORE_BASE64 is not set: builds use a throwaway key and no release is published."
+          fi
+          if [ -n "$SIGNING_UPLOAD_KEYSTORE_BASE64" ] && [ -n "$UPLOAD_STORE_PASSWORD" ] && [ -n "$UPLOAD_KEY_PASSWORD" ]; then
+            printf '%s' "$SIGNING_UPLOAD_KEYSTORE_BASE64" | base64 -d > app/boratreino-upload.keystore
+            echo "Upload key added"
+          else
+            echo "::warning::SIGNING_UPLOAD_KEYSTORE_BASE64, UPLOAD_STORE_PASSWORD or UPLOAD_KEY_PASSWORD is not set: the Google Play bundle is signed with a throwaway key and not attached to the release."
           fi
 
       - name: Translations are complete
@@ -82,13 +96,41 @@ jobs:
           name: screenshots
           path: screenshots/
 
-      - name: Build APKs
-        run: ./gradlew assembleDebug assembleRelease
+      # sideload = the GitHub APK (with the updater); play = the Google Play bundle (no updater,
+      # no network). assemblePlayDebug makes sure the play flavor also compiles as an APK.
+      # The upload passwords are only read when app/boratreino-upload.keystore exists.
+      - name: Build the APK and the bundle
+        env:
+          UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: ./gradlew assembleSideloadDebug assembleSideloadRelease assemblePlayDebug bundlePlayRelease
+
+      # Google Play forbids apps that update themselves or that don't need the network from asking
+      # for it: the play build must carry neither permission.
+      - name: Play build has no updater permissions
+        run: |
+          manifest=$(find app/build -path '*merged_manifests/playRelease*' -name AndroidManifest.xml | head -n1)
+          if [ -z "$manifest" ]; then
+            echo "::warning::Merged manifest of the play release not found; permissions not checked."
+            exit 0
+          fi
+          if grep -E 'android.permission.(INTERNET|REQUEST_INSTALL_PACKAGES)' "$manifest"; then
+            echo "::error::The play build declares INTERNET or REQUEST_INSTALL_PACKAGES ($manifest)."
+            exit 1
+          fi
+          echo "Play manifest is clean"
 
       - uses: actions/upload-artifact@v4
         with:
           name: boratreino-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/sideload/debug/*.apk
+
+      # Signed with the upload key when the secrets exist, otherwise with a throwaway key: never
+      # upload that one to Google Play.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boratreino-play-aab
+          path: app/build/outputs/bundle/playRelease/*.aab
 
       # One release per build, tagged v0.<build>, so update apps such as Obtainium see a new
       # version each time. GitHub's fixed link always serves the newest one:
@@ -102,8 +144,15 @@ jobs:
             echo "::warning::Not publishing: the SIGNING_KEYSTORE_BASE64 secret is missing, so this APK couldn't update an installed copy."
             exit 0
           fi
-          cp app/build/outputs/apk/release/app-release.apk BoraTreino.apk
+          cp app/build/outputs/apk/sideload/release/app-sideload-release.apk BoraTreino.apk
           assets="BoraTreino.apk"
+          # The Google Play bundle goes along only when it was signed with the real upload key.
+          if [ -f app/boratreino-upload.keystore ]; then
+            cp app/build/outputs/bundle/playRelease/app-play-release.aab BoraTreino.aab
+            assets="$assets BoraTreino.aab"
+          else
+            echo "::warning::BoraTreino.aab is not attached: the upload key secrets are missing."
+          fi
           if ls screenshots/*.png >/dev/null 2>&1; then
             (cd screenshots && zip -q ../screenshots.zip *.png)
             assets="$assets screenshots.zip"

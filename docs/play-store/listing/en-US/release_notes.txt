@@ -1,0 +1,1 @@
+First release on Google Play: one-tap set logging, routines that tell you which one is next, progress charts, calendar with weekly goal, rest timer, reminders, backup and restore, English and Portuguese.

@@ -30,12 +30,8 @@
     <string name="settings_import_message_dates">Trocar tudo neste celular por este backup? %1$s (%2$s).</string>
     <string name="settings_import_replace">Trocar</string>
     <string name="settings_import_counts">%1$s, %2$s, %3$s, %4$s</string>
-    <string name="settings_updates_title">Atualizações do app</string>
-    <string name="settings_updates_version">Bora pro Treino! %1$s</string>
-    <string name="settings_updates_check">Procurar atualização</string>
-    <string name="settings_updates_up_to_date">Tá tudo atualizado</string>
-    <string name="settings_updates_available">A versão %1$s está disponível</string>
-    <string name="settings_updates_unreachable">Não deu pra acessar a página de atualização</string>
+    <string name="settings_about_title">Sobre</string>
+    <string name="settings_about">Bora pro Treino! %1$s</string>
     <string name="settings_language_title">Idioma</string>
     <plurals name="settings_import_machines">
         <item quantity="one">%1$s aparelho</item>

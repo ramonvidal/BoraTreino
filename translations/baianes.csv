@@ -233,12 +233,8 @@ feature/settings,settings_import_trainings,one,%1$s training,%1$s treino
 feature/settings,settings_import_trainings,other,%1$s trainings,%1$s treinos
 feature/settings,settings_import_sets,one,%1$s set,%1$s série
 feature/settings,settings_import_sets,other,%1$s sets,%1$s séries
-feature/settings,settings_updates_title,,App updates,Atualizações do app
-feature/settings,settings_updates_version,,Bora pro Treino! %1$s,Bora pro Treino! %1$s
-feature/settings,settings_updates_check,,Check for updates,Procurar atualização
-feature/settings,settings_updates_up_to_date,,You're up to date,Tá tudo atualizado
-feature/settings,settings_updates_available,,Version %1$s is available,A versão %1$s está disponível
-feature/settings,settings_updates_unreachable,,Couldn't reach the update page,Não deu pra acessar a página de atualização
+feature/settings,settings_about_title,,About,Sobre
+feature/settings,settings_about,,Bora pro Treino! %1$s,Bora pro Treino! %1$s
 feature/settings,settings_language_title,,Language,Idioma
 feature/today,today_app_name,,Bora pro Treino!,Bora pro Treino!
 feature/today,today_open_settings,,Settings,Ajustes
@@ -303,3 +299,9 @@ feature/update,update_allow_button,,Allow,Permitir
 feature/update,update_downloading,,Downloading…,Baixando…
 feature/update,update_failed,,The update couldn't be downloaded. Check your connection.,Não deu pra baixar a atualização. Veja sua conexão.
 feature/update,update_retry,,Try again,Tentar de novo
+feature/update,updates_card_title,,App updates,Atualizações do app
+feature/update,updates_card_version,,Bora pro Treino! %1$s,Bora pro Treino! %1$s
+feature/update,updates_card_check,,Check for updates,Procurar atualização
+feature/update,updates_card_up_to_date,,You're up to date,Tá tudo atualizado
+feature/update,updates_card_available,,Version %1$s is available,A versão %1$s está disponível
+feature/update,updates_card_unreachable,,Couldn't reach the update page,Não deu pra acessar a página de atualização

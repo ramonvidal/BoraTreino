@@ -1,0 +1,29 @@
+Bora pro Treino! is a simple gym logbook made to be quick between sets.
+
+Open a machine, see what you lifted last time and log today's set in one tap. Change the weight with big minus and plus buttons. No typing, no "start workout" step, no account.
+
+WHAT YOU GET
+
+• One-tap logging: "Same again" repeats last time's set, "Log set" saves the numbers on the screen.
+
+• Your gym, registered once: add every machine and exercise your gym has (pick from a list of about 100 or create your own) and keep setup notes like "seat 4".
+
+• Routines (fichas): build routine A, B, C and more from your machines, with sets and rep targets. The app tells you which routine is next, whatever day of the week it is, so training four days a week just works.
+
+• Progress that tells you when to go up: when you reach the top of your rep range on every set, the machine suggests the next weight. New records get a little celebration.
+
+• Rest timer after each set, with a countdown notification and a buzz when it is time for the next one.
+
+• Calendar of your training days with a weekly goal and a streak of weeks. Forgot to log something? Add or fix a past training.
+
+• Progress charts for every machine: your top weight over 3 months, 1 year or all time.
+
+• Training reminders that tell you what is next.
+
+• Backup and restore with a simple file, to move your history to a new phone.
+
+• English and Brazilian Portuguese (Baianês), light and dark mode.
+
+PRIVATE BY DESIGN
+
+Everything stays on your phone. There is no account, no ads, no tracking and the app does not even ask for internet access.

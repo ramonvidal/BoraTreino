@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        The Google Play build has no updater and no network access (Play forbids apps that update
+        themselves outside Play). Neither permission should reach this manifest, because only
+        :core:update declares them and that module ships in the sideload flavor alone; these two
+        lines make sure a future library can't bring them in unnoticed.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
+
+</manifest>

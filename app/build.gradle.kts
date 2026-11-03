@@ -12,15 +12,21 @@ android {
     val buildNumber = providers.environmentVariable("GITHUB_RUN_NUMBER").map(String::toInt).getOrElse(1)
 
     defaultConfig {
-        applicationId = "com.boratreino"
         versionCode = buildNumber
         versionName = "0.$buildNumber"
     }
 
+    // Two distributions of the same app. `sideload` is the GitHub APK with the in-app updater;
+    // `play` is the Google Play bundle, which must not update itself or use the network.
+    flavorDimensions += "distribution"
+
     // Android only installs an update signed with the same key as the installed app, so every
-    // published build must use one fixed key. CI writes it from the SIGNING_KEYSTORE_BASE64
-    // secret (see README); it is never committed. Without it, builds fall back to the machine's
-    // debug key, which is fine locally but must never be published.
+    // published build must use one fixed key per distribution. CI writes them from secrets (see
+    // README); they are never committed. Without them, builds fall back to the machine's debug
+    // key, which is fine locally but must never be published.
+    //
+    // Signing is chosen per flavor. AGP gives a signingConfig on a build type priority over the
+    // flavor's, so the build types below leave it unset (and `debug` clears its default).
     val boraTreinoKeystore = file("boratreino-release.keystore")
     if (boraTreinoKeystore.exists()) {
         signingConfigs.create("boratreino") {
@@ -30,19 +36,59 @@ android {
             keyPassword = "boratreino"
         }
     }
-    val signing = signingConfigs.findByName("boratreino") ?: signingConfigs.getByName("debug")
+    val sideloadSigning = signingConfigs.findByName("boratreino") ?: signingConfigs.getByName("debug")
+
+    // The Google Play upload key: Play re-signs what we upload with its own app signing key.
+    val uploadKeystore = file("boratreino-upload.keystore")
+    val uploadStorePassword = providers.environmentVariable("UPLOAD_STORE_PASSWORD").orNull
+    val uploadKeyPassword = providers.environmentVariable("UPLOAD_KEY_PASSWORD").orNull
+    if (uploadKeystore.exists() && uploadStorePassword != null && uploadKeyPassword != null) {
+        signingConfigs.create("upload") {
+            storeFile = uploadKeystore
+            storePassword = uploadStorePassword
+            keyAlias = "upload"
+            keyPassword = uploadKeyPassword
+        }
+    } else {
+        logger.warn("Upload key or its passwords are missing: the play variant is signed with the debug key and must not be published.")
+    }
+    val playSigning = signingConfigs.findByName("upload") ?: signingConfigs.getByName("debug")
+
+    productFlavors {
+        create("sideload") {
+            dimension = "distribution"
+            applicationId = "com.boratreino"
+            signingConfig = sideloadSigning
+        }
+        create("play") {
+            dimension = "distribution"
+            applicationId = "com.punyplatypus.boratreino"
+            signingConfig = playSigning
+        }
+    }
 
     buildTypes {
         debug {
-            // Same key as releases, so either installs over the other without uninstalling.
-            signingConfig = signing
+            // Clears the debug key AGP sets by default, so each flavor's key applies. Sideload
+            // debug is signed like its releases (either installs over the other); play debug uses
+            // the debug key.
+            signingConfig = null
         }
         release {
-            signingConfig = signing
+            // No signingConfig here: the flavor's applies.
             // Shrinking would make the APK smaller, but can break code that's only found at
             // runtime; worth turning on once there are UI tests on a real device.
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    bundle {
+        // Play would otherwise deliver only the device's language, and the in-app language choice
+        // (Baianes on an English phone) would have nothing to switch to. Density and ABI splits
+        // stay at their defaults.
+        language {
+            enableSplit = false
         }
     }
 }
@@ -60,7 +106,9 @@ dependencies {
     implementation(projects.feature.progress)
     implementation(projects.feature.routines)
     implementation(projects.feature.settings)
-    implementation(projects.feature.update)
+    // The updater ships in the GitHub APK only; Google Play forbids apps that update themselves.
+    // :core:update (INTERNET, REQUEST_INSTALL_PACKAGES) arrives only through it.
+    "sideloadImplementation"(projects.feature.update)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

@@ -48,6 +48,21 @@ passwords `boratreino`). It is never committed: CI writes it from the repository
 builds and tests but publishes no release. Keep a copy of the keystore somewhere safe:
 losing it means the next build can't update installed copies.
 
+### Google Play build
+
+The app has two flavors. `sideload` (`com.boratreino`) is the GitHub APK above, with the in-app
+updater and the key above. `play` (`com.punyplatypus.boratreino`) is the Google Play bundle: no
+updater, no `INTERNET` or `REQUEST_INSTALL_PACKAGES`, language splits off so the in-app language
+choice still works. Build them with `./gradlew assembleSideloadRelease bundlePlayRelease`
+(`app/build/outputs/apk/sideload/release/app-sideload-release.apk` and
+`app/build/outputs/bundle/playRelease/app-play-release.aab`).
+
+The bundle is signed with an upload key (alias `upload`), kept apart from the APK key and never
+committed. CI writes it to `app/boratreino-upload.keystore` from the secrets
+`SIGNING_UPLOAD_KEYSTORE_BASE64` (the keystore, base64-encoded), `UPLOAD_STORE_PASSWORD` and
+`UPLOAD_KEY_PASSWORD`. When all three exist, the release also carries `BoraTreino.aab` (also the
+`boratreino-play-aab` artifact); otherwise CI warns and signs with a throwaway key.
+
 ## Tests
 
 - App logic: `./gradlew :core:model:test testDebugUnitTest`

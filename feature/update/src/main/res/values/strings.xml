@@ -7,4 +7,10 @@
     <string name="update_downloading">Downloading…</string>
     <string name="update_failed">The update couldn\'t be downloaded. Check your connection.</string>
     <string name="update_retry">Try again</string>
+    <string name="updates_card_title">App updates</string>
+    <string name="updates_card_version">Bora pro Treino! %1$s</string>
+    <string name="updates_card_check">Check for updates</string>
+    <string name="updates_card_up_to_date">You\'re up to date</string>
+    <string name="updates_card_available">Version %1$s is available</string>
+    <string name="updates_card_unreachable">Couldn\'t reach the update page</string>
 </resources>
