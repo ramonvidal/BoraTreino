@@ -4,6 +4,9 @@ app,nav_today,,Today,Treino
 app,nav_calendar,,Calendar,Agenda
 app,nav_progress,,Progress,Evolução
 app,nav_routines,,Routines,Fichas
+core/health,health_rationale_title,,Health Connect,Health Connect
+core/health,health_rationale_text,,"Bora pro Treino! can send each finished training to Health Connect: the exercise session, and the calories and distance of your cardio. It only writes. It never reads anything from Health Connect, and you can turn it off in Settings or remove the data in Health Connect at any time.","O Bora pro Treino! pode enviar cada treino terminado ao Health Connect: a sessão de exercício e as calorias e a distância do seu cardio. Ele só escreve. Nunca lê nada do Health Connect, e você pode desligar em Ajustes ou apagar os dados no Health Connect quando quiser."
+core/health,health_privacy_policy,,Privacy policy,Política de privacidade
 core/notify,notify_rest_channel,,Rest timer,Descanso
 core/notify,notify_rest_channel_description,,Countdown between sets and the buzz when it is over,Contagem entre as séries e o aviso quando acabar
 core/notify,notify_reminders_channel,,Training reminders,Lembretes de treino
@@ -32,6 +35,9 @@ core/ui,weight_kg,,%1$s kg,%1$s kg
 core/ui,set_text,,%1$s kg × %2$d,%1$s kg × %2$d
 core/ui,set_summary_uniform,,%1$d × %2$d at %3$s kg,%1$d × %2$d com %3$s kg
 core/ui,set_summary_same_weight,,%1$s kg: %2$s,%1$s kg: %2$s
+core/ui,cardio_minutes,,%1$d min,%1$d min
+core/ui,cardio_calories,,%1$d kcal,%1$d kcal
+core/ui,cardio_km,,%1$s km,%1$s km
 core/ui,set_summary_separator,,", ",", "
 core/ui,muscle_group_legs,,Legs,Pernas
 core/ui,muscle_group_chest,,Chest,Peito
@@ -92,6 +98,10 @@ feature/calendar,calendar_edit_set,,Edit set,Editar série
 feature/calendar,calendar_set_removed,,Set removed,Série removida
 feature/calendar,calendar_set_number,,Set %1$d,Série %1$d
 feature/calendar,calendar_reps,,Reps,Repetições
+feature/calendar,calendar_minutes,,Minutes,Minutos
+feature/calendar,calendar_calories,,Calories,Calorias
+feature/calendar,calendar_distance_km,,Distance (km),Distância (km)
+feature/calendar,calendar_dash,,-,-
 feature/progress,progress_title,,Progress,Evolução
 feature/progress,progress_empty,,Log a training to see your progress.,Registre um treino pra ver sua evolução. Bora!
 feature/progress,progress_summary,,This month: %1$s · %2$s,Neste mês: %1$s · %2$s
@@ -133,6 +143,18 @@ feature/progress,progress_chart_description_one_weight,,Top weight %1$s kg on %2
 feature/progress,progress_chart_description_one_reps,,Top reps %1$s on %2$s,Mais repetições %1$s em %2$s
 feature/progress,progress_sessions,,Sessions,Treinos
 feature/progress,progress_show_all,,Show all,Ver tudo
+feature/progress,progress_cardio_week,,Cardio this week: %1$s,Cardio da semana: %1$s
+feature/progress,progress_from_to_minutes,,%1$s → %2$s min,%1$s → %2$s min
+feature/progress,progress_best_minutes,,Best %1$d min,Melhor: %1$d min
+feature/progress,progress_delta_minutes,,%1$s min,%1$s min
+feature/progress,progress_trend_minutes,,Trend: %1$s to %2$s min,Tendência: %1$s a %2$s min
+feature/progress,progress_chart_title_minutes,,Minutes per session,Minutos por treino
+feature/progress,progress_chart_description_minutes,,Minutes from %1$s on %2$s to %3$s on %4$s; best %5$s,Minutos de %1$s em %2$s até %3$s em %4$s; melhor %5$s
+feature/progress,progress_chart_description_one_minutes,,Minutes %1$s on %2$s,Minutos %1$s em %2$s
+feature/progress,progress_weeks_title,,Minutes per week,Minutos por semana
+feature/progress,progress_weeks_description,,"Minutes per week over %1$d weeks: %2$d in total, best week %3$d","Minutos por semana em %1$d semanas: %2$d no total, melhor semana %3$d"
+feature/progress,progress_week_this,,This week,Essa semana
+feature/progress,progress_week_of,,Week of %1$s,Semana de %1$s
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha
@@ -155,6 +177,7 @@ feature/routines,editor_muscle_group,,Muscle group,Grupo muscular
 feature/routines,editor_kind,,Kind,Tipo
 feature/routines,editor_kind_weights,,Weights,Com carga
 feature/routines,editor_kind_bodyweight,,Bodyweight,Peso do corpo
+feature/routines,editor_kind_cardio,,Cardio,Cardio
 feature/routines,editor_step,,Weight step,Passo da carga
 feature/routines,editor_step_value,,%1$s kg,%1$s kg
 feature/routines,editor_rest,,Rest after each set,Descanso após cada série
@@ -216,6 +239,12 @@ feature/settings,settings_rest_switch,,Count down after each set,Contar depois d
 feature/settings,settings_rest_default,,Default rest,Descanso padrão
 feature/settings,settings_rest_seconds,,%1$d s,%1$d s
 feature/settings,settings_rest_hint,,Each machine can have its own rest time in its editor.,"Cada aparelho pode ter seu próprio descanso, no editor dele."
+feature/settings,settings_health_title,,Health Connect,Health Connect
+feature/settings,settings_health_hint,,"Send each finished training to Health Connect (exercise sessions, and calories and distance for cardio). Nothing is read.","Envia cada treino terminado para o Health Connect (sessões de exercício, e calorias e distância no cardio). Nada é lido."
+feature/settings,settings_health_switch,,Send trainings to Health Connect,Enviar treinos para o Health Connect
+feature/settings,settings_health_missing,,Health Connect is not installed or needs an update.,O Health Connect não está instalado ou precisa de atualização.
+feature/settings,settings_health_get,,Get Health Connect,Instalar o Health Connect
+feature/settings,settings_health_denied,,Permission not granted,Permissão não concedida
 feature/settings,settings_notifications_title,,Notifications,Notificações
 feature/settings,settings_notifications_off,,Notifications are off,As notificações estão desligadas
 feature/settings,settings_notifications_allow,,Allow,Permitir
@@ -296,6 +325,11 @@ feature/today,today_set_number,,Set %1$d,Série %1$d
 feature/today,today_reps,,Reps,Repetições
 feature/today,today_same_again,,Same again,Repetir
 feature/today,today_log_set,,Log set,Registrar série
+feature/today,today_log,,Log,Registrar
+feature/today,today_minutes,,Minutes,Minutos
+feature/today,today_calories,,Calories,Calorias
+feature/today,today_distance,,Distance (km),Distância (km)
+feature/today,today_add_distance,,Add distance,Pôr distância
 feature/today,today_delete,,Delete,Apagar
 feature/today,today_set_removed,,Set removed,Série removida
 feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível

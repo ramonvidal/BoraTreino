@@ -48,6 +48,11 @@
     <string name="today_reps">Repetições</string>
     <string name="today_same_again">Repetir</string>
     <string name="today_log_set">Registrar série</string>
+    <string name="today_log">Registrar</string>
+    <string name="today_minutes">Minutos</string>
+    <string name="today_calories">Calorias</string>
+    <string name="today_distance">Distância (km)</string>
+    <string name="today_add_distance">Pôr distância</string>
     <string name="today_delete">Apagar</string>
     <string name="today_set_removed">Série removida</string>
     <plurals name="today_machines">

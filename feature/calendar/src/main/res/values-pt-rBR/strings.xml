@@ -28,6 +28,10 @@
     <string name="calendar_set_removed">Série removida</string>
     <string name="calendar_set_number">Série %1$d</string>
     <string name="calendar_reps">Repetições</string>
+    <string name="calendar_minutes">Minutos</string>
+    <string name="calendar_calories">Calorias</string>
+    <string name="calendar_distance_km">Distância (km)</string>
+    <string name="calendar_dash">-</string>
     <plurals name="calendar_streak">
         <item quantity="one">Sequência: %d semana</item>
         <item quantity="other">Sequência: %d semanas</item>

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
 <resources>
     <string name="health_rationale_title">Health Connect</string>
     <string name="health_rationale_text">O Bora pro Treino! pode enviar cada treino terminado ao Health Connect: a sessão de exercício e as calorias e a distância do seu cardio. Ele só escreve. Nunca lê nada do Health Connect, e você pode desligar em Ajustes ou apagar os dados no Health Connect quando quiser.</string>
