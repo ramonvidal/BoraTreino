@@ -76,9 +76,10 @@ android {
         }
         release {
             // No signingConfig here: the flavor's applies.
-            // Shrinking would make the APK smaller, but can break code that's only found at
-            // runtime; worth turning on once there are UI tests on a real device.
-            isMinifyEnabled = false
+            // R8 shrinks and obfuscates the release builds (Google Play asks for it). What has to keep
+            // its names (enums stored by name, Health Connect's protobuf) is in proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
