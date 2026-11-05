@@ -7,6 +7,8 @@ import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.data.RepeatOutcome
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,6 +69,9 @@ internal data class RoutineUi(
     val alsoThisSession: List<SessionMachineUi> = emptyList(),
 )
 
+/** "Same as last time" is on offer: [machineCount] machines and [setCount] sets would be logged. */
+internal data class RepeatOfferUi(val machineCount: Int, val setCount: Int)
+
 /** [loaded] is false until the first database read, so the screen doesn't flash the empty state. */
 internal data class TodayUiState(
     val loaded: Boolean = false,
@@ -76,6 +81,8 @@ internal data class TodayUiState(
     val skipDialog: SkipDialog? = null,
     /** The training card is in edit mode (reorder / remove ficha machines). True only while a ficha is active (with or without an open session). */
     val editing: Boolean = false,
+    /** The routine card can log the whole routine like last time; null when nothing is on offer. */
+    val repeatOffer: RepeatOfferUi? = null,
 )
 
 internal sealed interface TodayEvent {
@@ -86,6 +93,8 @@ internal sealed interface TodayEvent {
 
     /** Taken out of the ficha [routineName]; Undo puts [item] back. */
     data class Removed(val routineName: String, val item: RoutineItem) : TodayEvent
+    /** The whole routine was logged like last time; the screen offers Undo. */
+    data class Repeated(val outcome: RepeatOutcome) : TodayEvent
     data object Failed : TodayEvent
 }
 
@@ -108,10 +117,12 @@ class TodayViewModel @Inject constructor(
         machines.observeRecentMachines(),
         training.observeTodayPlan(),
         machines.observeMachines(includeArchived = true),
-        // combine() takes at most five flows with a typed lambda: the two UI-only flows go in as one.
-        combine(skipDialog, editing) { dialog, editRequested -> dialog to editRequested },
+        // combine() takes at most five flows with a typed lambda: the UI-only flows and the repeat offer go in as one.
+        combine(skipDialog, editing, training.observeRepeatOffer()) { dialog, editRequested, offer ->
+            Triple(dialog, editRequested, offer)
+        },
     ) { open, recent, plan, allMachines, uiOnly ->
-        val (dialog, editRequested) = uiOnly
+        val (dialog, editRequested, offer) = uiOnly
         val byId = allMachines.associateBy { it.id }
         val routines = if (plan.routines.isEmpty()) {
             null
@@ -150,6 +161,7 @@ class TodayViewModel @Inject constructor(
             skipDialog = dialog,
             editing = editRequested && plan.active != null,
             loaded = true,
+            repeatOffer = offer?.let { RepeatOfferUi(it.machineCount, it.setCount) },
             session = open?.let { s ->
                 SessionUi(
                     machineCount = s.machines.size,
@@ -230,6 +242,14 @@ class TodayViewModel @Inject constructor(
             eventChannel.send(TodayEvent.Removed(name, item))
         }
     }
+
+    /** The shortcut: logs the active ficha's remaining machines like its last session. */
+    internal fun repeatLast(mode: RepeatMode) = launchSafely {
+        val outcome = training.repeatLastTraining(mode) ?: return@launchSafely
+        eventChannel.send(TodayEvent.Repeated(outcome))
+    }
+
+    internal fun undoRepeat(outcome: RepeatOutcome) = launchSafely { training.undoRepeat(outcome) }
 
     internal fun restoreItem(item: RoutineItem) = launchSafely { routineRepository.restoreItem(item) }
 

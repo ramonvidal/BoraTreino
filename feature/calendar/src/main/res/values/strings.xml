@@ -38,6 +38,9 @@
     <!-- Session editor -->
     <string name="calendar_free">Free</string>
     <string name="calendar_no_sets">No sets yet. Add a machine to start.</string>
+    <string name="calendar_repeat_same">Same as last time</string>
+    <string name="calendar_repeat_suggested">Same, with suggested weights</string>
+    <string name="calendar_nothing_to_repeat">Nothing to copy from an earlier training</string>
     <string name="calendar_add_set">Add set</string>
     <string name="calendar_add_machine">Add machine</string>
     <string name="calendar_pick_machine">Pick a machine</string>

@@ -57,6 +57,12 @@
     <string name="today_skip_or_remove">Skip or remove %1$s</string>
     <string name="today_skipped">%1$s skipped</string>
     <string name="today_removed_from">Removed from %1$s</string>
+    <string name="today_repeat_same">Same as last time</string>
+    <string name="today_repeat_suggested">Same, with suggested weights</string>
+    <plurals name="today_repeated">
+        <item quantity="one">Logged %1$d machine</item>
+        <item quantity="other">Logged %1$d machines</item>
+    </plurals>
 
     <!-- Picker -->
     <string name="today_picker_title">Pick a machine</string>

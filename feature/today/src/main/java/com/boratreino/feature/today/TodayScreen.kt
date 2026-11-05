@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.ui.MoveButtons
 import com.boratreino.core.ui.RoutineBadge
@@ -75,6 +76,8 @@ internal data class TodayActions(
     val onSkipToday: () -> Unit = {},
     val onRemoveFromRoutine: () -> Unit = {},
     val onDismissSkip: () -> Unit = {},
+    val onRepeatSame: () -> Unit = {},
+    val onRepeatSuggested: () -> Unit = {},
 )
 
 @Composable
@@ -111,6 +114,12 @@ internal fun TodayScreen(
                     val text = resources.getString(R.string.today_removed_from, event.routineName)
                     if (snackbar.showUndo(text, undoLabel)) viewModel.restoreItem(event.item)
                 }
+                is TodayEvent.Repeated -> launch {
+                    val text = resources.getQuantityString(
+                        R.plurals.today_repeated, event.outcome.machineCount, event.outcome.machineCount,
+                    )
+                    if (snackbar.showUndo(text, undoLabel)) viewModel.undoRepeat(event.outcome)
+                }
                 TodayEvent.Failed -> launch { snackbar.showSnackbar(failedText) }
             }
         }
@@ -138,6 +147,8 @@ internal fun TodayScreen(
             onSkipToday = viewModel::skipToday,
             onRemoveFromRoutine = viewModel::removeFromRoutine,
             onDismissSkip = viewModel::dismissSkip,
+            onRepeatSame = { viewModel.repeatLast(RepeatMode.SAME) },
+            onRepeatSuggested = { viewModel.repeatLast(RepeatMode.SUGGESTED) },
         ),
         snackbarHostState = snackbar,
     )
@@ -244,6 +255,7 @@ private fun LazyListScope.sessionHeader(
     routineName: String?,
     canEdit: Boolean = false,
     editing: Boolean = false,
+    repeatOffer: RepeatOfferUi? = null,
 ) {
     item(key = "header") {
         val resources = LocalContext.current.resources
@@ -293,6 +305,7 @@ private fun LazyListScope.sessionHeader(
                         Text(stringResource(R.string.today_edit_sets_reps), Modifier.padding(start = 8.dp))
                     }
                 } else {
+                    if (repeatOffer != null) RepeatButtons(repeatOffer, actions)
                     FilledTonalButton(
                         onClick = actions.onDone,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
@@ -350,16 +363,54 @@ private fun LazyListScope.withRoutines(state: TodayUiState, routines: RoutineUi,
             }
         }
         if (state.editing) item(key = "editbar") { EditBar(actions) }
+        val offer = state.repeatOffer
+        if (offer != null && !state.editing) item(key = "repeat") { RepeatCard(offer, actions) }
         routineRows(routines, actions, state.editing)
         if (!state.editing) item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
     } else {
-        sessionHeader(session, actions, routineName = active, canEdit = routines.activeId != null, editing = state.editing)
+        sessionHeader(session, actions, routineName = active, canEdit = routines.activeId != null, editing = state.editing,
+            repeatOffer = state.repeatOffer)
         routineRows(routines, actions, state.editing)
         if (routines.alsoThisSession.isNotEmpty() && !state.editing) {
             item(key = "also") { SectionTitle(stringResource(R.string.today_also_this_session)) }
             sessionRows(routines.alsoThisSession, actions)
         }
         if (!state.editing) item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
+    }
+}
+
+/** The two shortcut buttons: log the remaining machines like last time, or with the suggested weights. */
+@Composable
+private fun RepeatButtons(offer: RepeatOfferUi, actions: TodayActions) {
+    val resources = LocalContext.current.resources
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(
+            onClick = actions.onRepeatSame,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(stringResource(R.string.today_repeat_same))
+                Text(
+                    resources.machinesAndSets(offer.machineCount, offer.setCount),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
+        OutlinedButton(
+            onClick = actions.onRepeatSuggested,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) { Text(stringResource(R.string.today_repeat_suggested)) }
+    }
+}
+
+/** The shortcut on the "Next up" card (no session yet). */
+@Composable
+private fun RepeatCard(offer: RepeatOfferUi, actions: TodayActions) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+    ) {
+        Column(Modifier.padding(16.dp)) { RepeatButtons(offer, actions) }
     }
 }
 

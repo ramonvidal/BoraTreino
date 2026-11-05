@@ -12,6 +12,7 @@ import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SetDraft
@@ -80,6 +81,8 @@ internal sealed interface SessionEditorEvent {
 
     /** The set was deleted; the screen offers Undo. */
     data class SetRemoved(val set: WorkoutSet) : SessionEditorEvent
+    /** Repeat found nothing to copy (no earlier session of the routine, or nothing left to fill). */
+    data object NothingToRepeat : SessionEditorEvent
     data object Failed : SessionEditorEvent
 }
 
@@ -138,6 +141,18 @@ class SessionEditorViewModel @Inject constructor(
         write {
             addPrefilledSet(machineId, lastTime = emptyList(), sets = sets)
             eventChannel.send(SessionEditorEvent.SetAdded)
+        }
+    }
+
+    /** Fills the empty session from the last session of its routine (one write, in the repository). */
+    internal fun repeatLast(mode: RepeatMode) {
+        write {
+            val added = history.repeatLastSession(sessionId, mode)
+            if (added.isEmpty()) {
+                eventChannel.send(SessionEditorEvent.NothingToRepeat)
+            } else {
+                eventChannel.send(SessionEditorEvent.SetAdded)
+            }
         }
     }
 

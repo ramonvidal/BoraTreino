@@ -55,6 +55,7 @@ import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.EmptyState
@@ -71,6 +72,8 @@ internal data class SessionEditorActions(
     /** Null = Free. */
     val onChooseRoutine: (routineId: Long?) -> Unit = {},
     val onAddSet: (machineId: Long) -> Unit = {},
+    val onRepeatSame: () -> Unit = {},
+    val onRepeatSuggested: () -> Unit = {},
     val onAddMachine: () -> Unit = {},
     val onPickMachine: (machineId: Long) -> Unit = {},
     val onDismissPicker: () -> Unit = {},
@@ -99,6 +102,7 @@ internal fun SessionEditorScreen(
     val removedText = stringResource(R.string.calendar_set_removed)
     val undoLabel = stringResource(CoreUiR.string.undo)
     val failedText = stringResource(CoreUiR.string.error_generic)
+    val nothingToRepeatText = stringResource(R.string.calendar_nothing_to_repeat)
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -108,6 +112,7 @@ internal fun SessionEditorScreen(
                 is SessionEditorEvent.SetRemoved -> launch {
                     if (snackbar.showUndo(removedText, undoLabel)) viewModel.restoreSet(event.set)
                 }
+                SessionEditorEvent.NothingToRepeat -> launch { snackbar.showSnackbar(nothingToRepeatText) }
                 SessionEditorEvent.Failed -> launch { snackbar.showSnackbar(failedText) }
             }
         }
@@ -119,6 +124,8 @@ internal fun SessionEditorScreen(
             onBack = onBack,
             onChooseRoutine = viewModel::chooseRoutine,
             onAddSet = viewModel::addSet,
+            onRepeatSame = { viewModel.repeatLast(RepeatMode.SAME) },
+            onRepeatSuggested = { viewModel.repeatLast(RepeatMode.SUGGESTED) },
             onAddMachine = viewModel::openPicker,
             onPickMachine = viewModel::addMachine,
             onDismissPicker = viewModel::closePicker,
@@ -177,6 +184,7 @@ internal fun SessionEditorContent(
             ) {
                 RoutineChips(state, actions.onChooseRoutine)
                 if (detail.machines.isEmpty()) {
+                    if (detail.session.routineId != null) RepeatButtons(actions)
                     Text(
                         stringResource(R.string.calendar_no_sets),
                         style = MaterialTheme.typography.bodyMedium,
@@ -241,6 +249,25 @@ private fun RoutineChips(state: SessionEditorUiState, onChoose: (routineId: Long
             contentAlignment = Alignment.Center,
         ) {
             RoutineBadge(stringResource(R.string.calendar_free), selected = current == null)
+        }
+    }
+}
+
+/** Empty session with a routine: fill it from the routine's last session. */
+@Composable
+private fun RepeatButtons(actions: SessionEditorActions) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(
+            onClick = actions.onRepeatSame,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        ) {
+            Text(stringResource(R.string.calendar_repeat_same))
+        }
+        FilledTonalButton(
+            onClick = actions.onRepeatSuggested,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) {
+            Text(stringResource(R.string.calendar_repeat_suggested))
         }
     }
 }
