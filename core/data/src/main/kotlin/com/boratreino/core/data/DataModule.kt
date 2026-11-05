@@ -34,6 +34,10 @@ internal abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindTrainingRepository(impl: DefaultTrainingRepository): TrainingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindStatsRepository(impl: DefaultStatsRepository): StatsRepository
 }
 
 @Module
