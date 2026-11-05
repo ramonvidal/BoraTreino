@@ -70,6 +70,11 @@ core/ui,rest_extend,,+%1$d s,+%1$d s
 core/ui,rest_skip,,Skip,Pular
 core/ui,move_up,,Move up,Subir
 core/ui,move_down,,Move down,Descer
+core/ui,set_type_title,,Type,Tipo
+core/ui,set_type_normal,,Normal,Normal
+core/ui,set_type_warmup,,Warm-up,Aquecimento
+core/ui,set_type_drop,,Drop set,Drop set
+core/ui,set_type_failure,,Failure,Falha
 feature/calendar,calendar_week_progress,,This week: %1$d of %2$d,Semana: %1$d de %2$d
 feature/calendar,calendar_streak,one,Streak: %d week,Sequência: %d semana
 feature/calendar,calendar_streak,other,Streak: %d weeks,Sequência: %d semanas

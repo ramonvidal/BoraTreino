@@ -50,6 +50,11 @@
     <string name="rest_skip">Pular</string>
     <string name="move_up">Subir</string>
     <string name="move_down">Descer</string>
+    <string name="set_type_title">Tipo</string>
+    <string name="set_type_normal">Normal</string>
+    <string name="set_type_warmup">Aquecimento</string>
+    <string name="set_type_drop">Drop set</string>
+    <string name="set_type_failure">Falha</string>
     <plurals name="reps_only">
         <item quantity="one">%d repetição</item>
         <item quantity="other">%d repetições</item>
