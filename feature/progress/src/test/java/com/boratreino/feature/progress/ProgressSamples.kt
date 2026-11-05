@@ -81,6 +81,18 @@ internal object ProgressSamples {
                 distanceM = null,
                 loggedAt = Instant.parse("2026-01-01T10:00:00Z"),
             )
+            ProgressMetric.ONE_RM -> WorkoutSet(
+                id = sessionId,
+                sessionId = sessionId,
+                machineId = 0,
+                position = 1,
+                weightKg = value / (1 + 8 / 30.0),
+                reps = 8,
+                seconds = null,
+                calories = null,
+                distanceM = null,
+                loggedAt = Instant.parse("2026-01-01T10:00:00Z"),
+            )
         }
         return SessionPoint(sessionId, date, value, topSet, setCount)
     }
