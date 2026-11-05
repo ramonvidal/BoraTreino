@@ -173,8 +173,10 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       never count for records, progression, the top-weight chart, volume or "sets done" ticks.
       Logging stays as quick as today: no extra tap, the type only changes when you ask.
       Needs a Room migration (`workout_sets.type`, default NORMAL) with its test, and a
-      backup format bump (old backups import as Normal). Exact controls to be confirmed with
-      the owner before building (CLAUDE.md, section 0).
+      backup format bump (old backups import as Normal). Controls (decided by the owner): a small
+      **Warm-up** chip next to Log on the machine screen (off by default, so the normal path
+      is unchanged), and tapping a logged set opens its edit sheet, which also changes the
+      type (Normal, Warm-up, Drop, Failure).
 - [ ] **Phase 10: Warm-up calculator.** On a machine with a working weight, an optional
       suggestion of warm-up sets (for example 50 % x 8, 70 % x 5, 85 % x 3, rounded to the
       machine's step and never below the empty bar or stack). One tap logs them as warm-up
@@ -195,6 +197,33 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       progress for N sessions) tied to the progression suggestion; rep-range distribution;
       average session length and time between sets; cardio weekly minutes, calories,
       distance and pace; body weight against strength once a body weight log exists.
+- [ ] **Phase 13: Same as last time (do this first).** The owner's priority: it keeps the app
+      usable on tired days. One tap on the Today card ("Same as last time") logs the whole
+      routine exactly as the last session of that routine: every machine, the same number of
+      sets, weights and reps (cardio: the same minutes, calories and distance). Machines without
+      a last time are skipped; machines skipped last time stay skipped. It creates or fills the
+      open session, shows one Undo snackbar for the whole thing, and everything can still be
+      fixed afterwards (Today or Calendar). The same action is offered when logging a forgotten
+      day from the Calendar. Today there is only **Same again** per machine and per set. Rules in
+      `:core:model` (`RepeatSessionRules`, plain JVM tests); no schema change; a repeated
+      session is written to Health Connect like any other. Cheaper variant to consider: a second
+      button that applies the progression suggestions ("Same, with suggested weights").
+- [ ] **Phase 14: Daily energy (basal metabolism).** The owner wants to know how many calories to
+      eat on each day. The app **does not track food or calories eaten** (another app does):
+      it only shows an estimate of the day's need. Proposal:
+      * Settings gets a **Your body** card: sex, birth year, height and weight (the weight
+        later comes from the body weight log), a goal adjustment (maintain by default, or a
+        small surplus or deficit in %), and either the computed basal metabolic rate or a value the owner types
+        in ("I know my BMR", for example from a smart scale or watch).
+      * Basal rate by Mifflin-St Jeor: 10 x kg + 6.25 x cm - 5 x age + 5 (men) or - 161 (women).
+      * The day's need: basal rate x an everyday activity factor, plus an estimate of the
+        training burn when the day has a session (cardio calories logged, otherwise a MET
+        estimate from duration and body weight), plus the goal adjustment.
+      * Shown as one quiet line on Today ("About 2,450 kcal today; rest day about 2,150") and in
+        the Calendar day detail; it can be hidden in Settings. Never on the logging path.
+      * Everything stays on the phone; it is an estimate, worded as one, and not medical advice.
+      Rules in `:core:model` (`EnergyRules`), plain JVM tests. Needs the body weight log from
+      the Extras (moved up).
 - [ ] **Extras (later).** Home-screen widget (opens the next routine), photo of a machine's
       setup, body weight log, reading heart rate from Health Connect, Wear OS tile.
 
@@ -208,13 +237,17 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - **Cardio**: done (Phase 7), time and/or calories, distance if wanted.
 - **Health Connect**: yes, optional, write-only, done (Phase 8).
 - **Supersets**: not planned (owner's decision). Each machine is logged on its own.
-- **Set types**: yes, kept simple: Normal by default, the others only when asked (Phase 9).
+- **Set types**: yes, kept simple: Normal by default, the others only when asked (Phase 9); controls decided: a Warm-up chip next to Log and the type in the set's edit sheet.
+- **Same as last time**: yes, one tap for the whole routine (Phase 13), the owner's top priority.
+- **Food and calories eaten**: not planned, another app does it. The app only estimates the day's energy need (Phase 14).
 - **Warm-up calculator and estimated 1RM**: yes (Phases 10 and 11).
 - **More statistics**: yes, beyond the progress plots (Phase 12); the owner keeps adding ideas to that list.
 
 ## Open questions
 
-- Phase 9: how the set type is chosen on the machine screen without adding a tap to the normal
-  path (a small Warm-up chip next to Log, and tapping a logged set to change its type, is the
-  proposal).
-- Phase 12: which statistics matter most to the owner; this list is meant to grow.
+- Phase 12: the owner keeps adding statistics ideas to the list; the suggested list stands for now.
+- Phase 14: which activity factor to use for an ordinary day (proposal: 1.2, sedentary, since the
+  training burn is added separately), and whether the goal adjustment (surplus or deficit) is wanted.
+- Phase 13: whether "Same, with suggested weights" is wanted as a second button.
+
+Suggested order: 13, 9, 11, 10, 12, 14.
