@@ -143,7 +143,8 @@ class StatsContentTest {
 
     @Test
     fun `the rep ranges show their percentages`() {
-        showPage()
+        // The card alone: on the full page it sits far down, and this test is about its texts.
+        showCard { RepRangesCard(StatsSamples.full) }
         shown("1 to 5 reps")
         shown("6 to 8 reps")
         shown("9 to 12 reps")
