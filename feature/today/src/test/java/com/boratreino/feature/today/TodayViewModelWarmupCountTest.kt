@@ -156,6 +156,9 @@ class TodayViewModelWarmupCountTest {
             Machines(listOf(sample.legPress, sample.legExtension, sample.latPulldown, sample.chestPress)),
             Routines(),
             Rest(),
+            FakeHistory(),
+            FakeBodySettings(),
+            TodayTestClock,
         )
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()

@@ -124,7 +124,7 @@ class SettingsViewModelTest {
         health = FakeHealthSettings()
         access = FakeHealthAccess()
         context = RuntimeEnvironment.getApplication()
-        viewModel = SettingsViewModel(settings, FakeBackup(), scheduler, health, access, context, Clock.systemUTC())
+        viewModel = SettingsViewModel(settings, FakeBackup(), scheduler, health, access, FakeBodySettings(), context, Clock.systemUTC())
     }
 
     @After

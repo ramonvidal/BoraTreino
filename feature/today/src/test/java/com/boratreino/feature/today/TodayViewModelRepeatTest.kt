@@ -165,6 +165,9 @@ class TodayViewModelRepeatTest {
             RepeatMachines(listOf(sample.legPress, sample.legExtension, sample.latPulldown, sample.chestPress)),
             RepeatRoutines(),
             RepeatRestTimer(),
+            FakeHistory(),
+            FakeBodySettings(),
+            TodayTestClock,
         )
         backgroundScope.launch { viewModel.state.collect {} }
         backgroundScope.launch { viewModel.events.collect { events += it } }

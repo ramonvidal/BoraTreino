@@ -189,7 +189,7 @@ class TodayViewModelEditTest {
         val machines = FakeMachines(
             listOf(sample.legPress, sample.legExtension, sample.latPulldown, sample.chestPress, sample.seatedRow),
         )
-        viewModel = TodayViewModel(training, machines, routines, rest)
+        viewModel = TodayViewModel(training, machines, routines, rest, FakeHistory(), FakeBodySettings(), TodayTestClock)
         backgroundScope.launch { viewModel.state.collect {} }
         backgroundScope.launch { viewModel.events.collect { events += it } }
         runCurrent()
