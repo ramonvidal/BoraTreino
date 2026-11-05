@@ -209,7 +209,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       session is written to Health Connect like any other. A second button applies the progression
       suggestions ("Same, with suggested weights"); both are on the Today routine card and in the
       Calendar's empty session editor.
-- [ ] **Phase 14: Daily energy (basal metabolism).** The owner wants to know how many calories to
+- [x] **Phase 14: Daily energy (basal metabolism).** The owner wants to know how many calories to
       eat on each day. The app **does not track food or calories eaten** (another app does):
       it only shows an estimate of the day's need. Proposal:
       * Settings gets a **Your body** card: sex, birth year, height and weight (the weight
@@ -250,4 +250,4 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - Phase 14: which activity factor to use for an ordinary day (proposal: 1.2, sedentary, since the
   training burn is added separately), and whether the goal adjustment (surplus or deficit) is wanted.
 
-Order: 13 (done), 9 (done), 11 (done), 10 (done), 12 (done), 14.
+Order: 13, 9, 11, 10, 12 and 14 are all done.
