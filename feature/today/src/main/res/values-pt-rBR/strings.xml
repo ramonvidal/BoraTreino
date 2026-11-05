@@ -54,6 +54,9 @@
     <string name="today_reps">Repetições</string>
     <string name="today_same_again">Repetir</string>
     <string name="today_log_set">Registrar série</string>
+    <string name="today_warmup_sets">Séries de aquecimento</string>
+    <string name="today_log_warmups">Registrar aquecimentos</string>
+    <string name="today_close">Fechar</string>
     <string name="today_log">Registrar</string>
     <string name="today_minutes">Minutos</string>
     <string name="today_calories">Calorias</string>
@@ -76,5 +79,9 @@
     <plurals name="today_repeated">
         <item quantity="one">Registrei %1$d aparelho</item>
         <item quantity="other">Registrei %1$d aparelhos</item>
+    </plurals>
+    <plurals name="today_warmups_logged">
+        <item quantity="one">Registrei %d série de aquecimento</item>
+        <item quantity="other">Registrei %d séries de aquecimento</item>
     </plurals>
 </resources>

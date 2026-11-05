@@ -279,6 +279,9 @@ feature/settings,settings_rest_beep,,Beep when rest ends,Apitar quando o descans
 feature/settings,settings_rest_default,,Default rest,Descanso padrão
 feature/settings,settings_rest_seconds,,%1$d s,%1$d s
 feature/settings,settings_rest_hint,,Each machine can have its own rest time in its editor.,"Cada aparelho pode ter seu próprio descanso, no editor dele."
+feature/settings,settings_warmup_title,,Warm-up,Aquecimento
+feature/settings,settings_warmup_switch,,Warm-up suggestions,Sugestões de aquecimento
+feature/settings,settings_warmup_hint,,"Offers warm-up sets on the machine screen, from your working weight.","Oferece séries de aquecimento na tela do aparelho, a partir da sua carga de trabalho."
 feature/settings,settings_health_title,,Health Connect,Health Connect
 feature/settings,settings_health_hint,,"Send each finished training to Health Connect (exercise sessions, and calories and distance for cardio). Nothing is read.","Envia cada treino terminado para o Health Connect (sessões de exercício, e calorias e distância no cardio). Nada é lido."
 feature/settings,settings_health_switch,,Send trainings to Health Connect,Enviar treinos para o Health Connect
@@ -373,6 +376,11 @@ feature/today,today_set_number,,Set %1$d,Série %1$d
 feature/today,today_reps,,Reps,Repetições
 feature/today,today_same_again,,Same again,Repetir
 feature/today,today_log_set,,Log set,Registrar série
+feature/today,today_warmup_sets,,Warm-up sets,Séries de aquecimento
+feature/today,today_log_warmups,,Log warm-ups,Registrar aquecimentos
+feature/today,today_close,,Close,Fechar
+feature/today,today_warmups_logged,one,Logged %d warm-up set,Registrei %d série de aquecimento
+feature/today,today_warmups_logged,other,Logged %d warm-up sets,Registrei %d séries de aquecimento
 feature/today,today_log,,Log,Registrar
 feature/today,today_minutes,,Minutes,Minutos
 feature/today,today_calories,,Calories,Calorias
