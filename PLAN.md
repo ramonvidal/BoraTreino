@@ -186,7 +186,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       default: weight x (1 + reps / 30); only sets of 1 to 12 reps, warm-ups excluded). Shown
       per machine as a chart metric next to Top weight, as a "best estimated 1RM" card and in
       the records list. No schema change. Rules in `:core:model` (`OneRepMaxRules`).
-- [ ] **Phase 12: Statistics.** A Stats section in the Progress tab with a period picker (4
+- [ ] **Phase 12: Statistics.** (12a done: `StatsRules` in `:core:model` and `StatsRepository` in `:core:data`; 12b, the screen, pending) A Stats section in the Progress tab with a period picker (4
       weeks, 3 months, 1 year, all) beyond the single-machine chart. Charts in Compose Canvas,
       no chart library; every number computed in `:core:model` (`StatsRules`) and unit tested.
       First list (the owner will add more):
