@@ -164,6 +164,37 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       writing again replaces the record and deleted sessions are removed by id; the ids already
       sent are kept in `HealthSettings`. Needs the Play Console Health Connect declaration
       (`docs/PLAY_STORE_GUIDE.md`, step 4b) before rollout.
+- [x] **Feedback round 2** (from recent gym use). Settings is its own tab; the rest timer has a big card
+      on the machine screen, a global banner on every other screen and an optional beep; the
+      ficha can be edited from Today (move up / down, remove) before or during a training;
+      the Routines tab is split into **Routines | Gym**, routines are cards with a menu
+      (edit, move, duplicate, delete) and the routine editor saves every change at once.
+- [ ] **Phase 9: Set types.** A set is Normal (default), Warm-up, Drop or Failure. Warm-up sets
+      never count for records, progression, the top-weight chart, volume or "sets done" ticks.
+      Logging stays as quick as today: no extra tap, the type only changes when you ask.
+      Needs a Room migration (`workout_sets.type`, default NORMAL) with its test, and a
+      backup format bump (old backups import as Normal). Exact controls to be confirmed with
+      the owner before building (CLAUDE.md, section 0).
+- [ ] **Phase 10: Warm-up calculator.** On a machine with a working weight, an optional
+      suggestion of warm-up sets (for example 50 % x 8, 70 % x 5, 85 % x 3, rounded to the
+      machine's step and never below the empty bar or stack). One tap logs them as warm-up
+      sets; never forced, can be switched off in Settings. Rules in `:core:model`
+      (`WarmupRules`), plain JVM tests. Needs Phase 9.
+- [ ] **Phase 11: Estimated 1RM.** Estimated one-rep max from each working set (Epley by
+      default: weight x (1 + reps / 30); only sets of 1 to 12 reps, warm-ups excluded). Shown
+      per machine as a chart metric next to Top weight, as a "best estimated 1RM" card and in
+      the records list. No schema change. Rules in `:core:model` (`OneRepMaxRules`).
+- [ ] **Phase 12: Statistics.** A Stats section in the Progress tab with a period picker (4
+      weeks, 3 months, 1 year, all) beyond the single-machine chart. Charts in Compose Canvas,
+      no chart library; every number computed in `:core:model` (`StatsRules`) and unit tested.
+      First list (the owner will add more):
+      volume per week and per muscle group; hard sets per muscle group per week (balance);
+      days since each muscle group was trained; training frequency, best week and consistency
+      against the weekly goal; strength trend (estimated 1RM change over 4 / 12 weeks) per
+      machine and overall; records timeline and records per month; plateau detection (no
+      progress for N sessions) tied to the progression suggestion; rep-range distribution;
+      average session length and time between sets; cardio weekly minutes, calories,
+      distance and pace; body weight against strength once a body weight log exists.
 - [ ] **Extras (later).** Home-screen widget (opens the next routine), photo of a machine's
       setup, body weight log, reading heart rate from Health Connect, Wear OS tile.
 
@@ -176,7 +207,14 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - **Weights**: kg, as shown on the machines.
 - **Cardio**: done (Phase 7), time and/or calories, distance if wanted.
 - **Health Connect**: yes, optional, write-only, done (Phase 8).
+- **Supersets**: not planned (owner's decision). Each machine is logged on its own.
+- **Set types**: yes, kept simple: Normal by default, the others only when asked (Phase 9).
+- **Warm-up calculator and estimated 1RM**: yes (Phases 10 and 11).
+- **More statistics**: yes, beyond the progress plots (Phase 12); the owner keeps adding ideas to that list.
 
 ## Open questions
 
-- None right now.
+- Phase 9: how the set type is chosen on the machine screen without adding a tap to the normal
+  path (a small Warm-up chip next to Log, and tapping a logged set to change its type, is the
+  proposal).
+- Phase 12: which statistics matter most to the owner; this list is meant to grow.
