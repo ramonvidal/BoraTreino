@@ -8,5 +8,6 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.settings)
     implementation(libs.kotlinx.coroutines.android)
 }

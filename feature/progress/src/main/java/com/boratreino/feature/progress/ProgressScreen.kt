@@ -18,9 +18,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -43,13 +49,49 @@ internal data class ProgressActions(
     val onOpenMachine: (machineId: Long) -> Unit = {},
 )
 
+/** The two pages of the Progress tab. */
+internal enum class ProgressPage { MACHINES, STATS }
+
+/** The Progress tab: a Machines | Stats switch above the chosen page. The choice survives rotation. */
+@Composable
+internal fun ProgressShell(
+    onOpenMachine: (machineId: Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var chosen by rememberSaveable { mutableStateOf(ProgressPage.MACHINES.name) }
+    val page = ProgressPage.entries.firstOrNull { it.name == chosen } ?: ProgressPage.MACHINES
+    Column(modifier.fillMaxSize()) {
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
+            ProgressPage.entries.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = page == option,
+                    onClick = { chosen = option.name },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = ProgressPage.entries.size),
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    Text(
+                        stringResource(
+                            if (option == ProgressPage.MACHINES) R.string.progress_page_machines else R.string.progress_page_stats,
+                        ),
+                    )
+                }
+            }
+        }
+        when (page) {
+            ProgressPage.MACHINES -> ProgressScreen(onOpenMachine = onOpenMachine, modifier = Modifier.weight(1f))
+            ProgressPage.STATS -> StatsScreen(onOpenMachine = onOpenMachine, modifier = Modifier.weight(1f))
+        }
+    }
+}
+
 @Composable
 internal fun ProgressScreen(
     onOpenMachine: (machineId: Long) -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: ProgressViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProgressContent(state = state, actions = ProgressActions(onOpenMachine = onOpenMachine))
+    ProgressContent(state = state, actions = ProgressActions(onOpenMachine = onOpenMachine), modifier = modifier)
 }
 
 /** Drawn from its state alone, so screenshot tests can render it. */

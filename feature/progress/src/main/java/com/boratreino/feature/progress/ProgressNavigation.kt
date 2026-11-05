@@ -17,7 +17,7 @@ internal fun machineProgressRoute(machineId: Long): String = "progress/machine/$
 /** The Progress tab and the machine detail it opens. [navController] is only used for this feature's own screens. */
 fun NavGraphBuilder.progressGraph(navController: NavController) {
     composable(PROGRESS_ROUTE) {
-        ProgressScreen(onOpenMachine = { navController.navigate(machineProgressRoute(it)) })
+        ProgressShell(onOpenMachine = { navController.navigate(machineProgressRoute(it)) })
     }
     composable(
         route = MACHINE_PROGRESS_ROUTE,
