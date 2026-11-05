@@ -37,6 +37,8 @@
 
     <!-- Session editor -->
     <string name="calendar_free">Free</string>
+    <string name="calendar_energy_day">About %1$s kcal that day</string>
+    <string name="calendar_energy_rest">Rest day: about %1$s kcal</string>
     <string name="calendar_no_sets">No sets yet. Add a machine to start.</string>
     <string name="calendar_repeat_same">Same as last time</string>
     <string name="calendar_repeat_suggested">Same, with suggested weights</string>

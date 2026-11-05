@@ -4,12 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.HistoryRepository
 import com.boratreino.core.model.CalendarRules
+import com.boratreino.core.model.BodyProfile
+import com.boratreino.core.model.DayKind
+import com.boratreino.core.model.EnergyRules
+import com.boratreino.core.model.SessionSets
+import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.WeekGoalRules
 import com.boratreino.core.settings.TrainingSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -29,6 +35,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/** The quiet energy line of the selected day: the estimate in [kcal] (rounded to 10) and what kind of day it was. */
+internal data class DayEnergyUi(val kcal: Int, val kind: DayKind)
+
 /**
  * Everything the Calendar tab shows. [dayLabels] has the badge text of every training day of
  * [month]; [sessions] are the [selected] day's sessions. [goalEditor] is the goal dialog's value
@@ -46,6 +55,8 @@ internal data class CalendarUiState(
     val streak: Int = 0,
     val dayLabels: Map<LocalDate, String> = emptyMap(),
     val sessions: List<SessionDetail> = emptyList(),
+    /** Null for future days, without a profile, or when the owner switched the estimate off. */
+    val energy: DayEnergyUi? = null,
     val goalEditor: Int? = null,
     val confirmDelete: Long? = null,
 )
@@ -66,6 +77,7 @@ private data class Browsing(val month: YearMonth, val selected: LocalDate)
 class CalendarViewModel @Inject constructor(
     private val history: HistoryRepository,
     private val settings: TrainingSettings,
+    private val body: BodySettings,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -85,7 +97,9 @@ class CalendarViewModel @Inject constructor(
             history.observeDay(view.selected),
             history.observeTrainingDates(),
             settings.weeklyGoal,
-        ) { month, day, dates, goal ->
+            // combine() takes at most five flows with a typed lambda: the two body flows go in as one.
+            combine(body.profile, body.showEnergyEstimate) { profile, show -> profile.takeIf { show } },
+        ) { month, day, dates, goal, profile ->
             val today = LocalDate.now(clock)
             CalendarUiState(
                 loaded = true,
@@ -99,8 +113,16 @@ class CalendarViewModel @Inject constructor(
                 streak = WeekGoalRules.streak(dates, goal, today, firstDayOfWeek),
                 dayLabels = month.mapValues { (_, sessions) -> CalendarRules.dayLabel(sessions) },
                 sessions = day,
+                energy = dayEnergy(profile, view.selected, today, day),
             )
         }
+    }
+
+    private fun dayEnergy(profile: BodyProfile?, date: LocalDate, today: LocalDate, day: List<SessionDetail>): DayEnergyUi? {
+        if (profile == null || date.isAfter(today)) return null
+        val sessions = day.map { detail -> SessionSets(detail.session, detail.machines.flatMap { it.sets }) }
+        val result = EnergyRules.day(profile, date, Instant.now(clock), sessions, trainingExpected = false)
+        return DayEnergyUi(result.kcal, result.kind)
     }
 
     internal val state: StateFlow<CalendarUiState> = combine(content, goalEditor, confirmDelete) { s, goal, delete ->

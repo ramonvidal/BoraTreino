@@ -2,6 +2,10 @@
     <string name="today_app_name">Bora pro Treino!</string>
     <string name="today_open_settings">Settings</string>
 
+    <!-- Daily energy estimate -->
+    <string name="today_energy_day">About %1$s kcal today</string>
+    <string name="today_energy_rest">Rest day: about %1$s kcal</string>
+
     <!-- Today tab -->
     <string name="today_pick_to_start">Pick a machine to start</string>
     <string name="today_all_machines">All machines</string>

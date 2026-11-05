@@ -31,4 +31,9 @@ internal object SettingsModule {
     @Singleton
     fun provideHealthSettings(dataStore: DataStore<Preferences>): HealthSettings =
         DataStoreHealthSettings(dataStore)
+
+    @Provides
+    @Singleton
+    fun provideBodySettings(dataStore: DataStore<Preferences>): BodySettings =
+        DataStoreBodySettings(dataStore)
 }

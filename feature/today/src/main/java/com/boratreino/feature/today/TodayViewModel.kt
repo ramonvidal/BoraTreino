@@ -5,7 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.TrainingRepository
+import com.boratreino.core.data.HistoryRepository
+import com.boratreino.core.model.DayKind
+import com.boratreino.core.model.EnergyRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.SessionSets
+import com.boratreino.core.settings.BodySettings
+import java.time.Clock
+import java.time.LocalDate
+import java.time.Instant
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.data.RepeatOutcome
 import com.boratreino.core.model.RepeatMode
@@ -73,6 +81,17 @@ internal data class RoutineUi(
 /** "Same as last time" is on offer: [machineCount] machines and [setCount] sets would be logged. */
 internal data class RepeatOfferUi(val machineCount: Int, val setCount: Int)
 
+/** The quiet energy line: today's estimate in [kcal] (rounded to 10) and what kind of day it is. */
+internal data class DayEnergyUi(val kcal: Int, val kind: DayKind)
+
+/** The UI-only flows of the state, merged so the main combine stays within five flows. */
+private data class SideState(
+    val dialog: SkipDialog?,
+    val editing: Boolean,
+    val offer: RepeatOfferUi?,
+    val energy: DayEnergyUi?,
+)
+
 /** [loaded] is false until the first database read, so the screen doesn't flash the empty state. */
 internal data class TodayUiState(
     val loaded: Boolean = false,
@@ -84,6 +103,8 @@ internal data class TodayUiState(
     val editing: Boolean = false,
     /** The routine card can log the whole routine like last time; null when nothing is on offer. */
     val repeatOffer: RepeatOfferUi? = null,
+    /** Estimated energy need of today; null without a profile or when the owner switched it off. */
+    val energy: DayEnergyUi? = null,
 )
 
 internal sealed interface TodayEvent {
@@ -105,6 +126,9 @@ class TodayViewModel @Inject constructor(
     machines: MachineRepository,
     private val routineRepository: RoutineRepository,
     private val restTimer: RestTimer,
+    history: HistoryRepository,
+    body: BodySettings,
+    private val clock: Clock,
 ) : ViewModel() {
 
     private val eventChannel = Channel<TodayEvent>(Channel.BUFFERED)
@@ -113,17 +137,44 @@ class TodayViewModel @Inject constructor(
     private val skipDialog = MutableStateFlow<SkipDialog?>(null)
     private val editing = MutableStateFlow(false)
 
+    /**
+     * Today's energy estimate. Read-only on the sessions flows: logging a set updates it without
+     * any work on the logging path. Null without a profile or when the switch is off.
+     */
+    private val energy: Flow<DayEnergyUi?> = combine(
+        body.profile,
+        body.showEnergyEstimate,
+        history.observeDay(LocalDate.now(clock)),
+        training.observeOpenSession(),
+        training.observeTodayPlan(),
+    ) { profile, show, day, open, plan ->
+        if (profile == null || !show) return@combine null
+        val sessions = day.map { detail -> SessionSets(detail.session, detail.machines.flatMap { it.sets }) }.toMutableList()
+        if (open != null && sessions.none { it.session.id == open.session.id }) {
+            sessions += SessionSets(open.session, open.machines.flatMap { it.sets })
+        }
+        val result = EnergyRules.day(
+            profile = profile,
+            date = LocalDate.now(clock),
+            now = Instant.now(clock),
+            sessions = sessions,
+            trainingExpected = plan.suggested != null || open != null,
+        )
+        DayEnergyUi(result.kcal, result.kind)
+    }
+
     internal val state: StateFlow<TodayUiState> = combine(
         training.observeOpenSession(),
         machines.observeRecentMachines(),
         training.observeTodayPlan(),
         machines.observeMachines(includeArchived = true),
-        // combine() takes at most five flows with a typed lambda: the UI-only flows and the repeat offer go in as one.
-        combine(skipDialog, editing, training.observeRepeatOffer()) { dialog, editRequested, offer ->
-            Triple(dialog, editRequested, offer)
+        // combine() takes at most five flows with a typed lambda: the UI-only flows, the repeat offer and the energy line go in as one.
+        combine(skipDialog, editing, training.observeRepeatOffer(), energy) { dialog, editRequested, offer, energyUi ->
+            SideState(dialog, editRequested, offer?.let { RepeatOfferUi(it.machineCount, it.setCount) }, energyUi)
         },
     ) { open, recent, plan, allMachines, uiOnly ->
-        val (dialog, editRequested, offer) = uiOnly
+        val dialog = uiOnly.dialog
+        val editRequested = uiOnly.editing
         val byId = allMachines.associateBy { it.id }
         val routines = if (plan.routines.isEmpty()) {
             null
@@ -162,7 +213,8 @@ class TodayViewModel @Inject constructor(
             skipDialog = dialog,
             editing = editRequested && plan.active != null,
             loaded = true,
-            repeatOffer = offer?.let { RepeatOfferUi(it.machineCount, it.setCount) },
+            repeatOffer = uiOnly.offer,
+            energy = uiOnly.energy,
             session = open?.let { s ->
                 SessionUi(
                     machineCount = s.machines.size,

@@ -16,6 +16,8 @@ for the rules every change follows.
 - Calendar with a weekly goal, charts per machine, reminders and a rest timer.
 - Optional Health Connect: send each finished training (and cardio calories and distance) to
   Health Connect from Settings. Write-only, off by default.
+- Optional daily energy estimate from your body details (typed in Settings, kept on the phone,
+  never part of the backup); it only estimates, it does not track food.
 - Backup / restore with a file; English and Baianês.
 
 ## Installing on a phone

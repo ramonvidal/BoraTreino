@@ -1,6 +1,8 @@
 package com.boratreino.feature.today
 
+import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.MachineKind
+import java.text.NumberFormat
 import com.boratreino.core.ui.summaryLabel
 import com.boratreino.core.ui.showUndo
 import androidx.compose.foundation.layout.Arrangement
@@ -181,6 +183,7 @@ internal fun TodayContent(
         ) {
             val session = state.session
             val routines = state.routines
+            if (routines == null) energyLine(state.energy)
             if (routines != null) {
                 withRoutines(state, routines, actions)
             } else if (session == null) {
@@ -333,6 +336,7 @@ private fun LazyListScope.sessionRows(machines: List<SessionMachineUi>, actions:
 /** Today when the owner has routines: the chips, then the active routine's machines (or the Phase 1 lists). */
 private fun LazyListScope.withRoutines(state: TodayUiState, routines: RoutineUi, actions: TodayActions) {
     item(key = "chips") { RoutineChips(routines, actions.onChooseRoutine) }
+    energyLine(state.energy)
     val session = state.session
     val active = routines.activeName
     if (active == null) {
@@ -527,5 +531,20 @@ internal fun AddButton(text: String, onClick: () -> Unit) {
     ) {
         Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null, Modifier.size(20.dp))
         Text(text, Modifier.padding(start = 8.dp))
+    }
+}
+
+/** One quiet grey line with the day's estimated energy need; nothing without an estimate. Never part of the logging path. */
+private fun LazyListScope.energyLine(energy: DayEnergyUi?) {
+    if (energy == null) return
+    item(key = "energy") {
+        val amount = NumberFormat.getIntegerInstance().format(energy.kcal)
+        Text(
+            if (energy.kind == DayKind.REST) stringResource(R.string.today_energy_rest, amount)
+            else stringResource(R.string.today_energy_day, amount),
+            modifier = Modifier.padding(horizontal = 4.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

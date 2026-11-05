@@ -51,7 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.CalendarRules
+import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.SessionDetail
+import java.text.NumberFormat
 import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.working
 import com.boratreino.core.ui.RoutineBadge
@@ -335,6 +337,16 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
         }
     } else {
         state.sessions.forEach { detail -> SessionCard(detail, state, actions) }
+    }
+    state.energy?.let { energy ->
+        val amount = NumberFormat.getIntegerInstance().format(energy.kcal)
+        Text(
+            if (energy.kind == DayKind.REST) stringResource(R.string.calendar_energy_rest, amount)
+            else stringResource(R.string.calendar_energy_day, amount),
+            modifier = Modifier.padding(horizontal = 4.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
