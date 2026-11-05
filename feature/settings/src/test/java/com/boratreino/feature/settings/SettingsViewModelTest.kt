@@ -44,6 +44,7 @@ class SettingsViewModelTest {
         val goal = MutableStateFlow(4)
         val reminder = MutableStateFlow(ReminderSettings(enabled = true, weekdays = setOf(DayOfWeek.MONDAY)))
         val rest = MutableStateFlow(RestTimerSettings())
+        val warmup = MutableStateFlow(true)
 
         override val weeklyGoal: Flow<Int> get() = goal
         override suspend fun setWeeklyGoal(goal: Int) {
@@ -52,6 +53,10 @@ class SettingsViewModelTest {
         override val reminders: Flow<ReminderSettings> get() = reminder
         override suspend fun setReminders(settings: ReminderSettings) {
             reminder.value = settings
+        }
+        override val warmupCalculator: Flow<Boolean> get() = warmup
+        override suspend fun setWarmupCalculator(enabled: Boolean) {
+            warmup.value = enabled
         }
         override val restTimer: Flow<RestTimerSettings> get() = rest
         override suspend fun setRestTimer(settings: RestTimerSettings) {
@@ -475,5 +480,47 @@ class SettingsViewModelTest {
                 healthCardState(availability as HealthAvailability, enabled as Boolean, denied as Boolean),
             )
         }
+    }
+
+    // Warm-up suggestions
+
+    @Test
+    fun `warm-up suggestions are on by default`() = runTest {
+        assertTrue(loaded().warmupCalculator)
+    }
+
+    @Test
+    fun `switching warm-up suggestions off is stored and shown`() = runTest {
+        loaded()
+
+        viewModel.setWarmupCalculator(false)
+
+        assertFalse(settings.warmup.value)
+        assertFalse(loaded().warmupCalculator)
+    }
+
+    @Test
+    fun `switching warm-up suggestions back on is stored and shown`() = runTest {
+        loaded()
+        viewModel.setWarmupCalculator(false)
+
+        viewModel.setWarmupCalculator(true)
+
+        assertTrue(settings.warmup.value)
+        assertTrue(loaded().warmupCalculator)
+    }
+
+    @Test
+    fun `the warm-up switch leaves the rest timer and the goal alone and does not reschedule reminders`() = runTest {
+        loaded()
+        viewModel.setRestSeconds(120)
+        val goal = settings.goal.value
+        val rest = settings.rest.value
+
+        viewModel.setWarmupCalculator(false)
+
+        assertEquals(rest, settings.rest.value)
+        assertEquals(goal, settings.goal.value)
+        assertEquals(0, scheduler.calls)
     }
 }

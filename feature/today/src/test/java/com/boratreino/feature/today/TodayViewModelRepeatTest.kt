@@ -77,6 +77,8 @@ class TodayViewModelRepeatTest {
             return outcome
         }
 
+        override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
+
         override suspend fun undoRepeat(outcome: RepeatOutcome) {
             if (failUndo) error("disk full")
             undone += outcome

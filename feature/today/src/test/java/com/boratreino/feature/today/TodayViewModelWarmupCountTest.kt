@@ -75,6 +75,7 @@ class TodayViewModelWarmupCountTest {
         override fun observeTodayPlan(): Flow<TodayPlan> = plan
         override fun observeRepeatOffer(): Flow<RepeatOffer?> = MutableStateFlow(null)
         override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
+        override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
         override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
         override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
         override fun observeMachineLog(machineId: Long): Flow<MachineLog?> = emptyFlow()

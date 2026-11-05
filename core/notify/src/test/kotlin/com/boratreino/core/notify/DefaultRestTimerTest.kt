@@ -186,6 +186,8 @@ class DefaultRestTimerTest {
         override suspend fun setWeeklyGoal(goal: Int) = Unit
         override val reminders: Flow<ReminderSettings> = MutableStateFlow(ReminderSettings())
         override suspend fun setReminders(settings: ReminderSettings) = Unit
+        override val warmupCalculator: Flow<Boolean> = MutableStateFlow(true)
+        override suspend fun setWarmupCalculator(enabled: Boolean) = Unit
         override val restTimer: Flow<RestTimerSettings> = MutableStateFlow(RestTimerSettings(beep = beep))
         override suspend fun setRestTimer(settings: RestTimerSettings) = Unit
     }

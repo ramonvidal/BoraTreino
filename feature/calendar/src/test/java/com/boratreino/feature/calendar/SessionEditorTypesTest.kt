@@ -142,6 +142,7 @@ class SessionEditorTypesTest {
         override suspend fun unskipMachineToday(machineId: Long) = Unit
         override fun observeRepeatOffer(): Flow<RepeatOffer?> = emptyFlow()
         override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
+        override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
         override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
     }
 

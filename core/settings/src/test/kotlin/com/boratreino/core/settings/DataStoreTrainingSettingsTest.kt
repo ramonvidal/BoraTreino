@@ -229,4 +229,57 @@ class DataStoreTrainingSettingsTest {
 
         assertEquals(true, newSettings(dataStore).restTimer.first().beep)
     }
+
+    // Warm-up suggestions
+
+    @Test
+    fun `the warm-up calculator is on until it is set`() = runTest {
+        assertEquals(true, newSettings().warmupCalculator.first())
+    }
+
+    @Test
+    fun `the warm-up calculator can be switched off and on again`() = runTest {
+        val settings = newSettings()
+
+        settings.setWarmupCalculator(false)
+        assertEquals(false, settings.warmupCalculator.first())
+
+        settings.setWarmupCalculator(true)
+        assertEquals(true, settings.warmupCalculator.first())
+    }
+
+    @Test
+    fun `the warm-up calculator leaves the other settings alone`() = runTest {
+        val settings = newSettings()
+        settings.setWeeklyGoal(5)
+        val timer = RestTimerSettings(enabled = false, defaultSeconds = 120, beep = true)
+        settings.setRestTimer(timer)
+        val reminders = ReminderSettings(enabled = true, weekdays = setOf(DayOfWeek.SUNDAY), time = LocalTime.of(7, 45))
+        settings.setReminders(reminders)
+
+        settings.setWarmupCalculator(false)
+
+        assertEquals(5, settings.weeklyGoal.first())
+        assertEquals(timer, settings.restTimer.first())
+        assertEquals(reminders, settings.reminders.first())
+    }
+
+    @Test
+    fun `other settings leave the warm-up calculator alone`() = runTest {
+        val settings = newSettings()
+        settings.setWarmupCalculator(false)
+
+        settings.setWeeklyGoal(6)
+        settings.setRestTimer(RestTimerSettings(beep = true))
+
+        assertEquals(false, settings.warmupCalculator.first())
+    }
+
+    @Test
+    fun `the warm-up calculator survives a new settings object on the same file`() = runTest {
+        val dataStore = newDataStore()
+        newSettings(dataStore).setWarmupCalculator(false)
+
+        assertEquals(false, newSettings(dataStore).warmupCalculator.first())
+    }
 }

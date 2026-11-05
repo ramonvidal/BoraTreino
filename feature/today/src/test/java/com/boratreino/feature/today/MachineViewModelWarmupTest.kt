@@ -110,6 +110,7 @@ class MachineViewModelWarmupTest {
         override suspend fun unskipMachineToday(machineId: Long) = Unit
         override fun observeRepeatOffer(): Flow<RepeatOffer?> = MutableStateFlow(null)
         override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
+        override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
         override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
     }
 
@@ -129,6 +130,8 @@ class MachineViewModelWarmupTest {
         override suspend fun setWeeklyGoal(goal: Int) = Unit
         override val reminders: Flow<ReminderSettings> = MutableStateFlow(ReminderSettings())
         override suspend fun setReminders(settings: ReminderSettings) = Unit
+        override val warmupCalculator: Flow<Boolean> = MutableStateFlow(true)
+        override suspend fun setWarmupCalculator(enabled: Boolean) = Unit
         override val restTimer: Flow<RestTimerSettings> = MutableStateFlow(RestTimerSettings(enabled = true, defaultSeconds = 90))
         override suspend fun setRestTimer(settings: RestTimerSettings) = Unit
     }
