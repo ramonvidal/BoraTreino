@@ -34,7 +34,7 @@ import java.time.LocalTime
 
 /** The Settings screen from fixed states, light, dark, large text and each dialog; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
+@Config(sdk = [34], qualifiers = "en-w411dp-h3600dp")
 class SettingsScreenshotTest {
     @get:Rule
     val compose = createComposeRule()

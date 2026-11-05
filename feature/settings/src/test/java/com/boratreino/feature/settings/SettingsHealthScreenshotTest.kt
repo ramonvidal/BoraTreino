@@ -37,7 +37,7 @@ private fun healthState(health: HealthCardState, language: AppLanguage = AppLang
 
 /** The Health Connect card in each of its states, light and dark; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
+@Config(sdk = [34], qualifiers = "en-w411dp-h3600dp")
 class SettingsHealthScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
@@ -99,7 +99,7 @@ class SettingsHealthScreenshotTest {
 
 /** The Health Connect card with Baianês chosen, to check the translated text fits. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "pt-rBR-w411dp-h1600dp")
+@Config(sdk = [34], qualifiers = "pt-rBR-w411dp-h3600dp")
 class SettingsHealthPtScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
