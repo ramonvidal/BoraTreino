@@ -180,6 +180,45 @@ feature/progress,progress_one_rm_top,,%1$s kg est. (%2$s),%1$s kg est. (%2$s)
 feature/progress,progress_trend_one_rm,,Trend: %1$s to %2$s kg est.,Tendência: %1$s a %2$s kg est.
 feature/progress,progress_chart_description_one_rm,,Estimated 1RM from %1$s kg on %2$s to %3$s kg on %4$s; best %5$s kg,1RM estimado de %1$s kg em %2$s até %3$s kg em %4$s; melhor %5$s kg
 feature/progress,progress_chart_description_one_one_rm,,Estimated 1RM %1$s kg on %2$s,1RM estimado %1$s kg em %2$s
+feature/progress,progress_page_machines,,Machines,Aparelhos
+feature/progress,progress_page_stats,,Stats,Estatísticas
+feature/progress,stats_period_4w,,4 weeks,4 semanas
+feature/progress,stats_empty,,No training in this period yet,Nenhum treino nesse período ainda
+feature/progress,stats_summary_title,,Summary,Resumo
+feature/progress,stats_sessions_per_week,,%1$s sessions a week,%1$s treinos por semana
+feature/progress,stats_goal_weeks,one,Met your goal in %1$d of %2$d week,Bati a meta em %1$d de %2$d semana
+feature/progress,stats_goal_weeks,other,Met your goal in %1$d of %2$d weeks,Bati a meta em %1$d de %2$d semanas
+feature/progress,stats_best_week,one,"Best week: %1$d training day, week of %2$s","Melhor semana: %1$d dia de treino, semana de %2$s"
+feature/progress,stats_best_week,other,"Best week: %1$d training days, week of %2$s","Melhor semana: %1$d dias de treino, semana de %2$s"
+feature/progress,stats_strength_overall,,Strength: %1$s in this period,Força: %1$s nesse período
+feature/progress,stats_percent,,%1$s %%,%1$s %%
+feature/progress,stats_percent_plain,,%1$s %%,%1$s %%
+feature/progress,stats_volume_title,,Weekly volume,Volume por semana
+feature/progress,stats_volume_tonnes,,%1$s t,%1$s t
+feature/progress,stats_volume_chart_description,,"Weekly volume over %1$d weeks: %2$s in total, best week %3$s","Volume por semana em %1$d semanas: %2$s no total, melhor semana %3$s"
+feature/progress,stats_hard_sets_title,,Hard sets per muscle group,Séries pesadas por grupo muscular
+feature/progress,stats_sets_per_week,,%1$s a week,%1$s por semana
+feature/progress,stats_hard_sets_note,,Many programs use roughly 10 to 20 hard sets per muscle group per week.,Muitos programas usam mais ou menos de 10 a 20 séries pesadas por grupo muscular por semana.
+feature/progress,stats_recency_title,,Days since each muscle group was trained,Dias desde que cada grupo muscular foi treinado
+feature/progress,stats_today,,Today,Hoje
+feature/progress,stats_never,,Never,Nunca
+feature/progress,stats_days_ago,one,%d day ago,há %d dia
+feature/progress,stats_days_ago,other,%d days ago,há %d dias
+feature/progress,stats_strength_title,,Strength trend,Tendência de força
+feature/progress,stats_strength_from_to,,%1$s kg → %2$s kg est. 1RM,%1$s kg → %2$s kg de 1RM est.
+feature/progress,stats_plateau,one,%1$s: no progress in %2$d session,%1$s: sem evolução em %2$d treino
+feature/progress,stats_plateau,other,%1$s: no progress in %2$d sessions,%1$s: sem evolução em %2$d treinos
+feature/progress,stats_records_title,,Records,Recordes
+feature/progress,stats_record_heaviest,,Heaviest: %1$s kg,Maior carga: %1$s kg
+feature/progress,stats_record_most_reps,,Most reps: %1$d at %2$s kg,Mais repetições: %1$d com %2$s kg
+feature/progress,stats_rep_ranges_title,,Rep ranges,Faixas de repetições
+feature/progress,stats_reps_1_5,,1 to 5 reps,1 a 5 repetições
+feature/progress,stats_reps_6_8,,6 to 8 reps,6 a 8 repetições
+feature/progress,stats_reps_9_12,,9 to 12 reps,9 a 12 repetições
+feature/progress,stats_reps_13_plus,,13 or more reps,13 ou mais repetições
+feature/progress,stats_times_title,,Session length,Duração do treino
+feature/progress,stats_average_session,,Average session: %1$d min,Treino médio: %1$d min
+feature/progress,stats_between_sets,,About %1$s min between sets,Cerca de %1$s min entre séries
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha

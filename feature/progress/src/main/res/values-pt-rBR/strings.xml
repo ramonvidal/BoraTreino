@@ -54,6 +54,37 @@
     <string name="progress_trend_one_rm">Tendência: %1$s a %2$s kg est.</string>
     <string name="progress_chart_description_one_rm">1RM estimado de %1$s kg em %2$s até %3$s kg em %4$s; melhor %5$s kg</string>
     <string name="progress_chart_description_one_one_rm">1RM estimado %1$s kg em %2$s</string>
+    <string name="progress_page_machines">Aparelhos</string>
+    <string name="progress_page_stats">Estatísticas</string>
+    <string name="stats_period_4w">4 semanas</string>
+    <string name="stats_empty">Nenhum treino nesse período ainda</string>
+    <string name="stats_summary_title">Resumo</string>
+    <string name="stats_sessions_per_week">%1$s treinos por semana</string>
+    <string name="stats_strength_overall">Força: %1$s nesse período</string>
+    <string name="stats_percent">%1$s %%</string>
+    <string name="stats_percent_plain">%1$s %%</string>
+    <string name="stats_volume_title">Volume por semana</string>
+    <string name="stats_volume_tonnes">%1$s t</string>
+    <string name="stats_volume_chart_description">Volume por semana em %1$d semanas: %2$s no total, melhor semana %3$s</string>
+    <string name="stats_hard_sets_title">Séries pesadas por grupo muscular</string>
+    <string name="stats_sets_per_week">%1$s por semana</string>
+    <string name="stats_hard_sets_note">Muitos programas usam mais ou menos de 10 a 20 séries pesadas por grupo muscular por semana.</string>
+    <string name="stats_recency_title">Dias desde que cada grupo muscular foi treinado</string>
+    <string name="stats_today">Hoje</string>
+    <string name="stats_never">Nunca</string>
+    <string name="stats_strength_title">Tendência de força</string>
+    <string name="stats_strength_from_to">%1$s kg → %2$s kg de 1RM est.</string>
+    <string name="stats_records_title">Recordes</string>
+    <string name="stats_record_heaviest">Maior carga: %1$s kg</string>
+    <string name="stats_record_most_reps">Mais repetições: %1$d com %2$s kg</string>
+    <string name="stats_rep_ranges_title">Faixas de repetições</string>
+    <string name="stats_reps_1_5">1 a 5 repetições</string>
+    <string name="stats_reps_6_8">6 a 8 repetições</string>
+    <string name="stats_reps_9_12">9 a 12 repetições</string>
+    <string name="stats_reps_13_plus">13 ou mais repetições</string>
+    <string name="stats_times_title">Duração do treino</string>
+    <string name="stats_average_session">Treino médio: %1$d min</string>
+    <string name="stats_between_sets">Cerca de %1$s min entre séries</string>
     <plurals name="progress_trainings">
         <item quantity="one">%d treino</item>
         <item quantity="other">%d treinos</item>
@@ -73,5 +104,21 @@
     <plurals name="progress_sets">
         <item quantity="one">%d série</item>
         <item quantity="other">%d séries</item>
+    </plurals>
+    <plurals name="stats_goal_weeks">
+        <item quantity="one">Bati a meta em %1$d de %2$d semana</item>
+        <item quantity="other">Bati a meta em %1$d de %2$d semanas</item>
+    </plurals>
+    <plurals name="stats_best_week">
+        <item quantity="one">Melhor semana: %1$d dia de treino, semana de %2$s</item>
+        <item quantity="other">Melhor semana: %1$d dias de treino, semana de %2$s</item>
+    </plurals>
+    <plurals name="stats_days_ago">
+        <item quantity="one">há %d dia</item>
+        <item quantity="other">há %d dias</item>
+    </plurals>
+    <plurals name="stats_plateau">
+        <item quantity="one">%1$s: sem evolução em %2$d treino</item>
+        <item quantity="other">%1$s: sem evolução em %2$d treinos</item>
     </plurals>
 </resources>
