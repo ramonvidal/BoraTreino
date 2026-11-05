@@ -10,6 +10,7 @@ import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.model.working
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -149,7 +150,8 @@ internal class FakeWorkoutStore : WorkoutStore {
         setsOf(sessionId, machineId).size
 
     override suspend fun summary(sessionId: Long): SessionSummary {
-        val inSession = setsOf(sessionId)
+        // Like the Room store: warm-ups are not counted.
+        val inSession = setsOf(sessionId).working()
         return SessionSummary(
             sessionId = sessionId,
             machineCount = inSession.map { it.machineId }.distinct().size,

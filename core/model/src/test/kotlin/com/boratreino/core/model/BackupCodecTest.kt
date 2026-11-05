@@ -43,6 +43,9 @@ class BackupCodecTest {
             WorkoutSet(1, 1, 1, 0, 120.0, 12, null, null, null, Instant.parse("2026-10-27T18:05:00.123456789Z")),
             WorkoutSet(2, 1, 1, 1, null, null, 45, 7, 1500, Instant.parse("2026-10-27T18:08:00Z")),
             WorkoutSet(3, 2, 3, 0, 0.0, 8, null, null, null, Instant.parse("2026-11-02T10:02:00Z")),
+            WorkoutSet(4, 2, 3, 1, 20.0, 15, null, null, null, Instant.parse("2026-11-02T10:03:00Z"), SetType.WARMUP),
+            WorkoutSet(5, 2, 3, 2, 30.0, 10, null, null, null, Instant.parse("2026-11-02T10:04:00Z"), SetType.DROP),
+            WorkoutSet(6, 2, 3, 3, 30.0, 6, null, null, null, Instant.parse("2026-11-02T10:05:00Z"), SetType.FAILURE),
         ),
     )
 
@@ -100,7 +103,7 @@ class BackupCodecTest {
 
     @Test
     fun `the file names the app, the version, the export time and the weekdays by name`() {
-        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":1"))
+        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":2"))
         assertTrue(text.contains("\"exportedAt\":\"2026-11-02T20:15:30.250Z\""))
         assertTrue(text.contains("\"weekdays\":[\"MONDAY\",\"WEDNESDAY\"]"))
         assertTrue(text.contains("\"muscleGroup\":\"LEGS\""))
@@ -205,27 +208,27 @@ class BackupCodecTest {
 
     @Test
     fun `version 0 is invalid`() {
-        assertInvalid(text.replace("\"version\":1", "\"version\":0"))
+        assertInvalid(text.replace("\"version\":2", "\"version\":0"))
     }
 
     @Test
     fun `a negative version is invalid`() {
-        assertInvalid(text.replace("\"version\":1", "\"version\":-1"))
+        assertInvalid(text.replace("\"version\":2", "\"version\":-1"))
     }
 
     @Test
     fun `a missing, text or fractional version is invalid`() {
-        assertInvalid(text.replace("\"version\":1,", ""))
-        assertInvalid(text.replace("\"version\":1", "\"version\":\"1\""))
-        assertInvalid(text.replace("\"version\":1", "\"version\":1.0"))
+        assertInvalid(text.replace("\"version\":2,", ""))
+        assertInvalid(text.replace("\"version\":2", "\"version\":\"1\""))
+        assertInvalid(text.replace("\"version\":2", "\"version\":1.0"))
     }
 
     @Test
     fun `a newer version is too new, even when its fields are odd`() {
-        assertEquals(BackupDecodeResult.TooNew(2), decoded(text.replace("\"version\":1", "\"version\":2")))
+        assertEquals(BackupDecodeResult.TooNew(3), decoded(text.replace("\"version\":2", "\"version\":3")))
         assertEquals(
-            BackupDecodeResult.TooNew(2),
-            decoded("{\"app\":\"boratreino\",\"version\":2,\"machines\":\"odd\",\"sets\":42}"),
+            BackupDecodeResult.TooNew(3),
+            decoded("{\"app\":\"boratreino\",\"version\":3,\"machines\":\"odd\",\"sets\":42}"),
         )
         assertEquals(BackupDecodeResult.TooNew(99), decoded("{\"app\":\"boratreino\",\"version\":99}"))
     }
@@ -311,5 +314,57 @@ class BackupCodecTest {
     @Test
     fun `a routine item with no sets is invalid`() {
         assertInvalid(text.replace("\"targetSets\":3", "\"targetSets\":0"))
+    }
+
+    // Set types
+
+    @Test
+    fun `the format version is 2`() {
+        assertEquals(2, BackupCodec.FORMAT_VERSION)
+    }
+
+    @Test
+    fun `every set type is written and read back`() {
+        assertTrue(text.contains("\"type\":\"NORMAL\""))
+        assertTrue(text.contains("\"type\":\"WARMUP\""))
+        assertTrue(text.contains("\"type\":\"DROP\""))
+        assertTrue(text.contains("\"type\":\"FAILURE\""))
+        val types = assertOk(text).data.sets.map { it.type }
+        assertEquals(
+            listOf(SetType.NORMAL, SetType.NORMAL, SetType.NORMAL, SetType.WARMUP, SetType.DROP, SetType.FAILURE),
+            types,
+        )
+    }
+
+    private fun versionOneFile() = """
+        {"app":"boratreino","version":1,
+         "machines":[{"id":1,"name":"Leg press","muscleGroup":"LEGS","kind":"WEIGHT_REPS","stepKg":2.5,"archived":false}],
+         "plans":[],"routines":[],"items":[],
+         "sessions":[{"id":4,"startedAt":"2026-11-02T10:00:00Z"}],
+         "sets":[{"id":7,"sessionId":4,"machineId":1,"position":0,"weightKg":40.0,"reps":10,"loggedAt":"2026-11-02T10:01:00Z"}]}
+    """.trimIndent()
+
+    @Test
+    fun `a version 1 file without a type imports its sets as normal`() {
+        val ok = assertOk(versionOneFile())
+
+        assertEquals(SetType.NORMAL, ok.data.sets.single().type)
+        assertEquals(40.0, ok.data.sets.single().weightKg!!, 0.0)
+    }
+
+    @Test
+    fun `an unknown or null set type reads as normal`() {
+        val withUnknown = versionOneFile()
+            .replace("\"version\":1", "\"version\":2")
+            .replace("\"position\":0,", "\"position\":0,\"type\":\"SUPERSET\",")
+        assertEquals(SetType.NORMAL, assertOk(withUnknown).data.sets.single().type)
+
+        val withNull = versionOneFile().replace("\"position\":0,", "\"position\":0,\"type\":null,")
+        assertEquals(SetType.NORMAL, assertOk(withNull).data.sets.single().type)
+    }
+
+    @Test
+    fun `a version 3 file is too new`() {
+        assertEquals(BackupDecodeResult.TooNew(3), decoded(versionOneFile().replace("\"version\":1", "\"version\":3")))
     }
 }
