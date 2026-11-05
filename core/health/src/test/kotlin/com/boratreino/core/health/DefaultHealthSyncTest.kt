@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.data.HistoryRepository
 import com.boratreino.core.model.HealthExerciseKind
 import com.boratreino.core.model.HealthExport
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SessionInfo
 import com.boratreino.core.model.SetDraft
@@ -112,6 +113,7 @@ class DefaultHealthSyncTest {
         override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> = error("not used")
         override suspend fun deleteSession(sessionId: Long): SessionDetail? = error("not used")
         override suspend fun restoreSession(detail: SessionDetail): Unit = error("not used")
+        override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> = error("not used")
     }
 
     private lateinit var access: FakeAccess

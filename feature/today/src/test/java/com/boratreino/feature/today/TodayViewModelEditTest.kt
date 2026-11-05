@@ -3,6 +3,8 @@ package com.boratreino.feature.today
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RoutineRepository
+import com.boratreino.core.data.RepeatOffer
+import com.boratreino.core.data.RepeatOutcome
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.LoggedSet
@@ -10,6 +12,7 @@ import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.OpenSession
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
@@ -85,6 +88,9 @@ class TodayViewModelEditTest {
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit
+        override fun observeRepeatOffer(): Flow<RepeatOffer?> = MutableStateFlow(null)
+        override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
+        override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
     }
 
     private class FakeMachines(private val all: List<Machine>) : MachineRepository {

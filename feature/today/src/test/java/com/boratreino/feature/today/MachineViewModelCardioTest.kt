@@ -2,6 +2,8 @@ package com.boratreino.feature.today
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.data.RepeatOffer
+import com.boratreino.core.data.RepeatOutcome
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
@@ -12,6 +14,7 @@ import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.OpenSession
 import com.boratreino.core.model.ReminderSettings
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.SessionSummary
@@ -130,6 +133,9 @@ class MachineViewModelCardioTest {
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit
+        override fun observeRepeatOffer(): Flow<RepeatOffer?> = MutableStateFlow(null)
+        override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
+        override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
     }
 
     private class FakeRestTimer : RestTimer {

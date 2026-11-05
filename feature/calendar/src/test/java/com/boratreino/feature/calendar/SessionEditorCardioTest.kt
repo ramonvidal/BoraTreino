@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.data.HistoryRepository
 import com.boratreino.core.data.MachineRepository
+import com.boratreino.core.data.RepeatOffer
+import com.boratreino.core.data.RepeatOutcome
 import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
@@ -16,6 +18,7 @@ import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.OpenSession
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutinePlan
 import com.boratreino.core.model.RoutinePlanWithRoutines
@@ -105,6 +108,7 @@ class SessionEditorCardioTest {
         override fun observeSessionIds(): Flow<Set<Long>> = emptyFlow()
         override suspend fun deleteSession(sessionId: Long): SessionDetail? = null
         override suspend fun restoreSession(detail: SessionDetail) = Unit
+        override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> = emptyList()
     }
 
     private class FakeTraining : TrainingRepository {
@@ -135,6 +139,9 @@ class SessionEditorCardioTest {
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit
+        override fun observeRepeatOffer(): Flow<RepeatOffer?> = emptyFlow()
+        override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
+        override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
     }
 
     private class FakeRoutines : RoutineRepository {
