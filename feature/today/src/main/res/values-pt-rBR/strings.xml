@@ -3,6 +3,8 @@
 <resources>
     <string name="today_app_name">Bora pro Treino!</string>
     <string name="today_open_settings">Ajustes</string>
+    <string name="today_energy_day">Cerca de %1$s kcal hoje</string>
+    <string name="today_energy_rest">Dia de descanso: cerca de %1$s kcal</string>
     <string name="today_pick_to_start">Escolha um aparelho pra começar</string>
     <string name="today_all_machines">Todos os aparelhos</string>
     <string name="today_add_machine">Adicionar aparelho</string>

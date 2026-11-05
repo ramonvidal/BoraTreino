@@ -100,6 +100,8 @@ feature/calendar,calendar_machines,other,%d machines,%d aparelhos
 feature/calendar,calendar_sets,one,%d set,%d série
 feature/calendar,calendar_sets,other,%d sets,%d séries
 feature/calendar,calendar_free,,Free,Livre
+feature/calendar,calendar_energy_day,,About %1$s kcal that day,Cerca de %1$s kcal nesse dia
+feature/calendar,calendar_energy_rest,,Rest day: about %1$s kcal,Dia de descanso: cerca de %1$s kcal
 feature/calendar,calendar_no_sets,,No sets yet. Add a machine to start.,Nenhuma série ainda. Adicione um aparelho pra começar.
 feature/calendar,calendar_repeat_same,,Same as last time,Igual à última vez
 feature/calendar,calendar_repeat_suggested,,"Same, with suggested weights","Igual, com as cargas sugeridas"
@@ -354,8 +356,35 @@ feature/settings,settings_import_sets,other,%1$s sets,%1$s séries
 feature/settings,settings_about_title,,About,Sobre
 feature/settings,settings_about,,Bora pro Treino! %1$s,Bora pro Treino! %1$s
 feature/settings,settings_language_title,,Language,Idioma
+feature/settings,settings_body_title,,Your body,Seu corpo
+feature/settings,settings_body_hint,,Used only to estimate how much energy you need each day. It never leaves your phone.,Serve só pra estimar quanta energia você precisa por dia. Não sai do seu celular.
+feature/settings,settings_body_sex,,Sex,Sexo
+feature/settings,settings_body_sex_male,,Male,Masculino
+feature/settings,settings_body_sex_female,,Female,Feminino
+feature/settings,settings_body_birth_year,,Birth year,Ano de nascimento
+feature/settings,settings_body_height,,Height (cm),Altura (cm)
+feature/settings,settings_body_weight,,Weight (kg),Peso (kg)
+feature/settings,settings_body_basal,,I know my basal rate (kcal),Eu sei meu metabolismo basal (kcal)
+feature/settings,settings_body_basal_dialog,,"Basal rate (kcal, 0 = use the formula)","Metabolismo basal (kcal, 0 = usar a fórmula)"
+feature/settings,settings_body_not_set,,Not set,Não definido
+feature/settings,settings_body_use_formula,,Use the formula,Usar a fórmula
+feature/settings,settings_body_kcal,,%1$s kcal,%1$s kcal
+feature/settings,settings_body_kg,,%1$s kg,%1$s kg
+feature/settings,settings_body_percent,,%1$s %%,%1$s %%
+feature/settings,settings_body_goal_keep,,Goal: keep weight,Meta: manter o peso
+feature/settings,settings_body_goal_over,,Goal: +%1$d %% over your estimated need,Meta: +%1$d %% acima da sua necessidade estimada
+feature/settings,settings_body_goal_under,,Goal: %1$d %% under your estimated need,Meta: %1$d %% abaixo da sua necessidade estimada
+feature/settings,settings_body_estimate,,Estimated basal rate: %1$s kcal; rest day: about %2$s kcal,Metabolismo basal estimado: %1$s kcal; dia de descanso: cerca de %2$s kcal
+feature/settings,settings_body_estimate_note,,"These are estimates, not medical advice.","São estimativas, não orientação médica."
+feature/settings,settings_body_log_weight,,Log today's weight,Registrar o peso de hoje
+feature/settings,settings_body_log_weight_dialog,,Today's weight (kg),Peso de hoje (kg)
+feature/settings,settings_body_recent_weights,,Recent weights,Pesos recentes
+feature/settings,settings_body_show_estimate,,Show daily energy estimate,Mostrar estimativa de energia diária
+feature/settings,settings_body_range_error,,Enter a value from %1$s to %2$s,Digite um valor de %1$s a %2$s
 feature/today,today_app_name,,Bora pro Treino!,Bora pro Treino!
 feature/today,today_open_settings,,Settings,Ajustes
+feature/today,today_energy_day,,About %1$s kcal today,Cerca de %1$s kcal hoje
+feature/today,today_energy_rest,,Rest day: about %1$s kcal,Dia de descanso: cerca de %1$s kcal
 feature/today,today_pick_to_start,,Pick a machine to start,Escolha um aparelho pra começar
 feature/today,today_all_machines,,All machines,Todos os aparelhos
 feature/today,today_add_machine,,Add machine,Adicionar aparelho

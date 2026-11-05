@@ -18,6 +18,8 @@
     <string name="calendar_delete_message">O treino e todas as séries dele serão removidos.</string>
     <string name="calendar_deleted">Treino apagado</string>
     <string name="calendar_free">Livre</string>
+    <string name="calendar_energy_day">Cerca de %1$s kcal nesse dia</string>
+    <string name="calendar_energy_rest">Dia de descanso: cerca de %1$s kcal</string>
     <string name="calendar_no_sets">Nenhuma série ainda. Adicione um aparelho pra começar.</string>
     <string name="calendar_repeat_same">Igual à última vez</string>
     <string name="calendar_repeat_suggested">Igual, com as cargas sugeridas</string>

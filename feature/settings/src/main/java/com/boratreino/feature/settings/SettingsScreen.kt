@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.BackupSummary
 import com.boratreino.core.model.RestTimerRules
+import com.boratreino.core.model.Sex
 import com.boratreino.core.notify.NotificationPermission
 import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.ui.ExerciseCredit
@@ -93,6 +94,12 @@ internal data class SettingsActions(
     val onChooseLanguage: (AppLanguage) -> Unit = {},
     val onHealthChange: (Boolean) -> Unit = {},
     val onGetHealthConnect: () -> Unit = {},
+    val onBodySex: (Sex) -> Unit = {},
+    val onOpenBodyField: (BodyField) -> Unit = {},
+    val onConfirmBodyValue: (String) -> Unit = {},
+    val onDismissBodyField: () -> Unit = {},
+    val onBodyGoalStep: (up: Boolean) -> Unit = {},
+    val onShowEnergyEstimate: (Boolean) -> Unit = {},
 )
 
 @Composable
@@ -177,6 +184,12 @@ internal fun SettingsScreen(
             onHealthChange = { on ->
                 if (on) healthPermission.launch(viewModel.healthPermissions) else viewModel.turnHealthOff()
             },
+            onBodySex = viewModel::setBodySex,
+            onOpenBodyField = viewModel::openBodyField,
+            onConfirmBodyValue = viewModel::confirmBodyValue,
+            onDismissBodyField = viewModel::dismissBodyField,
+            onBodyGoalStep = viewModel::stepBodyGoal,
+            onShowEnergyEstimate = viewModel::setShowEnergyEstimate,
             onGetHealthConnect = {
                 try {
                     context.startActivity(viewModel.healthInstallIntent())
@@ -222,6 +235,7 @@ internal fun SettingsContent(
                 item { RemindersSection(state, actions) }
                 item { RestTimerSection(state, actions) }
                 item { WarmupSection(state, actions) }
+                item { BodySection(state.body, actions) }
                 if (state.health != HealthCardState.Hidden) item { HealthSection(state.health, actions) }
                 if (state.showNotificationsSection) item { NotificationsSection(actions) }
                 item { BackupSection(actions) }
@@ -233,11 +247,12 @@ internal fun SettingsContent(
     }
 
     if (state.timePickerOpen) TimeDialog(state, actions)
+    if (state.body.dialog != null) BodyDialog(state.body, state.body.dialog, actions)
     if (state.importConfirm != null) ImportDialog(state.importConfirm, actions)
 }
 
 @Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
+internal fun SectionCard(title: String, content: @Composable () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
@@ -250,7 +265,7 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+internal fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -265,12 +280,12 @@ private fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean
 }
 
 @Composable
-private fun Hint(text: String) {
+internal fun Hint(text: String) {
     Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
-private fun SettingsChip(label: String, selected: Boolean, onClick: () -> Unit) {
+internal fun SettingsChip(label: String, selected: Boolean, onClick: () -> Unit) {
     FilterChip(
         selected = selected,
         onClick = onClick,

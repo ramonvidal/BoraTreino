@@ -67,4 +67,30 @@
     <string name="settings_about">Bora pro Treino! %1$s</string>
 
     <string name="settings_language_title">Language</string>
+
+    <string name="settings_body_title">Your body</string>
+    <string name="settings_body_hint">Used only to estimate how much energy you need each day. It never leaves your phone.</string>
+    <string name="settings_body_sex">Sex</string>
+    <string name="settings_body_sex_male">Male</string>
+    <string name="settings_body_sex_female">Female</string>
+    <string name="settings_body_birth_year">Birth year</string>
+    <string name="settings_body_height">Height (cm)</string>
+    <string name="settings_body_weight">Weight (kg)</string>
+    <string name="settings_body_basal">I know my basal rate (kcal)</string>
+    <string name="settings_body_basal_dialog">Basal rate (kcal, 0 = use the formula)</string>
+    <string name="settings_body_not_set">Not set</string>
+    <string name="settings_body_use_formula">Use the formula</string>
+    <string name="settings_body_kcal">%1$s kcal</string>
+    <string name="settings_body_kg">%1$s kg</string>
+    <string name="settings_body_percent">%1$s %%</string>
+    <string name="settings_body_goal_keep">Goal: keep weight</string>
+    <string name="settings_body_goal_over">Goal: +%1$d %% over your estimated need</string>
+    <string name="settings_body_goal_under">Goal: %1$d %% under your estimated need</string>
+    <string name="settings_body_estimate">Estimated basal rate: %1$s kcal; rest day: about %2$s kcal</string>
+    <string name="settings_body_estimate_note">These are estimates, not medical advice.</string>
+    <string name="settings_body_log_weight">Log today\'s weight</string>
+    <string name="settings_body_log_weight_dialog">Today\'s weight (kg)</string>
+    <string name="settings_body_recent_weights">Recent weights</string>
+    <string name="settings_body_show_estimate">Show daily energy estimate</string>
+    <string name="settings_body_range_error">Enter a value from %1$s to %2$s</string>
 </resources>

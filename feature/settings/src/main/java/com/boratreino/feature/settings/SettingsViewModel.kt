@@ -9,6 +9,10 @@ import com.boratreino.core.data.BackupPreview
 import com.boratreino.core.data.BackupRepository
 import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.BackupSummary
+import com.boratreino.core.model.BodyProfile
+import com.boratreino.core.model.EnergyRules
+import com.boratreino.core.model.Sex
+import com.boratreino.core.model.WeightEntry
 import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.model.RestTimerSettings
@@ -17,6 +21,7 @@ import com.boratreino.core.health.HealthAvailability
 import com.boratreino.core.health.HealthConnectAccess
 import com.boratreino.core.notify.ReminderScheduler
 import com.boratreino.core.settings.AppLanguage
+import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.settings.HealthSettings
 import com.boratreino.core.settings.TrainingSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +29,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Intent
 import java.time.Clock
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalTime
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -40,6 +46,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 /**
  * Everything the Settings screen shows. [notificationsGranted] is what the system says right now;
@@ -59,6 +66,7 @@ internal data class SettingsUiState(
     val installedVersion: String = "",
     val language: AppLanguage = AppLanguage.ENGLISH,
     val health: HealthCardState = HealthCardState.Hidden,
+    val body: BodyCardState = BodyCardState(),
 ) {
     val showNotificationsSection: Boolean
         get() = (reminders.enabled || restTimer.enabled) && !notificationsGranted
@@ -98,6 +106,17 @@ private data class Overlay(
     val language: AppLanguage = AppLanguage.current(),
     val healthAvailability: HealthAvailability = HealthAvailability.Unsupported,
     val healthDenied: Boolean = false,
+    /** What was typed in the body card; null = follow the saved profile. */
+    val bodyDraft: BodyDraft? = null,
+    val bodyDialog: BodyField? = null,
+    val bodyDialogError: Boolean = false,
+)
+
+/** The body flows, merged so the main combine stays at five. */
+private data class BodyStored(
+    val profile: BodyProfile?,
+    val weights: List<WeightEntry>,
+    val showEstimate: Boolean,
 )
 
 @HiltViewModel
@@ -107,8 +126,9 @@ class SettingsViewModel @Inject constructor(
     private val reminderScheduler: ReminderScheduler,
     private val healthSettings: HealthSettings,
     private val healthAccess: HealthConnectAccess,
+    private val bodySettings: BodySettings,
     @ApplicationContext private val context: Context,
-    @Suppress("unused") private val clock: Clock,
+    private val clock: Clock,
 ) : ViewModel() {
 
     private val eventChannel = Channel<SettingsEvent>(Channel.BUFFERED)
@@ -129,12 +149,22 @@ class SettingsViewModel @Inject constructor(
         settings.weeklyGoal,
         settings.reminders,
         settings.restTimer,
-        combine(healthSettings.enabled, settings.warmupCalculator) { health: Boolean, warmup: Boolean ->
-            health to warmup
+        combine(
+            healthSettings.enabled,
+            settings.warmupCalculator,
+            combine(
+                bodySettings.profile,
+                bodySettings.weights,
+                bodySettings.showEnergyEstimate,
+            ) { profile: BodyProfile?, weights: List<WeightEntry>, show: Boolean ->
+                BodyStored(profile, weights, show)
+            },
+        ) { health: Boolean, warmup: Boolean, body: BodyStored ->
+            Triple(health, warmup, body)
         },
         overlay,
     ) { goal, reminders, restTimer, toggles, overlay ->
-        val (healthEnabled, warmupCalculator) = toggles
+        val (healthEnabled, warmupCalculator, bodyStored) = toggles
         SettingsUiState(
             loaded = true,
             weeklyGoal = goal,
@@ -147,8 +177,73 @@ class SettingsViewModel @Inject constructor(
             installedVersion = installedVersion,
             language = overlay.language,
             health = healthCardState(overlay.healthAvailability, healthEnabled, overlay.healthDenied),
+            body = bodyCardState(bodyStored, overlay, LocalDate.now(clock)),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+
+    private fun bodyCardState(stored: BodyStored, overlay: Overlay, today: LocalDate): BodyCardState {
+        val draft = overlay.bodyDraft ?: BodyDraft.from(stored.profile)
+        val profile = draft.toProfile()
+        return BodyCardState(
+            draft = draft,
+            weights = stored.weights.take(RECENT_WEIGHTS),
+            showEstimate = stored.showEstimate,
+            basalKcal = profile?.let { roundTo10(EnergyRules.bmr(it, today)) },
+            restDayKcal = profile?.let { EnergyRules.restDayKcal(it, today) },
+            maxBirthYear = BodyInput.maxBirthYear(today),
+            dialog = overlay.bodyDialog,
+            dialogError = overlay.bodyDialogError,
+        )
+    }
+
+    private fun currentDraft(): BodyDraft = state.value.body.draft
+
+    fun setBodySex(sex: Sex) = changeDraft(currentDraft().copy(sex = sex))
+
+    fun stepBodyGoal(up: Boolean) {
+        val draft = currentDraft()
+        val step = if (up) BodyInput.GOAL_STEP else -BodyInput.GOAL_STEP
+        changeDraft(draft.copy(goalPercent = (draft.goalPercent + step).coerceIn(BodyInput.MIN_GOAL, BodyInput.MAX_GOAL)))
+    }
+
+    fun setShowEnergyEstimate(show: Boolean) = save { bodySettings.setShowEnergyEstimate(show) }
+
+    fun openBodyField(field: BodyField) = overlay.update { it.copy(bodyDialog = field, bodyDialogError = false) }
+
+    fun dismissBodyField() = overlay.update { it.copy(bodyDialog = null, bodyDialogError = false) }
+
+    /** Applies the typed text to the open field; an invalid value keeps the pad open with an error. */
+    fun confirmBodyValue(text: String) {
+        val field = overlay.value.bodyDialog ?: return
+        val today = LocalDate.now(clock)
+        val draft = BodyInput.apply(currentDraft(), field, text, BodyInput.maxBirthYear(today))
+        if (draft == null) {
+            overlay.update { it.copy(bodyDialogError = true) }
+            return
+        }
+        overlay.update { it.copy(bodyDialog = null, bodyDialogError = false, bodyDraft = draft) }
+        if (field == BodyField.LOG_WEIGHT) {
+            val kg = draft.weightKg ?: return
+            save {
+                bodySettings.addWeight(today, kg)
+                // addWeight only touches an existing profile; this one may just have become complete.
+                draft.toProfile()?.let { bodySettings.setProfile(it) }
+            }
+        } else {
+            saveProfile(draft)
+        }
+    }
+
+    private fun changeDraft(draft: BodyDraft) {
+        overlay.update { it.copy(bodyDraft = draft) }
+        saveProfile(draft)
+    }
+
+    /** A profile is written only when every field is filled in and valid. */
+    private fun saveProfile(draft: BodyDraft) {
+        val profile = draft.toProfile() ?: return
+        save { bodySettings.setProfile(profile) }
+    }
 
     fun chooseLanguage(language: AppLanguage) {
         overlay.update { it.copy(language = language) }
@@ -315,6 +410,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 }
+
+private const val RECENT_WEIGHTS = 5
+
+private fun roundTo10(kcal: Double): Int = (kcal / 10.0).roundToInt() * 10
 
 /** Pure mapping from what Health Connect offers and what the user chose to the card. */
 internal fun healthCardState(
