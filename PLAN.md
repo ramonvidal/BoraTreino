@@ -197,7 +197,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       progress for N sessions) tied to the progression suggestion; rep-range distribution;
       average session length and time between sets; cardio weekly minutes, calories,
       distance and pace; body weight against strength once a body weight log exists.
-- [ ] **Phase 13: Same as last time (do this first).** The owner's priority: it keeps the app
+- [x] **Phase 13: Same as last time.** The owner's priority: it keeps the app
       usable on tired days. One tap on the Today card ("Same as last time") logs the whole
       routine exactly as the last session of that routine: every machine, the same number of
       sets, weights and reps (cardio: the same minutes, calories and distance). Machines without
@@ -206,8 +206,9 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       fixed afterwards (Today or Calendar). The same action is offered when logging a forgotten
       day from the Calendar. Today there is only **Same again** per machine and per set. Rules in
       `:core:model` (`RepeatSessionRules`, plain JVM tests); no schema change; a repeated
-      session is written to Health Connect like any other. Cheaper variant to consider: a second
-      button that applies the progression suggestions ("Same, with suggested weights").
+      session is written to Health Connect like any other. A second button applies the progression
+      suggestions ("Same, with suggested weights"); both are on the Today routine card and in the
+      Calendar's empty session editor.
 - [ ] **Phase 14: Daily energy (basal metabolism).** The owner wants to know how many calories to
       eat on each day. The app **does not track food or calories eaten** (another app does):
       it only shows an estimate of the day's need. Proposal:
@@ -248,6 +249,5 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - Phase 12: the owner keeps adding statistics ideas to the list; the suggested list stands for now.
 - Phase 14: which activity factor to use for an ordinary day (proposal: 1.2, sedentary, since the
   training burn is added separately), and whether the goal adjustment (surplus or deficit) is wanted.
-- Phase 13: whether "Same, with suggested weights" is wanted as a second button.
 
-Suggested order: 13, 9, 11, 10, 12, 14.
+Order: 13 (done), 9, 11, 10, 12, 14.
