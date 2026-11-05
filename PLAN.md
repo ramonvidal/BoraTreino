@@ -169,7 +169,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       ficha can be edited from Today (move up / down, remove) before or during a training;
       the Routines tab is split into **Routines | Gym**, routines are cards with a menu
       (edit, move, duplicate, delete) and the routine editor saves every change at once.
-- [ ] **Phase 9: Set types.** A set is Normal (default), Warm-up, Drop or Failure. Warm-up sets
+- [x] **Phase 9: Set types.** A set is Normal (default), Warm-up, Drop or Failure. Warm-up sets
       never count for records, progression, the top-weight chart, volume or "sets done" ticks.
       Logging stays as quick as today: no extra tap, the type only changes when you ask.
       Needs a Room migration (`workout_sets.type`, default NORMAL) with its test, and a
@@ -250,4 +250,4 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - Phase 14: which activity factor to use for an ordinary day (proposal: 1.2, sedentary, since the
   training burn is added separately), and whether the goal adjustment (surplus or deficit) is wanted.
 
-Order: 13 (done), 9, 11, 10, 12, 14.
+Order: 13 (done), 9 (done), 11, 10, 12, 14.
