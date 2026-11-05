@@ -8,6 +8,7 @@ import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.RoutinePlan
 import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.Session
+import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
 import java.time.DayOfWeek
 import java.time.Instant
@@ -61,6 +62,7 @@ internal fun WorkoutSetEntity.toModel() = WorkoutSet(
     calories = calories,
     distanceM = distanceM,
     loggedAt = Instant.ofEpochMilli(loggedAt),
+    type = runCatching { SetType.valueOf(type) }.getOrDefault(SetType.NORMAL),
 )
 
 internal fun WorkoutSet.toEntity() = WorkoutSetEntity(
@@ -74,6 +76,7 @@ internal fun WorkoutSet.toEntity() = WorkoutSetEntity(
     calories = calories,
     distanceM = distanceM,
     loggedAt = loggedAt.toEpochMilli(),
+    type = type.name,
 )
 
 internal fun RoutinePlanEntity.toModel() = RoutinePlan(id = id, scheduleMode = ScheduleMode.valueOf(scheduleMode))

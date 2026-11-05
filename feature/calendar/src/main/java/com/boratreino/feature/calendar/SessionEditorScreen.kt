@@ -57,8 +57,11 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.SessionMachine
+import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.EmptyState
+import com.boratreino.core.ui.SetTypeChips
+import com.boratreino.core.ui.setTypeLabel
 import com.boratreino.core.ui.NumberPadDialog
 import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.Stepper
@@ -86,6 +89,7 @@ internal data class SessionEditorActions(
     val onOpenPad: (PadTarget) -> Unit = {},
     val onConfirmPad: (String) -> Unit = {},
     val onDismissPad: () -> Unit = {},
+    val onEditorType: (SetType) -> Unit = {},
     val onSaveEditor: () -> Unit = {},
     val onDeleteEditor: () -> Unit = {},
     val onDismissEditor: () -> Unit = {},
@@ -138,6 +142,7 @@ internal fun SessionEditorScreen(
             onOpenPad = viewModel::openPad,
             onConfirmPad = viewModel::confirmPad,
             onDismissPad = viewModel::dismissPad,
+            onEditorType = viewModel::setEditorType,
             onSaveEditor = viewModel::saveEditor,
             onDeleteEditor = viewModel::deleteEditor,
             onDismissEditor = viewModel::closeEditor,
@@ -308,6 +313,14 @@ private fun MachineCard(entry: SessionMachine, actions: SessionEditorActions) {
                         },
                         style = MaterialTheme.typography.titleMedium,
                     )
+                    if (set.type != SetType.NORMAL) {
+                        Text(
+                            setTypeLabel(set.type),
+                            modifier = Modifier.padding(start = 12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             FilledTonalButton(
@@ -426,6 +439,16 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                     onMinus = { actions.onStepEditorReps(false) },
                     onPlus = { actions.onStepEditorReps(true) },
                     onValueClick = { actions.onOpenPad(PadTarget.EDIT_REPS) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    stringResource(CoreUiR.string.set_type_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SetTypeChips(
+                    selected = editor.type,
+                    onSelect = actions.onEditorType,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

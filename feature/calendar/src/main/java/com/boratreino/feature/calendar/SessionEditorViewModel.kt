@@ -16,6 +16,7 @@ import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SetDraft
+import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
@@ -44,6 +45,7 @@ internal data class SetEdit(
     val minutes: Int = 0,
     val calories: Int = 0,
     val distanceM: Int = 0,
+    val type: SetType = SetType.NORMAL,
 ) {
     val isCardio: Boolean get() = machine.kind == MachineKind.CARDIO
 
@@ -205,7 +207,12 @@ class SessionEditorViewModel @Inject constructor(
             minutes = cardio.minutes,
             calories = cardio.calories,
             distanceM = cardio.distanceM,
+            type = if (entry.machine.kind == MachineKind.CARDIO) SetType.NORMAL else set.type,
         )
+    }
+
+    internal fun setEditorType(type: SetType) {
+        editor.value = editor.value?.let { if (it.isCardio) it else it.copy(type = type) }
     }
 
     internal fun closeEditor() {
@@ -243,7 +250,7 @@ class SessionEditorViewModel @Inject constructor(
             val s = e.set
             CardioRules.toSet(s.id, s.sessionId, s.machineId, s.position, e.cardioDraft, s.loggedAt)
         } else {
-            e.set.copy(weightKg = e.weightKg, reps = e.reps)
+            e.set.copy(weightKg = e.weightKg, reps = e.reps, type = e.type)
         }
         write { training.updateSet(updated) }
     }

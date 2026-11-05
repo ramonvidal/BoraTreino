@@ -48,7 +48,7 @@ object ProgressRules {
     /** CARDIO machine -> MINUTES; BODYWEIGHT_REPS machine with no set whose weight > 0 -> REPS; else WEIGHT. */
     fun metricFor(machine: Machine, sets: List<WorkoutSet>): ProgressMetric = when {
         machine.kind == MachineKind.CARDIO -> ProgressMetric.MINUTES
-        machine.kind == MachineKind.BODYWEIGHT_REPS && sets.none { (it.weightKg ?: 0.0) > 0.0 } -> ProgressMetric.REPS
+        machine.kind == MachineKind.BODYWEIGHT_REPS && sets.working().none { (it.weightKg ?: 0.0) > 0.0 } -> ProgressMetric.REPS
         else -> ProgressMetric.WEIGHT
     }
 
@@ -70,7 +70,7 @@ object ProgressRules {
             ProgressMetric.MINUTES -> compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.position })
         }
         return sets
-            .filter { it.sessionId in sessionDates }
+            .filter { it.isWorking && it.sessionId in sessionDates }
             .groupBy { it.sessionId }
             .map { (sessionId, group) ->
                 val top = group.maxWith(order)
@@ -123,6 +123,10 @@ object ProgressRules {
         for (group in sets.groupBy { it.machineId }.values) {
             val earlier = ArrayList<WorkoutSet>()
             for (set in group.sortedWith(compareBy({ it.loggedAt }, { it.position }))) {
+                if (!set.isWorking) {
+                    earlier.add(set)
+                    continue
+                }
                 val date = sessionDates[set.sessionId]
                 if (date != null && YearMonth.from(date) == month && RecordRules.recordFor(set, earlier) != null) {
                     count++

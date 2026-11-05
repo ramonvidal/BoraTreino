@@ -18,6 +18,7 @@ import com.boratreino.core.model.Suggestion
 import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetSummary
+import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
@@ -40,7 +41,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** The set being fixed in the bottom sheet, with its own stepper values. [number] is its row number (1-based). */
-internal data class SetEditor(val set: WorkoutSet, val number: Int, val weightKg: Double, val reps: Int)
+internal data class SetEditor(val set: WorkoutSet, val number: Int, val weightKg: Double, val reps: Int, val type: SetType = set.type)
 
 /** A logged cardio set being fixed in the bottom sheet; [draft] is the stepper values. */
 internal data class CardioEditor(val set: WorkoutSet, val number: Int, val draft: CardioDraft)
@@ -65,6 +66,8 @@ internal data class MachineUiState(
     val weightKg: Double = 0.0,
     val reps: Int = LoggingRules.DEFAULT_REPS,
     val sameAgain: SetDraft? = null,
+    /** The Warm-up chip is on: the next logged set is a warm-up. Turns itself off after each log. */
+    val warmupOn: Boolean = false,
     val editor: SetEditor? = null,
     val pad: NumberPad? = null,
     /** This machine's target in the active routine, if it is in it. */
@@ -119,6 +122,7 @@ class MachineViewModel @Inject constructor(
     private val cardioEditor = MutableStateFlow<CardioEditor?>(null)
     private val pad = MutableStateFlow<NumberPad?>(null)
     private val record = MutableStateFlow<Record?>(null)
+    private val warmupOn = MutableStateFlow(false)
 
     /** Fires once when a rest countdown reaches zero; the screen gives a haptic. */
     internal val restFinished: Flow<Unit> = restTimer.finished
@@ -166,7 +170,8 @@ class MachineViewModel @Inject constructor(
     private val logState: Flow<MachineUiState> = combine(
         training.observeMachineLog(machineId),
         inputs,
-    ) { log, input ->
+        warmupOn,
+    ) { log, input, warmup ->
         val override = input.override
         val editing = input.editing
         val padding = input.padding
@@ -199,6 +204,7 @@ class MachineViewModel @Inject constructor(
                 weightKg = draft.weightKg,
                 reps = draft.reps,
                 sameAgain = LoggingRules.sameAgain(log.lastTime, log.thisSession),
+                warmupOn = warmup,
                 editor = editing,
                 pad = padding,
                 target = log.target,
@@ -216,18 +222,25 @@ class MachineViewModel @Inject constructor(
 
     internal fun logSet() {
         val s = state.value
-        write { log(SetDraft(s.weightKg, s.reps)) }
+        write { log(SetDraft(s.weightKg, s.reps, typeFor(s))) }
     }
 
     internal fun logSameAgain() {
         val draft = state.value.sameAgain ?: return
-        write { log(draft) }
+        write { log(draft.copy(type = typeFor(state.value))) }
     }
+
+    internal fun toggleWarmup() {
+        warmupOn.value = !warmupOn.value
+    }
+
+    private fun typeFor(s: MachineUiState): SetType = if (s.warmupOn) SetType.WARMUP else SetType.NORMAL
 
     private suspend fun log(draft: SetDraft) {
         val machine = state.value.machine
         val logged = training.logSet(machineId, draft)
         draftOverride.value = null
+        warmupOn.value = false
         eventChannel.send(MachineEvent.Logged(logged.record))
         startRest(machine)
         val newRecord = logged.record ?: return
@@ -379,7 +392,11 @@ class MachineViewModel @Inject constructor(
 
     internal fun openSet(set: WorkoutSet) {
         val number = state.value.sets.indexOfFirst { it.id == set.id } + 1
-        editor.value = SetEditor(set, number, set.weightKg ?: 0.0, set.reps ?: LoggingRules.DEFAULT_REPS)
+        editor.value = SetEditor(set, number, set.weightKg ?: 0.0, set.reps ?: LoggingRules.DEFAULT_REPS, set.type)
+    }
+
+    internal fun setEditorType(type: SetType) {
+        editor.value = editor.value?.copy(type = type)
     }
 
     internal fun closeEditor() {
@@ -398,7 +415,7 @@ class MachineViewModel @Inject constructor(
     internal fun saveEditor() {
         val e = editor.value ?: return
         editor.value = null
-        write { training.updateSet(e.set.copy(weightKg = e.weightKg, reps = e.reps)) }
+        write { training.updateSet(e.set.copy(weightKg = e.weightKg, reps = e.reps, type = e.type)) }
     }
 
     internal fun deleteEditor() {

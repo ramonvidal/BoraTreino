@@ -285,6 +285,7 @@ internal class DefaultTrainingRepository @Inject constructor(
                 calories = null,
                 distanceM = null,
                 loggedAt = now,
+                type = draft.type,
             )
             // Earlier sets of this machine, this session's included; read before the insert.
             val record = RecordRules.recordFor(set, store.machineSets(machineId))

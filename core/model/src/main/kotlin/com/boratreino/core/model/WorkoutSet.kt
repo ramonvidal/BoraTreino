@@ -2,6 +2,15 @@ package com.boratreino.core.model
 
 import java.time.Instant
 
+/** What kind of set it was. Only [WARMUP] is left out of records, progression, volume and counts. */
+enum class SetType { NORMAL, WARMUP, DROP, FAILURE }
+
+/** A working set counts for performance: every type except [SetType.WARMUP]. */
+val WorkoutSet.isWorking: Boolean get() = type != SetType.WARMUP
+
+/** The working sets, order kept. */
+fun List<WorkoutSet>.working(): List<WorkoutSet> = filter { it.isWorking }
+
 /** One logged set on a machine within a session. */
 data class WorkoutSet(
     val id: Long,
@@ -14,6 +23,7 @@ data class WorkoutSet(
     val calories: Int?,
     val distanceM: Int?,
     val loggedAt: Instant,
+    val type: SetType = SetType.NORMAL,
 ) {
     init {
         require(weightKg == null || weightKg >= 0) { "weightKg must not be negative" }

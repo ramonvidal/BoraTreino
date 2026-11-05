@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.model.SetSummary
+import com.boratreino.core.model.working
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -128,7 +129,7 @@ class TodayViewModel @Inject constructor(
             null
         } else {
             val active = plan.active
-            val setCounts = open?.machines.orEmpty().associate { it.machine.id to it.sets.size }
+            val setCounts = open?.machines.orEmpty().associate { it.machine.id to it.sets.working().size }
             val setsByMachine = open?.machines.orEmpty().associate { it.machine.id to it.sets }
             val itemIds = active?.items?.map { it.machineId }.orEmpty().toSet()
             var highlightedGiven = false
@@ -165,7 +166,7 @@ class TodayViewModel @Inject constructor(
             session = open?.let { s ->
                 SessionUi(
                     machineCount = s.machines.size,
-                    setCount = s.machines.sumOf { it.sets.size },
+                    setCount = s.machines.sumOf { it.sets.working().size },
                     machines = s.machines.map { SessionMachineUi(it.machine, SetSummary.of(it.sets)) },
                 )
             },

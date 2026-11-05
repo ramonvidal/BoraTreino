@@ -54,7 +54,11 @@ import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
+import androidx.compose.material3.FilterChip
+import com.boratreino.core.ui.SetTypeChips
+import com.boratreino.core.ui.setTypeLabel
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.ExercisePreviewDialog
 import com.boratreino.core.ui.MachineThumb
@@ -86,6 +90,8 @@ internal data class MachineActions(
     val onDismissPad: () -> Unit = {},
     val onLogSet: () -> Unit = {},
     val onSameAgain: () -> Unit = {},
+    val onToggleWarmup: () -> Unit = {},
+    val onEditorType: (SetType) -> Unit = {},
     val onOpenSet: (WorkoutSet) -> Unit = {},
     val onStepEditorWeight: (up: Boolean) -> Unit = {},
     val onStepEditorReps: (up: Boolean) -> Unit = {},
@@ -166,6 +172,8 @@ internal fun MachineScreen(
             onDismissPad = viewModel::dismissPad,
             onLogSet = viewModel::logSet,
             onSameAgain = viewModel::logSameAgain,
+            onToggleWarmup = viewModel::toggleWarmup,
+            onEditorType = viewModel::setEditorType,
             onOpenSet = viewModel::openSet,
             onStepEditorWeight = viewModel::stepEditorWeight,
             onStepEditorReps = viewModel::stepEditorReps,
@@ -358,6 +366,14 @@ private fun SetsCard(machine: Machine, sets: List<WorkoutSet>, onOpenSet: (Worko
                     },
                     style = MaterialTheme.typography.titleMedium,
                 )
+                if (set.type != SetType.NORMAL) {
+                    Text(
+                        setTypeLabel(set.type),
+                        modifier = Modifier.padding(start = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
@@ -392,6 +408,12 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                 onPlus = { actions.onStepReps(true) },
                 onValueClick = { actions.onOpenPad(PadTarget.REPS) },
                 modifier = Modifier.fillMaxWidth(),
+            )
+            FilterChip(
+                selected = state.warmupOn,
+                onClick = actions.onToggleWarmup,
+                label = { Text(setTypeLabel(SetType.WARMUP)) },
+                modifier = Modifier.heightIn(min = 40.dp),
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 val same = state.sameAgain
@@ -608,6 +630,8 @@ private fun EditSetSheet(machine: Machine, editor: SetEditor, actions: MachineAc
                 onValueClick = { actions.onOpenPad(PadTarget.EDIT_REPS) },
                 modifier = Modifier.fillMaxWidth(),
             )
+            Text(stringResource(CoreUiR.string.set_type_title), style = MaterialTheme.typography.labelLarge)
+            SetTypeChips(selected = editor.type, onSelect = actions.onEditorType)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = actions.onDeleteEditor,

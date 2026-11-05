@@ -55,7 +55,7 @@ object HealthExportRules {
         val start = session.startedAt
         val end = maxOf(endedAt, start.plus(Duration.ofMinutes(1)))
         val cardio = sets.filter { CardioRules.isCardio(it) }
-        val strength = sets.filterNot { CardioRules.isCardio(it) }
+        val strength = sets.filterNot { CardioRules.isCardio(it) }.working()
         val kind = kindFor(sets, machines)
         val title = routineName?.trim()?.takeIf { it.isNotEmpty() } ?: DEFAULT_TITLE
         val calories = cardio.sumOf { it.calories ?: 0 }
@@ -151,6 +151,7 @@ object HealthExportRules {
             mix((set.calories ?: -1).toLong())
             mix((set.distanceM ?: -1).toLong())
             mix(set.loggedAt.toEpochMilli())
+            mix(set.type.name)
         }
         return h and Long.MAX_VALUE
     }

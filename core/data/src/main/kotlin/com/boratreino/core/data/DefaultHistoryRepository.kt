@@ -16,6 +16,7 @@ import com.boratreino.core.model.SessionInfo
 import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.model.working
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -53,7 +54,7 @@ internal class DefaultHistoryRepository @Inject constructor(
             val routineById = routines.associateBy { it.id }
             val setsBySession = sets.groupBy { it.sessionId }
             sessions.map { session ->
-                val own = setsBySession[session.id].orEmpty()
+                val own = setsBySession[session.id].orEmpty().working()
                 SessionInfo(
                     session = session,
                     routine = session.routineId?.let(routineById::get),
@@ -124,6 +125,7 @@ internal class DefaultHistoryRepository @Inject constructor(
                 calories = null,
                 distanceM = null,
                 loggedAt = loggedAt,
+                type = draft.type,
             )
             val saved = set.copy(id = store.insertSet(set))
             val endedAt = session.endedAt

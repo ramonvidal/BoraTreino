@@ -52,4 +52,9 @@
     <string name="rest_skip">Skip</string>
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
+    <string name="set_type_title">Type</string>
+    <string name="set_type_normal">Normal</string>
+    <string name="set_type_warmup">Warm-up</string>
+    <string name="set_type_drop">Drop set</string>
+    <string name="set_type_failure">Failure</string>
 </resources>

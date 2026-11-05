@@ -126,4 +126,6 @@ internal data class WorkoutSetEntity(
     val calories: Int?,
     val distanceM: Int?,
     val loggedAt: Long,
+    /** SetType name; NORMAL for sets logged before set types existed. */
+    @ColumnInfo(defaultValue = "'NORMAL'") val type: String = "NORMAL",
 )

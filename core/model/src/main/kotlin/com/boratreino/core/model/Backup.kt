@@ -47,7 +47,7 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 1
+    const val FORMAT_VERSION = 2
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {
@@ -111,6 +111,7 @@ object BackupCodec {
                     "calories" to it.calories,
                     "distanceM" to it.distanceM,
                     "loggedAt" to it.loggedAt.toString(),
+                    "type" to it.type.name,
                 )
             },
         )
@@ -214,6 +215,9 @@ object BackupCodec {
                 calories = optInt(it, "calories"),
                 distanceM = optInt(it, "distanceM"),
                 loggedAt = instantOf(stringOf(it, "loggedAt"), "loggedAt"),
+                type = optString(it, "type")
+                    ?.let { name -> SetType.entries.firstOrNull { t -> t.name == name } }
+                    ?: SetType.NORMAL,
             )
         }
 

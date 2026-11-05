@@ -16,6 +16,7 @@ internal object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): BoraTreinoDatabase =
         Room.databaseBuilder(context, BoraTreinoDatabase::class.java, BoraTreinoDatabase.NAME)
+            .addMigrations(MIGRATION_1_2)
             .build()
 
     @Provides

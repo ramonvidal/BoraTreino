@@ -17,16 +17,18 @@ object RecordRules {
 
     /**
      * Compares a new set with every earlier set of the same machine (any session, including earlier sets of
-     * this one). Cardio sets are never records. No earlier sets -> null (the first time is not a record).
+     * this one). A warm-up set is never a record and earlier warm-ups are ignored. Cardio sets are never records. No earlier sets -> null (the first time is not a record).
      * Heavier than every earlier weight (by more than 0.001) -> HeaviestWeight. Otherwise more reps than every earlier set at the same weight,
      * with at least one earlier set at that weight -> MostReps. Otherwise null. Null weight counts as 0.
      */
     fun recordFor(newSet: WorkoutSet, earlier: List<WorkoutSet>): Record? {
-        if (CardioRules.isCardio(newSet) || earlier.isEmpty()) return null
+        if (!newSet.isWorking || CardioRules.isCardio(newSet)) return null
+        val prior = earlier.working()
+        if (prior.isEmpty()) return null
         val w = newSet.weightKg ?: 0.0
         val reps = newSet.reps ?: 0
-        if (earlier.all { w - (it.weightKg ?: 0.0) > EPSILON }) return Record.HeaviestWeight(w)
-        val same = earlier.filter { abs((it.weightKg ?: 0.0) - w) <= EPSILON }
+        if (prior.all { w - (it.weightKg ?: 0.0) > EPSILON }) return Record.HeaviestWeight(w)
+        val same = prior.filter { abs((it.weightKg ?: 0.0) - w) <= EPSILON }
         if (same.isNotEmpty() && same.all { reps > (it.reps ?: 0) }) return Record.MostReps(w, reps)
         return null
     }
@@ -41,6 +43,10 @@ object RecordRules {
         for (set in sessionSets.sortedWith(compareBy({ it.loggedAt }, { it.position }))) {
             val prior = history.getOrPut(set.machineId) { mutableListOf() }
             if (CardioRules.isCardio(set)) continue
+            if (!set.isWorking) {
+                prior.add(set)
+                continue
+            }
             if (recordFor(set, prior) != null) count++
             prior.add(set)
         }

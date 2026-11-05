@@ -18,7 +18,7 @@ object RepeatSessionRules {
      * Plans the sets, ficha order (by item position) then set position. [items] are the ficha machines
      * to consider (skipped ones already removed); [lastSets] the sets of the previous session of the
      * routine; [machineIdsWithSetsToday] are left out; [suggestions] (machineId -> Suggestion) are used
-     * only for [RepeatMode.SUGGESTED] and only for weight machines. A machine with no last sets is left out.
+     * only for [RepeatMode.SUGGESTED] and only for weight machines. Warm-up sets of the last session are not repeated. A machine with no last working sets is left out.
      */
     fun plan(
         items: List<RoutineItem>,
@@ -27,7 +27,7 @@ object RepeatSessionRules {
         mode: RepeatMode,
         suggestions: Map<Long, Suggestion>,
     ): List<PlannedSet> {
-        val byMachine = lastSets.groupBy { it.machineId }
+        val byMachine = lastSets.working().groupBy { it.machineId }
         return items
             .sortedBy { it.position }
             .map { it.machineId }

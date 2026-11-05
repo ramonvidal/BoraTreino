@@ -41,17 +41,20 @@ object ProgressionRules {
      * Otherwise null. Null when target is null, history is empty or the sets are cardio. Weights rounded like LoggingRules.stepWeight.
      */
     fun suggest(target: RoutineItem?, stepKg: Double, history: List<List<WorkoutSet>>): Suggestion? {
-        if (target == null || history.isEmpty()) return null
+        if (target == null) return null
+        // Warm-ups are ignored; a session with only warm-ups is not a session of history.
+        val sessions = history.map { it.working() }.filter { it.isNotEmpty() }
+        if (sessions.isEmpty()) return null
         val n = target.targetSets
-        val latest = firstSets(history[0], n) ?: return null
+        val latest = firstSets(sessions[0], n) ?: return null
         if (latest.any { CardioRules.isCardio(it) }) return null
         val w1 = sharedWeight(latest) ?: return null
 
         if (latest.all { it.r() >= target.repsMax }) {
             return Suggestion.Up(round3(w1 + stepKg), target.repsMin)
         }
-        if (history.size >= 2) {
-            val previous = firstSets(history[1], n) ?: return null
+        if (sessions.size >= 2) {
+            val previous = firstSets(sessions[1], n) ?: return null
             val w2 = sharedWeight(previous) ?: return null
             if (abs(w1 - w2) <= EPSILON &&
                 latest.any { it.r() < target.repsMin } &&

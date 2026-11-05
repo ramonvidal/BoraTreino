@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.CalendarRules
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SetSummary
+import com.boratreino.core.model.working
 import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.Stepper
 import java.time.LocalDate
@@ -344,12 +345,14 @@ private fun SessionCard(detail: SessionDetail, state: CalendarUiState, actions: 
         DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault()).withZone(state.zone)
     }
     val session = detail.session
-    val setCount = detail.machines.sumOf { it.sets.size }
+    // Warm-ups are not counted: only working sets, and machines that have some.
+    val setCount = detail.machines.sumOf { it.sets.working().size }
+    val machineCount = detail.machines.count { it.sets.working().isNotEmpty() }
     val routineName = detail.routine?.name ?: stringResource(R.string.calendar_free_training)
     val title = stringResource(
         R.string.calendar_session_summary,
         routineName,
-        resources.machinesText(detail.machines.size),
+        resources.machinesText(machineCount),
         resources.setsText(setCount),
     )
     val start = timeFormat.format(session.startedAt)

@@ -21,10 +21,11 @@ sealed interface SetSummary {
         private const val EPSILON = 0.001
 
         /**
-         * Null when [sets] is empty. All cardio sets -> Cardio (totals). Otherwise sets are taken in position
+         * Warm-up sets are left out. Null when there are no working sets. All cardio sets -> Cardio (totals). Otherwise sets are taken in position
          * order; weights equal within 0.001.
          */
-        fun of(sets: List<WorkoutSet>): SetSummary? {
+        fun of(allSets: List<WorkoutSet>): SetSummary? {
+            val sets = allSets.working()
             if (sets.isEmpty()) return null
             if (sets.all { CardioRules.isCardio(it) }) {
                 return Cardio(

@@ -167,10 +167,10 @@ internal interface WorkoutSetDao {
     @Query("SELECT MAX(loggedAt) FROM workout_sets WHERE sessionId = :sessionId")
     suspend fun lastLoggedAt(sessionId: Long): Long?
 
-    @Query("SELECT COUNT(*) FROM workout_sets WHERE sessionId = :sessionId")
+    @Query("SELECT COUNT(*) FROM workout_sets WHERE sessionId = :sessionId AND type <> 'WARMUP'")
     suspend fun count(sessionId: Long): Int
 
-    @Query("SELECT COUNT(DISTINCT machineId) FROM workout_sets WHERE sessionId = :sessionId")
+    @Query("SELECT COUNT(DISTINCT machineId) FROM workout_sets WHERE sessionId = :sessionId AND type <> 'WARMUP'")
     suspend fun machineCount(sessionId: Long): Int
 
     @Insert

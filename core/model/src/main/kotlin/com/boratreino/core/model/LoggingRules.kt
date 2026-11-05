@@ -6,7 +6,7 @@ import kotlin.math.floor
 import kotlin.math.roundToLong
 
 /** Weight and reps the steppers hold before a set is logged. */
-data class SetDraft(val weightKg: Double, val reps: Int)
+data class SetDraft(val weightKg: Double, val reps: Int, val type: SetType = SetType.NORMAL)
 
 /** Rules for the logging path: what the steppers start at and how they move. */
 object LoggingRules {
@@ -20,7 +20,7 @@ object LoggingRules {
     private fun WorkoutSet.toDraft() = SetDraft(weightKg ?: 0.0, reps ?: DEFAULT_REPS)
 
     /**
-     * Steppers' starting values: this session's last set if any; else [suggestion] if any; else last
+     * Steppers' starting values (warm-ups never count): this session's last set if any; else [suggestion] if any; else last
      * time's first set; else 0 kg x DEFAULT_REPS.
      */
     fun prefill(
@@ -28,14 +28,14 @@ object LoggingRules {
         thisSession: List<WorkoutSet>,
         suggestion: Suggestion? = null,
     ): SetDraft {
-        thisSession.lastOrNull()?.let { return it.toDraft() }
+        thisSession.working().lastOrNull()?.let { return it.toDraft() }
         suggestion?.let { return SetDraft(it.weightKg, it.reps) }
-        return lastTime.firstOrNull()?.toDraft() ?: SetDraft(0.0, DEFAULT_REPS)
+        return lastTime.working().firstOrNull()?.toDraft() ?: SetDraft(0.0, DEFAULT_REPS)
     }
 
-    /** Last time's set at index thisSession.size, as a draft; null when there is none. */
+    /** Last time's working set at index (working sets in thisSession), as a draft; null when there is none. */
     fun sameAgain(lastTime: List<WorkoutSet>, thisSession: List<WorkoutSet>): SetDraft? =
-        lastTime.getOrNull(thisSession.size)?.toDraft()
+        lastTime.working().getOrNull(thisSession.working().size)?.toDraft()
 
     /**
      * One step up or down. An off-grid weight first snaps to the next multiple of [stepKg] in that
