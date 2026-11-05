@@ -19,6 +19,9 @@
     <string name="calendar_deleted">Treino apagado</string>
     <string name="calendar_free">Livre</string>
     <string name="calendar_no_sets">Nenhuma série ainda. Adicione um aparelho pra começar.</string>
+    <string name="calendar_repeat_same">Igual à última vez</string>
+    <string name="calendar_repeat_suggested">Igual, com as cargas sugeridas</string>
+    <string name="calendar_nothing_to_repeat">Não tem treino anterior pra copiar</string>
     <string name="calendar_add_set">Adicionar série</string>
     <string name="calendar_add_machine">Adicionar aparelho</string>
     <string name="calendar_pick_machine">Escolha um aparelho</string>

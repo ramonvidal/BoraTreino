@@ -3,6 +3,7 @@ package com.boratreino.core.data
 import com.boratreino.core.model.LoggedSet
 import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.OpenSession
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.CardioDraft
@@ -10,6 +11,12 @@ import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
+
+/** What the one-tap repeat would log: machines and sets (for "same as last time"). */
+data class RepeatOffer(val routineId: Long, val machineCount: Int, val setCount: Int)
+
+/** What a repeat wrote, enough for [TrainingRepository.undoRepeat]. */
+data class RepeatOutcome(val sessionId: Long, val sessionCreated: Boolean, val setIds: List<Long>, val machineCount: Int)
 
 interface TrainingRepository {
     fun observeOpenSession(): Flow<OpenSession?>
@@ -43,4 +50,19 @@ interface TrainingRepository {
     /** Hides the machine from today's ficha for this training only (kept in memory). */
     suspend fun skipMachineToday(machineId: Long)
     suspend fun unskipMachineToday(machineId: Long)
+    /**
+     * Non-null when a ficha is active, its routine has an earlier session (the latest one that started
+     * before the open session, or before now) and at least one ficha machine (skipped ones excluded) has
+     * no sets yet today; counts are for [RepeatMode.SAME].
+     */
+    fun observeRepeatOffer(): Flow<RepeatOffer?>
+    /**
+     * Copies the previous session of the active routine into the open session (opened if none, as
+     * [logSet] does, closing a stale one first), for ficha machines without sets yet. [RepeatMode.SUGGESTED]
+     * uses the progression suggestion where one exists. No records, no rest timer. Null when there is
+     * nothing to repeat. One transaction.
+     */
+    suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome?
+    /** Deletes the sets of [outcome]; deletes the session too if the repeat created it and it is now empty. */
+    suspend fun undoRepeat(outcome: RepeatOutcome)
 }

@@ -7,6 +7,8 @@ import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.HealthExport
 import com.boratreino.core.model.HealthExportRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.RepeatMode
+import com.boratreino.core.model.RepeatSessionRules
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionDetail
@@ -17,6 +19,7 @@ import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.Clock
 import java.time.Instant
@@ -145,6 +148,38 @@ internal class DefaultHistoryRepository @Inject constructor(
             if (endedAt != null && loggedAt > endedAt) store.setSessionEnd(sessionId, loggedAt)
             saved
         }
+
+    override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> {
+        // Flows are read before the write transaction.
+        val session = store.session(sessionId) ?: throw IllegalArgumentException("No session $sessionId")
+        val routineId = session.routineId ?: return emptyList()
+        val previous = store.observeSessions().first()
+            .filter { it.routineId == routineId && it.id != sessionId && it.startedAt < session.startedAt }
+            .maxByOrNull { it.startedAt }
+            ?: return emptyList()
+        val items = store.routineItems(routineId)
+        val suggestions = if (mode == RepeatMode.SUGGESTED) store.repeatSuggestions(items, sessionId) else emptyMap()
+        return store.inTransaction {
+            val current = store.session(sessionId) ?: throw IllegalArgumentException("No session $sessionId")
+            val existing = store.sessionSets(sessionId)
+            val planned = RepeatSessionRules.plan(
+                items, store.sessionSets(previous.id), existing.map { it.machineId }.toSet(), mode, suggestions,
+            )
+            if (planned.isEmpty()) return@inTransaction emptyList()
+            val base = store.lastSetAt(sessionId)?.plusSeconds(60) ?: current.startedAt
+            val counts = HashMap<Long, Int>()
+            val saved = planned.mapIndexed { index, p ->
+                val position = counts[p.machineId] ?: store.setCount(sessionId, p.machineId)
+                counts[p.machineId] = position + 1
+                val set = p.toWorkoutSet(sessionId, position, base.plusSeconds(index.toLong()))
+                set.copy(id = store.insertSet(set))
+            }
+            val last = saved.maxOf { it.loggedAt }
+            val endedAt = current.endedAt
+            if (endedAt != null && last > endedAt) store.setSessionEnd(sessionId, last)
+            saved
+        }
+    }
 
     override fun observeClosedSessionExports(sinceDays: Int): Flow<List<HealthExport>> {
         val since = LocalDate.now(clock).minusDays(sinceDays.toLong()).startInstant()

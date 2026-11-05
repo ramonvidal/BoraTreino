@@ -11,6 +11,8 @@ import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.OpenSession
 import com.boratreino.core.model.ProgressionRules
 import com.boratreino.core.model.RecordRules
+import com.boratreino.core.model.RepeatMode
+import com.boratreino.core.model.RepeatSessionRules
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.Session
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.Clock
@@ -181,6 +184,83 @@ internal class DefaultTrainingRepository @Inject constructor(
                     }
                 }
             }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeRepeatOffer(): Flow<RepeatOffer?> =
+        combine(observeTodayPlan(), store.observeOpenSession()) { plan, open -> plan.active to open }
+            .distinctUntilChanged()
+            .flatMapLatest { (active, open) ->
+                if (active == null) {
+                    flowOf(null)
+                } else {
+                    val before = open?.startedAt ?: Instant.now(clock)
+                    val ownId = open?.id
+                    combine(
+                        store.observeSessions(),
+                        store.observeAllSets(),
+                    ) { sessions, sets ->
+                        val previous = sessions
+                            .filter { it.routineId == active.routine.id && it.id != ownId && it.startedAt < before }
+                            .maxByOrNull { it.startedAt }
+                        if (previous == null) return@combine null
+                        val today = if (ownId == null) emptySet() else sets.filter { it.sessionId == ownId }.map { it.machineId }.toSet()
+                        val planned = RepeatSessionRules.plan(
+                            items = active.items,
+                            lastSets = sets.filter { it.sessionId == previous.id },
+                            machineIdsWithSetsToday = today,
+                            mode = RepeatMode.SAME,
+                            suggestions = emptyMap(),
+                        )
+                        if (planned.isEmpty()) {
+                            null
+                        } else {
+                            RepeatOffer(active.routine.id, RepeatSessionRules.machineCount(planned), planned.size)
+                        }
+                    }
+                }
+            }
+            .distinctUntilChanged()
+
+    override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? {
+        // Flows are read before the write transaction; closing a stale session first keeps both consistent.
+        closeStaleSession()
+        val now = Instant.now(clock)
+        val open = store.openSession()
+        val routineId = if (open != null) open.routineId else routineIdFor(choice.value)
+        if (routineId == null) return null
+        val items = store.routineItems(routineId).filter { it.machineId !in skipped.value }
+        val before = open?.startedAt ?: now
+        val previous = store.observeSessions().first()
+            .filter { it.routineId == routineId && it.id != open?.id && it.startedAt < before }
+            .maxByOrNull { it.startedAt }
+            ?: return null
+        val suggestions = if (mode == RepeatMode.SUGGESTED) store.repeatSuggestions(items, open?.id ?: NO_SESSION) else emptyMap()
+        return store.inTransaction {
+            val current = store.openSession()
+            if (current?.id != open?.id) return@inTransaction null
+            val doneToday = if (current == null) emptySet() else store.sessionSets(current.id).map { it.machineId }.toSet()
+            val planned = RepeatSessionRules.plan(items, store.sessionSets(previous.id), doneToday, mode, suggestions)
+            if (planned.isEmpty()) return@inTransaction null
+            val sessionId = current?.id
+                ?: store.insertSession(Session(id = 0, startedAt = now, endedAt = null, routineId = routineId, note = null))
+            val counts = HashMap<Long, Int>()
+            val ids = planned.mapIndexed { index, p ->
+                val position = counts[p.machineId] ?: store.setCount(sessionId, p.machineId)
+                counts[p.machineId] = position + 1
+                store.insertSet(p.toWorkoutSet(sessionId, position, now.plusSeconds(index.toLong())))
+            }
+            RepeatOutcome(sessionId, current == null, ids, RepeatSessionRules.machineCount(planned))
+        }
+    }
+
+    override suspend fun undoRepeat(outcome: RepeatOutcome) {
+        store.inTransaction {
+            outcome.setIds.forEach { store.deleteSet(it) }
+            if (outcome.sessionCreated && store.sessionSets(outcome.sessionId).isEmpty()) {
+                store.deleteSession(outcome.sessionId)
+}
+        }
+    }
 
     override suspend fun closeStaleSession() {
         store.inTransaction { closeIfStale(Instant.now(clock)) }

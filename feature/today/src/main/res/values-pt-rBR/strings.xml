@@ -37,6 +37,8 @@
     <string name="today_skip_or_remove">Pular ou remover %1$s</string>
     <string name="today_skipped">%1$s pulado</string>
     <string name="today_removed_from">Removido de %1$s</string>
+    <string name="today_repeat_same">Igual à última vez</string>
+    <string name="today_repeat_suggested">Igual, com as cargas sugeridas</string>
     <string name="today_picker_title">Escolha um aparelho</string>
     <string name="today_recent">Recentes</string>
     <string name="today_more_machines">Mais aparelhos</string>
@@ -70,5 +72,9 @@
     <plurals name="today_records">
         <item quantity="one">%d recorde</item>
         <item quantity="other">%d recordes</item>
+    </plurals>
+    <plurals name="today_repeated">
+        <item quantity="one">Registrei %1$d aparelho</item>
+        <item quantity="other">Registrei %1$d aparelhos</item>
     </plurals>
 </resources>

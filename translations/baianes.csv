@@ -96,6 +96,9 @@ feature/calendar,calendar_sets,one,%d set,%d série
 feature/calendar,calendar_sets,other,%d sets,%d séries
 feature/calendar,calendar_free,,Free,Livre
 feature/calendar,calendar_no_sets,,No sets yet. Add a machine to start.,Nenhuma série ainda. Adicione um aparelho pra começar.
+feature/calendar,calendar_repeat_same,,Same as last time,Igual à última vez
+feature/calendar,calendar_repeat_suggested,,"Same, with suggested weights","Igual, com as cargas sugeridas"
+feature/calendar,calendar_nothing_to_repeat,,Nothing to copy from an earlier training,Não tem treino anterior pra copiar
 feature/calendar,calendar_add_set,,Add set,Adicionar série
 feature/calendar,calendar_add_machine,,Add machine,Adicionar aparelho
 feature/calendar,calendar_pick_machine,,Pick a machine,Escolha um aparelho
@@ -336,6 +339,10 @@ feature/today,today_remove_from,,Remove from %1$s,Remover de %1$s
 feature/today,today_skip_or_remove,,Skip or remove %1$s,Pular ou remover %1$s
 feature/today,today_skipped,,%1$s skipped,%1$s pulado
 feature/today,today_removed_from,,Removed from %1$s,Removido de %1$s
+feature/today,today_repeat_same,,Same as last time,Igual à última vez
+feature/today,today_repeat_suggested,,"Same, with suggested weights","Igual, com as cargas sugeridas"
+feature/today,today_repeated,one,Logged %1$d machine,Registrei %1$d aparelho
+feature/today,today_repeated,other,Logged %1$d machines,Registrei %1$d aparelhos
 feature/today,today_picker_title,,Pick a machine,Escolha um aparelho
 feature/today,today_recent,,Recent,Recentes
 feature/today,today_more_machines,,More machines,Mais aparelhos

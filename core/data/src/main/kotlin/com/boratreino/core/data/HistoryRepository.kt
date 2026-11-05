@@ -2,6 +2,7 @@ package com.boratreino.core.data
 
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.HealthExport
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SessionInfo
 import com.boratreino.core.model.SetDraft
@@ -45,4 +46,12 @@ interface HistoryRepository {
     suspend fun deleteSession(sessionId: Long): SessionDetail?
     /** Undo of delete: re-inserts the session and its sets with their ids, in one transaction. */
     suspend fun restoreSession(detail: SessionDetail)
+    /**
+     * Fills a session that has a routine from the last session of that routine that started before it:
+     * routine machines without sets in this session get the previous sets (see RepeatSessionRules).
+     * Positions continue; loggedAt = the session's last set + 1 minute (or its start) plus one second
+     * per set; a closed session stays closed (endedAt moves later if needed). Returns the new sets,
+     * empty if there is no routine, no earlier session or nothing to add.
+     */
+    suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet>
 }
