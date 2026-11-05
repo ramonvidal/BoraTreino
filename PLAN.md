@@ -182,7 +182,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       machine's step and never below the empty bar or stack). One tap logs them as warm-up
       sets; never forced, can be switched off in Settings. Rules in `:core:model`
       (`WarmupRules`), plain JVM tests. Needs Phase 9.
-- [ ] **Phase 11: Estimated 1RM.** Estimated one-rep max from each working set (Epley by
+- [x] **Phase 11: Estimated 1RM.** Estimated one-rep max from each working set (Epley by
       default: weight x (1 + reps / 30); only sets of 1 to 12 reps, warm-ups excluded). Shown
       per machine as a chart metric next to Top weight, as a "best estimated 1RM" card and in
       the records list. No schema change. Rules in `:core:model` (`OneRepMaxRules`).
@@ -250,4 +250,4 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - Phase 14: which activity factor to use for an ordinary day (proposal: 1.2, sedentary, since the
   training burn is added separately), and whether the goal adjustment (surplus or deficit) is wanted.
 
-Order: 13 (done), 9 (done), 11, 10, 12, 14.
+Order: 13 (done), 9 (done), 11 (done), 10, 12, 14.
