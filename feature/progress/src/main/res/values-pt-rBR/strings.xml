@@ -44,6 +44,16 @@
     <string name="progress_weeks_description">Minutos por semana em %1$d semanas: %2$d no total, melhor semana %3$d</string>
     <string name="progress_week_this">Essa semana</string>
     <string name="progress_week_of">Semana de %1$s</string>
+    <string name="progress_view_top_weight">Maior carga</string>
+    <string name="progress_view_one_rm">1RM est.</string>
+    <string name="progress_chart_title_one_rm">1RM estimado (kg)</string>
+    <string name="progress_one_rm_note">Estimado a partir das suas séries de trabalho com 1 a 12 repetições (Epley)</string>
+    <string name="progress_one_rm_card_title">Melhor 1RM estimado</string>
+    <string name="progress_tile_best_one_rm">Melhor 1RM est.</string>
+    <string name="progress_one_rm_top">%1$s kg est. (%2$s)</string>
+    <string name="progress_trend_one_rm">Tendência: %1$s a %2$s kg est.</string>
+    <string name="progress_chart_description_one_rm">1RM estimado de %1$s kg em %2$s até %3$s kg em %4$s; melhor %5$s kg</string>
+    <string name="progress_chart_description_one_one_rm">1RM estimado %1$s kg em %2$s</string>
     <plurals name="progress_trainings">
         <item quantity="one">%d treino</item>
         <item quantity="other">%d treinos</item>

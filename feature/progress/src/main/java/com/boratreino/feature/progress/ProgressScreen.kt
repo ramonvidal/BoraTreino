@@ -173,7 +173,7 @@ private fun ImprovedRowItem(row: ImprovedRow, onOpen: (Long) -> Unit) {
             }
             Text(
                 text = when (row.metric) {
-                    ProgressMetric.WEIGHT -> stringResource(R.string.progress_from_to_kg, from, to)
+                    ProgressMetric.WEIGHT, ProgressMetric.ONE_RM -> stringResource(R.string.progress_from_to_kg, from, to)
                     ProgressMetric.REPS -> stringResource(R.string.progress_from_to_reps, from, to)
                     ProgressMetric.MINUTES -> stringResource(R.string.progress_from_to_minutes, from, to)
                 },
@@ -188,7 +188,7 @@ private fun ImprovedRowItem(row: ImprovedRow, onOpen: (Long) -> Unit) {
 @Composable
 private fun MachineRowCard(row: MachineRow, state: ProgressUiState, onOpen: (Long) -> Unit) {
     val best = when (row.metric) {
-        ProgressMetric.WEIGHT -> stringResource(R.string.progress_best_kg, formatKg(row.best))
+        ProgressMetric.WEIGHT, ProgressMetric.ONE_RM -> stringResource(R.string.progress_best_kg, formatKg(row.best))
         ProgressMetric.REPS -> row.best.toInt().let { pluralStringResource(R.plurals.progress_best_reps, it, it) }
         ProgressMetric.MINUTES -> stringResource(R.string.progress_best_minutes, row.best.toInt())
     }

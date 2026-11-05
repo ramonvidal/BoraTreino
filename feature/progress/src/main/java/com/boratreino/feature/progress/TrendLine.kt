@@ -26,6 +26,7 @@ internal fun trendDescription(metric: ProgressMetric, values: List<Double>): Str
         ProgressMetric.WEIGHT -> stringResource(R.string.progress_trend_weight, from, to)
         ProgressMetric.REPS -> stringResource(R.string.progress_trend_reps, from, to)
         ProgressMetric.MINUTES -> stringResource(R.string.progress_trend_minutes, from, to)
+        ProgressMetric.ONE_RM -> stringResource(R.string.progress_trend_one_rm, formatEstimate(values.first()), formatEstimate(values.last()))
     }
 }
 

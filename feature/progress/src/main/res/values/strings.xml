@@ -63,4 +63,14 @@
     <string name="progress_weeks_description">Minutes per week over %1$d weeks: %2$d in total, best week %3$d</string>
     <string name="progress_week_this">This week</string>
     <string name="progress_week_of">Week of %1$s</string>
+    <string name="progress_view_top_weight">Top weight</string>
+    <string name="progress_view_one_rm">Est. 1RM</string>
+    <string name="progress_chart_title_one_rm">Estimated 1RM (kg)</string>
+    <string name="progress_one_rm_note">Estimated from your working sets with 1 to 12 reps (Epley)</string>
+    <string name="progress_one_rm_card_title">Best estimated 1RM</string>
+    <string name="progress_tile_best_one_rm">Best est. 1RM</string>
+    <string name="progress_one_rm_top">%1$s kg est. (%2$s)</string>
+    <string name="progress_trend_one_rm">Trend: %1$s to %2$s kg est.</string>
+    <string name="progress_chart_description_one_rm">Estimated 1RM from %1$s kg on %2$s to %3$s kg on %4$s; best %5$s kg</string>
+    <string name="progress_chart_description_one_one_rm">Estimated 1RM %1$s kg on %2$s</string>
 </resources>

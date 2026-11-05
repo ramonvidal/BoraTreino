@@ -51,6 +51,7 @@ internal data class MachineProgressActions(
     val onSelectRange: (ProgressRange) -> Unit = {},
     val onSelectPoint: (index: Int?) -> Unit = {},
     val onShowAll: () -> Unit = {},
+    val onShowOneRm: (Boolean) -> Unit = {},
 )
 
 @Composable
@@ -66,6 +67,7 @@ internal fun MachineProgressScreen(
             onSelectRange = viewModel::selectRange,
             onSelectPoint = viewModel::selectPoint,
             onShowAll = viewModel::showAllSessions,
+            onShowOneRm = viewModel::setShowOneRm,
         ),
     )
 }
@@ -113,7 +115,13 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
     ) {
         item(key = "tiles") { Tiles(state) }
         item(key = "ranges") { RangeChips(state.range, actions.onSelectRange) }
+        if (state.oneRmAvailable) {
+            item(key = "view") { ViewChips(state.showOneRm, actions.onShowOneRm) }
+        }
         item(key = "chart") { ChartCard(state, actions.onSelectPoint) }
+        if (state.oneRmAvailable && state.oneRmBest != null) {
+            item(key = "one-rm-best") { OneRmBestCard(state.oneRmBest, state.today) }
+        }
         if (state.metric == ProgressMetric.MINUTES && state.weeks.isNotEmpty()) {
             item(key = "weeks") { WeeksCard(state.weeks, state.today) }
         }
@@ -145,7 +153,9 @@ private fun Tiles(state: MachineProgressUiState) {
     val change = state.change
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         StatTile(
-            label = stringResource(R.string.progress_tile_best),
+            label = stringResource(
+                if (state.metric == ProgressMetric.ONE_RM) R.string.progress_tile_best_one_rm else R.string.progress_tile_best,
+            ),
             value = if (best == null) stringResource(R.string.progress_dash) else valueText(state.metric, best.value),
             hint = best?.let { formatFullDate(it.date) },
             modifier = Modifier.weight(1f),
@@ -199,6 +209,36 @@ private fun RangeChips(selected: ProgressRange, onSelect: (ProgressRange) -> Uni
     }
 }
 
+/** Top weight | Est. 1RM: which value the chart follows. */
+@Composable
+private fun ViewChips(showOneRm: Boolean, onShowOneRm: (Boolean) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (oneRm in listOf(false, true)) {
+            FilterChip(
+                selected = showOneRm == oneRm,
+                onClick = { onShowOneRm(oneRm) },
+                label = { Text(stringResource(if (oneRm) R.string.progress_view_one_rm else R.string.progress_view_top_weight)) },
+                modifier = Modifier.heightIn(min = 40.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            )
+        }
+    }
+}
+
+/** "Best estimated 1RM": the value, its date and the set it came from. */
+@Composable
+private fun OneRmBestCard(best: SessionPoint, today: LocalDate) {
+    StatTile(
+        modifier = Modifier.fillMaxWidth(),
+        label = stringResource(R.string.progress_one_rm_card_title),
+        value = valueText(ProgressMetric.ONE_RM, best.value),
+        hint = stringResource(R.string.progress_detail_pair, formatShortDate(best.date, today), setOnlyText(best)),
+    )
+}
+
 @Composable
 private fun rangeLabel(range: ProgressRange): String = stringResource(
     when (range) {
@@ -215,6 +255,7 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
         ProgressMetric.WEIGHT -> stringResource(R.string.progress_chart_title_weight)
         ProgressMetric.REPS -> stringResource(R.string.progress_chart_title_reps)
         ProgressMetric.MINUTES -> stringResource(R.string.progress_chart_title_minutes)
+        ProgressMetric.ONE_RM -> stringResource(R.string.progress_chart_title_one_rm)
     }
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -249,11 +290,27 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
                     onSelect = onSelect,
                     tooltip = tooltip,
                     description = chartDescription(state),
+                    valueFormat = valueFormatter(state.metric),
                 )
+                if (state.metric == ProgressMetric.ONE_RM) {
+                    Text(
+                        stringResource(R.string.progress_one_rm_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
 }
+
+/** Plain number formatting for chart labels: estimates keep one decimal, other values up to two. */
+private fun valueFormatter(metric: ProgressMetric): (Double) -> String =
+    if (metric == ProgressMetric.ONE_RM) ::formatEstimate1 else ::formatKg1
+
+private fun formatEstimate1(value: Double): String = formatEstimate(value)
+
+private fun formatKg1(value: Double): String = formatKg(value)
 
 /** "Top weight from 100 kg on 3 Sep to 125 kg on 2 Nov; best 125 kg". */
 @Composable
@@ -263,14 +320,16 @@ private fun chartDescription(state: MachineProgressUiState): String {
     val last = points.last()
     val best = points.maxOf { it.value }
     val metric = state.metric
+    val number = valueFormatter(metric)
     return if (points.size < 2) {
         stringResource(
             when (metric) {
                 ProgressMetric.WEIGHT -> R.string.progress_chart_description_one_weight
                 ProgressMetric.REPS -> R.string.progress_chart_description_one_reps
                 ProgressMetric.MINUTES -> R.string.progress_chart_description_one_minutes
+                ProgressMetric.ONE_RM -> R.string.progress_chart_description_one_one_rm
             },
-            formatKg(last.value),
+            number(last.value),
             formatShortDate(last.date, state.today),
         )
     } else {
@@ -279,12 +338,13 @@ private fun chartDescription(state: MachineProgressUiState): String {
                 ProgressMetric.WEIGHT -> R.string.progress_chart_description_weight
                 ProgressMetric.REPS -> R.string.progress_chart_description_reps
                 ProgressMetric.MINUTES -> R.string.progress_chart_description_minutes
+                ProgressMetric.ONE_RM -> R.string.progress_chart_description_one_rm
             },
-            formatKg(first.value),
+            number(first.value),
             formatShortDate(first.date, state.today),
-            formatKg(last.value),
+            number(last.value),
             formatShortDate(last.date, state.today),
-            formatKg(best),
+            number(best),
         )
     }
 }

@@ -101,6 +101,7 @@ internal fun ProgressChart(
     tooltip: String?,
     description: String,
     modifier: Modifier = Modifier,
+    valueFormat: (Double) -> String = { formatKg(it) },
 ) {
     val colors = MaterialTheme.colorScheme
     val lineColor = colors.primary
@@ -223,11 +224,11 @@ internal fun ProgressChart(
 
             // Value labels: only the last and the best point; the last wins when they collide.
             val gap = 4.dp.toPx()
-            val lastBox = valueLabel(last, centers, points, measurer, labelStyle, regular, gap, plot, size, valueLabelColor, draw = true)
+            val lastBox = valueLabel(last, centers, points, measurer, labelStyle, regular, gap, plot, size, valueLabelColor, valueFormat, draw = true)
             if (best != null && best != last) {
-                val bestBox = valueLabel(best, centers, points, measurer, labelStyle, big, gap, plot, size, valueLabelColor, draw = false)
+                val bestBox = valueLabel(best, centers, points, measurer, labelStyle, big, gap, plot, size, valueLabelColor, valueFormat, draw = false)
                 if (!bestBox.overlaps(lastBox, gap)) {
-                    valueLabel(best, centers, points, measurer, labelStyle, big, gap, plot, size, valueLabelColor, draw = true)
+                    valueLabel(best, centers, points, measurer, labelStyle, big, gap, plot, size, valueLabelColor, valueFormat, draw = true)
                 }
             }
 
@@ -279,9 +280,10 @@ private fun DrawScope.valueLabel(
     plot: Rect,
     canvas: Size,
     color: Color,
+    format: (Double) -> String,
     draw: Boolean,
 ): LabelBox {
-    val layout = measurer.measure(formatKg(points[index].value), style, softWrap = false, maxLines = 1)
+    val layout = measurer.measure(format(points[index].value), style, softWrap = false, maxLines = 1)
     val box = pointLabelBox(
         anchorX = centers[index].x,
         anchorY = centers[index].y,

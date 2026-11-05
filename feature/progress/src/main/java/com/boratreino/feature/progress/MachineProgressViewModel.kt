@@ -44,6 +44,12 @@ internal data class MachineProgressUiState(
     val showAll: Boolean = false,
     /** The last 12 weeks, oldest first; only cardio machines have them. */
     val weeks: List<CardioWeek> = emptyList(),
+    /** The machine has at least one set the estimated 1RM applies to. */
+    val oneRmAvailable: Boolean = false,
+    /** The chart shows the estimated 1RM (only true when [oneRmAvailable]); [metric] is then ONE_RM. */
+    val showOneRm: Boolean = false,
+    /** The best estimated 1RM, all-time like [best]; null without eligible sets. */
+    val oneRmBest: SessionPoint? = null,
 )
 
 /** The detail state for [progress] (null = machine missing) in [range] as of [today]. */
@@ -53,9 +59,13 @@ internal fun buildMachineState(
     today: LocalDate,
     selected: Int?,
     showAll: Boolean,
+    showOneRm: Boolean = false,
 ): MachineProgressUiState {
     if (progress == null) return MachineProgressUiState(loaded = true, found = false, range = range, today = today)
-    val inRange = ProgressRules.inRange(progress.points, range, today)
+    val oneRmAvailable = progress.oneRmPoints.isNotEmpty()
+    val useOneRm = showOneRm && oneRmAvailable
+    val allPoints = if (useOneRm) progress.oneRmPoints else progress.points
+    val inRange = ProgressRules.inRange(allPoints, range, today)
     val (start, end) = axisWindow(range, today, inRange.firstOrNull()?.date)
     val scale = if (inRange.isEmpty()) {
         MachineProgressUiState().scale
@@ -66,10 +76,10 @@ internal fun buildMachineState(
         loaded = true,
         found = true,
         name = progress.machine.name,
-        metric = progress.metric,
+        metric = if (useOneRm) ProgressMetric.ONE_RM else progress.metric,
         range = range,
         today = today,
-        best = ProgressRules.best(progress.points),
+        best = ProgressRules.best(allPoints),
         change = ProgressRules.change(inRange),
         points = inRange,
         scale = scale,
@@ -78,12 +88,15 @@ internal fun buildMachineState(
         selectedIndex = selected?.takeIf { it in inRange.indices },
         showAll = showAll,
         weeks = progress.weeks,
+        oneRmAvailable = oneRmAvailable,
+        showOneRm = useOneRm,
+        oneRmBest = ProgressRules.best(progress.oneRmPoints),
     )
 }
 
 @HiltViewModel
 class MachineProgressViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     repository: ProgressRepository,
     private val clock: Clock,
 ) : ViewModel() {
@@ -94,13 +107,18 @@ class MachineProgressViewModel @Inject constructor(
     private val selected = MutableStateFlow<Int?>(null)
     private val showAll = MutableStateFlow(false)
 
+    // Kept in the saved state so the choice survives rotation and process death; it is per machine
+    // because this view model (and its handle) belongs to one machine's route.
+    private val showOneRm: StateFlow<Boolean> = savedStateHandle.getStateFlow(SHOW_ONE_RM_KEY, false)
+
     internal val state: StateFlow<MachineProgressUiState> = combine(
         repository.observeMachineProgress(machineId),
         range,
         selected,
         showAll,
-    ) { progress, range, selected, showAll ->
-        buildMachineState(progress, range, LocalDate.now(clock), selected, showAll)
+        showOneRm,
+    ) { progress, range, selected, showAll, showOneRm ->
+        buildMachineState(progress, range, LocalDate.now(clock), selected, showAll, showOneRm)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MachineProgressUiState())
 
     internal fun selectRange(newRange: ProgressRange) {
@@ -113,7 +131,15 @@ class MachineProgressViewModel @Inject constructor(
         selected.value = index
     }
 
+    /** Switches the chart between top weight (false) and estimated 1RM (true). */
+    internal fun setShowOneRm(show: Boolean) {
+        selected.value = null
+        savedStateHandle[SHOW_ONE_RM_KEY] = show
+    }
+
     internal fun showAllSessions() {
         showAll.value = true
     }
 }
+
+private const val SHOW_ONE_RM_KEY = "showOneRm"
