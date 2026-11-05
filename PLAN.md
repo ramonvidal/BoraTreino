@@ -177,7 +177,7 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       **Warm-up** chip next to Log on the machine screen (off by default, so the normal path
       is unchanged), and tapping a logged set opens its edit sheet, which also changes the
       type (Normal, Warm-up, Drop, Failure).
-- [ ] **Phase 10: Warm-up calculator.** On a machine with a working weight, an optional
+- [x] **Phase 10: Warm-up calculator.** On a machine with a working weight, an optional
       suggestion of warm-up sets (for example 50 % x 8, 70 % x 5, 85 % x 3, rounded to the
       machine's step and never below the empty bar or stack). One tap logs them as warm-up
       sets; never forced, can be switched off in Settings. Rules in `:core:model`
@@ -250,4 +250,4 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - Phase 14: which activity factor to use for an ordinary day (proposal: 1.2, sedentary, since the
   training burn is added separately), and whether the goal adjustment (surplus or deficit) is wanted.
 
-Order: 13 (done), 9 (done), 11 (done), 10, 12, 14.
+Order: 13 (done), 9 (done), 11 (done), 10 (done), 12, 14.
