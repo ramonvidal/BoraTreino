@@ -3,8 +3,8 @@ package com.boratreino.core.model
 import java.time.LocalDate
 import java.time.YearMonth
 
-/** What a machine's progress chart measures. */
-enum class ProgressMetric { WEIGHT, REPS, MINUTES }
+/** What a machine's progress chart measures. [ONE_RM] is for chart values only (see [ProgressRules.oneRmPoints]). */
+enum class ProgressMetric { WEIGHT, REPS, MINUTES, ONE_RM }
 
 /** One point per session for one machine; [topSet] is the set that gave [value]. */
 data class SessionPoint(
@@ -33,6 +33,8 @@ data class MachineProgress(
     val points: List<SessionPoint>,
     /** The last 12 weeks, oldest first; only for cardio machines. */
     val weeks: List<CardioWeek> = emptyList(),
+    /** Estimated 1RM per session (raw, unrounded); empty for cardio and when no set is eligible. */
+    val oneRmPoints: List<SessionPoint> = emptyList(),
 )
 
 data class ProgressOverview(
@@ -68,6 +70,7 @@ object ProgressRules {
             ProgressMetric.WEIGHT -> compareBy<WorkoutSet>({ it.weightKg ?: 0.0 }, { it.reps ?: 0 }, { it.position })
             ProgressMetric.REPS -> compareBy<WorkoutSet>({ it.reps ?: 0 }, { it.weightKg ?: 0.0 }, { it.position })
             ProgressMetric.MINUTES -> compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.position })
+            ProgressMetric.ONE_RM -> return oneRmPoints(sets, sessionDates)
         }
         return sets
             .filter { it.isWorking && it.sessionId in sessionDates }
@@ -78,11 +81,28 @@ object ProgressRules {
                     ProgressMetric.WEIGHT -> top.weightKg ?: 0.0
                     ProgressMetric.REPS -> (top.reps ?: 0).toDouble()
                     ProgressMetric.MINUTES -> CardioRules.minutesOf(group.sumOf { it.seconds ?: 0 }).toDouble()
+                    ProgressMetric.ONE_RM -> top.weightKg ?: 0.0
                 }
                 SessionPoint(sessionId, sessionDates.getValue(sessionId), value, top, group.size)
             }
             .sortedWith(compareBy({ it.date }, { it.sessionId }))
     }
+
+    /**
+     * One point per session that has an eligible set (see [OneRepMaxRules]), ascending by date then session id.
+     * value = the session's best estimate, topSet = the set that gave it, setCount = working sets of this machine
+     * in that session. Sets whose session is missing from [sessionDates] are ignored.
+     */
+    fun oneRmPoints(sets: List<WorkoutSet>, sessionDates: Map<Long, LocalDate>): List<SessionPoint> =
+        sets
+            .filter { it.isWorking && it.sessionId in sessionDates }
+            .groupBy { it.sessionId }
+            .mapNotNull { (sessionId, group) ->
+                val top = OneRepMaxRules.bestSet(group) ?: return@mapNotNull null
+                val value = OneRepMaxRules.estimate(top) ?: return@mapNotNull null
+                SessionPoint(sessionId, sessionDates.getValue(sessionId), value, top, group.size)
+            }
+            .sortedWith(compareBy({ it.date }, { it.sessionId }))
 
     /** THREE_MONTHS: date >= today minus 3 months (calendar months); ONE_YEAR: minus 1 year; ALL: everything. Order kept. */
     fun inRange(points: List<SessionPoint>, range: ProgressRange, today: LocalDate): List<SessionPoint> {
