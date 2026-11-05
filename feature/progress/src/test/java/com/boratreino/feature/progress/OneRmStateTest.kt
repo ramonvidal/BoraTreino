@@ -98,8 +98,8 @@ class OneRmStateTest {
         val expected = withOneRm.oneRmPoints.maxByOrNull { it.value }!!
         assertEquals(expected.value, state.oneRmBest!!.value, 1e-9)
         assertEquals(expected.date, state.oneRmBest!!.date)
-        // 100 x 5 = 116.67 beats 100 x 3 = 110 and 80 x 8 = 101.33.
-        assertEquals(100.0 * (1 + 5 / 30.0), state.oneRmBest!!.value, 1e-9)
+        // 95 x 8 = 120.33 beats 100 x 5 = 116.67, 100 x 3 = 110 and 80 x 8 = 101.33.
+        assertEquals(95.0 * (1 + 8 / 30.0), state.oneRmBest!!.value, 1e-9)
     }
 
     @Test
