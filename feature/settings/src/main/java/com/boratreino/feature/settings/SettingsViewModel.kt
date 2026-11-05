@@ -208,7 +208,7 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowEnergyEstimate(show: Boolean) = save { bodySettings.setShowEnergyEstimate(show) }
 
-    fun openBodyField(field: BodyField) = overlay.update { it.copy(bodyDialog = field, bodyDialogError = false) }
+    internal fun openBodyField(field: BodyField) = overlay.update { it.copy(bodyDialog = field, bodyDialogError = false) }
 
     fun dismissBodyField() = overlay.update { it.copy(bodyDialog = null, bodyDialogError = false) }
 
