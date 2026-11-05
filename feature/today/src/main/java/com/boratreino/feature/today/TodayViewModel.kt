@@ -1,5 +1,12 @@
 package com.boratreino.feature.today
 
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import java.time.ZonedDateTime
+import java.time.Duration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.MachineRepository
@@ -81,6 +88,11 @@ internal data class RoutineUi(
 /** "Same as last time" is on offer: [machineCount] machines and [setCount] sets would be logged. */
 internal data class RepeatOfferUi(val machineCount: Int, val setCount: Int)
 
+/** A second past midnight, so the new day's date is surely the one read. */
+private const val MIDNIGHT_MARGIN_MS = 1_000L
+private const val RECHECK_MS = 60_000L
+private const val MAX_UNCHANGED_WAKES = 2
+
 /** The quiet energy line: today's estimate in [kcal] (rounded to 10) and what kind of day it is. */
 internal data class DayEnergyUi(val kcal: Int, val kind: DayKind)
 
@@ -138,29 +150,57 @@ class TodayViewModel @Inject constructor(
     private val editing = MutableStateFlow(false)
 
     /**
+     * Today's date, re-emitted after the next midnight so the energy line follows the day when the app stays open.
+     * If the date has not changed after waking up (a clock that does not move, as in tests, or an early wake-up),
+     * it checks once more a minute later and then stops, so it never spins.
+     */
+    private val today: Flow<LocalDate> = flow {
+        var date = LocalDate.now(clock)
+        emit(date)
+        var unchanged = 0
+        while (unchanged < MAX_UNCHANGED_WAKES) {
+            val now = ZonedDateTime.now(clock)
+            val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
+            val wait = if (unchanged == 0) Duration.between(now, nextMidnight).toMillis() + MIDNIGHT_MARGIN_MS else RECHECK_MS
+            delay(wait)
+            val again = LocalDate.now(clock)
+            if (again != date) {
+                date = again
+                emit(date)
+                unchanged = 0
+            } else {
+                unchanged++
+            }
+        }
+    }.distinctUntilChanged()
+
+    /**
      * Today's energy estimate. Read-only on the sessions flows: logging a set updates it without
      * any work on the logging path. Null without a profile or when the switch is off.
      */
-    private val energy: Flow<DayEnergyUi?> = combine(
-        body.profile,
-        body.showEnergyEstimate,
-        history.observeDay(LocalDate.now(clock)),
-        training.observeOpenSession(),
-        training.observeTodayPlan(),
-    ) { profile, show, day, open, plan ->
-        if (profile == null || !show) return@combine null
-        val sessions = day.map { detail -> SessionSets(detail.session, detail.machines.flatMap { it.sets }) }.toMutableList()
-        if (open != null && sessions.none { it.session.id == open.session.id }) {
-            sessions += SessionSets(open.session, open.machines.flatMap { it.sets })
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val energy: Flow<DayEnergyUi?> = today.flatMapLatest { date ->
+        combine(
+            body.profile,
+            body.showEnergyEstimate,
+            history.observeDay(date),
+            training.observeOpenSession(),
+            training.observeTodayPlan(),
+        ) { profile, show, day, open, plan ->
+            if (profile == null || !show) return@combine null
+            val sessions = day.map { detail -> SessionSets(detail.session, detail.machines.flatMap { it.sets }) }.toMutableList()
+            if (open != null && sessions.none { it.session.id == open.session.id }) {
+                sessions += SessionSets(open.session, open.machines.flatMap { it.sets })
+            }
+            val result = EnergyRules.day(
+                profile = profile,
+                date = date,
+                now = Instant.now(clock),
+                sessions = sessions,
+                trainingExpected = plan.suggested != null || open != null,
+            )
+            DayEnergyUi(result.kcal, result.kind)
         }
-        val result = EnergyRules.day(
-            profile = profile,
-            date = LocalDate.now(clock),
-            now = Instant.now(clock),
-            sessions = sessions,
-            trainingExpected = plan.suggested != null || open != null,
-        )
-        DayEnergyUi(result.kcal, result.kind)
     }
 
     internal val state: StateFlow<TodayUiState> = combine(
