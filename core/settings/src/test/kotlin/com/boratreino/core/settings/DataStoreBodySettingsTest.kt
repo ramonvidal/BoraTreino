@@ -224,11 +224,11 @@ class DataStoreBodySettingsTest {
     @Test
     fun `the choices survive a new settings object on the same file`() = runTest {
         val dataStore = newDataStore()
-        newSettings(dataStore).apply {
-            setProfile(profile.copy(goalAdjustmentPercent = 10, manualBmrKcal = 1400))
-            addWeight(LocalDate.of(2026, 11, 5), 60.0)
-            setShowEnergyEstimate(false)
-        }
+        // Not `apply { }`: inside it `profile` would be the settings' own flow, not the sample profile.
+        val first = newSettings(dataStore)
+        first.setProfile(profile.copy(goalAdjustmentPercent = 10, manualBmrKcal = 1400))
+        first.addWeight(LocalDate.of(2026, 11, 5), 60.0)
+        first.setShowEnergyEstimate(false)
 
         val again = newSettings(dataStore)
 
