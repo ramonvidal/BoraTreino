@@ -63,6 +63,12 @@ interface TrainingRepository {
      * nothing to repeat. One transaction.
      */
     suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome?
+    /**
+     * Closes a stale session first, opens one if none is open (routine of the current choice, as [logSet]), and writes [sets]
+     * as WARMUP sets (the drafts' type is ignored) in one transaction: positions continue per machine, loggedAt = now + index
+     * seconds. No records, no rest timer. Undo with [undoRepeat].
+     */
+    suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome
     /** Deletes the sets of [outcome]; deletes the session too if the repeat created it and it is now empty. */
     suspend fun undoRepeat(outcome: RepeatOutcome)
 }

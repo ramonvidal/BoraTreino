@@ -20,6 +20,7 @@ import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.SessionRules
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.SetDraft
+import com.boratreino.core.model.SetType
 import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.withoutMachines
 import com.boratreino.core.model.WorkoutSet
@@ -250,6 +251,37 @@ internal class DefaultTrainingRepository @Inject constructor(
                 store.insertSet(p.toWorkoutSet(sessionId, position, now.plusSeconds(index.toLong())))
             }
             RepeatOutcome(sessionId, current == null, ids, RepeatSessionRules.machineCount(planned))
+        }
+    }
+
+    override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome {
+        val now = Instant.now(clock)
+        return store.inTransaction {
+            closeIfStale(now)
+            val open = store.openSession()?.id
+            val sessionId = open
+                ?: store.insertSession(
+                    Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null),
+                )
+            val first = store.setCount(sessionId, machineId)
+            val ids = sets.mapIndexed { index, draft ->
+                store.insertSet(
+                    WorkoutSet(
+                        id = 0,
+                        sessionId = sessionId,
+                        machineId = machineId,
+                        position = first + index,
+                        weightKg = draft.weightKg,
+                        reps = draft.reps,
+                        seconds = null,
+                        calories = null,
+                        distanceM = null,
+                        loggedAt = now.plusSeconds(index.toLong()),
+                        type = SetType.WARMUP,
+                    ),
+                )
+            }
+            RepeatOutcome(sessionId, open == null, ids, 1)
         }
     }
 

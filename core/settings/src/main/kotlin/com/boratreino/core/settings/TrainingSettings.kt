@@ -22,4 +22,9 @@ interface TrainingSettings {
 
     /** The default duration is clamped to RestTimerRules.MIN_SECONDS..MAX_SECONDS. */
     suspend fun setRestTimer(settings: RestTimerSettings)
+
+    /** Offer warm-up sets on the machine screen; on by default. */
+    val warmupCalculator: Flow<Boolean>
+
+    suspend fun setWarmupCalculator(enabled: Boolean)
 }

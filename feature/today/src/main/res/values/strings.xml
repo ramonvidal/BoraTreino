@@ -82,6 +82,13 @@
     <string name="today_reps">Reps</string>
     <string name="today_same_again">Same again</string>
     <string name="today_log_set">Log set</string>
+    <string name="today_warmup_sets">Warm-up sets</string>
+    <string name="today_log_warmups">Log warm-ups</string>
+    <string name="today_close">Close</string>
+    <plurals name="today_warmups_logged">
+        <item quantity="one">Logged %d warm-up set</item>
+        <item quantity="other">Logged %d warm-up sets</item>
+    </plurals>
     <string name="today_log">Log</string>
     <string name="today_minutes">Minutes</string>
     <string name="today_calories">Calories</string>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -43,7 +44,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,6 +57,7 @@ import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
 import androidx.compose.material3.FilterChip
@@ -91,6 +95,9 @@ internal data class MachineActions(
     val onLogSet: () -> Unit = {},
     val onSameAgain: () -> Unit = {},
     val onToggleWarmup: () -> Unit = {},
+    val onOpenWarmups: () -> Unit = {},
+    val onCloseWarmups: () -> Unit = {},
+    val onLogWarmups: () -> Unit = {},
     val onEditorType: (SetType) -> Unit = {},
     val onOpenSet: (WorkoutSet) -> Unit = {},
     val onStepEditorWeight: (up: Boolean) -> Unit = {},
@@ -127,6 +134,7 @@ internal fun MachineScreen(
     val removedText = stringResource(R.string.today_set_removed)
     val undoLabel = stringResource(CoreUiR.string.undo)
     val failedText = stringResource(CoreUiR.string.error_generic)
+    val resources = LocalContext.current.resources
 
     LaunchedEffect(viewModel) {
         viewModel.restFinished.collect {
@@ -155,6 +163,11 @@ internal fun MachineScreen(
                 is MachineEvent.SetRemoved -> launch {
                     if (snackbar.showUndo(removedText, undoLabel)) viewModel.restoreSet(event.set)
                 }
+                is MachineEvent.WarmupsLogged -> launch {
+                    val count = event.outcome.setIds.size
+                    val text = resources.getQuantityString(R.plurals.today_warmups_logged, count, count)
+                    if (snackbar.showUndo(text, undoLabel)) viewModel.undoWarmups(event.outcome)
+                }
                 MachineEvent.Failed -> launch { snackbar.showSnackbar(failedText) }
             }
         }
@@ -173,6 +186,9 @@ internal fun MachineScreen(
             onLogSet = viewModel::logSet,
             onSameAgain = viewModel::logSameAgain,
             onToggleWarmup = viewModel::toggleWarmup,
+            onOpenWarmups = viewModel::openWarmups,
+            onCloseWarmups = viewModel::closeWarmups,
+            onLogWarmups = viewModel::logWarmups,
             onEditorType = viewModel::setEditorType,
             onOpenSet = viewModel::openSet,
             onStepEditorWeight = viewModel::stepEditorWeight,
@@ -260,6 +276,9 @@ internal fun MachineContent(
     val cardioEditor = state.cardioEditor
     if (machine != null && cardioEditor != null) {
         EditCardioSheet(cardioEditor, actions)
+    }
+    if (machine != null && state.warmupDialog && state.warmupPlan.isNotEmpty()) {
+        WarmupDialog(machine, state.warmupPlan, actions)
     }
     val pad = state.pad
     if (machine != null && pad != null) {
@@ -409,12 +428,20 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                 onValueClick = { actions.onOpenPad(PadTarget.REPS) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            FilterChip(
-                selected = state.warmupOn,
-                onClick = actions.onToggleWarmup,
-                label = { Text(setTypeLabel(SetType.WARMUP)) },
-                modifier = Modifier.heightIn(min = 40.dp),
-            )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                FilterChip(
+                    selected = state.warmupOn,
+                    onClick = actions.onToggleWarmup,
+                    label = { Text(setTypeLabel(SetType.WARMUP)) },
+                    modifier = Modifier.heightIn(min = 40.dp),
+                )
+                if (state.warmupPlan.isNotEmpty()) {
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = actions.onOpenWarmups) {
+                        Text(stringResource(R.string.today_warmup_sets))
+                    }
+                }
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 val same = state.sameAgain
                 if (same != null) {
@@ -448,6 +475,26 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
             }
         }
     }
+}
+
+/** The optional warm-up suggestion: one line per set, one tap to log them all. */
+@Composable
+private fun WarmupDialog(machine: Machine, plan: List<SetDraft>, actions: MachineActions) {
+    AlertDialog(
+        onDismissRequest = actions.onCloseWarmups,
+        title = { Text(stringResource(R.string.today_warmup_sets)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                plan.forEach { Text(draftText(machine, it.weightKg, it.reps), style = MaterialTheme.typography.titleMedium) }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = actions.onLogWarmups) { Text(stringResource(R.string.today_log_warmups)) }
+        },
+        dismissButton = {
+            TextButton(onClick = actions.onCloseWarmups) { Text(stringResource(R.string.today_close)) }
+        },
+    )
 }
 
 /** A stepper value for cardio: "-" when 0 (not logged). */

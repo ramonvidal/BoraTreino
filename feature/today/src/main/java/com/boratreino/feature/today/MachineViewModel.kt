@@ -3,6 +3,7 @@ package com.boratreino.feature.today
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.boratreino.core.data.RepeatOutcome
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
@@ -19,6 +20,7 @@ import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.SetType
+import com.boratreino.core.model.WarmupRules
 import com.boratreino.core.model.WorkoutSet
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
@@ -68,6 +70,10 @@ internal data class MachineUiState(
     val sameAgain: SetDraft? = null,
     /** The Warm-up chip is on: the next logged set is a warm-up. Turns itself off after each log. */
     val warmupOn: Boolean = false,
+    /** The optional warm-up sets offered for the current stepper weight; empty = no offer. */
+    val warmupPlan: List<SetDraft> = emptyList(),
+    /** The "Warm-up sets" dialog is open (only while [warmupPlan] is non-empty). */
+    val warmupDialog: Boolean = false,
     val editor: SetEditor? = null,
     val pad: NumberPad? = null,
     /** This machine's target in the active routine, if it is in it. */
@@ -95,6 +101,9 @@ internal sealed interface MachineEvent {
 
     /** The set was deleted; the screen offers Undo. */
     data class SetRemoved(val set: WorkoutSet) : MachineEvent
+
+    /** The warm-up sets are written; the screen offers Undo with [outcome]. */
+    data class WarmupsLogged(val outcome: RepeatOutcome) : MachineEvent
     data object Failed : MachineEvent
 }
 
@@ -123,6 +132,7 @@ class MachineViewModel @Inject constructor(
     private val pad = MutableStateFlow<NumberPad?>(null)
     private val record = MutableStateFlow<Record?>(null)
     private val warmupOn = MutableStateFlow(false)
+    private val warmupDialog = MutableStateFlow(false)
 
     /** Fires once when a rest countdown reaches zero; the screen gives a haptic. */
     internal val restFinished: Flow<Unit> = restTimer.finished
@@ -171,7 +181,9 @@ class MachineViewModel @Inject constructor(
         training.observeMachineLog(machineId),
         inputs,
         warmupOn,
-    ) { log, input, warmup ->
+        settings.warmupCalculator,
+        warmupDialog,
+    ) { log, input, warmup, calculator, dialog ->
         val override = input.override
         val editing = input.editing
         val padding = input.padding
@@ -195,6 +207,11 @@ class MachineViewModel @Inject constructor(
             )
         } else {
             val draft = override ?: LoggingRules.prefill(log.lastTime, log.thisSession, log.suggestion)
+            val warmupPlan = if (calculator && log.thisSession.isEmpty() && draft.weightKg > 0.0) {
+                WarmupRules.plan(draft.weightKg, log.machine.stepKg)
+            } else {
+                emptyList()
+            }
             MachineUiState(
                 loaded = true,
                 machine = log.machine,
@@ -205,6 +222,8 @@ class MachineViewModel @Inject constructor(
                 reps = draft.reps,
                 sameAgain = LoggingRules.sameAgain(log.lastTime, log.thisSession),
                 warmupOn = warmup,
+                warmupPlan = warmupPlan,
+                warmupDialog = dialog && warmupPlan.isNotEmpty(),
                 editor = editing,
                 pad = padding,
                 target = log.target,
@@ -232,6 +251,30 @@ class MachineViewModel @Inject constructor(
 
     internal fun toggleWarmup() {
         warmupOn.value = !warmupOn.value
+    }
+
+    // Optional warm-up sets: one tap in the dialog logs them all; Undo goes through undoRepeat.
+
+    internal fun openWarmups() {
+        if (state.value.warmupPlan.isNotEmpty()) warmupDialog.value = true
+    }
+
+    internal fun closeWarmups() {
+        warmupDialog.value = false
+    }
+
+    internal fun logWarmups() {
+        val plan = state.value.warmupPlan
+        warmupDialog.value = false
+        if (plan.isEmpty()) return
+        write {
+            val outcome = training.logWarmups(machineId, plan)
+            eventChannel.send(MachineEvent.WarmupsLogged(outcome))
+        }
+    }
+
+    internal fun undoWarmups(outcome: RepeatOutcome) {
+        write { training.undoRepeat(outcome) }
     }
 
     private fun typeFor(s: MachineUiState): SetType = if (s.warmupOn) SetType.WARMUP else SetType.NORMAL

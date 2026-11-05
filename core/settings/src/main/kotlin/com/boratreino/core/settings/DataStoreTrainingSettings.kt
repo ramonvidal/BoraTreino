@@ -75,6 +75,14 @@ internal class DataStoreTrainingSettings(
         }
     }
 
+    override val warmupCalculator: Flow<Boolean> = preferences
+        .map { prefs -> prefs[WARMUP_CALCULATOR] ?: true }
+        .distinctUntilChanged()
+
+    override suspend fun setWarmupCalculator(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[WARMUP_CALCULATOR] = enabled }
+    }
+
     private fun clampRest(seconds: Int) = seconds.coerceIn(RestTimerRules.MIN_SECONDS, RestTimerRules.MAX_SECONDS)
 
     private fun parseWeekdays(text: String): Set<DayOfWeek> =
@@ -90,6 +98,7 @@ internal class DataStoreTrainingSettings(
         val REMINDER_MINUTE_OF_DAY = intPreferencesKey("reminder_minute_of_day")
         val REST_ENABLED = booleanPreferencesKey("rest_timer_enabled")
         val REST_BEEP = booleanPreferencesKey("rest_timer_beep")
+        val WARMUP_CALCULATOR = booleanPreferencesKey("warmup_calculator")
         val REST_DEFAULT_SECONDS = intPreferencesKey("rest_timer_default_seconds")
     }
 }

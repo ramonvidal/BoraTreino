@@ -51,6 +51,7 @@ internal data class SettingsUiState(
     val weeklyGoal: Int = WeekGoalRules.DEFAULT_GOAL,
     val reminders: ReminderSettings = ReminderSettings(),
     val restTimer: RestTimerSettings = RestTimerSettings(),
+    val warmupCalculator: Boolean = true,
     val notificationsGranted: Boolean = true,
     val timePickerOpen: Boolean = false,
     val is24Hour: Boolean = true,
@@ -128,14 +129,18 @@ class SettingsViewModel @Inject constructor(
         settings.weeklyGoal,
         settings.reminders,
         settings.restTimer,
-        healthSettings.enabled,
+        combine(healthSettings.enabled, settings.warmupCalculator) { health: Boolean, warmup: Boolean ->
+            health to warmup
+        },
         overlay,
-    ) { goal, reminders, restTimer, healthEnabled, overlay ->
+    ) { goal, reminders, restTimer, toggles, overlay ->
+        val (healthEnabled, warmupCalculator) = toggles
         SettingsUiState(
             loaded = true,
             weeklyGoal = goal,
             reminders = reminders,
             restTimer = restTimer,
+            warmupCalculator = warmupCalculator,
             notificationsGranted = overlay.notificationsGranted,
             timePickerOpen = overlay.timePickerOpen,
             importConfirm = overlay.importConfirm,
@@ -216,6 +221,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setRestBeep(beep: Boolean) = save {
         settings.setRestTimer(settings.restTimer.first().copy(beep = beep))
+    }
+
+    fun setWarmupCalculator(enabled: Boolean) = save {
+        settings.setWarmupCalculator(enabled)
     }
 
     fun setRestSeconds(seconds: Int) = save {

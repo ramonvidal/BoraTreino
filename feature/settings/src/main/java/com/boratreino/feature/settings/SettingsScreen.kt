@@ -84,6 +84,7 @@ internal data class SettingsActions(
     val onRestEnabled: (Boolean) -> Unit = {},
     val onRestSeconds: (Int) -> Unit = {},
     val onRestBeep: (Boolean) -> Unit = {},
+    val onWarmupCalculator: (Boolean) -> Unit = {},
     val onAllowNotifications: () -> Unit = {},
     val onExport: () -> Unit = {},
     val onImport: () -> Unit = {},
@@ -162,6 +163,7 @@ internal fun SettingsScreen(
             onRestEnabled = viewModel::setRestEnabled,
             onRestSeconds = viewModel::setRestSeconds,
             onRestBeep = viewModel::setRestBeep,
+            onWarmupCalculator = viewModel::setWarmupCalculator,
             onAllowNotifications = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     requestPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -219,6 +221,7 @@ internal fun SettingsContent(
                 item { GoalSection(state, actions) }
                 item { RemindersSection(state, actions) }
                 item { RestTimerSection(state, actions) }
+                item { WarmupSection(state, actions) }
                 if (state.health != HealthCardState.Hidden) item { HealthSection(state.health, actions) }
                 if (state.showNotificationsSection) item { NotificationsSection(actions) }
                 item { BackupSection(actions) }
@@ -328,6 +331,14 @@ private fun RemindersSection(state: SettingsUiState, actions: SettingsActions) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun WarmupSection(state: SettingsUiState, actions: SettingsActions) {
+    SectionCard(stringResource(R.string.settings_warmup_title)) {
+        SwitchRow(stringResource(R.string.settings_warmup_switch), state.warmupCalculator, actions.onWarmupCalculator)
+        Hint(stringResource(R.string.settings_warmup_hint))
     }
 }
 
