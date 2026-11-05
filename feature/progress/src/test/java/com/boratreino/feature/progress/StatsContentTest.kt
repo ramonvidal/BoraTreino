@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -145,11 +146,11 @@ class StatsContentTest {
     fun `the rep ranges show their percentages`() {
         // The card alone: on the full page it sits far down, and this test is about its texts.
         showCard { RepRangesCard(StatsSamples.full) }
-        shown("1 to 5 reps")
-        shown("6 to 8 reps")
-        shown("9 to 12 reps")
-        shown("13 or more reps")
-        shown("45 %")
+        // The bar and its legend are one accessibility element: a screen reader gets one sentence.
+        compose.onNodeWithContentDescription(
+            "1 to 5 reps: 10 %. 6 to 8 reps: 30 %. 9 to 12 reps: 45 %. 13 or more reps: 15 %",
+        ).assertIsDisplayed()
+        shown("Rep ranges")
     }
 
     @Test
