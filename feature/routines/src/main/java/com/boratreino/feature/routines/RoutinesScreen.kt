@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,6 +56,8 @@ import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.RoutineBadge
+import com.boratreino.core.ui.shortLabel
+import java.time.DayOfWeek
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
 
@@ -80,6 +84,7 @@ internal fun RoutinesScreen(
             onConfirmDeleteRoutine = viewModel::confirmDeleteRoutine,
             onDismissDeleteRoutine = viewModel::dismissDeleteRoutine,
             onScheduleModeChange = viewModel::setScheduleMode,
+            onTrainingDaysChange = viewModel::setTrainingDays,
             onSearchStarters = viewModel::searchStarters,
             onToggleStarter = viewModel::toggleStarter,
             onAddSelectedStarters = viewModel::addSelectedStarters,
@@ -427,7 +432,8 @@ private fun RoutineCard(row: RoutineRow, canMoveUp: Boolean, canMoveDown: Boolea
     }
 }
 
-/** "Which routine is next": In turn / On weekdays. */
+/** "Which routine is next": In turn / On weekdays; in turn also asks for the training days. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun NextRoutineCard(state: RoutinesUiState, callbacks: RoutinesCallbacks) {
     Card(
@@ -446,6 +452,32 @@ private fun NextRoutineCard(state: RoutinesUiState, callbacks: RoutinesCallbacks
                     selected = state.scheduleMode == ScheduleMode.WEEKDAYS,
                     onClick = { callbacks.onScheduleModeChange(ScheduleMode.WEEKDAYS) },
                     label = { Text(stringResource(R.string.routines_mode_weekdays)) },
+                )
+            }
+            if (state.scheduleMode == ScheduleMode.IN_TURN) {
+                Text(
+                    stringResource(R.string.routines_training_days),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DayOfWeek.values().forEach { day ->
+                        FilterChip(
+                            selected = day in state.trainingDays,
+                            onClick = {
+                                val next = if (day in state.trainingDays) state.trainingDays - day else state.trainingDays + day
+                                callbacks.onTrainingDaysChange(next)
+                            },
+                            label = { Text(day.shortLabel()) },
+                            modifier = Modifier.heightIn(min = 40.dp),
+                        )
+                    }
+                }
+                Text(
+                    stringResource(R.string.routines_training_days_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

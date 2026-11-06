@@ -79,7 +79,11 @@ internal fun WorkoutSet.toEntity() = WorkoutSetEntity(
     type = type.name,
 )
 
-internal fun RoutinePlanEntity.toModel() = RoutinePlan(id = id, scheduleMode = ScheduleMode.valueOf(scheduleMode))
+internal fun RoutinePlanEntity.toModel() = RoutinePlan(
+    id = id,
+    scheduleMode = ScheduleMode.valueOf(scheduleMode),
+    trainingDays = if (trainingDays.isBlank()) emptySet() else trainingDays.split(',').map { DayOfWeek.valueOf(it) }.toSet(),
+)
 
 internal fun RoutineEntity.toModel() = Routine(
     id = id,
@@ -118,4 +122,8 @@ internal fun RoutineItem.toEntity() = RoutineItemEntity(
     repsMax = repsMax,
 )
 
-internal fun RoutinePlan.toEntity() = RoutinePlanEntity(id = id, scheduleMode = scheduleMode.name)
+internal fun RoutinePlan.toEntity() = RoutinePlanEntity(
+    id = id,
+    scheduleMode = scheduleMode.name,
+    trainingDays = trainingDays.sorted().joinToString(",") { it.name },
+)

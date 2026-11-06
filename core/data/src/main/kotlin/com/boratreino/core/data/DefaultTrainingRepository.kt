@@ -65,7 +65,9 @@ internal class DefaultTrainingRepository @Inject constructor(
         skipped.value = skipped.value - machineId
     }
 
-    private fun today() = LocalDate.now(clock).dayOfWeek
+    private fun todayDate() = LocalDate.now(clock)
+
+    private fun today() = todayDate().dayOfWeek
 
     override fun observeTodayPlan(): Flow<TodayPlan> =
         combine(
@@ -77,7 +79,9 @@ internal class DefaultTrainingRepository @Inject constructor(
         ) { plan, lastRoutineId, open, choice, skippedIds ->
             val all = plan.routines.map { it.routine }
             val mode = plan.plan.scheduleMode
-            val suggested = NextRoutineRules.next(mode, all, lastRoutineId, today())
+            val trainingDays = plan.plan.trainingDays
+            val suggested = NextRoutineRules.next(mode, all, lastRoutineId, today(), trainingDays)
+            val restDay = suggested == null && all.isNotEmpty()
             // An open session's own routine decides (null = Free); the choice only counts before one opens.
             val activeId = if (open != null) {
                 open.routineId
@@ -96,7 +100,12 @@ internal class DefaultTrainingRepository @Inject constructor(
                 active = activeId
                     ?.let { id -> plan.routines.firstOrNull { it.routine.id == id } }
                     ?.withoutMachines(skippedIds),
-                restDay = mode == ScheduleMode.WEEKDAYS && suggested == null && all.isNotEmpty(),
+                restDay = restDay,
+                upcoming = if (restDay) {
+                    NextRoutineRules.upcoming(mode, all, lastRoutineId, trainingDays, todayDate())
+                } else {
+                    null
+                },
                 skipped = skippedIds,
             )
         }
@@ -117,7 +126,7 @@ internal class DefaultTrainingRepository @Inject constructor(
             RoutineChoice.Free -> null
             is RoutineChoice.Chosen -> all.firstOrNull { it.id == choice.routineId }?.id
             RoutineChoice.Suggested ->
-                NextRoutineRules.next(plan.scheduleMode, all, store.lastRoutineId(), today())?.id
+                NextRoutineRules.next(plan.scheduleMode, all, store.lastRoutineId(), today(), plan.trainingDays)?.id
         }
     }
 

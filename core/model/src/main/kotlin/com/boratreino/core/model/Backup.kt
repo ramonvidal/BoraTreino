@@ -47,7 +47,7 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 2
+    const val FORMAT_VERSION = 3
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {
@@ -68,7 +68,11 @@ object BackupCodec {
                 )
             },
             "plans" to data.plans.map {
-                linkedMapOf("id" to it.id, "scheduleMode" to it.scheduleMode.name)
+                linkedMapOf(
+                    "id" to it.id,
+                    "scheduleMode" to it.scheduleMode.name,
+                    "trainingDays" to it.trainingDays.sortedBy { d -> d.value }.map { d -> d.name },
+                )
             },
             "routines" to data.routines.map {
                 linkedMapOf(
@@ -164,7 +168,19 @@ object BackupCodec {
             )
         }
         val plans = objects(root, "plans").map {
-            RoutinePlan(longOf(it, "id"), enumOf<ScheduleMode>(it, "scheduleMode"))
+            val trainingDays = when (val raw = it["trainingDays"]) {
+                null -> emptySet()
+                is List<*> -> raw.map { d ->
+                    val name = d as? String ?: problem("trainingDays must be weekday names")
+                    try {
+                        DayOfWeek.valueOf(name)
+                    } catch (e: IllegalArgumentException) {
+                        problem("Unknown weekday $name")
+                    }
+                }.toSet()
+                else -> problem("trainingDays must be a list")
+            }
+            RoutinePlan(longOf(it, "id"), enumOf<ScheduleMode>(it, "scheduleMode"), trainingDays)
         }
         val routines = objects(root, "routines").map {
             val days = (it["weekdays"] as? List<*> ?: problem("weekdays must be a list")).map { d ->

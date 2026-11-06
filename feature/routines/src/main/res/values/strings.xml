@@ -87,6 +87,8 @@
     <string name="routines_menu_move_down">Move down</string>
     <string name="routines_menu_duplicate">Duplicate</string>
     <string name="routines_menu_delete">Delete</string>
+    <string name="routines_training_days">Training days</string>
+    <string name="routines_training_days_hint">Pick the days you train. Routines rotate on those days. Leave empty to rotate every day.</string>
     <string name="routines_next_title">Which routine is next</string>
     <string name="routine_more">More options</string>
     <string name="routine_close">Close</string>

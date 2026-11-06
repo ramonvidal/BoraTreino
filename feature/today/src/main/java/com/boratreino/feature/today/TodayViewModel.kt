@@ -79,11 +79,16 @@ internal data class RoutineUi(
     val freeSelected: Boolean,
     val activeName: String? = null,
     val restDay: Boolean = false,
+    /** Shown on a rest day only; null when nothing is coming up. */
+    val upcoming: UpcomingUi? = null,
     /** The active routine's id; needed to remove a machine from it. */
     val activeId: Long? = null,
     val machines: List<RoutineMachineUi> = emptyList(),
     val alsoThisSession: List<SessionMachineUi> = emptyList(),
 )
+
+/** The next training on a rest day: [date], the [routineName] and whether the date is [tomorrow]. */
+internal data class UpcomingUi(val date: LocalDate, val routineName: String, val tomorrow: Boolean)
 
 /** "Same as last time" is on offer: [machineCount] machines and [setCount] sets would be logged. */
 internal data class RepeatOfferUi(val machineCount: Int, val setCount: Int)
@@ -241,6 +246,9 @@ class TodayViewModel @Inject constructor(
                 freeSelected = active == null && (!plan.restDay || plan.choice is RoutineChoice.Free),
                 activeName = active?.routine?.name,
                 restDay = plan.restDay,
+                upcoming = plan.upcoming.takeIf { plan.restDay }?.let {
+                    UpcomingUi(it.date, it.routine.name, it.date == LocalDate.now(clock).plusDays(1))
+                },
                 activeId = active?.routine?.id,
                 machines = rows,
                 alsoThisSession = open?.machines.orEmpty()

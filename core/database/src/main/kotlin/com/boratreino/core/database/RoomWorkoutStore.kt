@@ -142,6 +142,10 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
         routineDao.setScheduleMode(planId, mode.name)
     }
 
+    override suspend fun setTrainingDays(planId: Long, days: Set<DayOfWeek>) {
+        routineDao.setTrainingDays(planId, days.sorted().joinToString(",") { it.name })
+    }
+
     override fun observeRoutines(planId: Long): Flow<List<Routine>> =
         routineDao.observeRoutines(planId).map { list -> list.map { it.toModel() } }
 

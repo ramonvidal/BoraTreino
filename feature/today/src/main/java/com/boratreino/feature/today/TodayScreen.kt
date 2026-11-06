@@ -3,6 +3,8 @@ package com.boratreino.feature.today
 import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.MachineKind
 import java.text.NumberFormat
+import java.time.format.TextStyle
+import java.util.Locale
 import com.boratreino.core.ui.summaryLabel
 import com.boratreino.core.ui.showUndo
 import androidx.compose.foundation.layout.Arrangement
@@ -223,6 +225,7 @@ private fun LazyListScope.noSession(
     recent: List<Machine>,
     actions: TodayActions,
     title: Int = R.string.today_pick_to_start,
+    upcoming: UpcomingUi? = null,
 ) {
     item(key = "title") {
         Text(
@@ -230,6 +233,21 @@ private fun LazyListScope.noSession(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
         )
+    }
+    if (upcoming != null) {
+        item(key = "upcoming") {
+            val day = if (upcoming.tomorrow) {
+                stringResource(R.string.today_tomorrow)
+            } else {
+                upcoming.date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+            }
+            Text(
+                stringResource(R.string.today_next_training, day, upcoming.routineName),
+                modifier = Modifier.padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
     items(recent, key = { "r${it.id}" }) { machine ->
         MachineRow(
@@ -342,7 +360,11 @@ private fun LazyListScope.withRoutines(state: TodayUiState, routines: RoutineUi,
     if (active == null) {
         // Free, or a rest day: the Phase 1 lists, under a "Rest day" heading on a rest day.
         if (session == null) {
-            noSession(state.recent, actions, if (routines.restDay) R.string.today_rest_day else R.string.today_pick_to_start)
+            noSession(
+                state.recent, actions,
+                if (routines.restDay) R.string.today_rest_day else R.string.today_pick_to_start,
+                routines.upcoming,
+            )
         } else {
             openSession(session, actions)
         }

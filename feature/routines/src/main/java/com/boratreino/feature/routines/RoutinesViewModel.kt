@@ -12,6 +12,7 @@ import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.model.StarterMachines
 import com.boratreino.core.settings.AppLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.DayOfWeek
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -52,6 +53,8 @@ internal sealed interface DeleteDialog {
 internal data class RoutinesUiState(
     val routines: List<RoutineRow> = emptyList(),
     val scheduleMode: ScheduleMode = ScheduleMode.IN_TURN,
+    /** Weekdays the owner trains on in "In turn" mode; empty = every day. */
+    val trainingDays: Set<DayOfWeek> = emptySet(),
     val machineGroups: List<MachineGroup> = emptyList(),
     val archived: List<Machine> = emptyList(),
     val starterGroups: List<StarterGroup> = emptyList(),
@@ -83,6 +86,7 @@ internal data class RoutinesCallbacks(
     val onConfirmDeleteRoutine: () -> Unit = {},
     val onDismissDeleteRoutine: () -> Unit = {},
     val onScheduleModeChange: (ScheduleMode) -> Unit = {},
+    val onTrainingDaysChange: (Set<DayOfWeek>) -> Unit = {},
     val onSearchStarters: (String) -> Unit = {},
     val onToggleStarter: (StarterMachine) -> Unit = {},
     val onAddSelectedStarters: () -> Unit = {},
@@ -128,6 +132,7 @@ class RoutinesViewModel @Inject constructor(
                 )
             },
             scheduleMode = plan.plan.scheduleMode,
+            trainingDays = plan.plan.trainingDays,
             machineGroups = active.groupBy { it.muscleGroup }
                 .toSortedMap()
                 .map { (group, list) -> MachineGroup(group, list) },
@@ -224,5 +229,9 @@ class RoutinesViewModel @Inject constructor(
 
     internal fun setScheduleMode(mode: ScheduleMode) {
         viewModelScope.launch { routines.setScheduleMode(mode) }
+    }
+
+    internal fun setTrainingDays(days: Set<DayOfWeek>) {
+        viewModelScope.launch { routines.setTrainingDays(days) }
     }
 }

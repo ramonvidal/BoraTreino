@@ -6,12 +6,15 @@ import com.boratreino.core.model.RoutinePlanWithRoutines
 import com.boratreino.core.model.RoutineWithItems
 import com.boratreino.core.model.ScheduleMode
 import kotlinx.coroutines.flow.Flow
+import java.time.DayOfWeek
 
 interface RoutineRepository {
     /** Creates the single plan (IN_TURN) on first use. */
     fun observePlan(): Flow<RoutinePlanWithRoutines>
     fun observeRoutine(id: Long): Flow<RoutineWithItems?>
     suspend fun setScheduleMode(mode: ScheduleMode)
+    /** The weekdays the owner trains on the current plan (IN_TURN); empty = every day. */
+    suspend fun setTrainingDays(days: Set<DayOfWeek>)
     /**
      * Id 0 inserts at the end (position = count); returns the id. Name and short name are trimmed.
      * The items are replaced, stored in list order. One transaction.

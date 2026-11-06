@@ -197,6 +197,9 @@ internal interface RoutineDao {
     @Query("UPDATE routine_plans SET scheduleMode = :mode WHERE id = :planId")
     suspend fun setScheduleMode(planId: Long, mode: String)
 
+    @Query("UPDATE routine_plans SET trainingDays = :days WHERE id = :planId")
+    suspend fun setTrainingDays(planId: Long, days: String)
+
     @Query("SELECT * FROM routines WHERE planId = :planId ORDER BY position ASC, id ASC")
     fun observeRoutines(planId: Long): Flow<List<RoutineEntity>>
 

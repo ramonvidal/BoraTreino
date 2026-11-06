@@ -89,6 +89,8 @@ interface WorkoutStore {
     /** Returns the plan, creating it (IN_TURN) when there is none. */
     suspend fun ensurePlan(): RoutinePlan
     suspend fun setScheduleMode(planId: Long, mode: ScheduleMode)
+    /** The weekdays the owner trains; empty = every day. */
+    suspend fun setTrainingDays(planId: Long, days: Set<DayOfWeek>)
     /** The plan's routines by position. */
     fun observeRoutines(planId: Long): Flow<List<Routine>>
     suspend fun routines(planId: Long): List<Routine>

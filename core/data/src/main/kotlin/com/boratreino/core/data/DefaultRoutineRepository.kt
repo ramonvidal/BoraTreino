@@ -51,6 +51,13 @@ internal class DefaultRoutineRepository @Inject constructor(
         }
     }
 
+    override suspend fun setTrainingDays(days: Set<DayOfWeek>) {
+        store.inTransaction {
+            val plan = store.ensurePlan()
+            store.setTrainingDays(plan.id, days)
+        }
+    }
+
     override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long =
         store.inTransaction {
             val plan = store.ensurePlan()
