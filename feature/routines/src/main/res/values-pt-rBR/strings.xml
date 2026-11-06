@@ -77,6 +77,8 @@
     <string name="routines_menu_move_down">Descer</string>
     <string name="routines_menu_duplicate">Duplicar</string>
     <string name="routines_menu_delete">Excluir</string>
+    <string name="routines_training_days">Dias de treino</string>
+    <string name="routines_training_days_hint">Marque os dias em que você treina. As fichas rodam nesses dias. Deixe vazio pra rodar todo dia.</string>
     <string name="routines_next_title">Qual ficha vem agora</string>
     <string name="routine_more">Mais opções</string>
     <string name="routine_close">Fechar</string>

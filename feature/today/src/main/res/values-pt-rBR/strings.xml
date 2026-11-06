@@ -16,6 +16,8 @@
     <string name="today_next_up">Próxima: %1$s</string>
     <string name="today_training_now_routine">Treinando agora · %1$s · %2$s</string>
     <string name="today_rest_day">Dia de descanso</string>
+    <string name="today_next_training">Próximo treino: %1$s, %2$s</string>
+    <string name="today_tomorrow">Amanhã</string>
     <string name="today_also_this_session">Também neste treino</string>
     <string name="today_progress">%1$d de %2$d</string>
     <string name="today_machine_done">Feito</string>

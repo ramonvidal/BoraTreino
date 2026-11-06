@@ -303,6 +303,8 @@ feature/routines,routines_menu_move_up,,Move up,Subir
 feature/routines,routines_menu_move_down,,Move down,Descer
 feature/routines,routines_menu_duplicate,,Duplicate,Duplicar
 feature/routines,routines_menu_delete,,Delete,Excluir
+feature/routines,routines_training_days,,Training days,Dias de treino
+feature/routines,routines_training_days_hint,,Pick the days you train. Routines rotate on those days. Leave empty to rotate every day.,Marque os dias em que você treina. As fichas rodam nesses dias. Deixe vazio pra rodar todo dia.
 feature/routines,routines_next_title,,Which routine is next,Qual ficha vem agora
 feature/routines,routine_more,,More options,Mais opções
 feature/routines,routine_close,,Close,Fechar
@@ -400,6 +402,8 @@ feature/today,today_free,,Free,Livre
 feature/today,today_next_up,,Next up: %1$s,Próxima: %1$s
 feature/today,today_training_now_routine,,Training now · %1$s · %2$s,Treinando agora · %1$s · %2$s
 feature/today,today_rest_day,,Rest day,Dia de descanso
+feature/today,today_next_training,,"Next training: %1$s, %2$s","Próximo treino: %1$s, %2$s"
+feature/today,today_tomorrow,,Tomorrow,Amanhã
 feature/today,today_also_this_session,,Also this session,Também neste treino
 feature/today,today_progress,,%1$d of %2$d,%1$d de %2$d
 feature/today,today_machine_done,,Done,Feito
