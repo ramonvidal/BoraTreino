@@ -1,5 +1,6 @@
 package com.boratreino.core.notify
 
+import android.app.AlarmManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerSettings
@@ -19,6 +20,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.Clock
 import java.time.Duration
@@ -308,6 +310,47 @@ class DefaultRestTimerTest {
         scope.runCurrent()
 
         assertEquals(0, finished)
+    }
+
+    // polling
+
+    @Test
+    fun `a clock that jumps past the end finishes the rest within a second`() {
+        var finished = 0
+        scope.backgroundScope.launch { timer.finished.collect { finished++ } }
+        scope.runCurrent()
+        timer.start(15)
+
+        // The wall clock moves on without the coroutine being woken in time.
+        clock.advance(Duration.ofSeconds(60))
+        scope.advanceTimeBy(1_000)
+        scope.runCurrent()
+
+        assertNull(timer.state.value.endsAt)
+        assertEquals(1, finished)
+    }
+
+    // alarm
+
+    @Test
+    fun `start schedules an alarm at the end time`() {
+        val alarmManager = RuntimeEnvironment.getApplication().getSystemService(AlarmManager::class.java)
+
+        timer.start(90)
+        scope.runCurrent()
+
+        assertEquals(secondsFromStart(90).toEpochMilli(), shadowOf(alarmManager).nextScheduledAlarm?.triggerAtTime)
+    }
+
+    @Test
+    fun `skip clears the alarm`() {
+        val alarmManager = RuntimeEnvironment.getApplication().getSystemService(AlarmManager::class.java)
+        timer.start(90)
+        scope.runCurrent()
+
+        timer.skip()
+
+        assertNull(shadowOf(alarmManager).nextScheduledAlarm)
     }
 }
 
