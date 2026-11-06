@@ -24,7 +24,7 @@ internal data class MachineEntity(
 internal data class RoutinePlanEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val scheduleMode: String,
-    @ColumnInfo(defaultValue = "") val trainingDays: String = "",
+    @ColumnInfo(defaultValue = "''") val trainingDays: String = "",
 )
 
 @Entity(

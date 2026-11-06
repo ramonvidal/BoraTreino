@@ -12,6 +12,7 @@ import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
 import java.time.Instant
 
 internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutStore {

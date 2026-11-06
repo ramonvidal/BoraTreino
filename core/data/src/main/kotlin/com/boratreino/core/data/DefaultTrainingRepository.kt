@@ -14,7 +14,6 @@ import com.boratreino.core.model.RecordRules
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RepeatSessionRules
 import com.boratreino.core.model.RoutineChoice
-import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.SessionRules

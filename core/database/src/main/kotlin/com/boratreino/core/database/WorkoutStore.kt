@@ -10,6 +10,7 @@ import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
+import java.time.DayOfWeek
 import java.time.Instant
 
 /** Machines, sessions and sets, in model types only. Room stays behind this interface. */
