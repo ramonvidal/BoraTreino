@@ -26,7 +26,7 @@ class BackupCodecTest {
                 archived = false,
             ),
         ),
-        plans = listOf(RoutinePlan(1, ScheduleMode.IN_TURN, setOf(DayOfWeek.FRIDAY, DayOfWeek.MONDAY))),
+        plans = listOf(RoutinePlan(1, ScheduleMode.WEEKDAYS, setOf(DayOfWeek.FRIDAY, DayOfWeek.MONDAY))),
         routines = listOf(
             Routine(1, 1, "Routine A", "A", 0, setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)),
             Routine(2, 1, "Quote \"B\" \\ day", "B", 1, emptySet()),
