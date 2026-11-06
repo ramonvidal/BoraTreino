@@ -12,8 +12,9 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * Migration 1 -> 2 adds workout_sets.type. Needs schemas/.../2.json, which Room writes on the first build
- * with version 2 (the schemas folder is a test asset).
+ * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays. Needs
+ * schemas/.../2.json and 3.json, which Room writes on the first build with those versions (the schemas
+ * folder is a test asset).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -116,6 +117,106 @@ class MigrationTest {
         db.query("SELECT type FROM workout_sets WHERE position = 9").use { c ->
             c.moveToFirst()
             assertEquals("NORMAL", c.getString(0))
+        }
+    }
+
+    private fun SupportSQLiteDatabase.insertV2Data() {
+        execSQL("INSERT INTO routine_plans (id, scheduleMode) VALUES (1, 'WEEKDAYS')")
+        execSQL(
+            "INSERT INTO routines (id, planId, name, shortName, position, weekdays) " +
+                "VALUES (1, 1, 'Treino A', 'A', 0, '1,3,5')",
+        )
+        execSQL(
+            "INSERT INTO routines (id, planId, name, shortName, position, weekdays) " +
+                "VALUES (2, 1, 'Treino B', 'B', 1, '2,4')",
+        )
+    }
+
+    @Test
+    fun `migrating 2 to 3 keeps the plan and its routines and sets trainingDays to empty`() {
+        helper.createDatabase(name, 2).apply {
+            insertV2Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 3, true, MIGRATION_2_3)
+
+        db.query("SELECT id, scheduleMode, trainingDays FROM routine_plans").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            assertEquals("WEEKDAYS", c.getString(1))
+            assertEquals("", c.getString(2))
+        }
+
+        db.query("SELECT id, planId, name, shortName, position, weekdays FROM routines ORDER BY id").use { c ->
+            assertEquals(2, c.count)
+
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            assertEquals(1L, c.getLong(1))
+            assertEquals("Treino A", c.getString(2))
+            assertEquals("A", c.getString(3))
+            assertEquals(0, c.getInt(4))
+            assertEquals("1,3,5", c.getString(5))
+
+            c.moveToNext()
+            assertEquals(2L, c.getLong(0))
+            assertEquals(1L, c.getLong(1))
+            assertEquals("Treino B", c.getString(2))
+            assertEquals("B", c.getString(3))
+            assertEquals(1, c.getInt(4))
+            assertEquals("2,4", c.getString(5))
+        }
+    }
+
+    @Test
+    fun `a plan inserted after migrating 2 to 3 without trainingDays gets empty`() {
+        helper.createDatabase(name, 2).apply {
+            insertV2Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 3, true, MIGRATION_2_3)
+
+        db.execSQL("INSERT INTO routine_plans (scheduleMode) VALUES ('IN_TURN')")
+
+        db.query("SELECT trainingDays FROM routine_plans WHERE scheduleMode = 'IN_TURN'").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals("", c.getString(0))
+        }
+    }
+
+    @Test
+    fun `migrating 1 to 3 through both steps keeps the sets and gives plans empty trainingDays`() {
+        helper.createDatabase(name, 1).apply {
+            insertV1Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 3, true, MIGRATION_1_2, MIGRATION_2_3)
+
+        db.query("SELECT id, weightKg, reps, seconds, type FROM workout_sets ORDER BY id").use { c ->
+            assertEquals(2, c.count)
+
+            c.moveToFirst()
+            assertEquals(7L, c.getLong(0))
+            assertEquals(120.5, c.getDouble(1), 0.0)
+            assertEquals(12, c.getInt(2))
+            assertEquals("NORMAL", c.getString(4))
+
+            c.moveToNext()
+            assertEquals(8L, c.getLong(0))
+            assertEquals(600, c.getInt(3))
+            assertEquals("NORMAL", c.getString(4))
+        }
+
+        db.execSQL("INSERT INTO routine_plans (scheduleMode) VALUES ('IN_TURN')")
+
+        db.query("SELECT trainingDays FROM routine_plans").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals("", c.getString(0))
         }
     }
 }
