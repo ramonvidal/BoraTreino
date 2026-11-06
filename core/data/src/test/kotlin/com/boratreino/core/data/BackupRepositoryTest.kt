@@ -101,6 +101,21 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun `the training days of the plan survive an export and an import`() = runTest {
+        val withDays = seed.copy(plans = listOf(RoutinePlan(1, ScheduleMode.IN_TURN, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY))))
+        store.replaceAll(withDays)
+        val exported = repo.export()
+        val otherStore = FakeWorkoutStore()
+        val otherRepo = repoOn(otherStore, TestClock(now, zone))
+
+        val decoded = BackupCodec.decode(exported) as BackupDecodeResult.Ok
+        otherRepo.import(decoded.data)
+
+        assertEquals(setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY), otherStore.exportAll().plans.single().trainingDays)
+        assertEquals(withDays, otherStore.exportAll())
+    }
+
+    @Test
     fun `an export imported into another store gives back the same data`() = runTest {
         store.replaceAll(seed)
         val exported = repo.export()
@@ -159,9 +174,26 @@ class BackupRepositoryTest {
 
     @Test
     fun `a newer backup previews as too new`() {
-        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":3,\"machines\":\"odd\"}")
+        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":4,\"machines\":\"odd\"}")
 
-        assertEquals(BackupPreview.TooNew(3), preview)
+        assertEquals(BackupPreview.TooNew(4), preview)
+    }
+
+    @Test
+    fun `a version 2 backup without training days previews with every day`() {
+        val v2 = """
+            {"app":"boratreino","version":2,"machines":[],
+             "plans":[{"id":1,"scheduleMode":"IN_TURN"}],
+             "routines":[],"items":[],"sessions":[],"sets":[]}
+        """.trimIndent()
+
+        val preview = repo.preview(v2)
+
+        assertTrue(preview is BackupPreview.Ready)
+        assertEquals(
+            RoutinePlan(1, ScheduleMode.IN_TURN, emptySet()),
+            (preview as BackupPreview.Ready).data.plans.single(),
+        )
     }
 
     @Test

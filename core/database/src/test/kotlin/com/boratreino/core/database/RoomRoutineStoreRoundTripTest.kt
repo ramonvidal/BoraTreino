@@ -71,6 +71,44 @@ class RoomRoutineStoreRoundTripTest {
     }
 
     @Test
+    fun `the training days are empty by default`() = runTest {
+        val plan = store.ensurePlan()
+
+        assertEquals(emptySet<DayOfWeek>(), store.plan()?.trainingDays)
+        assertEquals(emptySet<DayOfWeek>(), plan.trainingDays)
+    }
+
+    @Test
+    fun `the training days are stored and come back, and setting them again replaces them`() = runTest {
+        val plan = store.ensurePlan()
+
+        store.setTrainingDays(plan.id, setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY))
+
+        assertEquals(setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY), store.plan()?.trainingDays)
+        assertEquals(
+            setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY),
+            store.observePlan().first()?.trainingDays,
+        )
+
+        store.setTrainingDays(plan.id, setOf(DayOfWeek.SUNDAY))
+
+        assertEquals(setOf(DayOfWeek.SUNDAY), store.plan()?.trainingDays)
+    }
+
+    @Test
+    fun `clearing the training days means every day again, and the schedule mode is kept`() = runTest {
+        val plan = store.ensurePlan()
+        store.setScheduleMode(plan.id, ScheduleMode.IN_TURN)
+        store.setTrainingDays(plan.id, setOf(DayOfWeek.FRIDAY))
+
+        store.setTrainingDays(plan.id, emptySet())
+
+        val stored = requireNotNull(store.plan())
+        assertEquals(emptySet<DayOfWeek>(), stored.trainingDays)
+        assertEquals(ScheduleMode.IN_TURN, stored.scheduleMode)
+    }
+
+    @Test
     fun `a routine comes back with its name, short name, position and weekdays`() = runTest {
         val plan = store.ensurePlan()
         val id = routine(plan.id, "Push day", "P", 2, setOf(DayOfWeek.FRIDAY, DayOfWeek.MONDAY))

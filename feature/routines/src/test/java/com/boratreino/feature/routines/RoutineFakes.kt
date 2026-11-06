@@ -15,11 +15,16 @@ import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.StarterMachine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
 
 /** An in-memory routine store that records every call, in order, in [events]. */
-internal class FakeRoutineRepository(initial: List<RoutineWithItems> = emptyList()) : RoutineRepository {
+internal class FakeRoutineRepository(
+    initial: List<RoutineWithItems> = emptyList(),
+    initialPlan: RoutinePlan = RoutinePlan(id = 1L, scheduleMode = ScheduleMode.IN_TURN),
+) : RoutineRepository {
     val store = MutableStateFlow(initial)
     val events = mutableListOf<String>()
     val saved = mutableListOf<Pair<Routine, List<RoutineItem>>>()
@@ -27,14 +32,22 @@ internal class FakeRoutineRepository(initial: List<RoutineWithItems> = emptyList
     val duplicated = mutableListOf<Long>()
     val deleted = mutableListOf<Long>()
     val moved = mutableListOf<Pair<Long, Boolean>>()
+    val trainingDayCalls = mutableListOf<Set<DayOfWeek>>()
     private var nextId = 100L
-    private val plan = RoutinePlan(id = 1L, scheduleMode = ScheduleMode.IN_TURN)
+    private val plan = MutableStateFlow(initialPlan)
 
-    override fun observePlan(): Flow<RoutinePlanWithRoutines> = store.map { RoutinePlanWithRoutines(plan, it) }
+    override fun observePlan(): Flow<RoutinePlanWithRoutines> =
+        combine(plan, store) { current, routines -> RoutinePlanWithRoutines(current, routines) }
 
     override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = store.map { list -> list.firstOrNull { it.routine.id == id } }
 
     override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
+
+    override suspend fun setTrainingDays(days: Set<DayOfWeek>) {
+        events += "trainingDays"
+        trainingDayCalls += days
+        plan.value = plan.value.copy(trainingDays = days)
+    }
 
     override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long {
         events += "save"

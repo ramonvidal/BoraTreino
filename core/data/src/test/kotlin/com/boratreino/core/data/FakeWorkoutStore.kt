@@ -14,6 +14,7 @@ import com.boratreino.core.model.working
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
 import java.time.Instant
 
 /**
@@ -256,6 +257,14 @@ internal class FakeWorkoutStore : WorkoutStore {
         val index = plans.indexOfFirst { it.id == planId }
         if (index >= 0) {
             plans[index] = plans[index].copy(scheduleMode = mode)
+            changed()
+        }
+    }
+
+    override suspend fun setTrainingDays(planId: Long, days: Set<DayOfWeek>) {
+        val index = plans.indexOfFirst { it.id == planId }
+        if (index >= 0) {
+            plans[index] = plans[index].copy(trainingDays = days)
             changed()
         }
     }

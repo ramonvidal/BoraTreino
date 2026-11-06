@@ -89,6 +89,49 @@ class RoutineRepositoryTest {
         assertEquals(ScheduleMode.IN_TURN, routines.observePlan().first().plan.scheduleMode)
     }
 
+    // Training days
+
+    @Test
+    fun `the training days are empty, every day, on the first plan`() = runTest {
+        assertEquals(emptySet<DayOfWeek>(), routines.observePlan().first().plan.trainingDays)
+    }
+
+    @Test
+    fun `setting the training days persists them on the plan`() = runTest {
+        routines.setTrainingDays(setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY))
+
+        assertEquals(
+            setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY),
+            routines.observePlan().first().plan.trainingDays,
+        )
+        assertEquals(setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY), store.plan()?.trainingDays)
+    }
+
+    @Test
+    fun `the training days can be changed and cleared, and the schedule mode is kept`() = runTest {
+        routines.setScheduleMode(ScheduleMode.IN_TURN)
+        routines.setTrainingDays(setOf(DayOfWeek.FRIDAY))
+        routines.setTrainingDays(setOf(DayOfWeek.TUESDAY))
+
+        assertEquals(setOf(DayOfWeek.TUESDAY), routines.observePlan().first().plan.trainingDays)
+
+        routines.setTrainingDays(emptySet())
+
+        val plan = routines.observePlan().first().plan
+        assertEquals(emptySet<DayOfWeek>(), plan.trainingDays)
+        assertEquals(ScheduleMode.IN_TURN, plan.scheduleMode)
+    }
+
+    @Test
+    fun `the training days do not change the routines or their order`() = runTest {
+        save("Routine A", "A")
+        save("Routine B", "B")
+
+        routines.setTrainingDays(setOf(DayOfWeek.MONDAY))
+
+        assertEquals(listOf("A", "B"), orderedShortNames())
+    }
+
     // saveRoutine: insert
 
     @Test

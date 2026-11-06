@@ -26,7 +26,7 @@ class BackupCodecTest {
                 archived = false,
             ),
         ),
-        plans = listOf(RoutinePlan(1, ScheduleMode.WEEKDAYS)),
+        plans = listOf(RoutinePlan(1, ScheduleMode.IN_TURN, setOf(DayOfWeek.FRIDAY, DayOfWeek.MONDAY))),
         routines = listOf(
             Routine(1, 1, "Routine A", "A", 0, setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)),
             Routine(2, 1, "Quote \"B\" \\ day", "B", 1, emptySet()),
@@ -103,9 +103,10 @@ class BackupCodecTest {
 
     @Test
     fun `the file names the app, the version, the export time and the weekdays by name`() {
-        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":2"))
+        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":3"))
         assertTrue(text.contains("\"exportedAt\":\"2026-11-02T20:15:30.250Z\""))
         assertTrue(text.contains("\"weekdays\":[\"MONDAY\",\"WEDNESDAY\"]"))
+        assertTrue(text.contains("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]"))
         assertTrue(text.contains("\"muscleGroup\":\"LEGS\""))
         assertTrue(text.contains("\"scheduleMode\":\"WEEKDAYS\""))
     }
@@ -208,27 +209,27 @@ class BackupCodecTest {
 
     @Test
     fun `version 0 is invalid`() {
-        assertInvalid(text.replace("\"version\":2", "\"version\":0"))
+        assertInvalid(text.replace("\"version\":3", "\"version\":0"))
     }
 
     @Test
     fun `a negative version is invalid`() {
-        assertInvalid(text.replace("\"version\":2", "\"version\":-1"))
+        assertInvalid(text.replace("\"version\":3", "\"version\":-1"))
     }
 
     @Test
     fun `a missing, text or fractional version is invalid`() {
-        assertInvalid(text.replace("\"version\":2,", ""))
-        assertInvalid(text.replace("\"version\":2", "\"version\":\"1\""))
-        assertInvalid(text.replace("\"version\":2", "\"version\":1.0"))
+        assertInvalid(text.replace("\"version\":3,", ""))
+        assertInvalid(text.replace("\"version\":3", "\"version\":\"1\""))
+        assertInvalid(text.replace("\"version\":3", "\"version\":1.0"))
     }
 
     @Test
     fun `a newer version is too new, even when its fields are odd`() {
-        assertEquals(BackupDecodeResult.TooNew(3), decoded(text.replace("\"version\":2", "\"version\":3")))
+        assertEquals(BackupDecodeResult.TooNew(4), decoded(text.replace("\"version\":3", "\"version\":4")))
         assertEquals(
-            BackupDecodeResult.TooNew(3),
-            decoded("{\"app\":\"boratreino\",\"version\":3,\"machines\":\"odd\",\"sets\":42}"),
+            BackupDecodeResult.TooNew(4),
+            decoded("{\"app\":\"boratreino\",\"version\":4,\"machines\":\"odd\",\"sets\":42}"),
         )
         assertEquals(BackupDecodeResult.TooNew(99), decoded("{\"app\":\"boratreino\",\"version\":99}"))
     }
@@ -319,8 +320,56 @@ class BackupCodecTest {
     // Set types
 
     @Test
-    fun `the format version is 2`() {
-        assertEquals(2, BackupCodec.FORMAT_VERSION)
+    fun `the format version is 3`() {
+        assertEquals(3, BackupCodec.FORMAT_VERSION)
+    }
+
+    @Test
+    fun `a version 2 file without training days imports with every day`() {
+        val json = """
+            {"app":"boratreino","version":2,
+             "machines":[],
+             "plans":[{"id":1,"scheduleMode":"IN_TURN"}],
+             "routines":[{"id":1,"planId":1,"name":"Routine A","shortName":"A","position":0,"weekdays":[]}],
+             "items":[],"sessions":[],"sets":[]}
+        """.trimIndent()
+
+        val plan = assertOk(json).data.plans.single()
+
+        assertEquals(ScheduleMode.IN_TURN, plan.scheduleMode)
+        assertEquals(emptySet<DayOfWeek>(), plan.trainingDays)
+    }
+
+    @Test
+    fun `a version 1 plan without training days imports with every day`() {
+        val json = """
+            {"app":"boratreino","version":1,"machines":[],
+             "plans":[{"id":1,"scheduleMode":"WEEKDAYS"}],
+             "routines":[],"items":[],"sessions":[],"sets":[]}
+        """.trimIndent()
+
+        assertEquals(emptySet<DayOfWeek>(), assertOk(json).data.plans.single().trainingDays)
+    }
+
+    @Test
+    fun `training days are read back by weekday, whatever their order in the file`() {
+        val json = text.replace("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]", "\"trainingDays\":[\"SATURDAY\",\"MONDAY\",\"WEDNESDAY\"]")
+
+        assertEquals(
+            setOf(DayOfWeek.SATURDAY, DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+            assertOk(json).data.plans.single().trainingDays,
+        )
+    }
+
+    @Test
+    fun `an unknown training day is invalid`() {
+        assertInvalid(text.replace("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]", "\"trainingDays\":[\"FUNDAY\"]"))
+    }
+
+    @Test
+    fun `training days that are not a list of weekday names are invalid`() {
+        assertInvalid(text.replace("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]", "\"trainingDays\":\"MONDAY\""))
+        assertInvalid(text.replace("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]", "\"trainingDays\":[1]"))
     }
 
     @Test
@@ -364,7 +413,12 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `a version 3 file is too new`() {
-        assertEquals(BackupDecodeResult.TooNew(3), decoded(versionOneFile().replace("\"version\":1", "\"version\":3")))
+    fun `a version 4 file is too new`() {
+        assertEquals(BackupDecodeResult.TooNew(4), decoded(versionOneFile().replace("\"version\":1", "\"version\":4")))
+    }
+
+    @Test
+    fun `a version 3 file is read`() {
+        assertOk(versionOneFile().replace("\"version\":1", "\"version\":3"))
     }
 }

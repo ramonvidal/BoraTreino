@@ -20,6 +20,7 @@ import org.junit.Test
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 
 /** What Today shows about routines, and how the owner's choice moves the session's routine. */
 class TodayPlanTest {
@@ -416,5 +417,133 @@ class TodayPlanTest {
         assertEquals(RoutineChoice.Suggested, plan().choice)
         assertEquals(b, plan().active?.routine?.id)
         assertEquals(b, requireNotNull(training.observeMachineLog(press).first()).target?.routineId)
+    }
+
+    // Training days (in turn): a rest day shows the next training
+
+    private val tuesday = Instant.parse("2026-11-03T18:00:00Z")
+    private val wednesday = Instant.parse("2026-11-04T18:00:00Z")
+    private val saturday = Instant.parse("2026-11-07T18:00:00Z")
+    private val monWedFri = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)
+
+    @Test
+    fun `in turn on a day that is not a training day is a rest day with the next training`() = runTest {
+        val press = machine("Leg press")
+        routine("A", press)
+        routine("B", machine("Lat pulldown"))
+        routines.setTrainingDays(monWedFri)
+        finishedSession(press) // Monday: A
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertNull(plan.suggested)
+        assertNull(plan.active)
+        assertEquals(LocalDate.of(2026, 11, 4), plan.upcoming?.date)
+        assertEquals("B", plan.upcoming?.routine?.shortName)
+        assertEquals(listOf("A", "B"), plan.routines.map { it.shortName })
+    }
+
+    @Test
+    fun `in turn on a training day is not a rest day and has no upcoming training`() = runTest {
+        val press = machine("Leg press")
+        routine("A", press)
+        routine("B", machine("Lat pulldown"))
+        routines.setTrainingDays(monWedFri)
+        finishedSession(press) // Monday: A
+        clock.now = wednesday
+
+        val plan = plan()
+
+        assertFalse(plan.restDay)
+        assertEquals("B", plan.suggested?.shortName)
+        assertNull(plan.upcoming)
+    }
+
+    @Test
+    fun `in turn with no training days every day is a training day, so there is no rest day`() = runTest {
+        routine("A", machine("Leg press"))
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertFalse(plan.restDay)
+        assertEquals("A", plan.suggested?.shortName)
+        assertNull(plan.upcoming)
+    }
+
+    @Test
+    fun `in turn the upcoming training wraps over the end of the week`() = runTest {
+        val press = machine("Leg press")
+        routine("A", press)
+        routine("B", machine("Lat pulldown"))
+        routines.setTrainingDays(monWedFri)
+        clock.now = Instant.parse("2026-11-06T18:00:00Z") // Friday
+        finishedSession(press) // Friday: A
+        clock.now = saturday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertEquals(LocalDate.of(2026, 11, 9), plan.upcoming?.date)
+        assertEquals("B", plan.upcoming?.routine?.shortName)
+    }
+
+    @Test
+    fun `in turn the upcoming training is found up to six days ahead`() = runTest {
+        routine("A", machine("Leg press"))
+        routines.setTrainingDays(setOf(DayOfWeek.TUESDAY))
+        clock.now = Instant.parse("2026-11-04T18:00:00Z") // Wednesday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertEquals(LocalDate.of(2026, 11, 10), plan.upcoming?.date)
+        assertEquals("A", plan.upcoming?.routine?.shortName)
+    }
+
+    // Fixed weekdays: a rest day shows the next day that has a routine
+
+    @Test
+    fun `on weekdays a rest day has the next day with a routine as upcoming`() = runTest {
+        routines.setScheduleMode(ScheduleMode.WEEKDAYS)
+        routine("A", machine("Leg press"), weekdays = setOf(DayOfWeek.MONDAY))
+        routine("B", machine("Lat pulldown"), weekdays = setOf(DayOfWeek.WEDNESDAY))
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertNull(plan.suggested)
+        assertEquals(LocalDate.of(2026, 11, 4), plan.upcoming?.date)
+        assertEquals("B", plan.upcoming?.routine?.shortName)
+    }
+
+    @Test
+    fun `on weekdays a rest day with no routine on any weekday has no upcoming training`() = runTest {
+        routines.setScheduleMode(ScheduleMode.WEEKDAYS)
+        routine("A", machine("Leg press"))
+        routine("B", machine("Lat pulldown"))
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertNull(plan.upcoming)
+    }
+
+    @Test
+    fun `on weekdays the training days do not affect the rest day`() = runTest {
+        routines.setScheduleMode(ScheduleMode.WEEKDAYS)
+        routines.setTrainingDays(setOf(DayOfWeek.TUESDAY))
+        routine("A", machine("Leg press"), weekdays = setOf(DayOfWeek.MONDAY))
+        routine("B", machine("Lat pulldown"), weekdays = setOf(DayOfWeek.WEDNESDAY))
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertEquals("B", plan.upcoming?.routine?.shortName)
     }
 }

@@ -121,6 +121,7 @@ class SessionEditorRepeatTest {
 
         override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = flowOf(null)
         override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
+        override suspend fun setTrainingDays(days: Set<java.time.DayOfWeek>) = Unit
         override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long = 0L
         override suspend fun deleteRoutine(id: Long) = Unit
         override suspend fun moveRoutine(id: Long, up: Boolean) = Unit
