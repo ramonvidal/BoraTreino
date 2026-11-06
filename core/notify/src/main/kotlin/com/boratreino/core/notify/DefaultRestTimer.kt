@@ -26,7 +26,7 @@ import javax.inject.Inject
 
 /**
  * A coroutine counts down while the process lives; the ongoing notification counts down by itself
- * (system chronometer); an inexact alarm that may run in Doze ends the rest if the process is gone.
+ * (system chronometer); an exact alarm-clock alarm ends the rest if the process is asleep or gone.
  */
 internal class DefaultRestTimer internal constructor(
     private val context: Context,
@@ -81,7 +81,15 @@ internal class DefaultRestTimer internal constructor(
         setAlarm(endsAt)
         val wait = (endsAt.toEpochMilli() - clock.millis()).coerceAtLeast(0L)
         job = scope.launch {
-            delay(wait)
+            // delay() only counts time the device is awake, so one long delay would fire late after the screen
+            // was off. Waiting in short steps and reading the wall clock each time makes the end follow the clock;
+            // the awake time adding up to the original wait is the other way out (a clock that does not move).
+            var waited = 0L
+            while (waited < wait && clock.millis() < endsAt.toEpochMilli()) {
+                val step = minOf(POLL_MS, wait - waited)
+                delay(step)
+                waited += step
+            }
             complete(endsAt)
         }
     }
@@ -95,28 +103,37 @@ internal class DefaultRestTimer internal constructor(
         cancelAlarm()
         Notifications.postRestOver(context)
         _finished.tryEmit(Unit)
+        // The alarm may have fired first (screen off): then it already buzzed and beeped for this rest.
+        val first = RestSignal.claim(endsAt.toEpochMilli())
+        if (first) RestSignal.buzz(context)
         scope.launch {
-            // The alarm is cancelled above, so this is the only beep for this rest.
             val beep = try {
                 settings?.restTimer?.first()?.beep == true
             } catch (e: Exception) {
                 false
             }
-            if (beep) RestBeep.play()
+            if (beep && first) RestBeep.play()
         }
     }
 
-    private fun alarmIntent(): PendingIntent = PendingIntent.getBroadcast(
+    private fun alarmIntent(endsAtMillis: Long = 0L): PendingIntent = PendingIntent.getBroadcast(
         context,
         ALARM_REQUEST,
-        Intent(context, RestAlarmReceiver::class.java).setAction(RestAlarmReceiver.ACTION_REST_OVER),
+        Intent(context, RestAlarmReceiver::class.java)
+            .setAction(RestAlarmReceiver.ACTION_REST_OVER)
+            .putExtra(RestAlarmReceiver.EXTRA_ENDS_AT, endsAtMillis),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
+    /**
+     * An alarm-clock alarm: exact, it wakes the phone even in Doze and needs no special permission. An inexact
+     * alarm (setAndAllowWhileIdle) can be held back for minutes with the screen off, which made the rest end late.
+     */
     private fun setAlarm(endsAt: Instant) {
         try {
             val alarms = context.getSystemService(AlarmManager::class.java) ?: return
-            alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endsAt.toEpochMilli(), alarmIntent())
+            val info = AlarmManager.AlarmClockInfo(endsAt.toEpochMilli(), Notifications.openAppIntent(context))
+            alarms.setAlarmClock(info, alarmIntent(endsAt.toEpochMilli()))
         } catch (e: RuntimeException) {
             // No alarm service or not allowed: the in-process timer still runs.
         }
@@ -132,5 +149,6 @@ internal class DefaultRestTimer internal constructor(
 
     private companion object {
         const val ALARM_REQUEST = 1
+        const val POLL_MS = 1_000L
     }
 }

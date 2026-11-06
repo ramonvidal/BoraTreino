@@ -30,6 +30,10 @@ internal class RestAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_REST_OVER) return
         Notifications.postRestOver(context)
+        // One signal per rest: if the in-process timer already ended this rest, it buzzed and beeped.
+        val endsAt = intent.getLongExtra(EXTRA_ENDS_AT, 0L)
+        if (!RestSignal.claim(endsAt)) return
+        RestSignal.buzz(context)
         val app = context.applicationContext
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
@@ -46,5 +50,6 @@ internal class RestAlarmReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION_REST_OVER = "com.boratreino.core.notify.REST_OVER"
+        const val EXTRA_ENDS_AT = "ends_at_millis"
     }
 }
