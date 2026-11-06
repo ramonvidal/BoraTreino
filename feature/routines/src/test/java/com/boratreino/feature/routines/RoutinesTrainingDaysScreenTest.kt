@@ -54,7 +54,7 @@ class RoutinesTrainingDaysScreenTest {
 
     @Test
     fun `in turn, the training days label, the hint and all seven day chips are shown`() {
-        setContent(RoutinesUiState(scheduleMode = ScheduleMode.IN_TURN, loaded = true))
+        setContent(GymSamples.populated.copy(scheduleMode = ScheduleMode.IN_TURN, trainingDays = emptySet()))
 
         compose.onNodeWithText(trainingDaysLabel).assertIsDisplayed()
         compose.onNodeWithText(hint).assertIsDisplayed()
@@ -66,7 +66,7 @@ class RoutinesTrainingDaysScreenTest {
 
     @Test
     fun `on fixed weekdays, no training day label, hint or chips are shown`() {
-        setContent(RoutinesUiState(scheduleMode = ScheduleMode.WEEKDAYS, loaded = true))
+        setContent(GymSamples.populated.copy(scheduleMode = ScheduleMode.WEEKDAYS))
 
         compose.onNodeWithText(trainingDaysLabel).assertDoesNotExist()
         compose.onNodeWithText(hint).assertDoesNotExist()
@@ -79,7 +79,7 @@ class RoutinesTrainingDaysScreenTest {
     fun `tapping a day that is not picked adds it to the picked days`() {
         var reported: Set<DayOfWeek>? = null
         setContent(
-            RoutinesUiState(scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY), loaded = true),
+            GymSamples.populated.copy(scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY)),
             onTrainingDaysChange = { reported = it },
         )
 
@@ -92,7 +92,7 @@ class RoutinesTrainingDaysScreenTest {
     fun `tapping a picked day removes it from the picked days`() {
         var reported: Set<DayOfWeek>? = null
         setContent(
-            RoutinesUiState(scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY), loaded = true),
+            GymSamples.populated.copy(scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY)),
             onTrainingDaysChange = { reported = it },
         )
 
