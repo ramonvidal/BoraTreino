@@ -16,7 +16,7 @@ object RestTimerRules {
     const val MAX_SECONDS = 600
     const val DEFAULT_SECONDS = 90
     const val EXTEND_SECONDS = 30
-    val OPTIONS: List<Int> = listOf(60, 90, 120, 180)
+    val OPTIONS: List<Int> = listOf(30, 60, 90, 120, 180)
 
     /** machine.restSeconds ?: defaultSeconds, clamped to MIN..MAX. */
     fun durationFor(machine: Machine, defaultSeconds: Int): Int =

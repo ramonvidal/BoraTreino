@@ -27,7 +27,7 @@ class RestTimerRulesTest {
         assertEquals(600, RestTimerRules.MAX_SECONDS)
         assertEquals(90, RestTimerRules.DEFAULT_SECONDS)
         assertEquals(30, RestTimerRules.EXTEND_SECONDS)
-        assertEquals(listOf(60, 90, 120, 180), RestTimerRules.OPTIONS)
+        assertEquals(listOf(30, 60, 90, 120, 180), RestTimerRules.OPTIONS)
     }
 
     // durationFor
