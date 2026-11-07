@@ -546,4 +546,102 @@ class TodayPlanTest {
         assertTrue(plan.restDay)
         assertEquals("B", plan.upcoming?.routine?.shortName)
     }
+
+    // Planned workouts: a routine planned for a date overrides the schedule for that date only
+
+    @Test
+    fun `a routine planned for today is the suggestion and is not a rest day`() = runTest {
+        routines.setScheduleMode(ScheduleMode.WEEKDAYS)
+        routine("A", machine("Leg press"), weekdays = setOf(DayOfWeek.MONDAY))
+        val b = routine("B", machine("Lat pulldown"))
+        routines.planWorkout(LocalDate.of(2026, 11, 3), b) // Tuesday, a day with no routine
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertEquals("B", plan.suggested?.shortName)
+        assertEquals("B", plan.active?.routine?.shortName)
+        assertFalse(plan.restDay)
+        assertTrue(plan.plannedToday)
+        assertNull(plan.upcoming)
+    }
+
+    @Test
+    fun `a planned routine on a day off in turn is the suggestion for that day`() = runTest {
+        val press = machine("Leg press")
+        routine("A", press)
+        routine("B", machine("Lat pulldown"))
+        val c = routine("C", machine("Squat rack"))
+        routines.setTrainingDays(monWedFri)
+        finishedSession(press) // Monday: A
+        routines.planWorkout(LocalDate.of(2026, 11, 3), c) // Tuesday, not a training day
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertEquals("C", plan.suggested?.shortName)
+        assertFalse(plan.restDay)
+        assertTrue(plan.plannedToday)
+    }
+
+    @Test
+    fun `a plan for another day leaves today a plain rest day`() = runTest {
+        routines.setScheduleMode(ScheduleMode.WEEKDAYS)
+        routine("A", machine("Leg press"), weekdays = setOf(DayOfWeek.MONDAY))
+        val b = routine("B", machine("Lat pulldown"))
+        routines.planWorkout(LocalDate.of(2026, 11, 4), b) // Wednesday, not today
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertNull(plan.suggested)
+        assertFalse(plan.plannedToday)
+    }
+
+    @Test
+    fun `a plan for a past day is ignored`() = runTest {
+        val press = machine("Leg press")
+        routine("A", press)
+        val b = routine("B", machine("Lat pulldown"))
+        routines.planWorkout(LocalDate.of(2026, 11, 1), b) // Sunday, before today
+
+        val plan = plan()
+
+        assertEquals("A", plan.suggested?.shortName)
+        assertFalse(plan.plannedToday)
+    }
+
+    @Test
+    fun `the upcoming training uses a planned day`() = runTest {
+        val press = machine("Leg press")
+        routine("A", press)
+        routine("B", machine("Lat pulldown"))
+        val c = routine("C", machine("Squat rack"))
+        routines.setTrainingDays(monWedFri)
+        finishedSession(press) // Monday: A, so Wednesday would be B
+        routines.planWorkout(LocalDate.of(2026, 11, 4), c) // Wednesday: C instead
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertEquals(LocalDate.of(2026, 11, 4), plan.upcoming?.date)
+        assertEquals("C", plan.upcoming?.routine?.shortName)
+    }
+
+    @Test
+    fun `a planned routine that is deleted leaves no plan for its day`() = runTest {
+        val press = machine("Leg press")
+        routine("A", press)
+        val b = routine("B", machine("Lat pulldown"))
+        routines.planWorkout(LocalDate.of(2026, 11, 2), b) // today
+        routines.deleteRoutine(b)
+
+        val plan = plan()
+
+        assertEquals("A", plan.suggested?.shortName)
+        assertFalse(plan.plannedToday)
+        assertEquals(listOf("A"), plan.routines.map { it.shortName })
+    }
 }

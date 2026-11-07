@@ -12,9 +12,9 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays. Needs
- * schemas/.../2.json and 3.json, which Room writes on the first build with those versions (the schemas
- * folder is a test asset).
+ * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays; migration
+ * 3 -> 4 adds planned_workouts. Needs schemas/.../2.json, 3.json and 4.json, which Room writes on the first
+ * build with those versions (the schemas folder is a test asset).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -217,6 +217,76 @@ class MigrationTest {
             assertEquals(1, c.count)
             c.moveToFirst()
             assertEquals("", c.getString(0))
+        }
+    }
+
+    private fun SupportSQLiteDatabase.insertV3Data() {
+        execSQL("INSERT INTO routine_plans (id, scheduleMode, trainingDays) VALUES (1, 'IN_TURN', '')")
+        execSQL(
+            "INSERT INTO routines (id, planId, name, shortName, position, weekdays) " +
+                "VALUES (1, 1, 'Treino A', 'A', 0, '')",
+        )
+        execSQL(
+            "INSERT INTO routines (id, planId, name, shortName, position, weekdays) " +
+                "VALUES (2, 1, 'Treino B', 'B', 1, '')",
+        )
+    }
+
+    @Test
+    fun `migrating 3 to 4 keeps the plan and routines and starts with no planned workouts`() {
+        helper.createDatabase(name, 3).apply {
+            insertV3Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 4, true, MIGRATION_3_4)
+
+        db.query("SELECT COUNT(*) FROM routines").use { c ->
+            c.moveToFirst()
+            assertEquals(2, c.getInt(0))
+        }
+        db.query("SELECT COUNT(*) FROM planned_workouts").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `the migrated database keeps one planned routine per date`() {
+        helper.createDatabase(name, 3).apply {
+            insertV3Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 4, true, MIGRATION_3_4)
+
+        db.execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 1)")
+        db.execSQL("INSERT OR REPLACE INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 2)")
+
+        db.query("SELECT date, routineId FROM planned_workouts").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals("2026-11-12", c.getString(0))
+            assertEquals(2L, c.getLong(1))
+        }
+    }
+
+    @Test
+    fun `deleting a routine of the migrated database removes its planned workouts`() {
+        helper.createDatabase(name, 3).apply {
+            insertV3Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 4, true, MIGRATION_3_4)
+        db.execSQL("PRAGMA foreign_keys = ON")
+        db.execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 2)")
+        db.execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-13', 1)")
+
+        db.execSQL("DELETE FROM routines WHERE id = 2")
+
+        db.query("SELECT date, routineId FROM planned_workouts").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals("2026-11-13", c.getString(0))
         }
     }
 }

@@ -160,6 +160,10 @@ class SessionEditorCardioTest {
         override suspend fun createRoutine(): Long = 0L
         override suspend fun addMachine(routineId: Long, machineId: Long) = Unit
         override suspend fun removeMachine(routineId: Long, machineId: Long): com.boratreino.core.model.RoutineItem? = null
+        override fun observePlanned(): kotlinx.coroutines.flow.Flow<List<com.boratreino.core.model.PlannedWorkout>> =
+            kotlinx.coroutines.flow.flowOf(emptyList())
+        override suspend fun planWorkout(date: java.time.LocalDate, routineId: Long) = Unit
+        override suspend fun unplanWorkout(date: java.time.LocalDate) = Unit
         override suspend fun restoreItem(item: com.boratreino.core.model.RoutineItem) = Unit
     }
 

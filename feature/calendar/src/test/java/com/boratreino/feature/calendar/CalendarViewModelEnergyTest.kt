@@ -76,7 +76,7 @@ class CalendarViewModelEnergyTest {
     }
 
     private fun TestScope.start() {
-        viewModel = CalendarViewModel(history, FakeTrainingSettings(), body, clock)
+        viewModel = CalendarViewModel(history, PlanRoutines(), FakeTrainingSettings(), body, clock)
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
     }

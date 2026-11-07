@@ -6,6 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 class BackupCodecTest {
     private val exportedAt: Instant = Instant.parse("2026-11-02T20:15:30.250Z")
@@ -103,7 +104,7 @@ class BackupCodecTest {
 
     @Test
     fun `the file names the app, the version, the export time and the weekdays by name`() {
-        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":3"))
+        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":4"))
         assertTrue(text.contains("\"exportedAt\":\"2026-11-02T20:15:30.250Z\""))
         assertTrue(text.contains("\"weekdays\":[\"MONDAY\",\"WEDNESDAY\"]"))
         assertTrue(text.contains("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]"))
@@ -209,27 +210,27 @@ class BackupCodecTest {
 
     @Test
     fun `version 0 is invalid`() {
-        assertInvalid(text.replace("\"version\":3", "\"version\":0"))
+        assertInvalid(text.replace("\"version\":4", "\"version\":0"))
     }
 
     @Test
     fun `a negative version is invalid`() {
-        assertInvalid(text.replace("\"version\":3", "\"version\":-1"))
+        assertInvalid(text.replace("\"version\":4", "\"version\":-1"))
     }
 
     @Test
     fun `a missing, text or fractional version is invalid`() {
-        assertInvalid(text.replace("\"version\":3,", ""))
-        assertInvalid(text.replace("\"version\":3", "\"version\":\"1\""))
-        assertInvalid(text.replace("\"version\":3", "\"version\":1.0"))
+        assertInvalid(text.replace("\"version\":4,", ""))
+        assertInvalid(text.replace("\"version\":4", "\"version\":\"1\""))
+        assertInvalid(text.replace("\"version\":4", "\"version\":1.0"))
     }
 
     @Test
     fun `a newer version is too new, even when its fields are odd`() {
-        assertEquals(BackupDecodeResult.TooNew(4), decoded(text.replace("\"version\":3", "\"version\":4")))
+        assertEquals(BackupDecodeResult.TooNew(5), decoded(text.replace("\"version\":4", "\"version\":5")))
         assertEquals(
-            BackupDecodeResult.TooNew(4),
-            decoded("{\"app\":\"boratreino\",\"version\":4,\"machines\":\"odd\",\"sets\":42}"),
+            BackupDecodeResult.TooNew(5),
+            decoded("{\"app\":\"boratreino\",\"version\":5,\"machines\":\"odd\",\"sets\":42}"),
         )
         assertEquals(BackupDecodeResult.TooNew(99), decoded("{\"app\":\"boratreino\",\"version\":99}"))
     }
@@ -320,8 +321,8 @@ class BackupCodecTest {
     // Set types
 
     @Test
-    fun `the format version is 3`() {
-        assertEquals(3, BackupCodec.FORMAT_VERSION)
+    fun `the format version is 4`() {
+        assertEquals(4, BackupCodec.FORMAT_VERSION)
     }
 
     @Test
@@ -413,12 +414,76 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `a version 4 file is too new`() {
-        assertEquals(BackupDecodeResult.TooNew(4), decoded(versionOneFile().replace("\"version\":1", "\"version\":4")))
+    fun `a version 5 file is too new`() {
+        assertEquals(BackupDecodeResult.TooNew(5), decoded(versionOneFile().replace("\"version\":1", "\"version\":5")))
+    }
+
+    @Test
+    fun `a version 4 file is read`() {
+        assertOk(versionOneFile().replace("\"version\":1", "\"version\":4"))
     }
 
     @Test
     fun `a version 3 file is read`() {
         assertOk(versionOneFile().replace("\"version\":1", "\"version\":3"))
+    }
+
+    // Planned workouts (format version 4)
+
+    private val planned = listOf(
+        PlannedWorkout(LocalDate.of(2026, 11, 12), 1L),
+        PlannedWorkout(LocalDate.of(2026, 11, 14), 2L),
+    )
+
+    @Test
+    fun `planned workouts come back unchanged`() {
+        val withPlans = data.copy(plannedWorkouts = planned)
+
+        assertEquals(BackupDecodeResult.Ok(withPlans, exportedAt), decoded(BackupCodec.encode(withPlans, exportedAt)))
+    }
+
+    @Test
+    fun `planned workouts are written with their date and routine`() {
+        val json = BackupCodec.encode(data.copy(plannedWorkouts = planned), exportedAt)
+
+        assertTrue(json.contains("\"plannedWorkouts\":[{\"date\":\"2026-11-12\",\"routineId\":1},{\"date\":\"2026-11-14\",\"routineId\":2}]"))
+    }
+
+    @Test
+    fun `a version 3 file without planned workouts imports with none`() {
+        val v3 = """
+            {"app":"boratreino","version":3,
+             "machines":[{"id":1,"name":"Leg press","muscleGroup":"LEGS","kind":"WEIGHT_REPS","stepKg":2.5,"archived":false}],
+             "plans":[{"id":1,"scheduleMode":"IN_TURN","trainingDays":[]}],
+             "routines":[{"id":1,"planId":1,"name":"Routine A","shortName":"A","position":0,"weekdays":[]}],
+             "items":[],"sessions":[],"sets":[]}
+        """.trimIndent()
+
+        val ok = assertOk(v3)
+
+        assertEquals(emptyList<PlannedWorkout>(), ok.data.plannedWorkouts)
+        assertEquals(1, ok.data.routines.size)
+    }
+
+    @Test
+    fun `a planned workout whose routine is missing from the file is invalid`() {
+        assertInvalid(BackupCodec.encode(data.copy(plannedWorkouts = listOf(PlannedWorkout(LocalDate.of(2026, 11, 12), 99L))), exportedAt))
+    }
+
+    @Test
+    fun `a planned workout with a bad date is invalid`() {
+        val json = BackupCodec.encode(data.copy(plannedWorkouts = planned), exportedAt)
+        assertTrue(json.contains("\"date\":\"2026-11-12\""))
+
+        assertInvalid(json.replace("\"date\":\"2026-11-12\"", "\"date\":\"12/11/2026\""))
+        assertInvalid(json.replace("\"date\":\"2026-11-12\"", "\"date\":\"2026-02-30\""))
+        assertInvalid(json.replace("\"date\":\"2026-11-12\"", "\"date\":20261112"))
+    }
+
+    @Test
+    fun `two planned workouts on the same day are invalid`() {
+        val twice = listOf(PlannedWorkout(LocalDate.of(2026, 11, 12), 1L), PlannedWorkout(LocalDate.of(2026, 11, 12), 2L))
+
+        assertInvalid(BackupCodec.encode(data.copy(plannedWorkouts = twice), exportedAt))
     }
 }

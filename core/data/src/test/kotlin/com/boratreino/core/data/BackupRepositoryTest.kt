@@ -9,6 +9,7 @@ import com.boratreino.core.model.BackupSummary
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
@@ -116,6 +117,59 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun `planned workouts survive an export and an import`() = runTest {
+        val planned = seed.copy(
+            plannedWorkouts = listOf(
+                PlannedWorkout(LocalDate.of(2026, 11, 4), 1L),
+                PlannedWorkout(LocalDate.of(2026, 11, 9), 2L),
+            ),
+        )
+        store.replaceAll(planned)
+        val exported = repo.export()
+        val otherStore = FakeWorkoutStore()
+        val otherRepo = repoOn(otherStore, TestClock(now, zone))
+
+        val decoded = BackupCodec.decode(exported) as BackupDecodeResult.Ok
+        otherRepo.import(decoded.data)
+
+        assertEquals(planned, otherStore.exportAll())
+    }
+
+    @Test
+    fun `an import replaces the planned workouts that were there`() = runTest {
+        store.replaceAll(seed.copy(plannedWorkouts = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 1L))))
+
+        repo.import(seed)
+
+        assertEquals(emptyList<PlannedWorkout>(), store.exportAll().plannedWorkouts)
+    }
+
+    @Test
+    fun `a version 3 backup without planned workouts imports with none`() = runTest {
+        store.replaceAll(seed.copy(plannedWorkouts = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 1L))))
+        val v3 = """
+            {"app":"boratreino","version":3,"machines":[],
+             "plans":[{"id":1,"scheduleMode":"IN_TURN","trainingDays":[]}],
+             "routines":[{"id":1,"planId":1,"name":"Routine A","shortName":"A","position":0,"weekdays":[]}],
+             "items":[],"sessions":[],"sets":[]}
+        """.trimIndent()
+
+        val preview = repo.preview(v3)
+        assertTrue(preview is BackupPreview.Ready)
+        repo.import((preview as BackupPreview.Ready).data)
+
+        assertEquals(emptyList<PlannedWorkout>(), store.exportAll().plannedWorkouts)
+        assertEquals(1, store.exportAll().routines.size)
+    }
+
+    @Test
+    fun `a backup with a planned workout for a missing routine previews as invalid`() {
+        val broken = BackupCodec.encode(seed.copy(plannedWorkouts = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 99L))), now)
+
+        assertTrue(repo.preview(broken) is BackupPreview.Invalid)
+    }
+
+    @Test
     fun `an export imported into another store gives back the same data`() = runTest {
         store.replaceAll(seed)
         val exported = repo.export()
@@ -174,9 +228,9 @@ class BackupRepositoryTest {
 
     @Test
     fun `a newer backup previews as too new`() {
-        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":4,\"machines\":\"odd\"}")
+        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":5,\"machines\":\"odd\"}")
 
-        assertEquals(BackupPreview.TooNew(4), preview)
+        assertEquals(BackupPreview.TooNew(5), preview)
     }
 
     @Test

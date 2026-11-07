@@ -287,4 +287,171 @@ class NextRoutineRulesTest {
     fun `on weekdays, routines with no weekdays have no upcoming training`() {
         assertNull(NextRoutineRules.upcoming(ScheduleMode.WEEKDAYS, abc, lastRoutineId = null, trainingDays = emptySet(), after = monday))
     }
+
+    // Planned routines: next
+
+    @Test
+    fun `on weekdays, a planned routine beats the routine scheduled for the day`() {
+        val scheduled = listOf(
+            routine(1L, 0, "A", setOf(DayOfWeek.MONDAY)),
+            routine(2L, 1, "B", setOf(DayOfWeek.WEDNESDAY)),
+        )
+
+        assertEquals(
+            scheduled[1],
+            NextRoutineRules.next(ScheduleMode.WEEKDAYS, scheduled, lastRoutineId = null, today = DayOfWeek.MONDAY, planned = scheduled[1]),
+        )
+    }
+
+    @Test
+    fun `on weekdays, a planned routine makes a rest day a training day`() {
+        val scheduled = listOf(routine(1L, 0, "A", setOf(DayOfWeek.MONDAY)))
+
+        assertEquals(
+            scheduled[0],
+            NextRoutineRules.next(ScheduleMode.WEEKDAYS, scheduled, lastRoutineId = null, today = DayOfWeek.TUESDAY, planned = scheduled[0]),
+        )
+    }
+
+    @Test
+    fun `in turn, a planned routine beats the rotation`() {
+        assertEquals(c, NextRoutineRules.next(ScheduleMode.IN_TURN, abc, lastRoutineId = a.id, today = anyDay, planned = c))
+    }
+
+    @Test
+    fun `in turn with training days, a planned routine makes a day off a training day`() {
+        assertEquals(
+            b,
+            NextRoutineRules.next(
+                ScheduleMode.IN_TURN,
+                abc,
+                lastRoutineId = a.id,
+                today = DayOfWeek.TUESDAY,
+                trainingDays = trainingDays,
+                planned = b,
+            ),
+        )
+    }
+
+    @Test
+    fun `without a planned routine the schedule still decides`() {
+        assertNull(
+            NextRoutineRules.next(
+                ScheduleMode.IN_TURN,
+                abc,
+                lastRoutineId = a.id,
+                today = DayOfWeek.TUESDAY,
+                trainingDays = trainingDays,
+                planned = null,
+            ),
+        )
+    }
+
+    // Planned routines: upcoming
+
+    private val weekScheduled = listOf(
+        routine(1L, 0, "A", setOf(DayOfWeek.MONDAY)),
+        routine(2L, 1, "B", setOf(DayOfWeek.WEDNESDAY)),
+        routine(3L, 2, "C", setOf(DayOfWeek.FRIDAY)),
+    )
+
+    @Test
+    fun `on weekdays, a planned routine on a scheduled day replaces that day's routine`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 3L)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 4), weekScheduled[2]), upcoming)
+    }
+
+    @Test
+    fun `on weekdays, a planned routine on a day with no schedule is the upcoming training`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 3), 2L)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 3), weekScheduled[1]), upcoming)
+    }
+
+    @Test
+    fun `a planned routine more than 7 days ahead is ignored`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 10), 1L)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 4), weekScheduled[1]), upcoming)
+    }
+
+    @Test
+    fun `a planned routine on the last day of the 7 day window counts`() {
+        val unscheduled = listOf(routine(1L, 0, "A"))
+
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            unscheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 9), 1L)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 9), unscheduled[0]), upcoming)
+    }
+
+    @Test
+    fun `a planned routine that no longer exists is ignored`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 999L)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 4), weekScheduled[1]), upcoming)
+    }
+
+    @Test
+    fun `in turn, a planned routine beats the rotation in the upcoming training`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.IN_TURN,
+            abc,
+            lastRoutineId = a.id,
+            trainingDays = trainingDays,
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), c.id)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 4), c), upcoming)
+    }
+
+    @Test
+    fun `in turn, a planned routine on a day off is the upcoming training`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.IN_TURN,
+            abc,
+            lastRoutineId = a.id,
+            trainingDays = trainingDays,
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 3), b.id)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 3), b), upcoming)
+    }
 }

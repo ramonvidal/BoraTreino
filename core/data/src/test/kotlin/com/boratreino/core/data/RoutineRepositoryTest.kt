@@ -1,6 +1,7 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.Routine
@@ -18,6 +19,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 class RoutineRepositoryTest {
     private val t0: Instant = Instant.parse("2026-11-02T18:00:00Z")
@@ -698,5 +700,91 @@ class RoutineRepositoryTest {
         routines.restoreItem(removed)
 
         assertEquals(listOf(a), requireNotNull(routines.observeRoutine(id).first()).items.map { it.machineId })
+    }
+
+    // Planned workouts
+
+    private val nov5 = LocalDate.of(2026, 11, 5)
+    private val nov12 = LocalDate.of(2026, 11, 12)
+
+    @Test
+    fun `nothing is planned at first`() = runTest {
+        save("Treino A", "A", machine("Leg press"))
+
+        assertEquals(emptyList<PlannedWorkout>(), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `a planned routine is listed with its date, in date order`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+
+        routines.planWorkout(nov12, a)
+        routines.planWorkout(nov5, b)
+
+        assertEquals(listOf(PlannedWorkout(nov5, b), PlannedWorkout(nov12, a)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `planning a date again replaces the routine planned there`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+
+        routines.planWorkout(nov5, a)
+        routines.planWorkout(nov5, b)
+
+        assertEquals(listOf(PlannedWorkout(nov5, b)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `unplanning a date removes only that date`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        routines.planWorkout(nov5, a)
+        routines.planWorkout(nov12, a)
+
+        routines.unplanWorkout(nov5)
+
+        assertEquals(listOf(PlannedWorkout(nov12, a)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `unplanning a date with nothing planned changes nothing`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        routines.planWorkout(nov5, a)
+
+        routines.unplanWorkout(nov12)
+
+        assertEquals(listOf(PlannedWorkout(nov5, a)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `planning a routine that does not exist is ignored`() = runTest {
+        save("Treino A", "A", machine("Leg press"))
+
+        routines.planWorkout(nov5, 999L)
+
+        assertEquals(emptyList<PlannedWorkout>(), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `planning a missing routine on a date keeps the routine already planned there`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        routines.planWorkout(nov5, a)
+
+        routines.planWorkout(nov5, 999L)
+
+        assertEquals(listOf(PlannedWorkout(nov5, a)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `deleting a routine removes the dates planned for it and keeps the others`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+        routines.planWorkout(nov5, a)
+        routines.planWorkout(nov12, b)
+
+        routines.deleteRoutine(a)
+
+        assertEquals(listOf(PlannedWorkout(nov12, b)), routines.observePlanned().first())
     }
 }

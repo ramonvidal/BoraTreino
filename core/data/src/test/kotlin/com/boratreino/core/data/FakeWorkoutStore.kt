@@ -2,6 +2,7 @@ package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
 import com.boratreino.core.model.BackupData
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 /**
  * In-memory [WorkoutStore] that follows the store's documented rules, including the foreign keys
@@ -29,6 +31,7 @@ internal class FakeWorkoutStore : WorkoutStore {
     private val plans = mutableListOf<RoutinePlan>()
     private val routines = mutableListOf<Routine>()
     private val items = mutableListOf<RoutineItem>()
+    private val planned = mutableListOf<PlannedWorkout>()
     private var nextMachineId = 1L
     private var nextSessionId = 1L
     private var nextSetId = 1L
@@ -304,10 +307,11 @@ internal class FakeWorkoutStore : WorkoutStore {
         }
     }
 
-    /** Foreign keys: the routine's items go with it, and sessions keep their sets with no routine. */
+    /** Foreign keys: the routine's items and its planned workouts go with it, and sessions keep their sets with no routine. */
     override suspend fun deleteRoutine(id: Long) {
         routines.removeAll { it.id == id }
         items.removeAll { it.routineId == id }
+        planned.removeAll { it.routineId == id }
         for (i in sessions.indices) {
             if (sessions[i].routineId == id) sessions[i] = sessions[i].copy(routineId = null)
         }
@@ -317,6 +321,22 @@ internal class FakeWorkoutStore : WorkoutStore {
     override suspend fun replaceRoutineItems(routineId: Long, items: List<RoutineItem>) {
         this.items.removeAll { it.routineId == routineId }
         this.items += items
+        changed()
+    }
+
+    // Planned workouts
+
+    override fun observePlannedWorkouts(): Flow<List<PlannedWorkout>> = observe { planned.sortedBy { it.date } }
+
+    /** One routine per date: replaces what was planned there. */
+    override suspend fun setPlannedWorkout(date: LocalDate, routineId: Long) {
+        planned.removeAll { it.date == date }
+        planned += PlannedWorkout(date, routineId)
+        changed()
+    }
+
+    override suspend fun clearPlannedWorkout(date: LocalDate) {
+        planned.removeAll { it.date == date }
         changed()
     }
 
@@ -419,6 +439,7 @@ internal class FakeWorkoutStore : WorkoutStore {
         items = items.sortedWith(compareBy({ it.routineId }, { it.position })),
         sessions = sessions.sortedBy { it.id },
         sets = sets.sortedBy { it.id },
+        plannedWorkouts = planned.sortedBy { it.date },
     )
 
     /** Replaces every table; ids are kept and the counters continue after the highest id seen. */
@@ -429,7 +450,9 @@ internal class FakeWorkoutStore : WorkoutStore {
         routines.clear()
         plans.clear()
         machineRows.clear()
+        planned.clear()
         machineRows += data.machines
+        planned += data.plannedWorkouts
         plans += data.plans
         routines += data.routines
         items += data.items
