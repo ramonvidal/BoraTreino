@@ -14,6 +14,11 @@
     <string name="calendar_delete">Apagar</string>
     <string name="calendar_nothing_logged">Nada registrado</string>
     <string name="calendar_add_training">Adicionar treino</string>
+    <string name="calendar_plan_workout">Agendar um treino</string>
+    <string name="calendar_plan_title">Agendar um treino</string>
+    <string name="calendar_planned">Agendado: %1$s</string>
+    <string name="calendar_plan_change">Trocar</string>
+    <string name="calendar_plan_remove">Remover</string>
     <string name="calendar_delete_title">Apagar este treino?</string>
     <string name="calendar_delete_message">O treino e todas as séries dele serão removidos.</string>
     <string name="calendar_deleted">Treino apagado</string>

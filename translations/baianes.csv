@@ -119,6 +119,11 @@ feature/calendar,calendar_minutes,,Minutes,Minutos
 feature/calendar,calendar_calories,,Calories,Calorias
 feature/calendar,calendar_distance_km,,Distance (km),Distância (km)
 feature/calendar,calendar_dash,,-,-
+feature/calendar,calendar_plan_workout,,Plan a workout,Agendar um treino
+feature/calendar,calendar_plan_title,,Plan a workout,Agendar um treino
+feature/calendar,calendar_planned,,Planned: %1$s,Agendado: %1$s
+feature/calendar,calendar_plan_change,,Change,Trocar
+feature/calendar,calendar_plan_remove,,Remove,Remover
 feature/progress,progress_title,,Progress,Evolução
 feature/progress,progress_empty,,Log a training to see your progress.,Registre um treino pra ver sua evolução. Bora!
 feature/progress,progress_summary,,This month: %1$s · %2$s,Neste mês: %1$s · %2$s
