@@ -3,10 +3,13 @@ package com.boratreino.feature.calendar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.HistoryRepository
+import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.model.CalendarRules
 import com.boratreino.core.model.BodyProfile
 import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.EnergyRules
+import com.boratreino.core.model.PlannedWorkout
+import com.boratreino.core.model.Routine
 import com.boratreino.core.model.SessionSets
 import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.model.SessionDetail
@@ -38,6 +41,15 @@ import kotlinx.coroutines.launch
 /** The quiet energy line of the selected day: the estimate in [kcal] (rounded to 10) and what kind of day it was. */
 internal data class DayEnergyUi(val kcal: Int, val kind: DayKind)
 
+/** A routine planned for a day: its id and the texts shown (name on the card, short name in the grid). */
+internal data class PlannedUi(val routineId: Long, val name: String, val shortName: String)
+
+/** One routine in the "Plan a workout" chooser. */
+internal data class RoutineChoiceUi(val id: Long, val name: String)
+
+/** The planned routines (today and later) with the routine choices, as one value for combine(). */
+private data class PlanningData(val planned: Map<LocalDate, PlannedUi>, val routines: List<RoutineChoiceUi>)
+
 /**
  * Everything the Calendar tab shows. [dayLabels] has the badge text of every training day of
  * [month]; [sessions] are the [selected] day's sessions. [goalEditor] is the goal dialog's value
@@ -57,6 +69,12 @@ internal data class CalendarUiState(
     val sessions: List<SessionDetail> = emptyList(),
     /** Null for future days, without a profile, or when the owner switched the estimate off. */
     val energy: DayEnergyUi? = null,
+    /** Routines planned for today and later days; past plans are ignored. */
+    val planned: Map<LocalDate, PlannedUi> = emptyMap(),
+    /** The routines the chooser lists. */
+    val routines: List<RoutineChoiceUi> = emptyList(),
+    /** The "Plan a workout" chooser for the selected day is open. */
+    val planChooser: Boolean = false,
     val goalEditor: Int? = null,
     val confirmDelete: Long? = null,
 )
@@ -76,6 +94,7 @@ private data class Browsing(val month: YearMonth, val selected: LocalDate)
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val history: HistoryRepository,
+    private val routineRepository: RoutineRepository,
     private val settings: TrainingSettings,
     private val body: BodySettings,
     private val clock: Clock,
@@ -89,6 +108,23 @@ class CalendarViewModel @Inject constructor(
     private val browsing = MutableStateFlow(LocalDate.now(clock).let { Browsing(YearMonth.from(it), it) })
     private val goalEditor = MutableStateFlow<Int?>(null)
     private val confirmDelete = MutableStateFlow<Long?>(null)
+    private val planChooser = MutableStateFlow(false)
+
+    private val planning: Flow<PlanningData> = combine(
+        routineRepository.observePlanned(),
+        routineRepository.observePlan(),
+    ) { plannedList: List<PlannedWorkout>, plan ->
+        val routines: List<Routine> = plan.routines.map { it.routine }
+        val byId = routines.associateBy { it.id }
+        val today = LocalDate.now(clock)
+        PlanningData(
+            planned = plannedList
+                .filter { !it.date.isBefore(today) }
+                .mapNotNull { p -> byId[p.routineId]?.let { p.date to PlannedUi(it.id, it.name, it.shortName) } }
+                .toMap(),
+            routines = routines.map { RoutineChoiceUi(it.id, it.name) },
+        )
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val content: Flow<CalendarUiState> = browsing.flatMapLatest { view ->
@@ -97,9 +133,10 @@ class CalendarViewModel @Inject constructor(
             history.observeDay(view.selected),
             history.observeTrainingDates(),
             settings.weeklyGoal,
-            // combine() takes at most five flows with a typed lambda: the two body flows go in as one.
-            combine(body.profile, body.showEnergyEstimate) { profile, show -> profile.takeIf { show } },
-        ) { month, day, dates, goal, profile ->
+            // combine() takes at most five flows with a typed lambda: the body flows and the plans go in as one.
+            combine(body.profile, body.showEnergyEstimate, planning) { profile, show, plan -> Pair(profile.takeIf { show }, plan) },
+        ) { month, day, dates, goal, extras ->
+            val (profile, plan) = extras
             val today = LocalDate.now(clock)
             CalendarUiState(
                 loaded = true,
@@ -114,6 +151,8 @@ class CalendarViewModel @Inject constructor(
                 dayLabels = month.mapValues { (_, sessions) -> CalendarRules.dayLabel(sessions) },
                 sessions = day,
                 energy = dayEnergy(profile, view.selected, today, day),
+                planned = plan.planned,
+                routines = plan.routines,
             )
         }
     }
@@ -125,8 +164,8 @@ class CalendarViewModel @Inject constructor(
         return DayEnergyUi(result.kcal, result.kind)
     }
 
-    internal val state: StateFlow<CalendarUiState> = combine(content, goalEditor, confirmDelete) { s, goal, delete ->
-        s.copy(goalEditor = goal, confirmDelete = delete)
+    internal val state: StateFlow<CalendarUiState> = combine(content, goalEditor, confirmDelete, planChooser) { s, goal, delete, chooser ->
+        s.copy(goalEditor = goal, confirmDelete = delete, planChooser = chooser)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
 
     // Month and day.
@@ -139,9 +178,8 @@ class CalendarViewModel @Inject constructor(
         browsing.value = browsing.value.let { it.copy(month = it.month.plusMonths(1)) }
     }
 
-    /** Future days do nothing. */
+    /** Future days can be selected too, to plan a workout on them. */
     internal fun selectDay(date: LocalDate) {
-        if (date.isAfter(LocalDate.now(clock))) return
         browsing.value = browsing.value.copy(selected = date)
     }
 
@@ -164,6 +202,30 @@ class CalendarViewModel @Inject constructor(
         val goal = goalEditor.value ?: return
         goalEditor.value = null
         write { settings.setWeeklyGoal(goal) }
+    }
+
+    // Planning a workout on the selected day (today or later).
+
+    internal fun openPlanChooser() {
+        if (browsing.value.selected.isBefore(LocalDate.now(clock))) return
+        planChooser.value = true
+    }
+
+    internal fun dismissPlanChooser() {
+        planChooser.value = false
+    }
+
+    /** One tap on a routine plans it for the selected day and closes the chooser. */
+    internal fun plan(routineId: Long) {
+        val day = browsing.value.selected
+        planChooser.value = false
+        if (day.isBefore(LocalDate.now(clock))) return
+        write { routineRepository.planWorkout(day, routineId) }
+    }
+
+    internal fun unplan() {
+        val day = browsing.value.selected
+        write { routineRepository.unplanWorkout(day) }
     }
 
     // Sessions of the selected day.

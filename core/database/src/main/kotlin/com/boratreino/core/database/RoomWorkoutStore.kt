@@ -3,6 +3,7 @@ package com.boratreino.core.database
 import androidx.room.withTransaction
 import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.RoutinePlan
@@ -14,12 +15,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutStore {
     private val machineDao = db.machineDao()
     private val sessionDao = db.sessionDao()
     private val setDao = db.workoutSetDao()
     private val routineDao = db.routineDao()
+    private val plannedDao = db.plannedWorkoutDao()
     private val backupDao = db.backupDao()
 
     override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> =
@@ -242,6 +245,17 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
     override fun observeSessions(): Flow<List<Session>> =
         sessionDao.observeAll().map { list -> list.map { it.toModel() } }
 
+    override fun observePlannedWorkouts(): Flow<List<PlannedWorkout>> =
+        plannedDao.observeAll().map { list -> list.map { it.toModel() } }
+
+    override suspend fun setPlannedWorkout(date: LocalDate, routineId: Long) {
+        plannedDao.upsert(PlannedWorkout(date, routineId).toEntity())
+    }
+
+    override suspend fun clearPlannedWorkout(date: LocalDate) {
+        plannedDao.delete(date.toString())
+    }
+
     override suspend fun exportAll(): BackupData = db.withTransaction {
         BackupData(
             machines = backupDao.machines().map { it.toModel() },
@@ -250,11 +264,13 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
             items = backupDao.items().map { it.toModel() },
             sessions = backupDao.sessions().map { it.toModel() },
             sets = backupDao.sets().map { it.toModel() },
+            plannedWorkouts = backupDao.plannedWorkouts().map { it.toModel() },
         )
     }
 
     override suspend fun replaceAll(data: BackupData) {
         db.withTransaction {
+            backupDao.deletePlannedWorkouts()
             backupDao.deleteSets()
             backupDao.deleteSessions()
             backupDao.deleteItems()
@@ -269,6 +285,7 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
             backupDao.insertItems(data.items.map { it.toEntity() })
             backupDao.insertSessions(data.sessions.map { it.toEntity() })
             backupDao.insertSets(data.sets.map { it.toEntity() })
+            backupDao.insertPlannedWorkouts(data.plannedWorkouts.map { it.toEntity() })
         }
     }
 

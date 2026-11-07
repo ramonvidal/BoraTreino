@@ -25,6 +25,12 @@ internal interface BackupDao {
     @Query("SELECT * FROM workout_sets ORDER BY id ASC")
     suspend fun sets(): List<WorkoutSetEntity>
 
+    @Query("SELECT * FROM planned_workouts ORDER BY date ASC")
+    suspend fun plannedWorkouts(): List<PlannedWorkoutEntity>
+
+    @Query("DELETE FROM planned_workouts")
+    suspend fun deletePlannedWorkouts()
+
     @Query("DELETE FROM workout_sets")
     suspend fun deleteSets()
 
@@ -60,4 +66,7 @@ internal interface BackupDao {
 
     @Insert
     suspend fun insertSets(sets: List<WorkoutSetEntity>)
+
+    @Insert
+    suspend fun insertPlannedWorkouts(planned: List<PlannedWorkoutEntity>)
 }

@@ -13,6 +13,7 @@ import com.boratreino.core.model.ProgressionRules
 import com.boratreino.core.model.RecordRules
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RepeatSessionRules
+import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionMachine
@@ -71,15 +72,18 @@ internal class DefaultTrainingRepository @Inject constructor(
     override fun observeTodayPlan(): Flow<TodayPlan> =
         combine(
             routines.observePlan(),
-            store.observeLastRoutineId(),
+            combine(store.observeLastRoutineId(), routines.observePlanned()) { last, planned -> last to planned },
             store.observeOpenSession(),
             choice,
             skipped,
-        ) { plan, lastRoutineId, open, choice, skippedIds ->
+        ) { plan, lastAndPlanned, open, choice, skippedIds ->
+            val (lastRoutineId, plannedList) = lastAndPlanned
             val all = plan.routines.map { it.routine }
             val mode = plan.plan.scheduleMode
             val trainingDays = plan.plan.trainingDays
-            val suggested = NextRoutineRules.next(mode, all, lastRoutineId, today(), trainingDays)
+            val plannedToday = plannedList.firstOrNull { it.date == todayDate() }
+                ?.let { p -> all.firstOrNull { it.id == p.routineId } }
+            val suggested = NextRoutineRules.next(mode, all, lastRoutineId, today(), trainingDays, plannedToday)
             val restDay = suggested == null && all.isNotEmpty()
             // An open session's own routine decides (null = Free); the choice only counts before one opens.
             val activeId = if (open != null) {
@@ -101,11 +105,12 @@ internal class DefaultTrainingRepository @Inject constructor(
                     ?.withoutMachines(skippedIds),
                 restDay = restDay,
                 upcoming = if (restDay) {
-                    NextRoutineRules.upcoming(mode, all, lastRoutineId, trainingDays, todayDate())
+                    NextRoutineRules.upcoming(mode, all, lastRoutineId, trainingDays, todayDate(), plannedList)
                 } else {
                     null
                 },
                 skipped = skippedIds,
+                plannedToday = plannedToday != null,
             )
         }
 
@@ -125,8 +130,21 @@ internal class DefaultTrainingRepository @Inject constructor(
             RoutineChoice.Free -> null
             is RoutineChoice.Chosen -> all.firstOrNull { it.id == choice.routineId }?.id
             RoutineChoice.Suggested ->
-                NextRoutineRules.next(plan.scheduleMode, all, store.lastRoutineId(), today(), plan.trainingDays)?.id
+                NextRoutineRules.next(
+                    plan.scheduleMode,
+                    all,
+                    store.lastRoutineId(),
+                    today(),
+                    plan.trainingDays,
+                    plannedRoutineToday(all),
+                )?.id
         }
+    }
+
+    /** The routine planned for today's date, if it still exists in [all]. */
+    private suspend fun plannedRoutineToday(all: List<Routine>): Routine? {
+        val planned = store.observePlannedWorkouts().first().firstOrNull { it.date == todayDate() } ?: return null
+        return all.firstOrNull { it.id == planned.routineId }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

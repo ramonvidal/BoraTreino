@@ -2,6 +2,7 @@ package com.boratreino.core.database
 
 import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.RoutinePlan
@@ -12,6 +13,7 @@ import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 /** Machines, sessions and sets, in model types only. Room stays behind this interface. */
 interface WorkoutStore {
@@ -151,6 +153,14 @@ interface WorkoutStore {
     fun observeAllSets(): Flow<List<WorkoutSet>>
     /** Every session, open or closed, by start time. */
     fun observeSessions(): Flow<List<Session>>
+
+    // Planned workouts
+
+    /** Workouts planned ahead, ordered by date. */
+    fun observePlannedWorkouts(): Flow<List<PlannedWorkout>>
+    /** Plans [routineId] on [date], replacing what was planned there. The routine must exist. */
+    suspend fun setPlannedWorkout(date: LocalDate, routineId: Long)
+    suspend fun clearPlannedWorkout(date: LocalDate)
 
     // Backup
 

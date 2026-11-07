@@ -3,9 +3,14 @@ package com.boratreino.feature.calendar
 import com.boratreino.core.ui.summaryLabel
 import com.boratreino.core.ui.showUndo
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -80,6 +85,10 @@ internal data class CalendarActions(
     val onConfirmDelete: () -> Unit = {},
     val onDismissDelete: () -> Unit = {},
     val onAddTraining: () -> Unit = {},
+    val onOpenPlanChooser: () -> Unit = {},
+    val onDismissPlanChooser: () -> Unit = {},
+    val onPlan: (routineId: Long) -> Unit = {},
+    val onUnplan: () -> Unit = {},
 )
 
 @Composable
@@ -121,6 +130,10 @@ internal fun CalendarScreen(
             onConfirmDelete = viewModel::confirmDelete,
             onDismissDelete = viewModel::dismissDelete,
             onAddTraining = viewModel::addTraining,
+            onOpenPlanChooser = viewModel::openPlanChooser,
+            onDismissPlanChooser = viewModel::dismissPlanChooser,
+            onPlan = viewModel::plan,
+            onUnplan = viewModel::unplan,
         ),
         snackbarHostState = snackbar,
     )
@@ -154,6 +167,9 @@ internal fun CalendarContent(
     }
     if (state.confirmDelete != null) {
         DeleteDialog(actions)
+    }
+    if (state.planChooser) {
+        PlanChooserDialog(state.routines, actions)
     }
 }
 
@@ -248,9 +264,9 @@ private fun MonthCard(state: CalendarUiState, actions: CalendarActions) {
                                 DayCell(
                                     date = date,
                                     label = state.dayLabels[date],
+                                    planned = state.planned[date]?.shortName,
                                     isToday = date == state.today,
                                     isSelected = date == state.selected,
-                                    enabled = !date.isAfter(state.today),
                                     onClick = { actions.onSelectDay(date) },
                                 )
                             }
@@ -267,13 +283,12 @@ private fun MonthCard(state: CalendarUiState, actions: CalendarActions) {
 private fun DayCell(
     date: LocalDate,
     label: String?,
+    planned: String?,
     isToday: Boolean,
     isSelected: Boolean,
-    enabled: Boolean,
     onClick: () -> Unit,
 ) {
     val numberColor = when {
-        !enabled -> MaterialTheme.colorScheme.outline
         isSelected && label == null -> MaterialTheme.colorScheme.onPrimaryContainer
         else -> MaterialTheme.colorScheme.onSurface
     }
@@ -281,7 +296,7 @@ private fun DayCell(
         Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .clickable(enabled = enabled, onClick = onClick),
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -303,7 +318,28 @@ private fun DayCell(
         }
         if (label != null) {
             RoutineBadge(label, selected = isSelected)
+        } else if (planned != null) {
+            PlannedBadge(planned)
         }
+    }
+}
+
+/** A planned routine with no session yet: the badge's size, outlined and unfilled (the trained one is filled). */
+@Composable
+private fun PlannedBadge(shortName: String) {
+    Box(
+        Modifier
+            .defaultMinSize(minWidth = 32.dp, minHeight = 32.dp)
+            .border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            shortName,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
@@ -317,8 +353,10 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+    val isFuture = state.selected.isAfter(state.today)
     if (state.sessions.isEmpty()) {
-        if (state.loaded) {
+        // A future day has nothing to log yet: only the plan below.
+        if (state.loaded && !isFuture) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
@@ -338,6 +376,9 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
     } else {
         state.sessions.forEach { detail -> SessionCard(detail, state, actions) }
     }
+    if (state.loaded && !state.selected.isBefore(state.today)) {
+        PlanRow(state.planned[state.selected], actions)
+    }
     state.energy?.let { energy ->
         val amount = NumberFormat.getIntegerInstance().format(energy.kcal)
         Text(
@@ -348,6 +389,65 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/** Today or later: "Plan a workout", or the planned routine with Change and Remove. */
+@Composable
+private fun PlanRow(planned: PlannedUi?, actions: CalendarActions) {
+    if (planned == null) {
+        OutlinedButton(onClick = actions.onOpenPlanChooser, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null)
+            Text(stringResource(R.string.calendar_plan_workout), Modifier.padding(start = 8.dp))
+        }
+        return
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(
+                stringResource(R.string.calendar_planned, planned.name),
+                modifier = Modifier.padding(top = 8.dp),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = actions.onOpenPlanChooser, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text(stringResource(R.string.calendar_plan_change))
+                }
+                TextButton(onClick = actions.onUnplan, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text(stringResource(R.string.calendar_plan_remove))
+                }
+            }
+        }
+    }
+}
+
+/** The routines to plan from: one tap on a routine plans it and closes. */
+@Composable
+private fun PlanChooserDialog(routines: List<RoutineChoiceUi>, actions: CalendarActions) {
+    AlertDialog(
+        onDismissRequest = actions.onDismissPlanChooser,
+        title = { Text(stringResource(R.string.calendar_plan_title)) },
+        text = {
+            LazyColumn {
+                items(routines, key = { it.id }) { routine ->
+                    TextButton(
+                        onClick = { actions.onPlan(routine.id) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) {
+                        Text(routine.name, Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = actions.onDismissPlanChooser, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(CoreUiR.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable

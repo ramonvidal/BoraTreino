@@ -1,6 +1,7 @@
 package com.boratreino.core.database
 
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.Routine
@@ -12,6 +13,7 @@ import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 internal fun MachineEntity.toModel() = Machine(
     id = id,
@@ -127,3 +129,7 @@ internal fun RoutinePlan.toEntity() = RoutinePlanEntity(
     scheduleMode = scheduleMode.name,
     trainingDays = trainingDays.sorted().joinToString(",") { it.name },
 )
+
+internal fun PlannedWorkoutEntity.toModel() = PlannedWorkout(date = LocalDate.parse(date), routineId = routineId)
+
+internal fun PlannedWorkout.toEntity() = PlannedWorkoutEntity(date = date.toString(), routineId = routineId)

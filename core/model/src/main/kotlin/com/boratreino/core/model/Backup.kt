@@ -13,6 +13,7 @@ data class BackupData(
     val items: List<RoutineItem>,
     val sessions: List<Session>,
     val sets: List<WorkoutSet>,
+    val plannedWorkouts: List<PlannedWorkout> = emptyList(),
 )
 
 /** Counts and date range of a backup; days come from each session's startedAt in the given zone. */
@@ -47,7 +48,7 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 3
+    const val FORMAT_VERSION = 4
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {
@@ -116,6 +117,12 @@ object BackupCodec {
                     "distanceM" to it.distanceM,
                     "loggedAt" to it.loggedAt.toString(),
                     "type" to it.type.name,
+                )
+            },
+            "plannedWorkouts" to data.plannedWorkouts.sortedBy { it.date }.map {
+                linkedMapOf(
+                    "date" to it.date.toString(),
+                    "routineId" to it.routineId,
                 )
             },
         )
@@ -237,6 +244,15 @@ object BackupCodec {
             )
         }
 
+        val plannedWorkouts = when (val raw = root["plannedWorkouts"]) {
+            null -> emptyList()
+            is List<*> -> raw.map {
+                val o = it as? Map<*, *> ?: problem("\"plannedWorkouts\" must hold objects")
+                PlannedWorkout(dateOf(stringOf(o, "date"), "date"), longOf(o, "routineId"))
+            }
+            else -> problem("\"plannedWorkouts\" must be a list")
+        }
+
         val machineIds = machines.map { it.id }.toSet()
         val planIds = plans.map { it.id }.toSet()
         val routineIds = routines.map { it.id }.toSet()
@@ -247,10 +263,16 @@ object BackupCodec {
         if (sessions.any { it.routineId != null && it.routineId !in routineIds }) {
             problem("A session points to a missing routine")
         }
+        if (plannedWorkouts.any { it.routineId !in routineIds }) {
+            problem("A planned workout points to a missing routine")
+        }
+        if (plannedWorkouts.map { it.date }.toSet().size != plannedWorkouts.size) {
+            problem("Two planned workouts on the same day")
+        }
         if (sets.any { it.sessionId !in sessionIds }) problem("A set points to a missing session")
         if (sets.any { it.machineId !in machineIds }) problem("A set points to a missing machine")
 
-        return BackupDecodeResult.Ok(BackupData(machines, plans, routines, items, sessions, sets), exportedAt)
+        return BackupDecodeResult.Ok(BackupData(machines, plans, routines, items, sessions, sets, plannedWorkouts), exportedAt)
     }
 
     private fun objects(root: Map<*, *>, key: String): List<Map<*, *>> {
@@ -291,6 +313,13 @@ object BackupCodec {
         val name = stringOf(map, key)
         return enumValues<E>().firstOrNull { it.name == name } ?: problem("Unknown value \"$name\" for \"$key\"")
     }
+
+    private fun dateOf(value: String, key: String): LocalDate =
+        try {
+            LocalDate.parse(value)
+        } catch (e: Exception) {
+            problem("\"$key\" is not a valid date")
+        }
 
     private fun instantOf(value: String, key: String): Instant =
         try {

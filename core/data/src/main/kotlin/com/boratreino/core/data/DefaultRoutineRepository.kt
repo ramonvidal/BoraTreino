@@ -1,6 +1,7 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineEditRules
 import com.boratreino.core.model.RoutineItem
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
+import java.time.LocalDate
 import javax.inject.Inject
 
 internal class DefaultRoutineRepository @Inject constructor(
@@ -171,5 +173,18 @@ internal class DefaultRoutineRepository @Inject constructor(
             val items = store.routineItems(item.routineId)
             store.replaceRoutineItems(item.routineId, RoutineEditRules.withItemBack(items, item))
         }
+    }
+
+    override fun observePlanned(): Flow<List<PlannedWorkout>> = store.observePlannedWorkouts()
+
+    override suspend fun planWorkout(date: LocalDate, routineId: Long) {
+        store.inTransaction {
+            if (store.allRoutines().none { it.id == routineId }) return@inTransaction
+            store.setPlannedWorkout(date, routineId)
+        }
+    }
+
+    override suspend fun unplanWorkout(date: LocalDate) {
+        store.clearPlannedWorkout(date)
     }
 }

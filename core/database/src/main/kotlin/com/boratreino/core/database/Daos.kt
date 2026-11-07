@@ -2,6 +2,7 @@ package com.boratreino.core.database
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
@@ -252,4 +253,16 @@ internal interface RoutineDao {
 
     @Insert
     suspend fun insertItems(items: List<RoutineItemEntity>)
+}
+
+@Dao
+internal interface PlannedWorkoutDao {
+    @Query("SELECT * FROM planned_workouts ORDER BY date ASC")
+    fun observeAll(): Flow<List<PlannedWorkoutEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(planned: PlannedWorkoutEntity)
+
+    @Query("DELETE FROM planned_workouts WHERE date = :date")
+    suspend fun delete(date: String)
 }

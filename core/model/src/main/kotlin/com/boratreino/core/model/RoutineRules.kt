@@ -36,6 +36,8 @@ data class TodayPlan(
     val skipped: Set<Long> = emptySet(),
     /** The next training after today; set only when [restDay]. */
     val upcoming: UpcomingTraining? = null,
+    /** True when [suggested] comes from a workout planned for today. */
+    val plannedToday: Boolean = false,
 )
 
 /** The next training day (strictly after a date) and the routine suggested then. */
@@ -47,6 +49,7 @@ object NextRoutineRules {
      * the first routine when there is none or it no longer exists. WEEKDAYS: the first routine (by position)
      * whose weekdays contain today's day; null on a rest day. Null when there are no routines.
      * IN_TURN with non-empty [trainingDays] that do not contain [today] is a rest day (null).
+     * A non-null [planned] routine (planned for today's date) beats all of this, even on a rest day.
      */
     fun next(
         mode: ScheduleMode,
@@ -54,7 +57,9 @@ object NextRoutineRules {
         lastRoutineId: Long?,
         today: DayOfWeek,
         trainingDays: Set<DayOfWeek> = emptySet(),
+        planned: Routine? = null,
     ): Routine? {
+        if (planned != null) return planned
         if (routines.isEmpty()) return null
         val sorted = routines.sortedBy { it.position }
         return when (mode) {
@@ -69,7 +74,8 @@ object NextRoutineRules {
 
     /**
      * The first date strictly after [after] (looking at most 7 days ahead) that is a training day, with the
-     * routine suggested then. Null when there is none or no routines.
+     * routine suggested then. Null when there is none or no routines. A routine in [planned] for a date
+     * (when it exists in [routines]) wins over the schedule on that date.
      */
     fun upcoming(
         mode: ScheduleMode,
@@ -77,11 +83,15 @@ object NextRoutineRules {
         lastRoutineId: Long?,
         trainingDays: Set<DayOfWeek>,
         after: LocalDate,
+        planned: List<PlannedWorkout> = emptyList(),
     ): UpcomingTraining? {
         if (routines.isEmpty()) return null
+        val byId = routines.associateBy { it.id }
+        val plannedByDate = planned.associate { it.date to byId[it.routineId] }
         for (offset in 1L..7L) {
             val date = after.plusDays(offset)
-            val routine = next(mode, routines, lastRoutineId, date.dayOfWeek, trainingDays)
+            val routine = plannedByDate[date]
+                ?: next(mode, routines, lastRoutineId, date.dayOfWeek, trainingDays)
             if (routine != null) return UpcomingTraining(date, routine)
         }
         return null

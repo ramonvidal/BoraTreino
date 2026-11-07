@@ -1,5 +1,6 @@
 package com.boratreino.core.data
 
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.RoutinePlanWithRoutines
@@ -7,6 +8,7 @@ import com.boratreino.core.model.RoutineWithItems
 import com.boratreino.core.model.ScheduleMode
 import kotlinx.coroutines.flow.Flow
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 interface RoutineRepository {
     /** Creates the single plan (IN_TURN) on first use. */
@@ -36,4 +38,10 @@ interface RoutineRepository {
     suspend fun removeMachine(routineId: Long, machineId: Long): RoutineItem?
     /** Undo of [removeMachine]: puts the item back at its old position. */
     suspend fun restoreItem(item: RoutineItem)
+
+    /** Workouts planned ahead, ordered by date. */
+    fun observePlanned(): Flow<List<PlannedWorkout>>
+    /** Plans the routine on [date], replacing what was planned there; ignored when the routine does not exist. */
+    suspend fun planWorkout(date: LocalDate, routineId: Long)
+    suspend fun unplanWorkout(date: LocalDate)
 }

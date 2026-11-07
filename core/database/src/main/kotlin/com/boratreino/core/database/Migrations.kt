@@ -16,3 +16,15 @@ internal val MIGRATION_2_3: Migration = object : Migration(2, 3) {
         db.execSQL("ALTER TABLE routine_plans ADD COLUMN trainingDays TEXT NOT NULL DEFAULT ''")
     }
 }
+
+/** Version 4: workouts planned ahead for a date (one routine per date). */
+internal val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `planned_workouts` (`date` TEXT NOT NULL, `routineId` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`date`), FOREIGN KEY(`routineId`) REFERENCES `routines`(`id`) " +
+                "ON UPDATE NO ACTION ON DELETE CASCADE )",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_planned_workouts_routineId` ON `planned_workouts` (`routineId`)")
+    }
+}

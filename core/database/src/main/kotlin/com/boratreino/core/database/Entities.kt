@@ -77,6 +77,24 @@ internal data class RoutineItemEntity(
     val repsMax: Int,
 )
 
+/** The date is ISO yyyy-MM-dd, one row per date. */
+@Entity(
+    tableName = "planned_workouts",
+    foreignKeys = [
+        ForeignKey(
+            entity = RoutineEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["routineId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("routineId")],
+)
+internal data class PlannedWorkoutEntity(
+    @PrimaryKey val date: String,
+    val routineId: Long,
+)
+
 @Entity(
     tableName = "sessions",
     foreignKeys = [

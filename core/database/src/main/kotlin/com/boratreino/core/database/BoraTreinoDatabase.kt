@@ -12,8 +12,9 @@ import androidx.room.RoomDatabase
         RoutineItemEntity::class,
         SessionEntity::class,
         WorkoutSetEntity::class,
+        PlannedWorkoutEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 internal abstract class BoraTreinoDatabase : RoomDatabase() {
@@ -21,6 +22,7 @@ internal abstract class BoraTreinoDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun workoutSetDao(): WorkoutSetDao
     abstract fun routineDao(): RoutineDao
+    abstract fun plannedWorkoutDao(): PlannedWorkoutDao
     abstract fun backupDao(): BackupDao
 
     companion object {
