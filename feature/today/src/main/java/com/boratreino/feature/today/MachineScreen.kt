@@ -415,10 +415,10 @@ private fun SetTable(machine: Machine, state: MachineUiState, onOpenSet: (Workou
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
     ) {
         Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                TableCell(stringResource(R.string.machine_col_set), Modifier.width(SetColumnWidth), header = true)
-                TableCell(stringResource(R.string.machine_col_previous), Modifier.weight(1f), header = true)
-                TableCell(stringResource(R.string.machine_col_today), Modifier.weight(1f), header = true)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TableCell(stringResource(R.string.machine_col_set), Modifier.weight(0.4f), header = true)
+                TableCell(stringResource(R.string.machine_col_previous), Modifier.weight(1.2f), header = true)
+                TableCell(stringResource(R.string.machine_col_today), Modifier.weight(1.3f), header = true)
             }
             sets.forEachIndexed { index, set ->
                 key(set.id) {
@@ -439,10 +439,11 @@ private fun SetTable(machine: Machine, state: MachineUiState, onOpenSet: (Workou
                                 .clickable(onClickLabel = stringResource(R.string.today_edit_set)) { onOpenSet(set) }
                                 .padding(horizontal = 16.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            TableCell("${index + 1}", Modifier.width(SetColumnWidth))
-                            TableCell(previousTexts[index], Modifier.weight(1f))
-                            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                            TableCell("${index + 1}", Modifier.weight(0.4f))
+                            TableCell(previousTexts[index], Modifier.weight(1.2f))
+                            Row(Modifier.weight(1.3f), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f, fill = false)) {
                                     Text(
                                         todayTexts[index],
@@ -480,12 +481,13 @@ private fun SetTable(machine: Machine, state: MachineUiState, onOpenSet: (Workou
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                TableCell("${sets.size + 1}", Modifier.width(SetColumnWidth))
-                TableCell(previousTexts[sets.size], Modifier.weight(1f))
+                TableCell("${sets.size + 1}", Modifier.weight(0.4f))
+                TableCell(previousTexts[sets.size], Modifier.weight(1.2f))
                 Text(
                     nextText,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1.3f),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 )
@@ -493,8 +495,6 @@ private fun SetTable(machine: Machine, state: MachineUiState, onOpenSet: (Workou
         }
     }
 }
-
-private val SetColumnWidth = 44.dp
 
 @Composable
 private fun TableCell(text: String, modifier: Modifier, header: Boolean = false) {
@@ -532,6 +532,7 @@ private fun RestBar(remainingSeconds: Int, totalSeconds: Int, onExtend: () -> Un
             LinearProgressIndicator(
                 progress = { RestTimerRules.progress(remainingSeconds, totalSeconds) },
                 modifier = Modifier.fillMaxWidth().padding(end = 12.dp).heightIn(max = 4.dp),
+                drawStopIndicator = {},
             )
         }
     }
