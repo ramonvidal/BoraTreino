@@ -3,6 +3,8 @@ package com.boratreino.feature.routines
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -161,7 +163,8 @@ class MachineEditorHowToTest {
 
         compose.onNodeWithText("Stand tall.").assertDoesNotExist()
 
-        compose.onNodeWithText("How to do it").performClick()
+        // The clickable header row (merged with its title) is the click target; the title alone is not.
+        compose.onNode(hasClickAction() and hasText("How to do it")).performClick()
 
         compose.onNodeWithText("Stand tall.").assertExists()
         compose.onNodeWithText("Curl the weight up.").assertExists()
