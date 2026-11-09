@@ -185,6 +185,6 @@ class MachineScreenshotTest {
                 restTotalSeconds = 90,
             ),
         )
-        compose.onNodeWithText("1:12").assertExists()
+        compose.onNodeWithText("Rest 1:12").assertExists()
     }
 }

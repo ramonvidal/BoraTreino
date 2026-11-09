@@ -34,7 +34,7 @@ private fun machineState(restSeconds: Int?, total: Int) = MachineUiState(
     restTotalSeconds = total,
 )
 
-/** The machine screen with the big rest card above the steppers; without a rest it is the old layout. */
+/** The machine screen with the rest bar under the info card; without a rest there is no bar. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class MachineRestCardScreenshotTest {
@@ -53,11 +53,10 @@ class MachineRestCardScreenshotTest {
     }
 
     @Test
-    fun `a running rest shows the big card with the time, +30 s and Skip`() {
+    fun `a running rest shows the slim bar with the time, +30 s and Skip`() {
         shoot("machine-rest-card", machineState(restSeconds = 72, total = 90))
 
-        compose.onNodeWithText("Rest").assertExists()
-        compose.onNodeWithText("1:12").assertExists()
+        compose.onNodeWithText("Rest 1:12").assertExists()
         compose.onNodeWithText("+30 s").assertExists()
         compose.onNodeWithText("Skip").assertExists()
         compose.onNodeWithText("Log set").assertExists()
@@ -68,14 +67,14 @@ class MachineRestCardScreenshotTest {
     fun `a rest that just started`() {
         shoot("machine-rest-card-start", machineState(restSeconds = 90, total = 90))
 
-        compose.onNodeWithText("1:30").assertExists()
+        compose.onNodeWithText("Rest 1:30").assertExists()
     }
 
     @Test
     fun `a rest almost over`() {
         shoot("machine-rest-card-end", machineState(restSeconds = 3, total = 90))
 
-        compose.onNodeWithText("0:03").assertExists()
+        compose.onNodeWithText("Rest 0:03").assertExists()
     }
 
     @Test
@@ -85,7 +84,7 @@ class MachineRestCardScreenshotTest {
     fun `no rest keeps the old layout`() {
         shoot("machine-rest-card-none", machineState(restSeconds = null, total = 0))
 
-        compose.onNodeWithText("Rest").assertDoesNotExist()
+        compose.onNodeWithText("Rest", substring = true).assertDoesNotExist()
         compose.onNodeWithText("+30 s").assertDoesNotExist()
         compose.onNodeWithText("Skip").assertDoesNotExist()
         compose.onNodeWithText("Log set").assertExists()

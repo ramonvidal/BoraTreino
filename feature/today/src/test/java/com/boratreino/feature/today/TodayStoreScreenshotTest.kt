@@ -86,6 +86,6 @@ class TodayStoreScreenshotTest {
         shoot("store-en-2-machine") {
             MachineContent(state = state, actions = MachineActions(), modifier = Modifier.fillMaxSize())
         }
-        compose.onNodeWithText("1:12").assertExists()
+        compose.onNodeWithText("Rest 1:12").assertExists()
     }
 }
