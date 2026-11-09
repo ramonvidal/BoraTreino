@@ -5,6 +5,7 @@ import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.OpenSession
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
+import com.boratreino.core.model.RoutineUpdate
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.SetDraft
@@ -71,4 +72,9 @@ interface TrainingRepository {
     suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome
     /** Deletes the sets of [outcome]; deletes the session too if the repeat created it and it is now empty. */
     suspend fun undoRepeat(outcome: RepeatOutcome)
+    /**
+     * What "update the routine with this training" would change for a finished (or any) session; null when the
+     * session has no routine, the routine is gone, or nothing would change.
+     */
+    suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate?
 }

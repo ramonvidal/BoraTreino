@@ -3,6 +3,7 @@ package com.boratreino.core.data
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
+import com.boratreino.core.model.RoutineUpdate
 import com.boratreino.core.model.RoutinePlanWithRoutines
 import com.boratreino.core.model.RoutineWithItems
 import com.boratreino.core.model.ScheduleMode
@@ -38,6 +39,15 @@ interface RoutineRepository {
     suspend fun removeMachine(routineId: Long, machineId: Long): RoutineItem?
     /** Undo of [removeMachine]: puts the item back at its old position. */
     suspend fun restoreItem(item: RoutineItem)
+
+    /**
+     * Applies [com.boratreino.core.model.RoutineUpdateRules.plan] for the session to the routine in one
+     * transaction; returns what was done, with `previousItems` for [undoRoutineUpdate]. An empty update
+     * when the routine or session is gone or nothing changes.
+     */
+    suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): RoutineUpdate
+    /** Undo of [updateRoutineFromSession]: puts [previousItems] back (items of machines since deleted are dropped). */
+    suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<RoutineItem>)
 
     /** Workouts planned ahead, ordered by date, then routine. */
     fun observePlanned(): Flow<List<PlannedWorkout>>

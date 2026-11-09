@@ -19,6 +19,8 @@ import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.SessionRules
+import com.boratreino.core.model.RoutineUpdate
+import com.boratreino.core.model.RoutineUpdateRules
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
@@ -456,6 +458,14 @@ internal class DefaultTrainingRepository @Inject constructor(
         val sessionSets = store.sessionSets(open.id)
         val earlier = store.machinesSetsBefore(sessionSets.map { it.machineId }.distinct(), open.startedAt)
         store.summary(open.id).copy(recordCount = RecordRules.countRecords(sessionSets, earlier))
+    }
+
+    override suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate? {
+        val routineId = store.session(sessionId)?.routineId ?: return null
+        if (store.allRoutines().none { it.id == routineId }) return null
+        val machineIds = store.machines().map { it.id }.toSet()
+        val sets = store.sessionSets(sessionId).filter { it.machineId in machineIds }
+        return RoutineUpdateRules.plan(store.routineItems(routineId), sets)
     }
 
     override suspend fun reopenSession(sessionId: Long) {

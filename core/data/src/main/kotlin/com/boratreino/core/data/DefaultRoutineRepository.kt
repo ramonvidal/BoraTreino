@@ -5,6 +5,8 @@ import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineEditRules
 import com.boratreino.core.model.RoutineItem
+import com.boratreino.core.model.RoutineUpdate
+import com.boratreino.core.model.RoutineUpdateRules
 import com.boratreino.core.model.RoutinePlanWithRoutines
 import com.boratreino.core.model.RoutineWithItems
 import com.boratreino.core.model.ScheduleMode
@@ -172,6 +174,29 @@ internal class DefaultRoutineRepository @Inject constructor(
             if (store.machines().none { it.id == item.machineId }) return@inTransaction
             val items = store.routineItems(item.routineId)
             store.replaceRoutineItems(item.routineId, RoutineEditRules.withItemBack(items, item))
+        }
+    }
+
+    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): RoutineUpdate =
+        store.inTransaction {
+            val none = RoutineUpdate(emptyList(), emptyList())
+            if (store.allRoutines().none { it.id == routineId }) return@inTransaction none
+            if (store.session(sessionId) == null) return@inTransaction none
+            val items = store.routineItems(routineId)
+            val machineIds = store.machines().map { it.id }.toSet()
+            val sets = store.sessionSets(sessionId).filter { it.machineId in machineIds }
+            val plan = RoutineUpdateRules.plan(items, sets) ?: return@inTransaction none
+            store.replaceRoutineItems(routineId, RoutineUpdateRules.apply(routineId, items, plan))
+            plan.copy(previousItems = items)
+        }
+
+    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<RoutineItem>) {
+        store.inTransaction {
+            if (store.allRoutines().none { it.id == routineId }) return@inTransaction
+            val machineIds = store.machines().map { it.id }.toSet()
+            val kept = previousItems.filter { it.machineId in machineIds }
+                .mapIndexed { i, item -> item.copy(routineId = routineId, position = i) }
+            store.replaceRoutineItems(routineId, kept)
         }
     }
 

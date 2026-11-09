@@ -1,6 +1,8 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
+import com.boratreino.core.model.ExerciseLibraryRules
+import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.StarterMachine
@@ -59,9 +61,39 @@ internal class DefaultMachineRepository @Inject constructor(
                 setupNote = null,
                 restSeconds = null,
                 archived = false,
+                libraryId = ExerciseLibraryRules.idForStarter(starter.name),
             ),
         )
     }
+
+    override suspend fun addFromLibrary(exercise: LibraryExercise, portuguese: Boolean): Long =
+        store.inTransaction {
+            val name = exercise.displayName(portuguese).trim()
+            val existing = store.machines().firstOrNull { it.name.trim().equals(name, ignoreCase = true) }
+            if (existing != null) {
+                if (existing.archived) store.setMachineArchived(existing.id, false)
+                existing.id
+            } else {
+                store.saveMachine(
+                    Machine(
+                        id = 0,
+                        name = name,
+                        muscleGroup = exercise.muscleGroup,
+                        kind = exercise.kind,
+                        stepKg = exercise.stepKg,
+                        setupNote = null,
+                        restSeconds = null,
+                        archived = false,
+                        libraryId = exercise.id,
+                    ),
+                )
+            }
+        }
+
+    override fun observeLibraryIdsInUse(): Flow<Set<String>> =
+        store.observeMachines(includeArchived = false).map { machines ->
+            machines.mapNotNullTo(HashSet()) { it.libraryId }
+        }
 
     override suspend fun setArchived(id: Long, archived: Boolean) {
         store.setMachineArchived(id, archived)

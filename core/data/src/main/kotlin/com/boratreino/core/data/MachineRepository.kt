@@ -1,5 +1,6 @@
 package com.boratreino.core.data
 
+import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.StarterMachine
@@ -29,5 +30,13 @@ interface MachineRepository {
     suspend fun addStarter(starter: StarterMachine, portuguese: Boolean = false): Long
     /** [addStarter] for each, in one transaction; ids in the same order. */
     suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean = false): List<Long>
+    /**
+     * Creates the machine for a library exercise (name = its display name in the language, group / kind / step from
+     * the exercise, libraryId set). A machine with the same name (case-insensitive, archived too) is unarchived and
+     * its id returned instead; no duplicate.
+     */
+    suspend fun addFromLibrary(exercise: LibraryExercise, portuguese: Boolean = false): Long
+    /** Library ids of the non-archived machines that came from the library, for "already added" marks. */
+    fun observeLibraryIdsInUse(): Flow<Set<String>>
     suspend fun setArchived(id: Long, archived: Boolean)
 }
