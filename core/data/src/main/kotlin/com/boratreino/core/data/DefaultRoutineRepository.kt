@@ -184,7 +184,7 @@ internal class DefaultRoutineRepository @Inject constructor(
         }
     }
 
-    override suspend fun unplanWorkout(date: LocalDate) {
-        store.clearPlannedWorkout(date)
+    override suspend fun unplanWorkout(date: LocalDate, routineId: Long) {
+        store.clearPlannedWorkout(date, routineId)
     }
 }

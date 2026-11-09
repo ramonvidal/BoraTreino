@@ -156,11 +156,12 @@ interface WorkoutStore {
 
     // Planned workouts
 
-    /** Workouts planned ahead, ordered by date. */
+    /** Workouts planned ahead, ordered by date, then routine id. */
     fun observePlannedWorkouts(): Flow<List<PlannedWorkout>>
-    /** Plans [routineId] on [date], replacing what was planned there. The routine must exist. */
+    /** Plans [routineId] on [date] besides what is planned there; ignored if already planned. The routine must exist. */
     suspend fun setPlannedWorkout(date: LocalDate, routineId: Long)
-    suspend fun clearPlannedWorkout(date: LocalDate)
+    /** Removes [routineId]'s plan on [date]; other routines planned that day stay. */
+    suspend fun clearPlannedWorkout(date: LocalDate, routineId: Long)
 
     // Backup
 

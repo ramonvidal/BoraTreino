@@ -9,6 +9,7 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.OpenSession
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.ProgressionRules
 import com.boratreino.core.model.RecordRules
 import com.boratreino.core.model.RepeatMode
@@ -25,17 +26,22 @@ import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.withoutMachines
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -69,21 +75,86 @@ internal class DefaultTrainingRepository @Inject constructor(
 
     private fun today() = todayDate().dayOfWeek
 
-    override fun observeTodayPlan(): Flow<TodayPlan> =
+    /** The last date [dayFlow] reported, to reset the in-memory choice only when the day really changes. */
+    @Volatile
+    private var lastSeenDate: LocalDate? = null
+
+    /**
+     * Today's date, re-emitted after the next midnight so Today follows the day when the app stays open.
+     * If the date has not changed after waking up (a clock that does not move, as in tests, or an early wake-up),
+     * it checks once more a minute later and then stops, so it never spins.
+     * A change of date also resets the in-memory choice (a routine browsed or picked yesterday must not stick).
+     */
+    private val dayFlow: Flow<LocalDate> = flow {
+        var date = LocalDate.now(clock)
+        emit(date)
+        var unchanged = 0
+        while (unchanged < MAX_UNCHANGED_WAKES) {
+            val now = ZonedDateTime.now(clock)
+            val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
+            val wait = if (unchanged == 0) Duration.between(now, nextMidnight).toMillis() + MIDNIGHT_MARGIN_MS else RECHECK_MS
+            delay(wait)
+            val again = LocalDate.now(clock)
+            if (again != date) {
+                date = again
+                emit(date)
+                unchanged = 0
+            } else {
+                unchanged++
+            }
+        }
+    }.distinctUntilChanged().onEach { date ->
+        val previous = lastSeenDate
+        lastSeenDate = date
+        if (previous != null && previous != date) resetChoice()
+    }
+
+    /** Routines planned on [date] that exist in [all], by position. */
+    private fun plannedOn(date: LocalDate, planned: List<PlannedWorkout>, all: List<Routine>): List<Routine> {
+        val byId = all.associateBy { it.id }
+        return planned.filter { it.date == date }.mapNotNull { byId[it.routineId] }.distinct().sortedBy { it.position }
+    }
+
+    /** Ids of the routines of the sessions started on [date] (closed or open). */
+    private fun doneOn(date: LocalDate, sessions: List<Session>): Set<Long> {
+        val zone = clock.zone
+        val start = date.atStartOfDay(zone).toInstant()
+        val end = date.plusDays(1).atStartOfDay(zone).toInstant()
+        return sessions.filter { it.startedAt >= start && it.startedAt < end }.mapNotNull { it.routineId }.toSet()
+    }
+
+    private fun sessionsOn(date: LocalDate): Flow<List<Session>> {
+        val zone = clock.zone
+        return store.observeSessionsStartedBetween(
+            date.atStartOfDay(zone).toInstant(),
+            date.plusDays(1).atStartOfDay(zone).toInstant(),
+        )
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeTodayPlan(): Flow<TodayPlan> = dayFlow.flatMapLatest { date -> observePlanFor(date) }
+
+    private fun observePlanFor(date: LocalDate): Flow<TodayPlan> =
         combine(
             routines.observePlan(),
-            combine(store.observeLastRoutineId(), routines.observePlanned()) { last, planned -> last to planned },
+            combine(
+                store.observeLastRoutineId(),
+                routines.observePlanned(),
+                sessionsOn(date),
+            ) { last, planned, sessions -> Triple(last, planned, sessions) },
             store.observeOpenSession(),
             choice,
             skipped,
-        ) { plan, lastAndPlanned, open, choice, skippedIds ->
-            val (lastRoutineId, plannedList) = lastAndPlanned
+        ) { plan, inner, open, choice, skippedIds ->
+            val (lastRoutineId, plannedList, todaySessions) = inner
             val all = plan.routines.map { it.routine }
             val mode = plan.plan.scheduleMode
             val trainingDays = plan.plan.trainingDays
-            val plannedToday = plannedList.firstOrNull { it.date == todayDate() }
-                ?.let { p -> all.firstOrNull { it.id == p.routineId } }
-            val suggested = NextRoutineRules.next(mode, all, lastRoutineId, today(), trainingDays, plannedToday)
+            val plannedToday = plannedOn(date, plannedList, all)
+            val doneToday = doneOn(date, todaySessions)
+            val suggested = NextRoutineRules.next(
+                mode, all, lastRoutineId, date.dayOfWeek, trainingDays, plannedToday, doneToday,
+            )
             val restDay = suggested == null && all.isNotEmpty()
             // An open session's own routine decides (null = Free); the choice only counts before one opens.
             val activeId = if (open != null) {
@@ -105,12 +176,12 @@ internal class DefaultTrainingRepository @Inject constructor(
                     ?.withoutMachines(skippedIds),
                 restDay = restDay,
                 upcoming = if (restDay) {
-                    NextRoutineRules.upcoming(mode, all, lastRoutineId, trainingDays, todayDate(), plannedList)
+                    NextRoutineRules.upcoming(mode, all, lastRoutineId, trainingDays, date, plannedList)
                 } else {
                     null
                 },
                 skipped = skippedIds,
-                plannedToday = plannedToday != null,
+                plannedToday = plannedToday.isNotEmpty(),
             )
         }
 
@@ -136,15 +207,10 @@ internal class DefaultTrainingRepository @Inject constructor(
                     store.lastRoutineId(),
                     today(),
                     plan.trainingDays,
-                    plannedRoutineToday(all),
+                    plannedOn(todayDate(), store.observePlannedWorkouts().first(), all),
+                    doneOn(todayDate(), sessionsOn(todayDate()).first()),
                 )?.id
         }
-    }
-
-    /** The routine planned for today's date, if it still exists in [all]. */
-    private suspend fun plannedRoutineToday(all: List<Routine>): Routine? {
-        val planned = store.observePlannedWorkouts().first().firstOrNull { it.date == todayDate() } ?: return null
-        return all.firstOrNull { it.id == planned.routineId }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -409,6 +475,11 @@ internal class DefaultTrainingRepository @Inject constructor(
     }
 
     private companion object {
+        /** A second past midnight, so the new day's date is surely the one read. */
+        const val MIDNIGHT_MARGIN_MS = 1_000L
+        const val RECHECK_MS = 60_000L
+        const val MAX_UNCHANGED_WAKES = 2
+
         /** No session has this id, so "other than the open one" excludes nothing. */
         const val NO_SESSION = -1L
 

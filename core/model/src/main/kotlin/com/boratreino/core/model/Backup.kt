@@ -119,7 +119,7 @@ object BackupCodec {
                     "type" to it.type.name,
                 )
             },
-            "plannedWorkouts" to data.plannedWorkouts.sortedBy { it.date }.map {
+            "plannedWorkouts" to data.plannedWorkouts.sortedWith(compareBy({ it.date }, { it.routineId })).map {
                 linkedMapOf(
                     "date" to it.date.toString(),
                     "routineId" to it.routineId,
@@ -266,8 +266,8 @@ object BackupCodec {
         if (plannedWorkouts.any { it.routineId !in routineIds }) {
             problem("A planned workout points to a missing routine")
         }
-        if (plannedWorkouts.map { it.date }.toSet().size != plannedWorkouts.size) {
-            problem("Two planned workouts on the same day")
+        if (plannedWorkouts.toSet().size != plannedWorkouts.size) {
+            problem("The same routine is planned twice on the same day")
         }
         if (sets.any { it.sessionId !in sessionIds }) problem("A set points to a missing session")
         if (sets.any { it.machineId !in machineIds }) problem("A set points to a missing machine")

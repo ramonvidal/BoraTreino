@@ -25,7 +25,7 @@ internal interface BackupDao {
     @Query("SELECT * FROM workout_sets ORDER BY id ASC")
     suspend fun sets(): List<WorkoutSetEntity>
 
-    @Query("SELECT * FROM planned_workouts ORDER BY date ASC")
+    @Query("SELECT * FROM planned_workouts ORDER BY date ASC, routineId ASC")
     suspend fun plannedWorkouts(): List<PlannedWorkoutEntity>
 
     @Query("DELETE FROM planned_workouts")

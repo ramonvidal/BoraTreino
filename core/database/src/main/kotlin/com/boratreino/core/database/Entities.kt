@@ -77,7 +77,7 @@ internal data class RoutineItemEntity(
     val repsMax: Int,
 )
 
-/** The date is ISO yyyy-MM-dd, one row per date. */
+/** The date is ISO yyyy-MM-dd; one row per (date, routine). */
 @Entity(
     tableName = "planned_workouts",
     foreignKeys = [
@@ -88,10 +88,11 @@ internal data class RoutineItemEntity(
             onDelete = ForeignKey.CASCADE,
         ),
     ],
+    primaryKeys = ["date", "routineId"],
     indices = [Index("routineId")],
 )
 internal data class PlannedWorkoutEntity(
-    @PrimaryKey val date: String,
+    val date: String,
     val routineId: Long,
 )
 

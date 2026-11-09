@@ -249,11 +249,11 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
         plannedDao.observeAll().map { list -> list.map { it.toModel() } }
 
     override suspend fun setPlannedWorkout(date: LocalDate, routineId: Long) {
-        plannedDao.upsert(PlannedWorkout(date, routineId).toEntity())
+        plannedDao.insert(PlannedWorkout(date, routineId).toEntity())
     }
 
-    override suspend fun clearPlannedWorkout(date: LocalDate) {
-        plannedDao.delete(date.toString())
+    override suspend fun clearPlannedWorkout(date: LocalDate, routineId: Long) {
+        plannedDao.delete(date.toString(), routineId)
     }
 
     override suspend fun exportAll(): BackupData = db.withTransaction {

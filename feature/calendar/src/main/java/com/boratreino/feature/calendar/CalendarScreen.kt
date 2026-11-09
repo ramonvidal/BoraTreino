@@ -88,7 +88,7 @@ internal data class CalendarActions(
     val onOpenPlanChooser: () -> Unit = {},
     val onDismissPlanChooser: () -> Unit = {},
     val onPlan: (routineId: Long) -> Unit = {},
-    val onUnplan: () -> Unit = {},
+    val onUnplan: (routineId: Long) -> Unit = {},
 )
 
 @Composable
@@ -169,7 +169,8 @@ internal fun CalendarContent(
         DeleteDialog(actions)
     }
     if (state.planChooser) {
-        PlanChooserDialog(state.routines, actions)
+        val open = state.routines.filter { r -> state.planned[state.selected].orEmpty().none { it.routineId == r.id } }
+        PlanChooserDialog(open, actions)
     }
 }
 
@@ -264,7 +265,7 @@ private fun MonthCard(state: CalendarUiState, actions: CalendarActions) {
                                 DayCell(
                                     date = date,
                                     label = state.dayLabels[date],
-                                    planned = state.planned[date]?.shortName,
+                                    planned = state.planned[date].orEmpty(),
                                     isToday = date == state.today,
                                     isSelected = date == state.selected,
                                     onClick = { actions.onSelectDay(date) },
@@ -283,7 +284,7 @@ private fun MonthCard(state: CalendarUiState, actions: CalendarActions) {
 private fun DayCell(
     date: LocalDate,
     label: String?,
-    planned: String?,
+    planned: List<PlannedUi>,
     isToday: Boolean,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -318,15 +319,15 @@ private fun DayCell(
         }
         if (label != null) {
             RoutineBadge(label, selected = isSelected)
-        } else if (planned != null) {
-            PlannedBadge(planned)
+        } else if (planned.isNotEmpty()) {
+            PlannedBadge(planned.first().shortName, planned.size - 1)
         }
     }
 }
 
 /** A planned routine with no session yet: the badge's size, outlined and unfilled (the trained one is filled). */
 @Composable
-private fun PlannedBadge(shortName: String) {
+private fun PlannedBadge(shortName: String, extra: Int) {
     Box(
         Modifier
             .defaultMinSize(minWidth = 32.dp, minHeight = 32.dp)
@@ -334,12 +335,24 @@ private fun PlannedBadge(shortName: String) {
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            shortName,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                shortName,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+            if (extra > 0) {
+                Text(
+                    "+$extra",
+                    modifier = Modifier.padding(start = 2.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
 
@@ -377,7 +390,7 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
         state.sessions.forEach { detail -> SessionCard(detail, state, actions) }
     }
     if (state.loaded && !state.selected.isBefore(state.today)) {
-        PlanRow(state.planned[state.selected], actions)
+        PlanRow(state.planned[state.selected].orEmpty(), state.routines, actions)
     }
     state.energy?.let { energy ->
         val amount = NumberFormat.getIntegerInstance().format(energy.kcal)
@@ -391,34 +404,33 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
     }
 }
 
-/** Today or later: "Plan a workout", or the planned routine with Change and Remove. */
+/** Today or later: a quiet card per planned routine with Remove, then "Plan a workout" while routines are left. */
 @Composable
-private fun PlanRow(planned: PlannedUi?, actions: CalendarActions) {
-    if (planned == null) {
-        OutlinedButton(onClick = actions.onOpenPlanChooser, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null)
-            Text(stringResource(R.string.calendar_plan_workout), Modifier.padding(start = 8.dp))
-        }
-        return
-    }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Text(
-                stringResource(R.string.calendar_planned, planned.name),
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = actions.onOpenPlanChooser, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.calendar_plan_change))
-                }
-                TextButton(onClick = actions.onUnplan, modifier = Modifier.heightIn(min = 48.dp)) {
+private fun PlanRow(planned: List<PlannedUi>, routines: List<RoutineChoiceUi>, actions: CalendarActions) {
+    planned.forEach { item ->
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.calendar_planned, item.name),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                TextButton(onClick = { actions.onUnplan(item.routineId) }, modifier = Modifier.heightIn(min = 48.dp)) {
                     Text(stringResource(R.string.calendar_plan_remove))
                 }
             }
+        }
+    }
+    if (routines.any { r -> planned.none { it.routineId == r.id } }) {
+        OutlinedButton(onClick = actions.onOpenPlanChooser, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null)
+            Text(stringResource(R.string.calendar_plan_workout), Modifier.padding(start = 8.dp))
         }
     }
 }

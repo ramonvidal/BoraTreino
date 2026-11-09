@@ -257,12 +257,12 @@ internal interface RoutineDao {
 
 @Dao
 internal interface PlannedWorkoutDao {
-    @Query("SELECT * FROM planned_workouts ORDER BY date ASC")
+    @Query("SELECT * FROM planned_workouts ORDER BY date ASC, routineId ASC")
     fun observeAll(): Flow<List<PlannedWorkoutEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(planned: PlannedWorkoutEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(planned: PlannedWorkoutEntity)
 
-    @Query("DELETE FROM planned_workouts WHERE date = :date")
-    suspend fun delete(date: String)
+    @Query("DELETE FROM planned_workouts WHERE date = :date AND routineId = :routineId")
+    suspend fun delete(date: String, routineId: Long)
 }

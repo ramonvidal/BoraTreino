@@ -48,7 +48,7 @@ internal data class PlannedUi(val routineId: Long, val name: String, val shortNa
 internal data class RoutineChoiceUi(val id: Long, val name: String)
 
 /** The planned routines (today and later) with the routine choices, as one value for combine(). */
-private data class PlanningData(val planned: Map<LocalDate, PlannedUi>, val routines: List<RoutineChoiceUi>)
+private data class PlanningData(val planned: Map<LocalDate, List<PlannedUi>>, val routines: List<RoutineChoiceUi>)
 
 /**
  * Everything the Calendar tab shows. [dayLabels] has the badge text of every training day of
@@ -70,7 +70,7 @@ internal data class CalendarUiState(
     /** Null for future days, without a profile, or when the owner switched the estimate off. */
     val energy: DayEnergyUi? = null,
     /** Routines planned for today and later days; past plans are ignored. */
-    val planned: Map<LocalDate, PlannedUi> = emptyMap(),
+    val planned: Map<LocalDate, List<PlannedUi>> = emptyMap(),
     /** The routines the chooser lists. */
     val routines: List<RoutineChoiceUi> = emptyList(),
     /** The "Plan a workout" chooser for the selected day is open. */
@@ -120,8 +120,9 @@ class CalendarViewModel @Inject constructor(
         PlanningData(
             planned = plannedList
                 .filter { !it.date.isBefore(today) }
-                .mapNotNull { p -> byId[p.routineId]?.let { p.date to PlannedUi(it.id, it.name, it.shortName) } }
-                .toMap(),
+                .mapNotNull { p -> byId[p.routineId]?.let { r -> Triple(p.date, r.position, PlannedUi(r.id, r.name, r.shortName)) } }
+                .sortedBy { it.second }
+                .groupBy({ it.first }, { it.third }),
             routines = routines.map { RoutineChoiceUi(it.id, it.name) },
         )
     }
@@ -223,9 +224,9 @@ class CalendarViewModel @Inject constructor(
         write { routineRepository.planWorkout(day, routineId) }
     }
 
-    internal fun unplan() {
+    internal fun unplan(routineId: Long) {
         val day = browsing.value.selected
-        write { routineRepository.unplanWorkout(day) }
+        write { routineRepository.unplanWorkout(day, routineId) }
     }
 
     // Sessions of the selected day.
