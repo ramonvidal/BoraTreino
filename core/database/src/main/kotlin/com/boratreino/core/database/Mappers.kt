@@ -24,6 +24,7 @@ internal fun MachineEntity.toModel() = Machine(
     setupNote = setupNote,
     restSeconds = restSeconds,
     archived = archived,
+    libraryId = libraryId,
 )
 
 internal fun Machine.toEntity() = MachineEntity(
@@ -35,6 +36,7 @@ internal fun Machine.toEntity() = MachineEntity(
     setupNote = setupNote,
     restSeconds = restSeconds,
     archived = archived,
+    libraryId = libraryId,
 )
 
 internal fun SessionEntity.toModel() = Session(

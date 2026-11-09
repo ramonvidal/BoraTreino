@@ -18,6 +18,7 @@ internal data class MachineEntity(
     val setupNote: String?,
     val restSeconds: Int?,
     val archived: Boolean,
+    val libraryId: String? = null,
 )
 
 @Entity(tableName = "routine_plans")

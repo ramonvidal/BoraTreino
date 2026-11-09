@@ -43,3 +43,10 @@ internal val MIGRATION_4_5: Migration = object : Migration(4, 5) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_planned_workouts_routineId` ON `planned_workouts` (`routineId`)")
     }
 }
+
+/** Version 6: machines remember the exercise-library entry they came from (null for hand-made ones). */
+internal val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE machines ADD COLUMN libraryId TEXT")
+    }
+}

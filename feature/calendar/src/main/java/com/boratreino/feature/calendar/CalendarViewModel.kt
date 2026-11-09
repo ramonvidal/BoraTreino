@@ -18,22 +18,27 @@ import com.boratreino.core.settings.TrainingSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.temporal.WeekFields
 import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -91,6 +96,11 @@ internal sealed interface CalendarEvent {
 /** Which month is shown and which day is selected. */
 private data class Browsing(val month: YearMonth, val selected: LocalDate)
 
+/** A second past midnight, so the new day's date is surely the one read. */
+private const val MIDNIGHT_MARGIN_MS = 1_000L
+private const val RECHECK_MS = 60_000L
+private const val MAX_UNCHANGED_WAKES = 2
+
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val history: HistoryRepository,
@@ -110,13 +120,38 @@ class CalendarViewModel @Inject constructor(
     private val confirmDelete = MutableStateFlow<Long?>(null)
     private val planChooser = MutableStateFlow(false)
 
+    /**
+     * Today's date, re-emitted after the next midnight so the planned workouts follow the day when the app stays open.
+     * If the date has not changed after waking up (a clock that does not move, as in tests, or an early wake-up),
+     * it checks once more a minute later and then stops, so it never spins.
+     */
+    private val currentDate: Flow<LocalDate> = flow {
+        var date = LocalDate.now(clock)
+        emit(date)
+        var unchanged = 0
+        while (unchanged < MAX_UNCHANGED_WAKES) {
+            val now = ZonedDateTime.now(clock)
+            val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
+            val wait = if (unchanged == 0) Duration.between(now, nextMidnight).toMillis() + MIDNIGHT_MARGIN_MS else RECHECK_MS
+            delay(wait)
+            val again = LocalDate.now(clock)
+            if (again != date) {
+                date = again
+                emit(date)
+                unchanged = 0
+            } else {
+                unchanged++
+            }
+        }
+    }.distinctUntilChanged()
+
     private val planning: Flow<PlanningData> = combine(
         routineRepository.observePlanned(),
         routineRepository.observePlan(),
-    ) { plannedList: List<PlannedWorkout>, plan ->
+        currentDate,
+    ) { plannedList: List<PlannedWorkout>, plan, today ->
         val routines: List<Routine> = plan.routines.map { it.routine }
         val byId = routines.associateBy { it.id }
-        val today = LocalDate.now(clock)
         PlanningData(
             planned = plannedList
                 .filter { !it.date.isBefore(today) }

@@ -10,6 +10,8 @@ data class Machine(
     val setupNote: String?,
     val restSeconds: Int?,
     val archived: Boolean,
+    /** The exercise-library entry this machine came from (its instructions are looked up by it). */
+    val libraryId: String? = null,
 ) {
     init {
         require(name.isNotBlank()) { "Machine name must not be blank" }
