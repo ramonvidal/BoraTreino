@@ -10,6 +10,13 @@
     <string name="progress_from_to_reps">%1$s → %2$s reps</string>
     <string name="progress_best_kg">Melhor: %1$s kg</string>
     <string name="progress_last_trained">Último: %1$s</string>
+    <string name="progress_this_month">Este mês</string>
+    <string name="progress_stat_trainings">Treinos</string>
+    <string name="progress_stat_records">Recordes</string>
+    <string name="progress_stat_sets">Séries</string>
+    <string name="stats_week_muscles_title">Grupos musculares nesta semana</string>
+    <string name="stats_week_muscle_sets">%1$s: %2$d séries</string>
+    <string name="stats_week_muscle_sets_one">%1$s: %2$d série</string>
     <string name="progress_detail">%1$s · %2$s · %3$s</string>
     <string name="progress_detail_pair">%1$s · %2$s</string>
     <string name="progress_trend_weight">Tendência: %1$s a %2$s kg</string>

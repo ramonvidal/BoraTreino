@@ -143,6 +143,13 @@ feature/progress,progress_delta_reps,one,%1$s rep,%1$s rep
 feature/progress,progress_delta_reps,other,%1$s reps,%1$s reps
 feature/progress,progress_sets,one,%d set,%d série
 feature/progress,progress_sets,other,%d sets,%d séries
+feature/progress,progress_this_month,,This month,Este mês
+feature/progress,progress_stat_trainings,,Trainings,Treinos
+feature/progress,progress_stat_records,,Records,Recordes
+feature/progress,progress_stat_sets,,Sets,Séries
+feature/progress,stats_week_muscles_title,,Muscle groups this week,Grupos musculares nesta semana
+feature/progress,stats_week_muscle_sets,,%1$s: %2$d sets,%1$s: %2$d séries
+feature/progress,stats_week_muscle_sets_one,,%1$s: %2$d set,%1$s: %2$d série
 feature/progress,progress_detail,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
 feature/progress,progress_detail_pair,,%1$s · %2$s,%1$s · %2$s
 feature/progress,progress_trend_weight,,Trend: %1$s to %2$s kg,Tendência: %1$s a %2$s kg
@@ -533,6 +540,31 @@ feature/today,machine_col_today,,Today,Hoje
 feature/today,machine_no_previous,,-,-
 feature/today,machine_record_mark,,Record,Recorde
 feature/today,machine_type_value,,Type the number,Digite o número
+feature/today,summary_title,,Training complete,Treino concluído
+feature/today,summary_free_training,,Free training,Treino livre
+feature/today,summary_duration,,Duration,Duração
+feature/today,summary_sets,,Sets,Séries
+feature/today,summary_volume,,Volume,Volume
+feature/today,summary_machines,,Machines,Aparelhos
+feature/today,summary_minutes_value,,%1$d min,%1$d min
+feature/today,summary_kg_value,,%1$s kg,%1$s kg
+feature/today,summary_tonnes_value,,%1$s t,%1$s t
+feature/today,summary_no_value,,-,-
+feature/today,summary_records_title,,Records,Recordes
+feature/today,summary_record_heaviest,,%1$s: Heaviest %2$s kg,%1$s: Maior carga %2$s kg
+feature/today,summary_record_most_reps,,%1$s: Most reps %2$d at %3$s kg,%1$s: Mais repetições %2$d com %3$s kg
+feature/today,summary_compare_title,,Compared with last time,Em relação à última vez
+feature/today,summary_compare_volume_up,,Volume +%1$d %% vs last time,Volume +%1$d %% em relação à última vez
+feature/today,summary_compare_volume_down,,Volume -%1$d %% vs last time,Volume -%1$d %% em relação à última vez
+feature/today,summary_compare_volume_same,,Volume same as last time,Volume igual à última vez
+feature/today,summary_compare_sets_up,,Sets +%1$d,Séries +%1$d
+feature/today,summary_compare_sets_down,,Sets -%1$d,Séries -%1$d
+feature/today,summary_compare_sets_same,,Sets same as last time,Séries iguais à última vez
+feature/today,summary_share,,Share,Compartilhar
+feature/today,summary_update_routine,,Update your routine,Atualizar sua ficha
+feature/today,summary_routine_updated,,Routine updated,Ficha atualizada
+feature/today,summary_not_finished,,Not finished yet,Ainda não terminei
+feature/today,summary_close,,Close,Fechar
 feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível
 feature/update,update_install,,Install,Instalar
 feature/update,update_later,,Later,Depois
