@@ -22,14 +22,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.Normalizer
 import java.time.DayOfWeek
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -265,8 +263,7 @@ class RoutinesViewModel @Inject constructor(
             routineDelete = local.routineDelete,
             portuguese = portuguese,
         )
-    }.flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RoutinesUiState(portuguese = portuguese, loaded = false))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RoutinesUiState(portuguese = portuguese, loaded = false))
 
     /**
      * Starters not yet added plus library exercises, both through the same filter, by muscle group
