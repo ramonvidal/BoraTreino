@@ -30,6 +30,9 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34])
 class MachineEditorViewModelCardioTest {
     private class FakeMachines(private val stored: Machine? = null) : MachineRepository {
+    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
+    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
+
         val saved = mutableListOf<Machine>()
 
         override fun observeMachine(id: Long): Flow<Machine?> = flowOf(stored?.takeIf { it.id == id })

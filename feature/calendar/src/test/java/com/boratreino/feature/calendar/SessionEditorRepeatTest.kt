@@ -95,6 +95,9 @@ class SessionEditorRepeatTest {
     }
 
     private class RepeatTraining : TrainingRepository {
+    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
+    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
+
         override suspend fun updateSet(set: WorkoutSet) = Unit
         override suspend fun deleteSet(set: WorkoutSet) = Unit
         override suspend fun restoreSet(set: WorkoutSet) = Unit
@@ -116,6 +119,10 @@ class SessionEditorRepeatTest {
     }
 
     private class RepeatRoutines : RoutineRepository {
+    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
+        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
+    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
+
         override fun observePlan(): Flow<RoutinePlanWithRoutines> =
             flowOf(RoutinePlanWithRoutines(RoutinePlan(1L, ScheduleMode.IN_TURN), emptyList()))
 
@@ -138,6 +145,9 @@ class SessionEditorRepeatTest {
     }
 
     private class RepeatMachines(private val all: List<Machine>) : MachineRepository {
+    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
+    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
+
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(all)
         override fun observeMachine(id: Long): Flow<Machine?> = flowOf(all.firstOrNull { it.id == id })
         override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(all)

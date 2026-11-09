@@ -71,6 +71,9 @@ class TodayViewModelEnergyTest {
     private val profile = BodyProfile(Sex.MALE, birthYear = 1990, heightCm = 180, weightKg = 80.0)
 
     private class EnergyTraining : TrainingRepository {
+    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
+    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
+
         val plan = MutableStateFlow(noRoutinePlan())
         val open = MutableStateFlow<OpenSession?>(null)
 
@@ -95,6 +98,9 @@ class TodayViewModelEnergyTest {
     }
 
     private class EnergyMachines(private val all: List<Machine>) : MachineRepository {
+    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
+    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
+
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = MutableStateFlow(all)
         override fun observeMachine(id: Long): Flow<Machine?> = MutableStateFlow(all.firstOrNull { it.id == id })
         override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = MutableStateFlow(emptyList())
@@ -108,6 +114,10 @@ class TodayViewModelEnergyTest {
     }
 
     private class EnergyRoutines : RoutineRepository {
+    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
+        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
+    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
+
         override fun observePlan(): Flow<RoutinePlanWithRoutines> = emptyFlow()
         override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = emptyFlow()
         override suspend fun setScheduleMode(mode: ScheduleMode) = Unit

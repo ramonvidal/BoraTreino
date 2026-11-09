@@ -62,6 +62,9 @@ class TodayViewModelEditTest {
     private val t0: Instant = Instant.parse("2026-10-31T18:00:00Z")
 
     private class FakeTraining : TrainingRepository {
+    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
+    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
+
         val plan = MutableStateFlow(
             TodayPlan(ScheduleMode.IN_TURN, emptyList(), null, RoutineChoice.Suggested, null, restDay = false),
         )
@@ -95,6 +98,9 @@ class TodayViewModelEditTest {
     }
 
     private class FakeMachines(private val all: List<Machine>) : MachineRepository {
+    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
+    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
+
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = MutableStateFlow(all)
         override fun observeMachine(id: Long): Flow<Machine?> = MutableStateFlow(all.firstOrNull { it.id == id })
         override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = MutableStateFlow(emptyList())
@@ -108,6 +114,10 @@ class TodayViewModelEditTest {
     }
 
     private class FakeRoutines : RoutineRepository {
+    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
+        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
+    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
+
         val moves = mutableListOf<Triple<Long, Long, Boolean>>()
         val removals = mutableListOf<Pair<Long, Long>>()
         val restored = mutableListOf<RoutineItem>()

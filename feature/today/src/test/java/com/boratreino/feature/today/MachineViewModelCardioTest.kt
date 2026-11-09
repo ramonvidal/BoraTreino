@@ -86,6 +86,9 @@ class MachineViewModelCardioTest {
         CardioRules.toSet(id, sessionId = 1L, machineId = machine.id, position = position, draft = draft, loggedAt = at)
 
     private class FakeTraining : TrainingRepository {
+    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
+    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
+
         val log = MutableStateFlow<MachineLog?>(null)
         val cardioLogged = mutableListOf<Pair<Long, CardioDraft>>()
         val setLogged = mutableListOf<Pair<Long, SetDraft>>()

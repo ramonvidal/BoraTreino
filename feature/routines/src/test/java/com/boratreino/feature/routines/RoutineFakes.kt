@@ -25,6 +25,10 @@ internal class FakeRoutineRepository(
     initial: List<RoutineWithItems> = emptyList(),
     initialPlan: RoutinePlan = RoutinePlan(id = 1L, scheduleMode = ScheduleMode.IN_TURN),
 ) : RoutineRepository {
+    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
+        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
+    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
+
     val store = MutableStateFlow(initial)
     val events = mutableListOf<String>()
     val saved = mutableListOf<Pair<Routine, List<RoutineItem>>>()
@@ -100,6 +104,9 @@ internal class FakeRoutineRepository(
 
 /** A fixed gym; every other call is not needed by the routines view models. */
 internal class FakeMachineRepository(private val all: List<Machine> = emptyList()) : MachineRepository {
+    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
+    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
+
     override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(all)
     override fun observeMachine(id: Long): Flow<Machine?> = flowOf(all.firstOrNull { it.id == id })
     override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(emptyList())

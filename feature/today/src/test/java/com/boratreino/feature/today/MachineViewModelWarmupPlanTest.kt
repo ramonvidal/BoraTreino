@@ -75,6 +75,9 @@ class MachineViewModelWarmupPlanTest {
     private val outcome = RepeatOutcome(sessionId = 7L, sessionCreated = true, setIds = listOf(31L, 32L, 33L), machineCount = 1)
 
     private class FakeTraining : TrainingRepository {
+    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
+    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
+
         val log = MutableStateFlow<MachineLog?>(null)
         val warmupsLogged = mutableListOf<Pair<Long, List<SetDraft>>>()
         val undone = mutableListOf<RepeatOutcome>()

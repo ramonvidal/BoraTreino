@@ -104,7 +104,7 @@ class BackupCodecTest {
 
     @Test
     fun `the file names the app, the version, the export time and the weekdays by name`() {
-        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":4"))
+        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":5"))
         assertTrue(text.contains("\"exportedAt\":\"2026-11-02T20:15:30.250Z\""))
         assertTrue(text.contains("\"weekdays\":[\"MONDAY\",\"WEDNESDAY\"]"))
         assertTrue(text.contains("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]"))
@@ -210,27 +210,27 @@ class BackupCodecTest {
 
     @Test
     fun `version 0 is invalid`() {
-        assertInvalid(text.replace("\"version\":4", "\"version\":0"))
+        assertInvalid(text.replace("\"version\":5", "\"version\":0"))
     }
 
     @Test
     fun `a negative version is invalid`() {
-        assertInvalid(text.replace("\"version\":4", "\"version\":-1"))
+        assertInvalid(text.replace("\"version\":5", "\"version\":-1"))
     }
 
     @Test
     fun `a missing, text or fractional version is invalid`() {
-        assertInvalid(text.replace("\"version\":4,", ""))
-        assertInvalid(text.replace("\"version\":4", "\"version\":\"1\""))
-        assertInvalid(text.replace("\"version\":4", "\"version\":1.0"))
+        assertInvalid(text.replace("\"version\":5,", ""))
+        assertInvalid(text.replace("\"version\":5", "\"version\":\"1\""))
+        assertInvalid(text.replace("\"version\":5", "\"version\":1.0"))
     }
 
     @Test
     fun `a newer version is too new, even when its fields are odd`() {
-        assertEquals(BackupDecodeResult.TooNew(5), decoded(text.replace("\"version\":4", "\"version\":5")))
+        assertEquals(BackupDecodeResult.TooNew(6), decoded(text.replace("\"version\":5", "\"version\":6")))
         assertEquals(
-            BackupDecodeResult.TooNew(5),
-            decoded("{\"app\":\"boratreino\",\"version\":5,\"machines\":\"odd\",\"sets\":42}"),
+            BackupDecodeResult.TooNew(6),
+            decoded("{\"app\":\"boratreino\",\"version\":6,\"machines\":\"odd\",\"sets\":42}"),
         )
         assertEquals(BackupDecodeResult.TooNew(99), decoded("{\"app\":\"boratreino\",\"version\":99}"))
     }
@@ -321,8 +321,8 @@ class BackupCodecTest {
     // Set types
 
     @Test
-    fun `the format version is 4`() {
-        assertEquals(4, BackupCodec.FORMAT_VERSION)
+    fun `the format version is 5`() {
+        assertEquals(5, BackupCodec.FORMAT_VERSION)
     }
 
     @Test
@@ -414,8 +414,13 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `a version 5 file is too new`() {
-        assertEquals(BackupDecodeResult.TooNew(5), decoded(versionOneFile().replace("\"version\":1", "\"version\":5")))
+    fun `a version 6 file is too new`() {
+        assertEquals(BackupDecodeResult.TooNew(6), decoded(versionOneFile().replace("\"version\":1", "\"version\":6")))
+    }
+
+    @Test
+    fun `a version 5 file is read`() {
+        assertOk(versionOneFile().replace("\"version\":1", "\"version\":5"))
     }
 
     @Test
@@ -426,6 +431,30 @@ class BackupCodecTest {
     @Test
     fun `a version 3 file is read`() {
         assertOk(versionOneFile().replace("\"version\":1", "\"version\":3"))
+    }
+
+    // Exercise library link (format version 5)
+
+    @Test
+    fun `a machine's library id comes back`() {
+        val linked = data.copy(machines = data.machines.map { if (it.id == 1L) it.copy(libraryId = "Leg_Press") else it })
+
+        assertEquals(BackupDecodeResult.Ok(linked, exportedAt), decoded(BackupCodec.encode(linked, exportedAt)))
+    }
+
+    @Test
+    fun `a version 5 machine with a library id reads it`() {
+        val json = versionOneFile()
+            .replace("\"version\":1", "\"version\":5")
+            .replace("\"archived\":false}", "\"archived\":false,\"libraryId\":\"Leg_Press\"}")
+
+        assertEquals("Leg_Press", assertOk(json).data.machines.single().libraryId)
+    }
+
+    @Test
+    fun `a machine without a library id, as in an older file, reads as none`() {
+        assertNull(assertOk(versionOneFile().replace("\"version\":1", "\"version\":4")).data.machines.single().libraryId)
+        assertNull(assertOk(versionOneFile().replace("\"version\":1", "\"version\":5")).data.machines.single().libraryId)
     }
 
     // Planned workouts (format version 4)

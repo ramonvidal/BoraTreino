@@ -20,6 +20,10 @@ import kotlinx.coroutines.flow.flowOf
  * not stored. The calls are recorded for assertions.
  */
 internal class PlanRoutines(private val routines: List<Routine> = emptyList()) : RoutineRepository {
+    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
+        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
+    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
+
     val plannedFlow = MutableStateFlow<List<PlannedWorkout>>(emptyList())
     val planCalls = mutableListOf<Pair<LocalDate, Long>>()
     val unplanCalls = mutableListOf<Pair<LocalDate, Long>>()

@@ -73,6 +73,9 @@ class MachineViewModelWarmupTest {
     )
 
     private class FakeTraining : TrainingRepository {
+    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
+    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
+
         val log = MutableStateFlow<MachineLog?>(null)
         val setLogged = mutableListOf<Pair<Long, SetDraft>>()
         val cardioLogged = mutableListOf<Pair<Long, CardioDraft>>()

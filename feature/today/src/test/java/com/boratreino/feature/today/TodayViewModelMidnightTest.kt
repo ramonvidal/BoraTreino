@@ -119,6 +119,9 @@ class TodayViewModelMidnightTest {
     private val fullDayWakeMs = 86_395_000L + 1_000L
 
     private class MidTraining : TrainingRepository {
+    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
+    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
+
         override fun observeOpenSession(): Flow<OpenSession?> = MutableStateFlow(null)
         override fun observeTodayPlan(): Flow<TodayPlan> =
             MutableStateFlow(TodayPlan(ScheduleMode.IN_TURN, emptyList(), null, RoutineChoice.Suggested, null, restDay = false))
@@ -141,6 +144,9 @@ class TodayViewModelMidnightTest {
     }
 
     private class MidMachines : MachineRepository {
+    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
+    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
+
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = MutableStateFlow(emptyList())
         override fun observeMachine(id: Long): Flow<Machine?> = MutableStateFlow(null)
         override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = MutableStateFlow(emptyList())
@@ -154,6 +160,10 @@ class TodayViewModelMidnightTest {
     }
 
     private class MidRoutines : RoutineRepository {
+    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
+        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
+    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
+
         override fun observePlan(): Flow<RoutinePlanWithRoutines> = emptyFlow()
         override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = emptyFlow()
         override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
