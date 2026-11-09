@@ -173,6 +173,6 @@ class TodayStoreScreenshotPtTest {
         shoot("store-pt-2-machine") {
             MachineContent(state = state, actions = MachineActions(), modifier = Modifier.fillMaxSize())
         }
-        compose.onNodeWithText("Este treino").assertExists()
+        compose.onNodeWithText("Anterior").assertExists()
     }
 }
