@@ -276,6 +276,7 @@ class TodayViewModel @Inject constructor(
             loaded = true,
             repeatOffer = uiOnly.offer,
             energy = uiOnly.energy,
+            today = LocalDate.now(clock),
             session = open?.let { s ->
                 SessionUi(
                     machineCount = s.machines.size,

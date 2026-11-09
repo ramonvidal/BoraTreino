@@ -105,4 +105,13 @@
     <string name="today_add_distance">Add distance</string>
     <string name="today_delete">Delete</string>
     <string name="today_set_removed">Set removed</string>
+
+    <!-- Today header, chips and training card -->
+    <string name="today_header_routine">%1$s · %2$s</string>
+    <string name="today_chip_next">Next</string>
+    <string name="today_training_now_title">Training now</string>
+    <plurals name="today_machines_progress">
+        <item quantity="one">%1$d of %2$d machine</item>
+        <item quantity="other">%1$d of %2$d machines</item>
+    </plurals>
 </resources>

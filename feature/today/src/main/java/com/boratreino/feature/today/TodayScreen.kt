@@ -3,7 +3,9 @@ package com.boratreino.feature.today
 import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.MachineKind
 import java.text.NumberFormat
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import java.util.Locale
 import com.boratreino.core.ui.summaryLabel
 import com.boratreino.core.ui.showUndo
@@ -24,7 +26,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,7 +34,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -50,16 +50,14 @@ import com.boratreino.core.model.Machine
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.ui.MoveButtons
-import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.targetText
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.Alignment
 import com.boratreino.core.ui.label
+import com.boratreino.core.ui.BoraChip
+import androidx.compose.material3.LinearProgressIndicator
 import kotlinx.coroutines.launch
 import com.boratreino.core.ui.R as CoreUiR
 
@@ -177,7 +175,6 @@ internal fun TodayScreen(
 }
 
 /** Drawn from its state alone, so screenshot tests can render it. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TodayContent(
     state: TodayUiState,
@@ -188,11 +185,6 @@ internal fun TodayContent(
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.today_app_name)) },
-            )
-        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         if (!state.loaded) return@Scaffold
@@ -203,6 +195,7 @@ internal fun TodayContent(
         ) {
             val session = state.session
             val routines = state.routines
+            todayHeader(state)
             if (routines == null) energyLine(state.energy)
             if (routines != null) {
                 withRoutines(state, routines, actions)
@@ -215,6 +208,47 @@ internal fun TodayContent(
     }
 
     state.skipDialog?.let { SkipMachineDialog(it, actions) }
+}
+
+/** App name, the date in large type and, under it, the next or active routine in one grey line. */
+private fun LazyListScope.todayHeader(state: TodayUiState) {
+    item(key = "today_header") {
+        val resources = LocalContext.current.resources
+        val date = state.today
+        val routines = state.routines
+        val active = routines?.activeName
+        Column(Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp, bottom = 4.dp)) {
+            Text(
+                stringResource(R.string.today_app_name),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (date != null) {
+                val locale = Locale.getDefault()
+                val dateText = remember(date, locale) {
+                    val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM")
+                    date.format(DateTimeFormatter.ofPattern(pattern, locale))
+                }
+                Text(
+                    dateText,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            if (routines != null && active != null) {
+                val counts = resources.machinesAndSets(
+                    routines.machines.size,
+                    routines.machines.sumOf { it.target.targetSets },
+                )
+                Text(
+                    stringResource(R.string.today_header_routine, active, counts),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
 }
 
 /** "Skip Pull-ups today?": skip for this training, take it out of the ficha, or cancel. */
@@ -292,6 +326,7 @@ private fun LazyListScope.sessionHeader(
     session: SessionUi,
     actions: TodayActions,
     routineName: String?,
+    routineProgress: Pair<Int, Int>? = null,
     canEdit: Boolean = false,
     editing: Boolean = false,
     repeatOffer: RepeatOfferUi? = null,
@@ -305,15 +340,26 @@ private fun LazyListScope.sessionHeader(
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        if (routineName == null) {
-                            stringResource(R.string.today_training_now, counts)
-                        } else {
-                            stringResource(R.string.today_training_now_routine, routineName, counts)
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f),
-                    )
+                    if (routineName == null) {
+                        Text(
+                            stringResource(R.string.today_training_now, counts),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.today_training_now_title),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                routineName,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
                     if (canEdit && !editing) {
                         IconButton(onClick = actions.onStartEditing) {
                             Icon(
@@ -321,6 +367,22 @@ private fun LazyListScope.sessionHeader(
                                 contentDescription = stringResource(R.string.today_edit_ficha),
                             )
                         }
+                    }
+                }
+                if (routineProgress != null && !editing) {
+                    val (doneCount, total) = routineProgress
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            LocalContext.current.resources.getQuantityString(
+                                R.plurals.today_machines_progress, total, doneCount, total,
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        LinearProgressIndicator(
+                            progress = { if (total == 0) 0f else doneCount.toFloat() / total },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
                 if (editing) {
@@ -345,12 +407,24 @@ private fun LazyListScope.sessionHeader(
                     }
                 } else {
                     if (repeatOffer != null) RepeatButtons(repeatOffer, actions)
-                    FilledTonalButton(
-                        onClick = actions.onDone,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    ) {
-                        Icon(painterResource(CoreUiR.drawable.ic_check), contentDescription = null, Modifier.size(20.dp))
-                        Text(stringResource(R.string.today_done), Modifier.padding(start = 8.dp))
+                    val allDone = routineProgress != null && routineProgress.second > 0 &&
+                        routineProgress.first >= routineProgress.second
+                    if (allDone) {
+                        Button(
+                            onClick = actions.onDone,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                        ) {
+                            Icon(painterResource(CoreUiR.drawable.ic_check), contentDescription = null, Modifier.size(20.dp))
+                            Text(stringResource(R.string.today_done), Modifier.padding(start = 8.dp))
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = actions.onDone,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                        ) {
+                            Icon(painterResource(CoreUiR.drawable.ic_check), contentDescription = null, Modifier.size(20.dp))
+                            Text(stringResource(R.string.today_done), Modifier.padding(start = 8.dp))
+                        }
                     }
                 }
             }
@@ -412,7 +486,8 @@ private fun LazyListScope.withRoutines(state: TodayUiState, routines: RoutineUi,
         routineRows(routines, actions, state.editing)
         if (!state.editing) item(key = "add") { AddButton(stringResource(R.string.today_add_machine), actions.onAddMachine) }
     } else {
-        sessionHeader(session, actions, routineName = active, canEdit = routines.activeId != null, editing = state.editing,
+        sessionHeader(session, actions, routineName = active,
+            routineProgress = routines.machines.count { it.done } to routines.machines.size, canEdit = routines.activeId != null, editing = state.editing,
             repeatOffer = state.repeatOffer)
         routineRows(routines, actions, state.editing)
         if (routines.alsoThisSession.isNotEmpty() && !state.editing) {
@@ -541,23 +616,34 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
     }
 }
 
-/** Routine badges and "Free"; the selected one is green-tinted. */
+/** Routine chips and "Free"; the selected one is filled green, the suggested one carries a tiny "Next". */
 @Composable
 private fun RoutineChips(routines: RoutineUi, onChoose: (RoutineChoice) -> Unit) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         items(routines.chips, key = { it.id }) { chip ->
-            Box(
-                Modifier.heightIn(min = 48.dp).clickable(role = Role.RadioButton) {
-                    onChoose(RoutineChoice.Chosen(chip.id))
-                },
-                contentAlignment = Alignment.Center,
-            ) { RoutineBadge(chip.shortName, selected = chip.selected) }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                BoraChip(
+                    label = chip.shortName,
+                    selected = chip.selected,
+                    onClick = { onChoose(RoutineChoice.Chosen(chip.id)) },
+                    large = true,
+                )
+                if (chip.suggested && !chip.selected) {
+                    Text(
+                        stringResource(R.string.today_chip_next),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
         }
         item(key = "free") {
-            Box(
-                Modifier.heightIn(min = 48.dp).clickable(role = Role.RadioButton) { onChoose(RoutineChoice.Free) },
-                contentAlignment = Alignment.Center,
-            ) { RoutineBadge(stringResource(R.string.today_free), selected = routines.freeSelected) }
+            BoraChip(
+                label = stringResource(R.string.today_free),
+                selected = routines.freeSelected,
+                onClick = { onChoose(RoutineChoice.Free) },
+                large = true,
+            )
         }
     }
 }

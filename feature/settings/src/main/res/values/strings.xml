@@ -1,6 +1,11 @@
 <resources>
     <string name="settings_title">Settings</string>
 
+    <string name="settings_section_training">Training</string>
+    <string name="settings_section_body">Body</string>
+    <string name="settings_section_data">Data</string>
+    <string name="settings_section_app">App</string>
+
     <string name="settings_goal_title">Weekly goal</string>
     <string name="settings_goal_label">Days per week</string>
 

@@ -61,7 +61,7 @@ import com.boratreino.core.notify.NotificationPermission
 import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.ExerciseCredit
-import com.boratreino.core.ui.Stepper
+import com.boratreino.core.ui.SmallStepper
 import com.boratreino.core.ui.shortLabel
 import java.text.NumberFormat
 import java.time.DayOfWeek
@@ -230,14 +230,18 @@ internal fun SettingsContent(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                item { SectionTitle(stringResource(R.string.settings_section_training), first = true) }
                 item { GoalSection(state, actions) }
                 item { RemindersSection(state, actions) }
+                if (state.showNotificationsSection) item { NotificationsSection(actions) }
                 item { RestTimerSection(state, actions) }
                 item { WarmupSection(state, actions) }
+                item { SectionTitle(stringResource(R.string.settings_section_body)) }
                 item { BodySection(state.body, actions) }
-                if (state.health != HealthCardState.Hidden) item { HealthSection(state.health, actions) }
-                if (state.showNotificationsSection) item { NotificationsSection(actions) }
+                item { SectionTitle(stringResource(R.string.settings_section_data)) }
                 item { BackupSection(actions) }
+                if (state.health != HealthCardState.Hidden) item { HealthSection(state.health, actions) }
+                item { SectionTitle(stringResource(R.string.settings_section_app)) }
                 if (updatesCard != null) item { updatesCard() }
                 item { LanguageSection(state, actions) }
                 item { AboutSection(state) }
@@ -248,6 +252,17 @@ internal fun SettingsContent(
     if (state.timePickerOpen) TimeDialog(state, actions)
     if (state.body.dialog != null) BodyDialog(state.body, state.body.dialog, actions)
     if (state.importConfirm != null) ImportDialog(state.importConfirm, actions)
+}
+
+/** The small grey heading above a group of cards. */
+@Composable
+private fun SectionTitle(title: String, first: Boolean = false) {
+    Text(
+        title,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 4.dp, top = if (first) 0.dp else 12.dp),
+    )
 }
 
 @Composable
@@ -291,13 +306,16 @@ internal fun SettingsChip(label: String, selected: Boolean, onClick: () -> Unit)
 @Composable
 private fun GoalSection(state: SettingsUiState, actions: SettingsActions) {
     SectionCard(stringResource(R.string.settings_goal_title)) {
-        Stepper(
-            label = stringResource(R.string.settings_goal_label),
-            value = state.weeklyGoal.toString(),
-            onMinus = { actions.onStepGoal(false) },
-            onPlus = { actions.onStepGoal(true) },
-            onValueClick = {},
-        )
+        val label = stringResource(R.string.settings_goal_label)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            SmallStepper(
+                value = state.weeklyGoal.toString(),
+                onMinus = { actions.onStepGoal(false) },
+                onPlus = { actions.onStepGoal(true) },
+                contentDescription = label,
+            )
+        }
     }
 }
 
