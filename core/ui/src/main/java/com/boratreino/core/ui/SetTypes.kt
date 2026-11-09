@@ -3,9 +3,6 @@ package com.boratreino.core.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -37,11 +34,10 @@ fun SetTypeChips(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SetType.entries.forEach { type ->
-            FilterChip(
+            BoraChip(
+                label = setTypeLabel(type),
                 selected = type == selected,
                 onClick = { onSelect(type) },
-                label = { Text(setTypeLabel(type)) },
-                modifier = Modifier.heightIn(min = 40.dp),
             )
         }
     }

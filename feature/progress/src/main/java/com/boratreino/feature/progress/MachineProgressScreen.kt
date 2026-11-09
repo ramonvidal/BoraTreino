@@ -13,8 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +34,7 @@ import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.ProgressRange
 import com.boratreino.core.model.SessionPoint
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
@@ -196,14 +195,10 @@ private fun StatTile(label: String, value: String, hint: String?, modifier: Modi
 private fun RangeChips(selected: ProgressRange, onSelect: (ProgressRange) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (range in ProgressRange.entries) {
-            FilterChip(
+            BoraChip(
+                label = rangeLabel(range),
                 selected = range == selected,
                 onClick = { onSelect(range) },
-                label = { Text(rangeLabel(range)) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                ),
             )
         }
     }
@@ -214,15 +209,10 @@ private fun RangeChips(selected: ProgressRange, onSelect: (ProgressRange) -> Uni
 private fun ViewChips(showOneRm: Boolean, onShowOneRm: (Boolean) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (oneRm in listOf(false, true)) {
-            FilterChip(
+            BoraChip(
+                label = stringResource(if (oneRm) R.string.progress_view_one_rm else R.string.progress_view_top_weight),
                 selected = showOneRm == oneRm,
                 onClick = { onShowOneRm(oneRm) },
-                label = { Text(stringResource(if (oneRm) R.string.progress_view_one_rm else R.string.progress_view_top_weight)) },
-                modifier = Modifier.heightIn(min = 40.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                ),
             )
         }
     }

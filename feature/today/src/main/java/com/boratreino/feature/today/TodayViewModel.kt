@@ -51,7 +51,13 @@ internal data class SessionMachineUi(val machine: Machine, val summary: SetSumma
 internal data class SessionUi(val machineCount: Int, val setCount: Int, val machines: List<SessionMachineUi>)
 
 /** One routine chip; [selected] is the active one. */
-internal data class RoutineChipUi(val id: Long, val shortName: String, val selected: Boolean)
+internal data class RoutineChipUi(
+    val id: Long,
+    val shortName: String,
+    val selected: Boolean,
+    /** The routine the rotation suggests next; the chip carries a subtle "Next" label while it is not selected. */
+    val suggested: Boolean = false,
+)
 
 /** A machine of the active routine with its target and this session's progress. [highlighted]: the first one not done. */
 internal data class RoutineMachineUi(
@@ -123,6 +129,8 @@ internal data class TodayUiState(
     val repeatOffer: RepeatOfferUi? = null,
     /** Estimated energy need of today; null without a profile or when the owner switched it off. */
     val energy: DayEnergyUi? = null,
+    /** Today's date for the header; null hides the date line (previews and tests without a clock). */
+    val today: LocalDate? = null,
 )
 
 internal sealed interface TodayEvent {
@@ -247,7 +255,7 @@ class TodayViewModel @Inject constructor(
                 )
             }
             RoutineUi(
-                chips = plan.routines.map { RoutineChipUi(it.id, it.shortName, it.id == active?.routine?.id) },
+                chips = plan.routines.map { RoutineChipUi(it.id, it.shortName, it.id == active?.routine?.id, suggested = it.id == plan.suggested?.id) },
                 freeSelected = active == null && (!plan.restDay || plan.choice is RoutineChoice.Free),
                 activeName = active?.routine?.name,
                 restDay = plan.restDay,

@@ -33,7 +33,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -64,6 +63,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.ScheduleMode
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.shortLabel
@@ -463,18 +463,16 @@ private fun <T> FilterChipRow(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            FilterChip(
+            BoraChip(
+                label = stringResource(R.string.library_filter_all),
                 selected = selected == null,
                 onClick = { onSelect(null) },
-                label = { Text(stringResource(R.string.library_filter_all)) },
-                modifier = Modifier.heightIn(min = 40.dp),
             )
             options.forEach { option ->
-                FilterChip(
+                BoraChip(
+                    label = optionLabel(option),
                     selected = option == selected,
                     onClick = { onSelect(if (option == selected) null else option) },
-                    label = { Text(optionLabel(option)) },
-                    modifier = Modifier.heightIn(min = 40.dp),
                 )
             }
         }
@@ -611,15 +609,15 @@ private fun NextRoutineCard(state: RoutinesUiState, callbacks: RoutinesCallbacks
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.routines_next_title), style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
+                BoraChip(
+                    label = stringResource(R.string.routines_mode_in_turn),
                     selected = state.scheduleMode == ScheduleMode.IN_TURN,
                     onClick = { callbacks.onScheduleModeChange(ScheduleMode.IN_TURN) },
-                    label = { Text(stringResource(R.string.routines_mode_in_turn)) },
                 )
-                FilterChip(
+                BoraChip(
+                    label = stringResource(R.string.routines_mode_weekdays),
                     selected = state.scheduleMode == ScheduleMode.WEEKDAYS,
                     onClick = { callbacks.onScheduleModeChange(ScheduleMode.WEEKDAYS) },
-                    label = { Text(stringResource(R.string.routines_mode_weekdays)) },
                 )
             }
             if (state.scheduleMode == ScheduleMode.IN_TURN) {
@@ -631,14 +629,13 @@ private fun NextRoutineCard(state: RoutinesUiState, callbacks: RoutinesCallbacks
                 )
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     DayOfWeek.values().forEach { day ->
-                        FilterChip(
+                        BoraChip(
+                            label = day.shortLabel(),
                             selected = day in state.trainingDays,
                             onClick = {
                                 val next = if (day in state.trainingDays) state.trainingDays - day else state.trainingDays + day
                                 callbacks.onTrainingDaysChange(next)
                             },
-                            label = { Text(day.shortLabel()) },
-                            modifier = Modifier.heightIn(min = 40.dp),
                         )
                     }
                 }

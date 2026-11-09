@@ -26,8 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
@@ -61,6 +59,7 @@ import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.model.Sex
 import com.boratreino.core.notify.NotificationPermission
 import com.boratreino.core.settings.AppLanguage
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.ExerciseCredit
 import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.shortLabel
@@ -286,15 +285,7 @@ internal fun Hint(text: String) {
 
 @Composable
 internal fun SettingsChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = MaterialTheme.colorScheme.primary,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-    )
+    BoraChip(label = label, selected = selected, onClick = onClick)
 }
 
 @Composable

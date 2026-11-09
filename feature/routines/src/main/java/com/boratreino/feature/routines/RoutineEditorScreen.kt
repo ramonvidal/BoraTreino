@@ -23,7 +23,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.MoveButtons
 import com.boratreino.core.ui.SmallStepper
@@ -182,10 +182,10 @@ internal fun RoutineEditorContent(
                     )
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         DayOfWeek.values().forEach { day ->
-                            FilterChip(
+                            BoraChip(
+                                label = day.shortLabel(),
                                 selected = day in state.weekdays,
                                 onClick = { callbacks.onToggleWeekday(day) },
-                                label = { Text(day.shortLabel()) },
                             )
                         }
                     }

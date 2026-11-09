@@ -12,7 +12,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.RestTimerRules
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
@@ -117,10 +117,10 @@ internal fun MachineEditorContent(
             Section(stringResource(R.string.editor_muscle_group)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MuscleGroup.entries.forEach { group ->
-                        FilterChip(
+                        BoraChip(
+                            label = group.label(),
                             selected = state.muscleGroup == group,
                             onClick = { callbacks.onMuscleGroupChange(group) },
-                            label = { Text(group.label()) },
                         )
                     }
                 }
@@ -128,20 +128,20 @@ internal fun MachineEditorContent(
 
             Section(stringResource(R.string.editor_kind)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
+                    BoraChip(
+                        label = stringResource(R.string.editor_kind_weights),
                         selected = state.kind == MachineKind.WEIGHT_REPS,
                         onClick = { callbacks.onKindChange(MachineKind.WEIGHT_REPS) },
-                        label = { Text(stringResource(R.string.editor_kind_weights)) },
                     )
-                    FilterChip(
+                    BoraChip(
+                        label = stringResource(R.string.editor_kind_bodyweight),
                         selected = state.kind == MachineKind.BODYWEIGHT_REPS,
                         onClick = { callbacks.onKindChange(MachineKind.BODYWEIGHT_REPS) },
-                        label = { Text(stringResource(R.string.editor_kind_bodyweight)) },
                     )
-                    FilterChip(
+                    BoraChip(
+                        label = stringResource(R.string.editor_kind_cardio),
                         selected = state.kind == MachineKind.CARDIO,
                         onClick = { callbacks.onKindChange(MachineKind.CARDIO) },
-                        label = { Text(stringResource(R.string.editor_kind_cardio)) },
                     )
                 }
             }
@@ -153,10 +153,10 @@ internal fun MachineEditorContent(
                         // A machine saved with another step keeps it as a fourth choice.
                         val steps = if (state.stepKg in StepChoices) StepChoices else (StepChoices + state.stepKg).sorted()
                         steps.forEach { step ->
-                            FilterChip(
+                            BoraChip(
+                                label = stringResource(R.string.editor_step_value, formatKg(step)),
                                 selected = state.stepKg == step,
                                 onClick = { callbacks.onStepChange(step) },
-                                label = { Text(stringResource(R.string.editor_step_value, formatKg(step))) },
                             )
                         }
                     }
@@ -164,10 +164,10 @@ internal fun MachineEditorContent(
 
                 Section(stringResource(R.string.editor_rest)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
+                        BoraChip(
+                            label = stringResource(R.string.editor_rest_default),
                             selected = state.restSeconds == null,
                             onClick = { callbacks.onRestChange(null) },
-                            label = { Text(stringResource(R.string.editor_rest_default)) },
                         )
                         // A stored value outside the options keeps its own chip.
                         val stored = state.restSeconds
@@ -177,10 +177,10 @@ internal fun MachineEditorContent(
                             (RestTimerRules.OPTIONS + stored).sorted()
                         }
                         options.forEach { seconds ->
-                            FilterChip(
+                            BoraChip(
+                                label = stringResource(R.string.editor_rest_value, seconds),
                                 selected = state.restSeconds == seconds,
                                 onClick = { callbacks.onRestChange(seconds) },
-                                label = { Text(stringResource(R.string.editor_rest_value, seconds)) },
                             )
                         }
                     }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,6 +32,7 @@ import com.boratreino.core.model.Record
 import com.boratreino.core.model.RepRange
 import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
 
@@ -90,11 +90,10 @@ internal fun PeriodChips(selected: StatsPeriod, onPeriod: (StatsPeriod) -> Unit,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         StatsPeriod.entries.forEach { period ->
-            FilterChip(
+            BoraChip(
+                label = periodLabel(period),
                 selected = period == selected,
                 onClick = { onPeriod(period) },
-                label = { Text(periodLabel(period)) },
-                modifier = Modifier.heightIn(min = 40.dp),
             )
         }
     }
