@@ -22,6 +22,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -89,18 +91,15 @@ internal fun TrainingSummaryContent(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         ) {
-            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                texts.stats.forEach { stat ->
-                    Column(Modifier.weight(1f)) {
-                        Text(stat.value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
-                        Text(
-                            stat.label,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
-                    }
+            val large = LocalDensity.current.fontScale > 1.3f
+            val cells: @Composable (List<SummaryStat>) -> Unit = { row ->
+                Row(Modifier.fillMaxWidth()) {
+                    row.forEach { stat -> StatCell(stat, Modifier.weight(1f)) }
                 }
+            }
+            Column(Modifier.fillMaxWidth().padding(vertical = 16.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // At large font sizes two rows of two, so the values wrap instead of overlapping.
+                if (large) texts.stats.chunked(2).forEach { cells(it) } else cells(texts.stats)
             }
         }
 
@@ -142,5 +141,24 @@ internal fun TrainingSummaryContent(
             TextButton(onClick = actions.onNotFinished) { Text(stringResource(R.string.summary_not_finished)) }
             TextButton(onClick = actions.onClose) { Text(stringResource(R.string.summary_close)) }
         }
+    }
+}
+
+/** One number, centred in an equal-width column: the value large and bold, the label small and grey. */
+@Composable
+private fun StatCell(stat: SummaryStat, modifier: Modifier = Modifier) {
+    Column(modifier.padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            stat.value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            stat.label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
