@@ -392,7 +392,7 @@ class TrainingSummaryRulesTest {
     @Test
     fun `the session id, routine name and date are carried over`() {
         val summary = build(
-            session = session(id = 77L, startedAt = Instant.parse("2026-11-10T01:30:00Z")),
+            session = session(id = 77L, startedAt = Instant.parse("2026-11-10T01:30:00Z"), endedAt = Instant.parse("2026-11-10T02:30:00Z")),
             routineName = "Routine B",
             zoneId = ZoneId.of("America/Sao_Paulo"),
         )
