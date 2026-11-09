@@ -15,13 +15,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 
 /**
- * Routines and planned workouts in memory, kept the way the repository keeps them: one routine per
- * date, and a planned routine that does not exist is not stored. The calls are recorded for assertions.
+ * Routines and planned workouts in memory, kept the way the repository keeps them: several routines per
+ * date, unique per (date, routine), ordered by date then routine id; a planned routine that does not exist is
+ * not stored. The calls are recorded for assertions.
  */
 internal class PlanRoutines(private val routines: List<Routine> = emptyList()) : RoutineRepository {
     val plannedFlow = MutableStateFlow<List<PlannedWorkout>>(emptyList())
     val planCalls = mutableListOf<Pair<LocalDate, Long>>()
-    val unplanCalls = mutableListOf<LocalDate>()
+    val unplanCalls = mutableListOf<Pair<LocalDate, Long>>()
 
     private val plan = RoutinePlan(1L, ScheduleMode.IN_TURN)
 
@@ -48,11 +49,13 @@ internal class PlanRoutines(private val routines: List<Routine> = emptyList()) :
     override suspend fun planWorkout(date: LocalDate, routineId: Long) {
         planCalls += date to routineId
         if (routines.none { it.id == routineId }) return
-        plannedFlow.value = plannedFlow.value.filterNot { it.date == date } + PlannedWorkout(date, routineId)
+        plannedFlow.value = (plannedFlow.value + PlannedWorkout(date, routineId))
+            .distinct()
+            .sortedWith(compareBy({ it.date }, { it.routineId }))
     }
 
-    override suspend fun unplanWorkout(date: LocalDate) {
-        unplanCalls += date
-        plannedFlow.value = plannedFlow.value.filterNot { it.date == date }
+    override suspend fun unplanWorkout(date: LocalDate, routineId: Long) {
+        unplanCalls += date to routineId
+        plannedFlow.value = plannedFlow.value.filterNot { it.date == date && it.routineId == routineId }
     }
 }

@@ -13,8 +13,8 @@ import org.robolectric.annotation.Config
 
 /**
  * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays; migration
- * 3 -> 4 adds planned_workouts. Needs schemas/.../2.json, 3.json and 4.json, which Room writes on the first
- * build with those versions (the schemas folder is a test asset).
+ * 3 -> 4 adds planned_workouts; 4 -> 5 makes its key (date, routineId). Needs schemas/.../2.json, 3.json, 4.json
+ * and 5.json, which Room writes on the first build with those versions (the schemas folder is a test asset).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -287,6 +287,92 @@ class MigrationTest {
             assertEquals(1, c.count)
             c.moveToFirst()
             assertEquals("2026-11-13", c.getString(0))
+        }
+    }
+
+    // 4 -> 5: the planned workout's key becomes (date, routineId), so several routines can share a date.
+
+    private fun SupportSQLiteDatabase.insertV4Data() {
+        insertV3Data()
+        execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 1)")
+        execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-13', 2)")
+    }
+
+    @Test
+    fun `migrating 4 to 5 keeps the planned workouts that were there`() {
+        helper.createDatabase(name, 4).apply {
+            insertV4Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 5, true, MIGRATION_4_5)
+
+        db.query("SELECT date, routineId FROM planned_workouts ORDER BY date").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals("2026-11-12", c.getString(0))
+            assertEquals(1L, c.getLong(1))
+            c.moveToNext()
+            assertEquals("2026-11-13", c.getString(0))
+            assertEquals(2L, c.getLong(1))
+        }
+    }
+
+    @Test
+    fun `after 4 to 5 two routines can be planned on the same date`() {
+        helper.createDatabase(name, 4).apply {
+            insertV4Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 5, true, MIGRATION_4_5)
+
+        db.execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 2)")
+
+        db.query("SELECT routineId FROM planned_workouts WHERE date = '2026-11-12' ORDER BY routineId").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            c.moveToNext()
+            assertEquals(2L, c.getLong(0))
+        }
+    }
+
+    @Test
+    fun `after 4 to 5 the same routine is still planned only once on a date`() {
+        helper.createDatabase(name, 4).apply {
+            insertV4Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 5, true, MIGRATION_4_5)
+
+        db.execSQL("INSERT OR IGNORE INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 1)")
+
+        db.query("SELECT COUNT(*) FROM planned_workouts WHERE date = '2026-11-12'").use { c ->
+            c.moveToFirst()
+            assertEquals(1, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `after 4 to 5 deleting a routine removes all its planned workouts and keeps the others`() {
+        helper.createDatabase(name, 4).apply {
+            insertV4Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 5, true, MIGRATION_4_5)
+        db.execSQL("PRAGMA foreign_keys = ON")
+        db.execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 2)")
+
+        db.execSQL("DELETE FROM routines WHERE id = 1")
+
+        db.query("SELECT date, routineId FROM planned_workouts ORDER BY date").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals("2026-11-12", c.getString(0))
+            assertEquals(2L, c.getLong(1))
+            c.moveToNext()
+            assertEquals("2026-11-13", c.getString(0))
+            assertEquals(2L, c.getLong(1))
         }
     }
 }

@@ -123,7 +123,7 @@ class TodayViewModelEnergyTest {
         override fun observePlanned(): kotlinx.coroutines.flow.Flow<List<com.boratreino.core.model.PlannedWorkout>> =
             kotlinx.coroutines.flow.flowOf(emptyList())
         override suspend fun planWorkout(date: java.time.LocalDate, routineId: Long) = Unit
-        override suspend fun unplanWorkout(date: java.time.LocalDate) = Unit
+        override suspend fun unplanWorkout(date: java.time.LocalDate, routineId: Long) = Unit
         override suspend fun restoreItem(item: RoutineItem) = Unit
     }
 

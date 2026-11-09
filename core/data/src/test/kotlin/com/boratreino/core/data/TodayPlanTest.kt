@@ -644,4 +644,83 @@ class TodayPlanTest {
         assertFalse(plan.plannedToday)
         assertEquals(listOf("A"), plan.routines.map { it.shortName })
     }
+
+    // Several planned routines on today's date (the clock is Monday 2 November 2026)
+
+    private val mondayDate = LocalDate.of(2026, 11, 2)
+
+    @Test
+    fun `with several routines planned today the first by position is suggested`() = runTest {
+        val a = routine("A", machine("Leg press"))
+        val b = routine("B", machine("Lat pulldown"))
+        routines.planWorkout(mondayDate, b)
+        routines.planWorkout(mondayDate, a)
+
+        val plan = plan()
+
+        assertEquals(a, plan.suggested?.id)
+        assertEquals(a, plan.active?.routine?.id)
+        assertTrue(plan.plannedToday)
+    }
+
+    @Test
+    fun `after the first planned routine has a closed session today, the second is suggested`() = runTest {
+        val press = machine("Leg press")
+        val a = routine("A", press)
+        val b = routine("B", machine("Lat pulldown"))
+        routines.planWorkout(mondayDate, a)
+        routines.planWorkout(mondayDate, b)
+        finishedSession(press)
+
+        val plan = plan()
+
+        assertEquals(b, plan.suggested?.id)
+        assertEquals(b, plan.active?.routine?.id)
+    }
+
+    @Test
+    fun `an open session of the first planned routine keeps it suggested`() = runTest {
+        val press = machine("Leg press")
+        val a = routine("A", press)
+        val b = routine("B", machine("Lat pulldown"))
+        routines.planWorkout(mondayDate, a)
+        routines.planWorkout(mondayDate, b)
+        training.logSet(press, SetDraft(100.0, 10))
+
+        val plan = plan()
+
+        assertEquals(a, plan.suggested?.id)
+        assertEquals(a, plan.active?.routine?.id)
+    }
+
+    @Test
+    fun `once every planned routine is done today the schedule rule applies`() = runTest {
+        routines.setScheduleMode(ScheduleMode.WEEKDAYS)
+        val press = machine("Leg press")
+        val lat = machine("Lat pulldown")
+        val a = routine("A", press, weekdays = setOf(DayOfWeek.MONDAY))
+        val b = routine("B", lat)
+        routines.planWorkout(mondayDate, a)
+        routines.planWorkout(mondayDate, b)
+        finishedSession(press)
+        finishedSession(lat)
+
+        val plan = plan()
+
+        // Both planned routines are done: Monday's scheduled routine is the suggestion again.
+        assertEquals(a, plan.suggested?.id)
+        assertFalse(plan.restDay)
+    }
+
+    @Test
+    fun `a planned routine finished yesterday is not done today`() = runTest {
+        val press = machine("Leg press")
+        val a = routine("A", press)
+        routines.planWorkout(mondayDate, a)
+        clock.now = Instant.parse("2026-11-01T18:00:00Z") // Sunday
+        finishedSession(press)
+        clock.now = monday
+
+        assertEquals(a, plan().suggested?.id)
+    }
 }

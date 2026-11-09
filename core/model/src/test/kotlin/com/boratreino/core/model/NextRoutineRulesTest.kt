@@ -299,7 +299,7 @@ class NextRoutineRulesTest {
 
         assertEquals(
             scheduled[1],
-            NextRoutineRules.next(ScheduleMode.WEEKDAYS, scheduled, lastRoutineId = null, today = DayOfWeek.MONDAY, planned = scheduled[1]),
+            NextRoutineRules.next(ScheduleMode.WEEKDAYS, scheduled, lastRoutineId = null, today = DayOfWeek.MONDAY, planned = listOf(scheduled[1])),
         )
     }
 
@@ -309,13 +309,13 @@ class NextRoutineRulesTest {
 
         assertEquals(
             scheduled[0],
-            NextRoutineRules.next(ScheduleMode.WEEKDAYS, scheduled, lastRoutineId = null, today = DayOfWeek.TUESDAY, planned = scheduled[0]),
+            NextRoutineRules.next(ScheduleMode.WEEKDAYS, scheduled, lastRoutineId = null, today = DayOfWeek.TUESDAY, planned = listOf(scheduled[0])),
         )
     }
 
     @Test
     fun `in turn, a planned routine beats the rotation`() {
-        assertEquals(c, NextRoutineRules.next(ScheduleMode.IN_TURN, abc, lastRoutineId = a.id, today = anyDay, planned = c))
+        assertEquals(c, NextRoutineRules.next(ScheduleMode.IN_TURN, abc, lastRoutineId = a.id, today = anyDay, planned = listOf(c)))
     }
 
     @Test
@@ -328,7 +328,7 @@ class NextRoutineRulesTest {
                 lastRoutineId = a.id,
                 today = DayOfWeek.TUESDAY,
                 trainingDays = trainingDays,
-                planned = b,
+                planned = listOf(b),
             ),
         )
     }
@@ -342,7 +342,7 @@ class NextRoutineRulesTest {
                 lastRoutineId = a.id,
                 today = DayOfWeek.TUESDAY,
                 trainingDays = trainingDays,
-                planned = null,
+                planned = emptyList(),
             ),
         )
     }
@@ -453,5 +453,100 @@ class NextRoutineRulesTest {
         )
 
         assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 3), b), upcoming)
+    }
+
+    // Several planned routines on one date
+
+    @Test
+    fun `several planned routines, the first by position that is not done today is next`() {
+        val planned = listOf(a, b)
+
+        assertEquals(a, NextRoutineRules.next(ScheduleMode.IN_TURN, abc, lastRoutineId = null, today = anyDay, planned = planned))
+        assertEquals(
+            b,
+            NextRoutineRules.next(ScheduleMode.IN_TURN, abc, lastRoutineId = null, today = anyDay, planned = planned, doneToday = setOf(a.id)),
+        )
+    }
+
+    @Test
+    fun `several planned routines all beat the schedule on a day off`() {
+        assertEquals(
+            b,
+            NextRoutineRules.next(
+                ScheduleMode.IN_TURN,
+                abc,
+                lastRoutineId = a.id,
+                today = DayOfWeek.TUESDAY,
+                trainingDays = trainingDays,
+                planned = listOf(b, c),
+            ),
+        )
+    }
+
+    @Test
+    fun `a routine done today that is not planned does not change the planned suggestion`() {
+        assertEquals(
+            b,
+            NextRoutineRules.next(ScheduleMode.IN_TURN, abc, lastRoutineId = null, today = anyDay, planned = listOf(b), doneToday = setOf(c.id)),
+        )
+    }
+
+    @Test
+    fun `once every planned routine is done the schedule rule applies`() {
+        val scheduled = listOf(
+            routine(1L, 0, "A", setOf(DayOfWeek.MONDAY)),
+            routine(2L, 1, "B"),
+        )
+        val bothDone = setOf(1L, 2L)
+
+        assertEquals(
+            scheduled[0],
+            NextRoutineRules.next(
+                ScheduleMode.WEEKDAYS,
+                scheduled,
+                lastRoutineId = null,
+                today = DayOfWeek.MONDAY,
+                planned = scheduled,
+                doneToday = bothDone,
+            ),
+        )
+        assertNull(
+            NextRoutineRules.next(
+                ScheduleMode.WEEKDAYS,
+                scheduled,
+                lastRoutineId = null,
+                today = DayOfWeek.TUESDAY,
+                planned = scheduled,
+                doneToday = bothDone,
+            ),
+        )
+    }
+
+    @Test
+    fun `upcoming, several planned routines on one date give the lowest position`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 3), 3L), PlannedWorkout(LocalDate.of(2026, 11, 3), 2L)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 3), weekScheduled[1]), upcoming)
+    }
+
+    @Test
+    fun `upcoming, a missing routine planned on a date does not hide another routine planned there`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(LocalDate.of(2026, 11, 3), 999L), PlannedWorkout(LocalDate.of(2026, 11, 3), 3L)),
+        )
+
+        assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 3), weekScheduled[2]), upcoming)
     }
 }

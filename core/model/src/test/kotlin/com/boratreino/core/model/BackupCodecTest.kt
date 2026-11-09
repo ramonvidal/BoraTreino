@@ -481,8 +481,16 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `two planned workouts on the same day are invalid`() {
-        val twice = listOf(PlannedWorkout(LocalDate.of(2026, 11, 12), 1L), PlannedWorkout(LocalDate.of(2026, 11, 12), 2L))
+    fun `several routines planned on the same day are valid`() {
+        val sameDay = listOf(PlannedWorkout(LocalDate.of(2026, 11, 12), 1L), PlannedWorkout(LocalDate.of(2026, 11, 12), 2L))
+        val withPlans = data.copy(plannedWorkouts = sameDay)
+
+        assertEquals(BackupDecodeResult.Ok(withPlans, exportedAt), decoded(BackupCodec.encode(withPlans, exportedAt)))
+    }
+
+    @Test
+    fun `the same routine planned twice on the same day is invalid`() {
+        val twice = listOf(PlannedWorkout(LocalDate.of(2026, 11, 12), 1L), PlannedWorkout(LocalDate.of(2026, 11, 12), 1L))
 
         assertInvalid(BackupCodec.encode(data.copy(plannedWorkouts = twice), exportedAt))
     }

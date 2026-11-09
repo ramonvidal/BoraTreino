@@ -136,6 +136,35 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun `several routines planned on one day survive an export and an import`() = runTest {
+        val planned = seed.copy(
+            plannedWorkouts = listOf(
+                PlannedWorkout(LocalDate.of(2026, 11, 4), 1L),
+                PlannedWorkout(LocalDate.of(2026, 11, 4), 2L),
+                PlannedWorkout(LocalDate.of(2026, 11, 9), 2L),
+            ),
+        )
+        store.replaceAll(planned)
+        val exported = repo.export()
+        val otherStore = FakeWorkoutStore()
+        val otherRepo = repoOn(otherStore, TestClock(now, zone))
+
+        val decoded = BackupCodec.decode(exported) as BackupDecodeResult.Ok
+        otherRepo.import(decoded.data)
+
+        assertEquals(planned, otherStore.exportAll())
+    }
+
+    @Test
+    fun `a backup that plans the same routine twice on one day previews as invalid`() = runTest {
+        val twice = seed.copy(
+            plannedWorkouts = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 1L), PlannedWorkout(LocalDate.of(2026, 11, 4), 1L)),
+        )
+
+        assertTrue(repo.preview(BackupCodec.encode(twice, now)) is BackupPreview.Invalid)
+    }
+
+    @Test
     fun `an import replaces the planned workouts that were there`() = runTest {
         store.replaceAll(seed.copy(plannedWorkouts = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 1L))))
 

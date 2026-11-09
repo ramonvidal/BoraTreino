@@ -326,17 +326,18 @@ internal class FakeWorkoutStore : WorkoutStore {
 
     // Planned workouts
 
-    override fun observePlannedWorkouts(): Flow<List<PlannedWorkout>> = observe { planned.sortedBy { it.date } }
+    override fun observePlannedWorkouts(): Flow<List<PlannedWorkout>> = observe { planned.sortedWith(PLANNED_ORDER) }
 
-    /** One routine per date: replaces what was planned there. */
+    /** Several routines per date; a (date, routine) pair already there is ignored. */
     override suspend fun setPlannedWorkout(date: LocalDate, routineId: Long) {
-        planned.removeAll { it.date == date }
-        planned += PlannedWorkout(date, routineId)
+        val entry = PlannedWorkout(date, routineId)
+        if (entry !in planned) planned += entry
         changed()
     }
 
-    override suspend fun clearPlannedWorkout(date: LocalDate) {
-        planned.removeAll { it.date == date }
+    /** Removes only the pair; other routines planned that day stay. */
+    override suspend fun clearPlannedWorkout(date: LocalDate, routineId: Long) {
+        planned.removeAll { it.date == date && it.routineId == routineId }
         changed()
     }
 
@@ -439,7 +440,7 @@ internal class FakeWorkoutStore : WorkoutStore {
         items = items.sortedWith(compareBy({ it.routineId }, { it.position })),
         sessions = sessions.sortedBy { it.id },
         sets = sets.sortedBy { it.id },
-        plannedWorkouts = planned.sortedBy { it.date },
+        plannedWorkouts = planned.sortedWith(PLANNED_ORDER),
     )
 
     /** Replaces every table; ids are kept and the counters continue after the highest id seen. */
@@ -468,3 +469,6 @@ internal class FakeWorkoutStore : WorkoutStore {
 
     override suspend fun <T> inTransaction(block: suspend () -> T): T = block()
 }
+
+/** Planned workouts by date, then routine: the order the store reads them in. */
+private val PLANNED_ORDER = compareBy<PlannedWorkout>({ it.date }, { it.routineId })

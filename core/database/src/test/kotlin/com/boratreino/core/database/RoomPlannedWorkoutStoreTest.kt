@@ -18,7 +18,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.time.LocalDate
 
-/** Planned workouts in the Room store: one routine per date, cleared by date, removed with their routine, kept in backups. */
+/** Planned workouts in the Room store: several routines per date (unique per date and routine), cleared one by one, removed with their routine, kept in backups. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 class RoomPlannedWorkoutStoreTest {
@@ -66,47 +66,65 @@ class RoomPlannedWorkoutStoreTest {
     }
 
     @Test
-    fun `planning a date again replaces the routine planned there`() = runTest {
+    fun `two routines planned on the same date are both kept, by routine`() = runTest {
+        val a = routine("A", 0)
+        val b = routine("B", 1)
+
+        store.setPlannedWorkout(nov4, b)
+        store.setPlannedWorkout(nov4, a)
+
+        assertEquals(
+            listOf(PlannedWorkout(nov4, a), PlannedWorkout(nov4, b)),
+            store.observePlannedWorkouts().first(),
+        )
+    }
+
+    @Test
+    fun `planning the same routine on the same date again is ignored`() = runTest {
+        val a = routine("A", 0)
+        store.setPlannedWorkout(nov4, a)
+
+        store.setPlannedWorkout(nov4, a)
+
+        assertEquals(listOf(PlannedWorkout(nov4, a)), store.observePlannedWorkouts().first())
+        assertEquals(listOf(PlannedWorkout(nov4, a)), store.exportAll().plannedWorkouts)
+    }
+
+    @Test
+    fun `clearing one routine of a date keeps the others planned there`() = runTest {
         val a = routine("A", 0)
         val b = routine("B", 1)
         store.setPlannedWorkout(nov4, a)
-
         store.setPlannedWorkout(nov4, b)
+
+        store.clearPlannedWorkout(nov4, a)
 
         assertEquals(listOf(PlannedWorkout(nov4, b)), store.observePlannedWorkouts().first())
     }
 
     @Test
-    fun `clearing a date removes only that date`() = runTest {
+    fun `clearing a routine that is not planned on that date is harmless`() = runTest {
         val a = routine("A", 0)
-        store.setPlannedWorkout(nov4, a)
-        store.setPlannedWorkout(nov12, a)
-
-        store.clearPlannedWorkout(nov4)
-
-        assertEquals(listOf(PlannedWorkout(nov12, a)), store.observePlannedWorkouts().first())
-    }
-
-    @Test
-    fun `clearing a date with nothing planned is harmless`() = runTest {
-        val a = routine("A", 0)
+        val b = routine("B", 1)
         store.setPlannedWorkout(nov4, a)
 
-        store.clearPlannedWorkout(nov12)
+        store.clearPlannedWorkout(nov12, a)
+        store.clearPlannedWorkout(nov4, b)
 
         assertEquals(listOf(PlannedWorkout(nov4, a)), store.observePlannedWorkouts().first())
     }
 
     @Test
-    fun `deleting a routine removes its planned dates and keeps the others`() = runTest {
+    fun `deleting a routine removes all its planned dates and keeps the others on those dates`() = runTest {
         val a = routine("A", 0)
         val b = routine("B", 1)
         store.setPlannedWorkout(nov4, a)
-        store.setPlannedWorkout(nov12, b)
+        store.setPlannedWorkout(nov4, b)
+        store.setPlannedWorkout(nov12, a)
 
         store.deleteRoutine(a)
 
-        assertEquals(listOf(PlannedWorkout(nov12, b)), store.observePlannedWorkouts().first())
+        assertEquals(listOf(PlannedWorkout(nov4, b)), store.observePlannedWorkouts().first())
     }
 
     @Test
@@ -152,6 +170,20 @@ class RoomPlannedWorkoutStoreTest {
         } finally {
             freshDb.close()
         }
+    }
+
+    @Test
+    fun `a backup with two routines on one date replaces the store and comes back in routine order`() = runTest {
+        val sameDay = backup.copy(
+            plannedWorkouts = listOf(PlannedWorkout(nov4, 2L), PlannedWorkout(nov4, 1L)),
+        )
+
+        store.replaceAll(sameDay)
+
+        assertEquals(
+            listOf(PlannedWorkout(nov4, 1L), PlannedWorkout(nov4, 2L)),
+            store.exportAll().plannedWorkouts,
+        )
     }
 
     @Test

@@ -17,14 +17,13 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** Planning a workout from the Calendar: the chooser, plan, change, remove, and which plans count. */
+/** Planning workouts from the Calendar: the chooser, several routines on one day, removing one, and which plans count. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -37,6 +36,9 @@ class CalendarPlanViewModelTest {
 
     private val routineA = Routine(1L, 1L, "Treino A", "A", 0, emptySet())
     private val routineB = Routine(2L, 1L, "Treino B", "B", 1, emptySet())
+
+    private val plannedA = PlannedUi(1L, "Treino A", "A")
+    private val plannedB = PlannedUi(2L, "Treino B", "B")
 
     private lateinit var routines: PlanRoutines
     private lateinit var viewModel: CalendarViewModel
@@ -78,7 +80,7 @@ class CalendarPlanViewModelTest {
         runCurrent()
 
         assertEquals(listOf(nextWeek to 2L), routines.planCalls)
-        assertEquals(PlannedUi(2L, "Treino B", "B"), state.planned[nextWeek])
+        assertEquals(listOf(plannedB), state.planned[nextWeek])
         assertFalse(state.planChooser)
     }
 
@@ -90,7 +92,7 @@ class CalendarPlanViewModelTest {
         viewModel.plan(1L)
         runCurrent()
 
-        assertEquals(PlannedUi(1L, "Treino A", "A"), state.planned[today])
+        assertEquals(listOf(plannedA), state.planned[today])
     }
 
     @Test
@@ -122,7 +124,7 @@ class CalendarPlanViewModelTest {
     }
 
     @Test
-    fun `changing the plan of a day replaces its routine`() = runTest {
+    fun `a second routine can be planned on a day that already has one`() = runTest {
         start()
         viewModel.selectDay(nextWeek)
         viewModel.openPlanChooser()
@@ -133,12 +135,55 @@ class CalendarPlanViewModelTest {
         viewModel.plan(2L)
         runCurrent()
 
-        assertEquals(PlannedUi(2L, "Treino B", "B"), state.planned[nextWeek])
+        assertEquals(listOf(plannedA, plannedB), state.planned[nextWeek])
         assertEquals(setOf(nextWeek), state.planned.keys)
     }
 
     @Test
-    fun `removing a plan clears the selected day and keeps the other days`() = runTest {
+    fun `the routines of a day are listed by position, whatever order they were planned in`() = runTest {
+        start()
+        viewModel.selectDay(nextWeek)
+        viewModel.openPlanChooser()
+        viewModel.plan(2L)
+        viewModel.openPlanChooser()
+        viewModel.plan(1L)
+        runCurrent()
+
+        assertEquals(listOf(plannedA, plannedB), state.planned[nextWeek])
+    }
+
+    @Test
+    fun `planning the same routine on the same day again keeps one entry`() = runTest {
+        start()
+        viewModel.selectDay(nextWeek)
+        viewModel.openPlanChooser()
+        viewModel.plan(1L)
+        viewModel.openPlanChooser()
+        viewModel.plan(1L)
+        runCurrent()
+
+        assertEquals(listOf(plannedA), state.planned[nextWeek])
+    }
+
+    @Test
+    fun `removing one routine of a day keeps the others planned there`() = runTest {
+        start()
+        viewModel.selectDay(nextWeek)
+        viewModel.openPlanChooser()
+        viewModel.plan(1L)
+        viewModel.openPlanChooser()
+        viewModel.plan(2L)
+        runCurrent()
+
+        viewModel.unplan(1L)
+        runCurrent()
+
+        assertEquals(listOf(nextWeek to 1L), routines.unplanCalls)
+        assertEquals(listOf(plannedB), state.planned[nextWeek])
+    }
+
+    @Test
+    fun `removing the last routine of a day clears that day and keeps the other days`() = runTest {
         start()
         viewModel.selectDay(nextWeek)
         viewModel.openPlanChooser()
@@ -149,12 +194,11 @@ class CalendarPlanViewModelTest {
         viewModel.selectDay(nextWeek)
         runCurrent()
 
-        viewModel.unplan()
+        viewModel.unplan(1L)
         runCurrent()
 
-        assertEquals(listOf(nextWeek), routines.unplanCalls)
-        assertNull(state.planned[nextWeek])
         assertEquals(setOf(today), state.planned.keys)
+        assertEquals(listOf(plannedB), state.planned[today])
     }
 
     @Test
@@ -164,7 +208,17 @@ class CalendarPlanViewModelTest {
         routines.plannedFlow.value = listOf(PlannedWorkout(nextWeek, 2L))
         runCurrent()
 
-        assertEquals(PlannedUi(2L, "Treino B", "B"), state.planned[nextWeek])
+        assertEquals(listOf(plannedB), state.planned[nextWeek])
+    }
+
+    @Test
+    fun `several plans on one date that appear in the data are all shown`() = runTest {
+        start()
+
+        routines.plannedFlow.value = listOf(PlannedWorkout(nextWeek, 2L), PlannedWorkout(nextWeek, 1L))
+        runCurrent()
+
+        assertEquals(listOf(plannedA, plannedB), state.planned[nextWeek])
     }
 
     @Test
@@ -182,7 +236,7 @@ class CalendarPlanViewModelTest {
 
         start()
 
-        assertEquals(PlannedUi(1L, "Treino A", "A"), state.planned[today])
+        assertEquals(listOf(plannedA), state.planned[today])
     }
 
     @Test

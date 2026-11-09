@@ -726,35 +726,59 @@ class RoutineRepositoryTest {
     }
 
     @Test
-    fun `planning a date again replaces the routine planned there`() = runTest {
+    fun `several routines can be planned on the same date`() = runTest {
         val a = save("Treino A", "A", machine("Leg press"))
         val b = save("Treino B", "B", machine("Leg curl"))
 
+        routines.planWorkout(nov5, b)
+        routines.planWorkout(nov5, a)
+
+        assertEquals(listOf(PlannedWorkout(nov5, a), PlannedWorkout(nov5, b)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `planning the same routine on the same date again changes nothing`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+
+        routines.planWorkout(nov5, a)
+        routines.planWorkout(nov5, a)
+
+        assertEquals(listOf(PlannedWorkout(nov5, a)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `unplanning one routine of a date keeps the others planned there`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
         routines.planWorkout(nov5, a)
         routines.planWorkout(nov5, b)
+
+        routines.unplanWorkout(nov5, a)
 
         assertEquals(listOf(PlannedWorkout(nov5, b)), routines.observePlanned().first())
     }
 
     @Test
-    fun `unplanning a date removes only that date`() = runTest {
+    fun `unplanning a routine that is not planned on that date changes nothing`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+        routines.planWorkout(nov5, a)
+
+        routines.unplanWorkout(nov12, a)
+        routines.unplanWorkout(nov5, b)
+
+        assertEquals(listOf(PlannedWorkout(nov5, a)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `unplanning the last routine of a date leaves the other dates`() = runTest {
         val a = save("Treino A", "A", machine("Leg press"))
         routines.planWorkout(nov5, a)
         routines.planWorkout(nov12, a)
 
-        routines.unplanWorkout(nov5)
+        routines.unplanWorkout(nov5, a)
 
         assertEquals(listOf(PlannedWorkout(nov12, a)), routines.observePlanned().first())
-    }
-
-    @Test
-    fun `unplanning a date with nothing planned changes nothing`() = runTest {
-        val a = save("Treino A", "A", machine("Leg press"))
-        routines.planWorkout(nov5, a)
-
-        routines.unplanWorkout(nov12)
-
-        assertEquals(listOf(PlannedWorkout(nov5, a)), routines.observePlanned().first())
     }
 
     @Test
