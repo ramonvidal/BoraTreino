@@ -115,12 +115,12 @@ internal class DefaultTrainingRepository @Inject constructor(
         return planned.filter { it.date == date }.mapNotNull { byId[it.routineId] }.distinct().sortedBy { it.position }
     }
 
-    /** Ids of the routines of the sessions started on [date] (closed or open). */
+    /** Ids of the routines of the CLOSED sessions started on [date]; an open session does not count as done. */
     private fun doneOn(date: LocalDate, sessions: List<Session>): Set<Long> {
         val zone = clock.zone
         val start = date.atStartOfDay(zone).toInstant()
         val end = date.plusDays(1).atStartOfDay(zone).toInstant()
-        return sessions.filter { it.startedAt >= start && it.startedAt < end }.mapNotNull { it.routineId }.toSet()
+        return sessions.filter { it.endedAt != null && it.startedAt >= start && it.startedAt < end }.mapNotNull { it.routineId }.toSet()
     }
 
     private fun sessionsOn(date: LocalDate): Flow<List<Session>> {
