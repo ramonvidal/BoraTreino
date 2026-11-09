@@ -27,7 +27,6 @@ import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
 import kotlinx.coroutines.flow.MutableStateFlow
-import com.boratreino.core.model.RoutineUpdate
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.model.SetSummary
@@ -42,6 +41,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** One card of the open session: a machine and what was logged on it. */
@@ -114,6 +114,7 @@ private data class SideState(
     val editing: Boolean,
     val offer: RepeatOfferUi?,
     val energy: DayEnergyUi?,
+    val summary: SummaryUi?,
 )
 
 /** [loaded] is false until the first database read, so the screen doesn't flash the empty state. */
@@ -131,10 +132,12 @@ internal data class TodayUiState(
     val energy: DayEnergyUi? = null,
     /** Today's date for the header; null hides the date line (previews and tests without a clock). */
     val today: LocalDate? = null,
+    /** The "Training complete" sheet; null while it is closed. */
+    val summary: SummaryUi? = null,
 )
 
 internal sealed interface TodayEvent {
-    /** Done was tapped and the session closed; the screen offers Undo. */
+    /** Done was tapped and the session closed; the summary sheet follows through [TodayUiState.summary]. */
     data class Finished(val summary: SessionSummary) : TodayEvent
     /** Skipped for this training; the screen offers Undo. */
     data class Skipped(val machine: Machine) : TodayEvent
@@ -143,10 +146,8 @@ internal sealed interface TodayEvent {
     data class Removed(val routineName: String, val item: RoutineItem) : TodayEvent
     /** The whole routine was logged like last time; the screen offers Undo. */
     data class Repeated(val outcome: RepeatOutcome) : TodayEvent
-    /** The finished session would change its routine; the screen offers "Update" (never required). */
-    data class RoutineUpdateOffer(val routineId: Long, val sessionId: Long) : TodayEvent
-    /** The routine was updated from the training; the screen offers Undo. */
-    data class RoutineUpdated(val routineId: Long, val update: RoutineUpdate) : TodayEvent
+    /** Share was tapped: the screen draws the picture of [summary] and opens the system share sheet. */
+    data class Share(val summary: SummaryUi) : TodayEvent
     data object Failed : TodayEvent
 }
 
@@ -166,6 +167,7 @@ class TodayViewModel @Inject constructor(
 
     private val skipDialog = MutableStateFlow<SkipDialog?>(null)
     private val editing = MutableStateFlow(false)
+    private val summaryState = MutableStateFlow<SummaryUi?>(null)
 
     /**
      * Today's date, re-emitted after the next midnight so the energy line follows the day when the app stays open.
@@ -227,8 +229,8 @@ class TodayViewModel @Inject constructor(
         training.observeTodayPlan(),
         machines.observeMachines(includeArchived = true),
         // combine() takes at most five flows with a typed lambda: the UI-only flows, the repeat offer and the energy line go in as one.
-        combine(skipDialog, editing, training.observeRepeatOffer(), energy) { dialog, editRequested, offer, energyUi ->
-            SideState(dialog, editRequested, offer?.let { RepeatOfferUi(it.machineCount, it.setCount) }, energyUi)
+        combine(skipDialog, editing, training.observeRepeatOffer(), energy, summaryState) { dialog, editRequested, offer, energyUi, summaryUi ->
+            SideState(dialog, editRequested, offer?.let { RepeatOfferUi(it.machineCount, it.setCount) }, energyUi, summaryUi)
         },
     ) { open, recent, plan, allMachines, uiOnly ->
         val dialog = uiOnly.dialog
@@ -276,6 +278,7 @@ class TodayViewModel @Inject constructor(
             loaded = true,
             repeatOffer = uiOnly.offer,
             energy = uiOnly.energy,
+            summary = uiOnly.summary,
             today = LocalDate.now(clock),
             session = open?.let { s ->
                 SessionUi(
@@ -406,6 +409,7 @@ class TodayViewModel @Inject constructor(
                 }
                 val summary = training.finishSession() ?: return@launch
                 eventChannel.send(TodayEvent.Finished(summary))
+                openSummary(summary.sessionId)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -414,20 +418,61 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    /** After a finish that was not undone: sends the update offer when the session's routine would change. */
-    internal fun offerRoutineUpdate(sessionId: Long) = launchSafely {
-        val routineId = training.sessionRoutineId(sessionId) ?: return@launchSafely
-        training.routineUpdateOffer(sessionId) ?: return@launchSafely
-        eventChannel.send(TodayEvent.RoutineUpdateOffer(routineId, sessionId))
+    /** Loads the summary of the finished session and shows the sheet; the routine update is offered in it when it would change something. */
+    private suspend fun openSummary(sessionId: Long) {
+        val summary = training.trainingSummary(sessionId) ?: return
+        val canUpdate = training.sessionRoutineId(sessionId) != null && training.routineUpdateOffer(sessionId) != null
+        summaryState.value = SummaryUi(summary, canUpdateRoutine = canUpdate)
     }
 
-    internal fun updateRoutine(routineId: Long, sessionId: Long) = launchSafely {
-        val update = routineRepository.updateRoutineFromSession(routineId, sessionId)
-        if (!update.isEmpty) eventChannel.send(TodayEvent.RoutineUpdated(routineId, update))
+    internal fun dismissSummary() {
+        summaryState.value = null
     }
 
-    internal fun undoRoutineUpdate(routineId: Long, update: RoutineUpdate) =
-        launchSafely { routineRepository.undoRoutineUpdate(routineId, update.previousItems) }
+    /** Asks the screen to draw and share the picture of the open summary. */
+    internal fun shareSummary() {
+        val current = summaryState.value ?: return
+        launchSafely { eventChannel.send(TodayEvent.Share(current)) }
+    }
+
+    /** The picture could not be made or no app could take it. */
+    internal fun shareFailed() {
+        viewModelScope.launch { eventChannel.send(TodayEvent.Failed) }
+    }
+
+    /** "Update your routine" in the sheet: the existing update; the sheet then shows "Routine updated" with Undo. */
+    internal fun applyRoutineUpdate() {
+        val current = summaryState.value ?: return
+        val sessionId = current.summary.sessionId
+        launchSafely {
+            val routineId = training.sessionRoutineId(sessionId) ?: return@launchSafely
+            val update = routineRepository.updateRoutineFromSession(routineId, sessionId)
+            summaryState.update { shown ->
+                shown?.takeIf { it.summary.sessionId == sessionId }
+                    ?.copy(canUpdateRoutine = false, routineUpdate = update.takeUnless { it.isEmpty })
+            }
+        }
+    }
+
+    internal fun undoRoutineUpdate() {
+        val current = summaryState.value ?: return
+        val update = current.routineUpdate ?: return
+        val sessionId = current.summary.sessionId
+        launchSafely {
+            val routineId = training.sessionRoutineId(sessionId) ?: return@launchSafely
+            routineRepository.undoRoutineUpdate(routineId, update.previousItems)
+            summaryState.update { shown ->
+                shown?.takeIf { it.summary.sessionId == sessionId }?.copy(canUpdateRoutine = true, routineUpdate = null)
+            }
+        }
+    }
+
+    /** "Not finished yet": closes the sheet and reopens the session (the old Undo of Done). */
+    internal fun reopenFromSummary() {
+        val sessionId = summaryState.value?.summary?.sessionId ?: return
+        summaryState.value = null
+        reopen(sessionId)
+    }
 
     internal fun reopen(sessionId: Long) {
         viewModelScope.launch {

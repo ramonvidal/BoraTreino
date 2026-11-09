@@ -58,7 +58,9 @@ import androidx.compose.ui.Alignment
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.BoraChip
 import androidx.compose.material3.LinearProgressIndicator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.boratreino.core.ui.R as CoreUiR
 
 /** What the Today tab can ask for; `:app` and the graph decide where each goes. */
@@ -80,6 +82,7 @@ internal data class TodayActions(
     val onDismissSkip: () -> Unit = {},
     val onRepeatSame: () -> Unit = {},
     val onRepeatSuggested: () -> Unit = {},
+    val summary: SummaryActions = SummaryActions(),
 )
 
 @Composable
@@ -94,9 +97,7 @@ internal fun TodayScreen(
     val resources = LocalContext.current.resources
     val undoLabel = stringResource(CoreUiR.string.undo)
     val failedText = stringResource(CoreUiR.string.error_generic)
-    val updateOfferText = stringResource(R.string.today_update_routine_offer)
-    val updateLabel = stringResource(R.string.today_update_routine_action)
-    val updatedText = stringResource(R.string.today_routine_updated)
+    val context = LocalContext.current
 
     // Leaving the screen ends edit mode.
     DisposableEffect(viewModel) { onDispose { viewModel.finishEditing() } }
@@ -104,27 +105,15 @@ internal fun TodayScreen(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                is TodayEvent.Finished -> launch {
-                    val text = resources.getString(
-                        R.string.today_done_snackbar,
-                        resources.machinesAndSets(event.summary.machineCount, event.summary.setCount, event.summary.recordCount),
-                    )
-                    if (snackbar.showUndo(text, undoLabel)) {
-                        viewModel.reopen(event.summary.sessionId)
-                    } else {
-                        // Not undone: quietly offer to bring the routine in line with this training.
-                        viewModel.offerRoutineUpdate(event.summary.sessionId)
+                // The summary sheet replaces the old Done snackbar; it opens from the state.
+                is TodayEvent.Finished -> Unit
+                is TodayEvent.Share -> launch {
+                    // Drawing the picture is off the main thread; opening the share sheet is not.
+                    val chooser = withContext(Dispatchers.IO) {
+                        runCatching { shareChooser(context, event.summary) }.getOrNull()
                     }
-                }
-                is TodayEvent.RoutineUpdateOffer -> launch {
-                    if (snackbar.showUndo(updateOfferText, updateLabel)) {
-                        viewModel.updateRoutine(event.routineId, event.sessionId)
-                    }
-                }
-                is TodayEvent.RoutineUpdated -> launch {
-                    if (snackbar.showUndo(updatedText, undoLabel)) {
-                        viewModel.undoRoutineUpdate(event.routineId, event.update)
-                    }
+                    val started = chooser != null && runCatching { context.startActivity(chooser) }.isSuccess
+                    if (!started) viewModel.shareFailed()
                 }
                 is TodayEvent.Skipped -> launch {
                     val text = resources.getString(R.string.today_skipped, event.machine.name)
@@ -169,6 +158,13 @@ internal fun TodayScreen(
             onDismissSkip = viewModel::dismissSkip,
             onRepeatSame = { viewModel.repeatLast(RepeatMode.SAME) },
             onRepeatSuggested = { viewModel.repeatLast(RepeatMode.SUGGESTED) },
+            summary = SummaryActions(
+                onShare = viewModel::shareSummary,
+                onUpdateRoutine = viewModel::applyRoutineUpdate,
+                onUndoRoutineUpdate = viewModel::undoRoutineUpdate,
+                onNotFinished = viewModel::reopenFromSummary,
+                onClose = viewModel::dismissSummary,
+            ),
         ),
         snackbarHostState = snackbar,
     )
@@ -208,6 +204,7 @@ internal fun TodayContent(
     }
 
     state.skipDialog?.let { SkipMachineDialog(it, actions) }
+    state.summary?.let { TodaySummarySheet(it, actions.summary) }
 }
 
 /** App name, the date in large type and, under it, the next or active routine in one grey line. */
@@ -673,4 +670,17 @@ private fun LazyListScope.energyLine(energy: DayEnergyUi?) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/** Draws the picture and returns the chooser that shares it. Throws when anything fails; the caller shows the failure. */
+private fun shareChooser(context: android.content.Context, summary: SummaryUi): android.content.Intent {
+    val texts = summaryTexts(context.resources, summary.summary)
+    val file = renderSummaryPng(context, summary, texts)
+    val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.share", file)
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "image/png"
+        putExtra(android.content.Intent.EXTRA_STREAM, uri)
+        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    return android.content.Intent.createChooser(send, null)
 }
