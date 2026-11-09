@@ -6,7 +6,21 @@ import com.boratreino.core.ui.weightLabel
 import com.boratreino.core.ui.summaryLabel
 import com.boratreino.core.ui.draftText
 import com.boratreino.core.ui.showUndo
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.material3.LinearProgressIndicator
+import com.boratreino.core.model.RestTimerRules
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -80,7 +94,6 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.boratreino.core.ui.RestCard
 import com.boratreino.core.ui.R as CoreUiR
 
 /** What the machine screen can ask for. */
@@ -248,6 +261,11 @@ internal fun MachineContent(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            if (state.loaded && machine != null) {
+                if (isCardio) CardioLogPanel(state, actions) else LogPanel(machine, state, actions)
+            }
+        },
     ) { innerPadding ->
         when {
             !state.loaded -> Unit
@@ -255,16 +273,23 @@ internal fun MachineContent(
                 title = stringResource(R.string.today_machine_not_found),
                 modifier = Modifier.padding(innerPadding),
             )
-            else -> Column(Modifier.fillMaxSize().padding(innerPadding)) {
+            else -> {
+                val scroll = rememberScrollState()
+                var shownCount by remember { mutableIntStateOf(state.sets.size) }
+                LaunchedEffect(state.sets.size) {
+                    // A newly logged set: bring its row (and the next one) into view.
+                    if (state.sets.size > shownCount) scroll.animateScrollTo(Int.MAX_VALUE)
+                    shownCount = state.sets.size
+                }
                 Column(
-                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+                    Modifier.fillMaxSize().padding(innerPadding).verticalScroll(scroll).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     InfoCard(machine, state)
+                    state.restSeconds?.let { RestBar(it, state.restTotalSeconds, actions.onExtendRest, actions.onSkipRest) }
                     state.record?.let { RecordCard(recordText(it)) }
-                    SetsCard(machine, state.sets, if (isCardio) actions.onOpenCardioSet else actions.onOpenSet)
+                    SetTable(machine, state, if (isCardio) actions.onOpenCardioSet else actions.onOpenSet)
                 }
-                if (isCardio) CardioLogPanel(state, actions) else LogPanel(machine, state, actions)
             }
         }
     }
@@ -313,6 +338,8 @@ private fun InfoCard(machine: Machine, state: MachineUiState) {
             if (!machine.setupNote.isNullOrBlank()) {
                 Text(
                     machine.setupNote!!,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -353,52 +380,164 @@ private fun InfoCard(machine: Machine, state: MachineUiState) {
     }
 }
 
-/** This session's sets as numbered rows; tapping one opens the editor sheet. */
+/** Text for one logged set, by machine kind. */
 @Composable
-private fun SetsCard(machine: Machine, sets: List<WorkoutSet>, onOpenSet: (WorkoutSet) -> Unit) {
-    if (sets.isEmpty()) return
-    SectionTitle(stringResource(R.string.today_this_session))
+private fun setValueText(machine: Machine, set: WorkoutSet): String =
+    if (machine.kind == MachineKind.CARDIO) {
+        val d = CardioRules.toDraft(set)
+        cardioText(d.minutes, d.calories, d.distanceM)
+    } else {
+        draftText(machine, set.weightKg ?: 0.0, set.reps ?: 0)
+    }
+
+/**
+ * Set | Previous | Today. One row per set of this session (tap = edit), then one muted "next"
+ * row showing the stepper values about to be logged. Rows added after the first composition
+ * slide in and flash the accent tint.
+ */
+@Composable
+private fun SetTable(machine: Machine, state: MachineUiState, onOpenSet: (WorkoutSet) -> Unit) {
+    val sets = state.sets
+    val isCardio = machine.kind == MachineKind.CARDIO
+    val none = stringResource(R.string.machine_no_previous)
+    val previous = state.lastTimeSets
+    val previousTexts = (0..sets.size).map { i -> previous.getOrNull(i)?.let { setValueText(machine, it) } ?: none }
+    val todayTexts = sets.map { setValueText(machine, it) }
+    val nextText = if (isCardio) {
+        cardioText(state.cardio.minutes, state.cardio.calories, state.cardio.distanceM)
+    } else {
+        draftText(machine, state.weightKg, state.reps)
+    }
+    val initialIds = remember { sets.map { it.id }.toSet() }
+    val recordId = if (state.record != null) sets.lastOrNull()?.id else null
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
     ) {
-        sets.forEachIndexed { index, set ->
+        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                TableCell(stringResource(R.string.machine_col_set), Modifier.width(SetColumnWidth), header = true)
+                TableCell(stringResource(R.string.machine_col_previous), Modifier.weight(1f), header = true)
+                TableCell(stringResource(R.string.machine_col_today), Modifier.weight(1f), header = true)
+            }
+            sets.forEachIndexed { index, set ->
+                key(set.id) {
+                    val fresh = set.id !in initialIds
+                    val visible = remember { MutableTransitionState(!fresh) }
+                    LaunchedEffect(Unit) { visible.targetState = true }
+                    AnimatedVisibility(
+                        visibleState = visible,
+                        enter = fadeIn(tween(200)) + expandVertically(tween(200)),
+                    ) {
+                        val flash = remember { Animatable(if (fresh) 1f else 0f) }
+                        LaunchedEffect(Unit) { if (fresh) flash.animateTo(0f, tween(600)) }
+                        val tint = MaterialTheme.colorScheme.primary
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .drawBehind { drawRect(tint.copy(alpha = 0.18f * flash.value)) }
+                                .heightIn(min = 52.dp)
+                                .clickable(onClickLabel = stringResource(R.string.today_edit_set)) { onOpenSet(set) }
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            TableCell("${index + 1}", Modifier.width(SetColumnWidth))
+                            TableCell(previousTexts[index], Modifier.weight(1f))
+                            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f, fill = false)) {
+                                    Text(
+                                        todayTexts[index],
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                    if (set.type != SetType.NORMAL) {
+                                        Text(
+                                            setTypeLabel(set.type),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                                Icon(
+                                    painterResource(CoreUiR.drawable.ic_check),
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(start = 6.dp).size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                                if (set.id == recordId) {
+                                    Icon(
+                                        painterResource(CoreUiR.drawable.ic_emoji_events),
+                                        contentDescription = stringResource(R.string.machine_record_mark),
+                                        modifier = Modifier.padding(start = 4.dp).size(18.dp),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // The set about to be logged.
             Row(
-                Modifier.fillMaxWidth()
-                    .heightIn(min = 56.dp)
-                    .clickable(onClickLabel = stringResource(R.string.today_edit_set)) { onOpenSet(set) }
-                    .padding(horizontal = 16.dp),
+                Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                TableCell("${sets.size + 1}", Modifier.width(SetColumnWidth))
+                TableCell(previousTexts[sets.size], Modifier.weight(1f))
                 Text(
-                    "${index + 1}",
-                    modifier = Modifier.width(36.dp),
+                    nextText,
+                    modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 )
-                Text(
-                    if (machine.kind == MachineKind.CARDIO) {
-                        val d = CardioRules.toDraft(set)
-                        cardioText(d.minutes, d.calories, d.distanceM)
-                    } else {
-                        draftText(machine, set.weightKg ?: 0.0, set.reps ?: 0)
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                if (set.type != SetType.NORMAL) {
-                    Text(
-                        setTypeLabel(set.type),
-                        modifier = Modifier.padding(start = 12.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
     }
 }
 
-/** The bottom half: steppers, then Same again and Log set. */
+private val SetColumnWidth = 44.dp
+
+@Composable
+private fun TableCell(text: String, modifier: Modifier, header: Boolean = false) {
+    Text(
+        text,
+        modifier = modifier,
+        style = if (header) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/** One slim row while a rest runs: "Rest 1:12", a thin progress line, +30 s and Skip. */
+@Composable
+private fun RestBar(remainingSeconds: Int, totalSeconds: Int, onExtend: () -> Unit, onSkip: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    ) {
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.today_rest, RestTimerRules.format(remainingSeconds)),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                TextButton(onClick = onExtend, modifier = Modifier.heightIn(min = 40.dp)) {
+                    Text(stringResource(R.string.today_rest_extend, RestTimerRules.EXTEND_SECONDS))
+                }
+                TextButton(onClick = onSkip, modifier = Modifier.heightIn(min = 40.dp)) {
+                    Text(stringResource(R.string.today_rest_skip))
+                }
+            }
+            LinearProgressIndicator(
+                progress = { RestTimerRules.progress(remainingSeconds, totalSeconds) },
+                modifier = Modifier.fillMaxWidth().padding(end = 12.dp).heightIn(max = 4.dp),
+            )
+        }
+    }
+}
+
+/** The fixed bottom panel: weight and reps side by side, the warm-up chip, then Same again and Log set. */
 @Composable
 private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineActions) {
     Surface(
@@ -408,26 +547,27 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
         shadowElevation = 4.dp,
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            state.restSeconds?.let { RestCard(it, state.restTotalSeconds, actions.onExtendRest, actions.onSkipRest) }
-            Stepper(
-                label = weightLabel(machine),
-                value = formatKg(state.weightKg),
-                onMinus = { actions.onStepWeight(false) },
-                onPlus = { actions.onStepWeight(true) },
-                onValueClick = { actions.onOpenPad(PadTarget.WEIGHT) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Stepper(
-                label = stringResource(R.string.today_reps),
-                value = state.reps.toString(),
-                onMinus = { actions.onStepReps(false) },
-                onPlus = { actions.onStepReps(true) },
-                onValueClick = { actions.onOpenPad(PadTarget.REPS) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BigStepper(
+                    label = weightLabel(machine),
+                    value = formatKg(state.weightKg),
+                    onMinus = { actions.onStepWeight(false) },
+                    onPlus = { actions.onStepWeight(true) },
+                    onValueClick = { actions.onOpenPad(PadTarget.WEIGHT) },
+                    modifier = Modifier.weight(1f),
+                )
+                BigStepper(
+                    label = stringResource(R.string.today_reps),
+                    value = state.reps.toString(),
+                    onMinus = { actions.onStepReps(false) },
+                    onPlus = { actions.onStepReps(true) },
+                    onValueClick = { actions.onOpenPad(PadTarget.REPS) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 FilterChip(
                     selected = state.warmupOn,
@@ -465,12 +605,12 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                         }
                     }
                 }
-                // The one green button on the screen.
+                // The one green button on the screen, and the biggest target.
                 Button(
                     onClick = actions.onLogSet,
-                    modifier = Modifier.weight(1f).heightIn(min = 64.dp),
+                    modifier = Modifier.weight(if (same != null) 1.2f else 1f).heightIn(min = 64.dp),
                 ) {
-                    Text(stringResource(R.string.today_log_set), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.today_log_set), style = MaterialTheme.typography.titleLarge)
                 }
             }
         }
@@ -555,7 +695,7 @@ private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
         shadowElevation = 4.dp,
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(16.dp),
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             CardioSteppers(
@@ -703,23 +843,22 @@ private fun EditSetSheet(machine: Machine, editor: SetEditor, actions: MachineAc
     }
 }
 
-/** "New record: 125 kg" with a tick, shown for a few seconds after the set is logged. */
+/** "New record: 125 kg" as a one-line chip, shown for a few seconds after the set is logged. */
 @Composable
 private fun RecordCard(text: String) {
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(16.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(painterResource(CoreUiR.drawable.ic_emoji_events), contentDescription = null)
-            Text(text, style = MaterialTheme.typography.titleMedium)
+            Icon(painterResource(CoreUiR.drawable.ic_emoji_events), contentDescription = null, modifier = Modifier.size(20.dp))
+            Text(text, style = MaterialTheme.typography.titleSmall)
         }
     }
 }
