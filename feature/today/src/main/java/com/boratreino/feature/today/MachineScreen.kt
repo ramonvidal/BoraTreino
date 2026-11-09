@@ -74,7 +74,7 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
-import androidx.compose.material3.FilterChip
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.SetTypeChips
 import com.boratreino.core.ui.setTypeLabel
 import com.boratreino.core.ui.EmptyState
@@ -569,11 +569,10 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                 )
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                FilterChip(
+                BoraChip(
+                    label = setTypeLabel(SetType.WARMUP),
                     selected = state.warmupOn,
                     onClick = actions.onToggleWarmup,
-                    label = { Text(setTypeLabel(SetType.WARMUP)) },
-                    modifier = Modifier.heightIn(min = 40.dp),
                 )
                 if (state.warmupPlan.isNotEmpty()) {
                     Spacer(Modifier.weight(1f))

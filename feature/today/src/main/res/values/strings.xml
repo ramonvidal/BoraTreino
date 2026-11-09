@@ -114,4 +114,12 @@
         <item quantity="one">%1$d of %2$d machine</item>
         <item quantity="other">%1$d of %2$d machines</item>
     </plurals>
+
+    <!-- Machine screen redesign -->
+    <string name="machine_col_set">Set</string>
+    <string name="machine_col_previous">Previous</string>
+    <string name="machine_col_today">Today</string>
+    <string name="machine_no_previous">-</string>
+    <string name="machine_record_mark">Record</string>
+    <string name="machine_type_value">Type the number</string>
 </resources>
