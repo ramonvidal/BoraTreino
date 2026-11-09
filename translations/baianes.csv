@@ -364,6 +364,10 @@ feature/routines,library_muscle_shoulders,,Shoulders,Ombros
 feature/routines,library_muscle_traps,,Traps,Trapézio
 feature/routines,library_muscle_triceps,,Triceps,Tríceps
 feature/settings,settings_title,,Settings,Ajustes
+feature/settings,settings_section_training,,Training,Treino
+feature/settings,settings_section_body,,Body,Corpo
+feature/settings,settings_section_data,,Data,Dados
+feature/settings,settings_section_app,,App,App
 feature/settings,settings_goal_title,,Weekly goal,Meta semanal
 feature/settings,settings_goal_label,,Days per week,Dias por semana
 feature/settings,settings_reminders_title,,Training reminders,Lembretes de treino
@@ -518,6 +522,17 @@ feature/today,today_distance,,Distance (km),Distância (km)
 feature/today,today_add_distance,,Add distance,Pôr distância
 feature/today,today_delete,,Delete,Apagar
 feature/today,today_set_removed,,Set removed,Série removida
+feature/today,today_header_routine,,%1$s · %2$s,%1$s · %2$s
+feature/today,today_chip_next,,Next,Próximo
+feature/today,today_training_now_title,,Training now,Treino de agora
+feature/today,today_machines_progress,one,%1$d of %2$d machine,%1$d de %2$d aparelho
+feature/today,today_machines_progress,other,%1$d of %2$d machines,%1$d de %2$d aparelhos
+feature/today,machine_col_set,,Set,Série
+feature/today,machine_col_previous,,Previous,Anterior
+feature/today,machine_col_today,,Today,Hoje
+feature/today,machine_no_previous,,-,-
+feature/today,machine_record_mark,,Record,Recorde
+feature/today,machine_type_value,,Type the number,Digite o número
 feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível
 feature/update,update_install,,Install,Instalar
 feature/update,update_later,,Later,Depois

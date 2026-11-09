@@ -2,6 +2,10 @@
 <!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
 <resources>
     <string name="settings_title">Ajustes</string>
+    <string name="settings_section_training">Treino</string>
+    <string name="settings_section_body">Corpo</string>
+    <string name="settings_section_data">Dados</string>
+    <string name="settings_section_app">App</string>
     <string name="settings_goal_title">Meta semanal</string>
     <string name="settings_goal_label">Dias por semana</string>
     <string name="settings_reminders_title">Lembretes de treino</string>

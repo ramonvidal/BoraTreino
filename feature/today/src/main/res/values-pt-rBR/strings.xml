@@ -71,6 +71,15 @@
     <string name="today_add_distance">Pôr distância</string>
     <string name="today_delete">Apagar</string>
     <string name="today_set_removed">Série removida</string>
+    <string name="today_header_routine">%1$s · %2$s</string>
+    <string name="today_chip_next">Próximo</string>
+    <string name="today_training_now_title">Treino de agora</string>
+    <string name="machine_col_set">Série</string>
+    <string name="machine_col_previous">Anterior</string>
+    <string name="machine_col_today">Hoje</string>
+    <string name="machine_no_previous">-</string>
+    <string name="machine_record_mark">Recorde</string>
+    <string name="machine_type_value">Digite o número</string>
     <plurals name="today_machines">
         <item quantity="one">%d aparelho</item>
         <item quantity="other">%d aparelhos</item>
@@ -90,5 +99,9 @@
     <plurals name="today_warmups_logged">
         <item quantity="one">Registrei %d série de aquecimento</item>
         <item quantity="other">Registrei %d séries de aquecimento</item>
+    </plurals>
+    <plurals name="today_machines_progress">
+        <item quantity="one">%1$d de %2$d aparelho</item>
+        <item quantity="other">%1$d de %2$d aparelhos</item>
     </plurals>
 </resources>
