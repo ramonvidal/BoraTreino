@@ -276,7 +276,7 @@ class RoutinesViewModel @Inject constructor(
     private fun pickerRows(picker: PickerSource, filter: LibraryFilter, libraryAdded: (LibraryExercise) -> Boolean): List<PickerGroup> {
         val lib = picker.library
         val notAddedNames = picker.notAdded.mapTo(HashSet()) { it.name }
-        val starterRows = StarterMachines.search(filter.query, picker.notAdded, portuguese)
+        val starterRows = StarterMachines.search(filter.query, picker.notAdded, null)
             .filter { filter.group == null || it.muscleGroup == filter.group }
             .mapNotNull { starter ->
                 val linked = StarterLibraryLinks.ids[starter.name]?.let { lib.byId[it] }
@@ -335,7 +335,14 @@ class RoutinesViewModel @Inject constructor(
         it.copy(filter = it.filter.copy(group = null, equipment = null, level = null))
     }
 
-    internal fun toggleLibrary(libraryId: String) = local.update {
+    internal fun toggleLibrary(libraryId: String) {
+        // Already-added exercises are never selectable (same rule as the rows' "Added" mark).
+        val key = "l:$libraryId"
+        if (uiState.value.pickerGroups.any { g -> g.rows.any { r -> r.key == key && r.added } }) return
+        toggleLibrarySelection(libraryId)
+    }
+
+    private fun toggleLibrarySelection(libraryId: String) = local.update {
         it.copy(
             selectedLibrary = if (libraryId in it.selectedLibrary) it.selectedLibrary - libraryId else it.selectedLibrary + libraryId,
         )

@@ -153,13 +153,15 @@ internal fun ExerciseDetailDialog(
                 }
                 DetailLine(stringResource(R.string.library_detail_equipment), exercise.equipment.label())
                 DetailLine(stringResource(R.string.library_detail_level), exercise.level.label())
-                Text(
-                    stringResource(R.string.library_how_to),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                NumberedSteps(exercise.steps)
-                EnglishNote(portuguese)
+                if (exercise.steps.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.library_how_to),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    NumberedSteps(exercise.steps)
+                    EnglishNote(portuguese)
+                }
             }
         },
         confirmButton = {
@@ -195,6 +197,7 @@ private fun DetailLine(label: String, value: String) {
 /** The machine editor's "How to do it" card: folded until tapped. */
 @Composable
 internal fun HowToCard(steps: List<String>, portuguese: Boolean, modifier: Modifier = Modifier) {
+    if (steps.isEmpty()) return
     var expanded by rememberSaveable { mutableStateOf(false) }
     Card(
         modifier = modifier.fillMaxWidth(),
