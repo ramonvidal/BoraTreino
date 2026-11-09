@@ -11,7 +11,9 @@ for the rules every change follows.
 
 - One-tap logging with "Same again", steppers for weight and reps, no keyboard.
 - Your gym registered once: about 100 starter machines (many with pictures) and your own.
-- Routines (A, B, C...) with the app telling you which one is next; weight suggestions and records.
+- An exercise library of 753 exercises with instructions and filters; "How to do it" on library machines.
+- Routines (A, B, C...) with the app telling you which one is next, on the training days you pick;
+  plan workouts ahead in the Calendar; weight suggestions and records.
 - Cardio machines: minutes, calories and optional distance, with weekly totals in Progress.
 - Calendar with a weekly goal, charts per machine, reminders and a rest timer.
 - Optional Health Connect: send each finished training (and cardio calories and distance) to
@@ -83,6 +85,13 @@ Many machines and exercises show a drawing of the movement (start and end positi
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); they were converted to WebP, resized and placed on a white
 background. The pictures are the only part of this repository under that license: see `docs/exercise-images/README.md` for the
 mapping and the full notice. The app shows the credit in Settings and in the picture view.
+
+## Exercise library
+
+The exercise names, instructions and filters come from [free-exercise-db](https://github.com/yuhonas/free-exercise-db)
+by yuhonas, released into the public domain under the [Unlicense](https://unlicense.org/). The Portuguese names are our own.
+No pictures are taken from it. LibreFit was looked at while planning the library ([docs/librefit-evaluation.md](docs/librefit-evaluation.md));
+nothing was copied from it.
 
 ## Tests
 

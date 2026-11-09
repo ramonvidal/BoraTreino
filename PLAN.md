@@ -38,24 +38,25 @@ and no patience, so:
 | Machines | Each machine (or exercise) has a name, a muscle group, a weight **step** (1, 2.5 or 5 kg) and an optional **setup note** ("seat 4, back pad 2") shown every time you open it. Weights are always **kg, as shown on the machine**. A starter list of ~30 common machines in groups (Legs, Chest, Back, Shoulders, Arms, Core) so nothing needs typing on day one. Bodyweight exercises (pull-ups, dips) log reps only, with optional added weight |
 | Your gym first | The **Routines tab starts with the gym's inventory**: every machine and exercise your gym has, grouped by muscle group, with a short explanation ("Register here everything your gym has. Your routines (fichas) are built from this list"). Routines come below it. On a fresh install the starter list is open, so registering the gym is the first thing you do |
 | Starter list | About 100 common machines and exercises (machines, barbell, dumbbell, cable, bodyweight) in groups, searchable (accents ignored), each with an English and a Portuguese name: a machine added while the app is in Baianês gets the Portuguese name ("Supino reto"). Tick several and add them in one tap ("Add 5 selected"). Names already added (in either language) are not offered again |
+| Exercise library | **753 exercises** from the public-domain [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (Unlicense), with Portuguese names, English instructions, and filters by muscle group, equipment and level. A machine added from the library remembers its entry and shows **How to do it** on its screen. No pictures are taken from it; the Everkinetic drawings stay as they are. After a training, the routine can be updated to match it in one tap (undo available) |
 | Deleting a machine | A trash icon on each row of the gym list, and **Delete** in the machine editor. A machine **without logged sets** is deleted after a confirmation that names the routines it will leave; a machine **with logged sets** can't be deleted without losing history, so the dialog offers **Archive instead** (hidden from lists, history kept) |
 | Changing a ficha during a training | Not a form, only questions at the moment it matters, never on the logging path: picking a machine that is **not in the active ficha** from "Add machine" asks "Add it to Treino B?" (**Add to ficha** / **Just today**); a ficha machine you haven't started has a close icon: "Skip it today" (this training only) or "Remove from Treino B" (edits the ficha). Both have Undo. Free trainings (no ficha) never ask |
 | Logging a set | The machine screen shows **Last time: 3 × 10 at 40 kg** and today's sets so far. Below: weight stepper, reps stepper (both prefilled from last time) and one big button **Log set**. **Same again** logs last time's next set in one tap. A logged set can be fixed or removed by tapping it (undo snackbar for 5 s) |
-| Session | Starts with the first set, ends after 3 h without a set or with **Done**. Done shows a one-line summary ("6 machines · 18 sets · 3 records") and nothing else to fill in. Sessions can be edited from the Calendar |
+| Session | Starts with the first set, ends after 3 h without a set or with **Done**. Done opens a training summary sheet ("6 machines · 18 sets · 3 records" and the numbers), with nothing to fill in. Its **Share** button makes a picture of the summary on the phone, and the picture goes only to the app the owner picks. Sessions can be edited from the Calendar |
 | Routines | Optional, and **any number**: A / B / C, A / B, push / pull / legs, one full-body routine, or anything else. A routine is a named list of machines in order, each with a target (sets × rep range, e.g. 3 × 8–12) |
-| Which routine is next | Two ways, picked per set of routines: **In turn** (the default, and the owner's case): the next one after the last you did, **whatever the weekday**, so with A / B / C four days a week, A lands on a different day each week and the app keeps count for you. **On fixed weekdays**: Monday is A, Wednesday is B, and so on, for people whose routine is tied to the day. Either way Today opens on the suggested routine, and any other (or none) is one tap away. Training a different routine than suggested moves the turn on from the one you actually did |
+| Which routine is next | Two ways, picked per set of routines: **In turn** (the default, and the owner's case): the next one after the last you did. You pick the **training days** (the weekdays you train, in the Routines tab; none picked means every day) and routines rotate on those days only, so with A / B / C four days a week, A lands on a different weekday each week and the app keeps count for you. A missed routine stays next. On a rest day Today shows **"Next training: Thursday, Routine B"**. **On fixed weekdays**: Monday is A, Wednesday is B, and so on, for people whose routine is tied to the day; the rest-day line is the same. Either way Today opens on the suggested routine, and any other (or none) is one tap away. Today follows the day: it refreshes at midnight, so a routine picked the day before does not stick. Training a different routine than suggested moves the turn on from the one you actually did |
 | Progression | **Double progression**, worked out in `:core:model`: once every target set reaches the top of the rep range (e.g. 3 × 12), the machine suggests **"Try 42.5 kg"** next time (one step up, reps back to the bottom). If you miss the bottom of the range twice in a row it suggests going back one step. A suggestion is only shown, never forced: the stepper starts on it and one tap goes back |
 | Records | A new best (heaviest weight, or most reps at a weight) shows **"New record: 45 kg"** with a tick and a buzz, like ChoreMe's "Well done" |
-| Calendar | Month view, one dot per training day, labelled with the routine's letter; tap a day for what you did there. On top: **this week, 2 of 4** (weekly goal, set in Settings) and the streak of weeks that met the goal (weeks, not days, so rest days never break it) |
+| Calendar | Month view, one dot per training day, labelled with the routine's letter; tap a day for what you did there. Today has a ring. On top: **this week, 2 of 4** (weekly goal, set in Settings) and the streak of weeks that met the goal (weeks, not days, so rest days never break it). A day can be **planned ahead** with one or more routines (several per day allowed); a planned routine beats the schedule for that date |
 | Reminders | Optional. On the weekdays and at the time you pick, a notification says what's next: **"Gym today? Next up: Routine B"**. Skipped on days you already trained. If the week is running behind your goal (two sessions left and two days to go), the last reminder of the week says so. Tapping it opens Today on that routine |
 | Progress | Per machine: a simple line chart of the **top set weight** per session (3 months, 1 year, all), the record, and the last sessions as a list. A front page with the machines that went up the most this month. Charts drawn with Compose Canvas, no chart library |
-| Rest timer | Optional, on by default: logging a set starts a rest countdown (default 90 s, per machine if set) shown on the machine screen and as a notification; it buzzes when it's time. Tap to add 30 s or skip |
+| Rest timer | Optional, on by default: logging a set starts a rest countdown (default 90 s, options 30 to 180 s, per machine if set) shown on the machine screen and as a notification. It ends on time even with the screen off (an alarm-clock alarm wakes the phone) and buzzes when it's time. Tap to add 30 s or skip |
 | Cardio | **Later phase** (Phase 7). Cardio machines (treadmill, bike, elliptical, rower, stairs) log **time and/or calories**, as the machine's screen shows them, and optionally distance. Same quick logging: steppers prefilled from last time, one tap to log. Progress shows minutes and calories per week |
 | Health Connect | **Yes, optional, later** (Phase 8). Google Fit's own APIs are being shut down; **Health Connect** is Google's replacement and what Fitbit, Samsung Health and Google's apps read from. Free, on the phone, no account. Each session is written as a strength-training exercise session with its exercises and reps; cardio adds calories and distance. Health Connect has no field for the kg of each set, so the weight history stays in the app. Write-only at first; reading (heart rate from a watch during the session) maybe later. Switched on in Settings, with Android's own permission screen. Needs Android 9 or newer, so on Android 8 the switch is hidden |
 | Units | **kg** only |
-| Settings | One **Settings** screen from the Today tab's top bar: weekly goal, reminders, rest timer, language, backup export / import, Health Connect, app updates |
-| Look | **The family look, exactly ChoreMe's "Soft cards"**: light grey page (`#F4F4F2`), white cards, black and grey text, and **ChoreMe's green** (`#2E6B52`) as the one accent, for the main action and the selected tab. Red only for errors. Font: Figtree. Dark mode from day one. No mascot, illustrations or playful copy inside the app: plain, calm and quick. The theme is copied from ChoreMe's `:core:ui` so the three apps match, and stays in step with it |
-| Routine colours | None. Routines are told apart by their **letter or short name** in a grey badge ("A", "B", "Push"), so the green stays the only colour |
+| Settings | One **Settings** screen, in sections, as its own tab: weekly goal, reminders, rest timer, language, backup export / import, Health Connect, app updates |
+| Look | **The family look, exactly ChoreMe's "Soft cards"**: light grey page (`#F4F4F2`), white cards, black and grey text, and **ChoreMe's green** (`#2E6B52`) as the one accent, for the main action and the selected tab. Red only for errors. Font: Figtree. The app always uses the light look, even when the phone is in dark mode (the owner's choice). No mascot, illustrations or playful copy inside the app: plain, calm and quick. The theme is copied from ChoreMe's `:core:ui` so the three apps match, and stays in step with it |
+| Routine colours | Routines are told apart by their **letter or short name** in a grey badge ("A", "B", "Push"), so the green stays the accent. The **Calendar** is the one place with a colour per routine, so its days read at a glance |
 | Pictures | **No emoji.** Muscle groups and machines use line drawings from **Tabler Icons** (MIT); controls use Google's **Material Symbols** (Apache 2.0), copied as vector drawables into `:core:ui`, the same sets ChoreMe uses |
 | Languages | **English** by default, with **Baianês** (Brazilian Portuguese with Bahia slang) as an option in Settings or Android's app language settings. Each module's `values-pt-rBR` is made from `translations/baianes.csv` by `translations/i18n.py`, as in ChoreMe |
 | Screenshots | Every screen (light, dark, the largest text size, empty) is drawn from its state alone (`XxxContent`) and screenshotted with Roborazzi on each release (`screenshots.zip`) |
@@ -81,10 +82,13 @@ Room database, owned by `:core:database`. Plain-Kotlin models in `:core:model`.
 
 ```
 machines        id, name, muscleGroup, kind (WEIGHT_REPS | BODYWEIGHT_REPS | CARDIO),
-                step, setupNote, restSeconds (null = default), archived
-routinePlans    id, scheduleMode (IN_TURN | WEEKDAYS)          the set of routines in use
+                step, setupNote, restSeconds (null = default), archived,
+                libraryId (exercise library entry, null = hand-made)
+routinePlans    id, scheduleMode (IN_TURN | WEEKDAYS), trainingDays (IN_TURN: the
+                weekdays you train, empty = every day)         the set of routines in use
 routines        id, planId, name, shortName, position, weekdays[] (WEEKDAYS mode only)
 routineItems    routineId, machineId, position, targetSets, repsMin, repsMax
+plannedWorkouts date, routineId                                 planned ahead, one row per date and routine
 sessions        id, startedAt, endedAt (null = open), routineId (nullable), note,
                 healthConnectId (null = not written)
 sets            id, sessionId, machineId, position, weightKg, reps,
@@ -92,7 +96,9 @@ sets            id, sessionId, machineId, position, weightKg, reps,
 ```
 
 `CARDIO` and the cardio columns are in the schema from the start (empty until Phase 7), so
-cardio needs no migration of existing data.
+cardio needs no migration of existing data. The Room schema is at version 6 (training days in
+v3, planned workouts in v4 and v5, the library link in v6). The backup file is versioned
+(format 5); older backups still import.
 
 The rules for progression suggestions, records, session open/close, **which routine is
 next**, reminder text and weekly streaks live in `core/model` (`ProgressionRules`,
@@ -105,17 +111,18 @@ unit tested on the plain JVM.
 app/                Activity, root screen, bottom navigation
 core/model/         Plain Kotlin: machines, routines, sessions, sets and the rules above
 core/database/      Room: tables, DAOs, migrations
-core/data/          Repositories over the database, backup export / import (JSON)
+core/data/          Repositories over the database, backup export / import (JSON), exercise library (bundled JSON)
 core/settings/      This phone's choices (DataStore): weekly goal, reminders, rest timer, language
 core/notify/        Rest timer notification and training-day reminders (WorkManager, AlarmManager)
 core/health/        Health Connect: permission check, writing sessions
 core/ui/            Theme (ChoreMe's), Figtree, steppers, machine row, small charts, shared strings, icons
 core/update/        Updating the app itself from the release page (ported from PodOuvir)
 feature/
-  today/            Next routine, the machine screen with logging, "Done" summary
-  calendar/         Month view, day detail, week goal and streak
-  progress/         Per-machine charts, records, "most improved"
-  routines/         Machines and routines: add, edit, reorder, schedule mode, starter list
+  today/            Next routine, the machine screen with logging, training summary sheet
+  calendar/         Month view, day detail, planned workouts, week goal and streak
+  progress/         Per-machine charts, records, "most improved", Stats
+  routines/         Machines and routines: add, edit, reorder, schedule mode and training days,
+                    starter list, exercise library
   settings/         The Settings screen
   update/           "Bora pro Treino! 0.4 is available – Install" banner
 build-logic/
@@ -225,8 +232,29 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       * Everything stays on the phone; it is an estimate, worded as one, and not medical advice.
       Rules in `:core:model` (`EnergyRules`), plain JVM tests. Needs the body weight log from
       the Extras (moved up).
+- [x] **Phase 15: Training days for rotation.** In "in turn" mode the owner picks the weekdays
+      they train (Routines tab). Routines rotate on those days only; a missed routine stays next.
+      On a rest day the screen shows **"Next training: Thursday, Routine B"**, and fixed-weekday
+      mode shows the same line. The days are stored in the plan (Room v3) and in the backup.
+- [x] **Phases 16 and 16b: Plan ahead.** The Calendar takes one or more planned routines per
+      day (several per day allowed); a planned routine beats the schedule for that date. Today
+      follows the day: it refreshes at midnight, and a routine picked the day before does not
+      stick. Room v4 and v5 (one row per date and routine), backup format 4.
+- [x] **Phase 17: Exercise library.** 753 exercises from the public-domain free-exercise-db
+      (Unlicense), with Portuguese names, English instructions and filters by muscle group,
+      equipment and level. Library machines show **How to do it**. No pictures are copied. The
+      routine can be updated after a training in one tap, with undo. Room v6 (`libraryId`),
+      backup format 5. The source is credited in the README; LibreFit was evaluated
+      (`docs/librefit-evaluation.md`) and nothing was copied from it.
+- [x] **Phases 18 and 19: UX passes.** One chip style; a Today header with the date; the machine
+      screen redesigned (fixed input panel, a table of sets with the previous values, big numbers,
+      steppers that repeat when held, with haptics); Settings in sections; a training summary
+      sheet after **Done**, with a share picture made on the phone; calendar routine colours and
+      a ring on today; a "muscle groups this week" card in Stats.
+- [x] **Rest timer ends on time.** With the screen off, the end is an alarm-clock alarm, so it
+      is not held back by Doze. 30 s is one of the options (30 to 180 s).
 - [ ] **Extras (later).** Home-screen widget (opens the next routine), photo of a machine's
-      setup, body weight log, reading heart rate from Health Connect, Wear OS tile.
+      setup, reading heart rate from Health Connect, Wear OS tile.
 
 ## Settled questions
 
@@ -243,6 +271,8 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - **Food and calories eaten**: not planned, another app does it. The app only estimates the day's energy need (Phase 14).
 - **Warm-up calculator and estimated 1RM**: yes (Phases 10 and 11).
 - **More statistics**: yes, beyond the progress plots (Phase 12); the owner keeps adding ideas to that list.
+- **Training days**: the owner picks the weekdays they train; the rotation counts only those (Phase 15).
+- **Exercise library**: names, instructions and filters from free-exercise-db (Unlicense); no pictures copied. LibreFit was evaluated and nothing was copied from it (`docs/librefit-evaluation.md`).
 
 ## Open questions
 
@@ -250,4 +280,4 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - Phase 14: which activity factor to use for an ordinary day (proposal: 1.2, sedentary, since the
   training burn is added separately), and whether the goal adjustment (surplus or deficit) is wanted.
 
-Order: 13, 9, 11, 10, 12 and 14 are all done.
+Order: 13, 9, 11, 10, 12, 14, 15, 16, 17, 18 and 19 are all done.
