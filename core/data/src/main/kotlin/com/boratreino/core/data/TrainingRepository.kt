@@ -10,6 +10,7 @@ import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.TodayPlan
+import com.boratreino.core.model.TrainingSummary
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
 
@@ -79,4 +80,9 @@ interface TrainingRepository {
     suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate?
     /** The routine the session was trained on; null for a free session or when it no longer exists. */
     suspend fun sessionRoutineId(sessionId: Long): Long?
+    /**
+     * The numbers, records and comparison with the previous session of the same routine for a closed or open
+     * session; null when the session does not exist.
+     */
+    suspend fun trainingSummary(sessionId: Long): TrainingSummary?
 }

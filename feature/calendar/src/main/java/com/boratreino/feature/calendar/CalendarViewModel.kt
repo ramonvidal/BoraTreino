@@ -71,6 +71,8 @@ internal data class CalendarUiState(
     val daysTrained: Int = 0,
     val streak: Int = 0,
     val dayLabels: Map<LocalDate, String> = emptyMap(),
+    /** The routine behind each day's badge (first session with a routine), for the badge colour. */
+    val dayRoutineIds: Map<LocalDate, Long> = emptyMap(),
     val sessions: List<SessionDetail> = emptyList(),
     /** Null for future days, without a profile, or when the owner switched the estimate off. */
     val energy: DayEnergyUi? = null,
@@ -185,6 +187,9 @@ class CalendarViewModel @Inject constructor(
                 daysTrained = WeekGoalRules.daysTrained(dates, today, firstDayOfWeek),
                 streak = WeekGoalRules.streak(dates, goal, today, firstDayOfWeek),
                 dayLabels = month.mapValues { (_, sessions) -> CalendarRules.dayLabel(sessions) },
+                dayRoutineIds = month.mapNotNull { (date, sessions) ->
+                    sessions.sortedBy { it.session.startedAt }.firstNotNullOfOrNull { it.routine?.id }?.let { date to it }
+                }.toMap(),
                 sessions = day,
                 energy = dayEnergy(profile, view.selected, today, day),
                 planned = plan.planned,

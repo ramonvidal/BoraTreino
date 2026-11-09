@@ -61,7 +61,6 @@ import com.boratreino.core.model.SessionDetail
 import java.text.NumberFormat
 import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.working
-import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.Stepper
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -265,6 +264,7 @@ private fun MonthCard(state: CalendarUiState, actions: CalendarActions) {
                                 DayCell(
                                     date = date,
                                     label = state.dayLabels[date],
+                                    tone = state.dayRoutineIds[date],
                                     planned = state.planned[date].orEmpty(),
                                     isToday = date == state.today,
                                     isSelected = date == state.selected,
@@ -284,6 +284,7 @@ private fun MonthCard(state: CalendarUiState, actions: CalendarActions) {
 private fun DayCell(
     date: LocalDate,
     label: String?,
+    tone: Long?,
     planned: List<PlannedUi>,
     isToday: Boolean,
     isSelected: Boolean,
@@ -307,6 +308,10 @@ private fun DayCell(
                 .clip(CircleShape)
                 .background(
                     if (isSelected && label == null) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                )
+                .then(
+                    // The current day: a clear ring around its number.
+                    if (isToday) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier,
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -318,20 +323,20 @@ private fun DayCell(
             )
         }
         if (label != null) {
-            RoutineBadge(label, selected = isSelected)
+            TrainedBadge(label, routineTone(tone), isSelected)
         } else if (planned.isNotEmpty()) {
-            PlannedBadge(planned.first().shortName, planned.size - 1)
+            PlannedBadge(planned.first().shortName, planned.size - 1, routineTone(planned.first().routineId))
         }
     }
 }
 
 /** A planned routine with no session yet: the badge's size, outlined and unfilled (the trained one is filled). */
 @Composable
-private fun PlannedBadge(shortName: String, extra: Int) {
+private fun PlannedBadge(shortName: String, extra: Int, tone: Color) {
     Box(
         Modifier
             .defaultMinSize(minWidth = 32.dp, minHeight = 32.dp)
-            .border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
+            .border(1.5.dp, tone, RoundedCornerShape(10.dp))
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center,
     ) {

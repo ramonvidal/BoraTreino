@@ -25,6 +25,8 @@ import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.TodayPlan
+import com.boratreino.core.model.TrainingSummary
+import com.boratreino.core.model.TrainingSummaryRules
 import com.boratreino.core.model.withoutMachines
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -471,6 +473,28 @@ internal class DefaultTrainingRepository @Inject constructor(
         val machineIds = store.machines().map { it.id }.toSet()
         val sets = store.sessionSets(sessionId).filter { it.machineId in machineIds }
         return RoutineUpdateRules.plan(store.routineItems(routineId), sets)
+    }
+
+    override suspend fun trainingSummary(sessionId: Long): TrainingSummary? {
+        val session = store.session(sessionId) ?: return null
+        val sets = store.sessionSets(sessionId)
+        val routineId = session.routineId
+        val routineName = routineId?.let { id -> store.allRoutines().firstOrNull { it.id == id }?.name }
+        val earlier = store.machinesSetsBefore(sets.map { it.machineId }.distinct(), session.startedAt).groupBy { it.machineId }
+        val previousSession = routineId?.let { id ->
+            store.observeSessions().first()
+                .filter { it.routineId == id && it.id != sessionId && it.endedAt != null && it.startedAt < session.startedAt }
+                .maxByOrNull { it.startedAt }
+        }
+        return TrainingSummaryRules.build(
+            session = session,
+            routineName = routineName,
+            sets = sets,
+            machines = store.machines(),
+            earlierSetsByMachine = earlier,
+            previous = previousSession?.let { it to store.sessionSets(it.id) },
+            zone = clock.zone,
+        )
     }
 
     override suspend fun reopenSession(sessionId: Long) {
