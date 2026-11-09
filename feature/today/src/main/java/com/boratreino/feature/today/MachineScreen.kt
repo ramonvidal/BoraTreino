@@ -12,7 +12,11 @@ import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.drawBehind
@@ -117,6 +121,7 @@ internal data class MachineActions(
     val onStepEditorReps: (up: Boolean) -> Unit = {},
     val onSaveEditor: () -> Unit = {},
     val onDeleteEditor: () -> Unit = {},
+    val onDeleteSet: (WorkoutSet) -> Unit = {},
     val onDismissEditor: () -> Unit = {},
     val onSkipRest: () -> Unit = {},
     val onExtendRest: () -> Unit = {},
@@ -139,6 +144,7 @@ internal data class MachineActions(
 internal fun MachineScreen(
     onBack: () -> Unit,
     onEdit: (machineId: Long) -> Unit,
+    onRoutineFinished: () -> Unit = onBack,
     viewModel: MachineViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -181,6 +187,7 @@ internal fun MachineScreen(
                     val text = resources.getQuantityString(R.plurals.today_warmups_logged, count, count)
                     if (snackbar.showUndo(text, undoLabel)) viewModel.undoWarmups(event.outcome)
                 }
+                MachineEvent.RoutineFinished -> onRoutineFinished()
                 MachineEvent.Failed -> launch { snackbar.showSnackbar(failedText) }
             }
         }
@@ -208,6 +215,7 @@ internal fun MachineScreen(
             onStepEditorReps = viewModel::stepEditorReps,
             onSaveEditor = viewModel::saveEditor,
             onDeleteEditor = viewModel::deleteEditor,
+            onDeleteSet = viewModel::deleteSet,
             onDismissEditor = viewModel::closeEditor,
             onSkipRest = viewModel::skipRest,
             onExtendRest = viewModel::extendRest,
@@ -288,7 +296,7 @@ internal fun MachineContent(
                     InfoCard(machine, state)
                     state.restSeconds?.let { RestBar(it, state.restTotalSeconds, actions.onExtendRest, actions.onSkipRest) }
                     state.record?.let { RecordCard(recordText(it)) }
-                    SetTable(machine, state, if (isCardio) actions.onOpenCardioSet else actions.onOpenSet)
+                    SetTable(machine, state, if (isCardio) actions.onOpenCardioSet else actions.onOpenSet, actions.onDeleteSet)
                 }
             }
         }
@@ -395,8 +403,14 @@ private fun setValueText(machine: Machine, set: WorkoutSet): String =
  * row showing the stepper values about to be logged. Rows added after the first composition
  * slide in and flash the accent tint.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SetTable(machine: Machine, state: MachineUiState, onOpenSet: (WorkoutSet) -> Unit) {
+private fun SetTable(
+    machine: Machine,
+    state: MachineUiState,
+    onOpenSet: (WorkoutSet) -> Unit,
+    onDeleteSet: (WorkoutSet) -> Unit,
+) {
     val sets = state.sets
     val isCardio = machine.kind == MachineKind.CARDIO
     val none = stringResource(R.string.machine_no_previous)
@@ -432,11 +446,17 @@ private fun SetTable(machine: Machine, state: MachineUiState, onOpenSet: (Workou
                         val flash = remember { Animatable(if (fresh) 1f else 0f) }
                         LaunchedEffect(Unit) { if (fresh) flash.animateTo(0f, tween(600)) }
                         val tint = MaterialTheme.colorScheme.primary
+                        var menuOpen by remember { mutableStateOf(false) }
+                        Box {
                         Row(
                             Modifier.fillMaxWidth()
                                 .drawBehind { drawRect(tint.copy(alpha = 0.18f * flash.value)) }
                                 .heightIn(min = 52.dp)
-                                .clickable(onClickLabel = stringResource(R.string.today_edit_set)) { onOpenSet(set) }
+                                .combinedClickable(
+                                    onClickLabel = stringResource(R.string.today_edit_set),
+                                    onClick = { onOpenSet(set) },
+                                    onLongClick = { menuOpen = true },
+                                )
                                 .padding(horizontal = 16.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -473,6 +493,23 @@ private fun SetTable(machine: Machine, state: MachineUiState, onOpenSet: (Workou
                                     )
                                 }
                             }
+                        }
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.machine_menu_edit)) },
+                                onClick = {
+                                    menuOpen = false
+                                    onOpenSet(set)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.today_delete)) },
+                                onClick = {
+                                    menuOpen = false
+                                    onDeleteSet(set)
+                                },
+                            )
+                        }
                         }
                     }
                 }

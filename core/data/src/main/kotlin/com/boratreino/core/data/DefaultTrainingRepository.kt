@@ -16,6 +16,7 @@ import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RepeatSessionRules
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineChoice
+import com.boratreino.core.model.RoutineCompletionRules
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.SessionRules
@@ -60,6 +61,12 @@ internal class DefaultTrainingRepository @Inject constructor(
 
     /** Machines hidden from today's ficha for this training; in memory, cleared with the choice. */
     private val skipped = MutableStateFlow<Set<Long>>(emptySet())
+
+    /** The session whose summary Today shows next; in memory. */
+    private val pendingSummary = MutableStateFlow<Long?>(null)
+
+    /** Sessions reopened by the owner: they never auto-finish again. In memory. */
+    private val noAutoFinish: MutableSet<Long> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
     /** Back to Suggested with nothing skipped; used wherever a session ends or is replaced. */
     internal fun resetChoice() {
@@ -453,13 +460,58 @@ internal class DefaultTrainingRepository @Inject constructor(
         store.insertSet(set)
     }
 
-    override suspend fun finishSession(): SessionSummary? = store.inTransaction {
-        val open = store.openSession() ?: return@inTransaction null
+    override suspend fun finishSession(): SessionSummary? {
+        val (summary, sessionId) = store.inTransaction<Pair<SessionSummary?, Long?>> { finishOpenSession() }
+        if (summary != null) pendingSummary.value = sessionId
+        return summary
+    }
+
+    /** Closes the open session and builds its summary. Call inside a transaction. */
+    private suspend fun finishOpenSession(): Pair<SessionSummary?, Long?> {
+        val open = store.openSession() ?: return null to null
         store.setSessionEnd(open.id, Instant.now(clock))
         resetChoice()
         val sessionSets = store.sessionSets(open.id)
         val earlier = store.machinesSetsBefore(sessionSets.map { it.machineId }.distinct(), open.startedAt)
-        store.summary(open.id).copy(recordCount = RecordRules.countRecords(sessionSets, earlier))
+        val summary = store.summary(open.id).copy(recordCount = RecordRules.countRecords(sessionSets, earlier))
+        return summary to open.id
+    }
+
+    override suspend fun finishIfRoutineComplete(): SessionSummary? {
+        val (summary, sessionId) = store.inTransaction<Pair<SessionSummary?, Long?>> {
+            val open = store.openSession() ?: return@inTransaction null to null
+            val routineId = open.routineId ?: return@inTransaction null to null
+            if (open.id in noAutoFinish) return@inTransaction null to null
+            val complete = RoutineCompletionRules.isComplete(
+                store.routineItems(routineId), store.sessionSets(open.id), skipped.value,
+            )
+            if (!complete) return@inTransaction null to null
+            finishOpenSession()
+        }
+        if (summary != null) pendingSummary.value = sessionId
+        return summary
+    }
+
+    override val pendingSummarySessionId: Flow<Long?> = pendingSummary
+
+    override suspend fun consumePendingSummary() {
+        pendingSummary.value = null
+    }
+
+    override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> {
+        val removed = store.inTransaction<List<WorkoutSet>?> {
+            val open = store.openSession() ?: return@inTransaction null
+            val sets = store.sessionSets(open.id).filter { it.machineId == machineId }
+            sets.forEach { store.deleteSet(it.id) }
+            sets
+        } ?: return emptyList()
+        skipMachineToday(machineId)
+        return removed
+    }
+
+    override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) {
+        store.inTransaction { sets.forEach { store.insertSet(it) } }
+        unskipMachineToday(machineId)
     }
 
     override suspend fun sessionRoutineId(sessionId: Long): Long? {
@@ -501,6 +553,8 @@ internal class DefaultTrainingRepository @Inject constructor(
         store.inTransaction {
             if (!store.hasOtherOpenSession(sessionId)) store.setSessionEnd(sessionId, null)
         }
+        noAutoFinish.add(sessionId)
+        pendingSummary.value = null
     }
 
     /** Closes the open session at its closing time when it is stale. Call inside a transaction. */

@@ -149,4 +149,5 @@
     <string name="summary_routine_updated">Routine updated</string>
     <string name="summary_not_finished">Not finished yet</string>
     <string name="summary_close">Close</string>
+    <string name="machine_menu_edit">Edit</string>
 </resources>

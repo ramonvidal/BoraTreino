@@ -47,8 +47,26 @@ interface TrainingRepository {
     suspend fun restoreSet(set: WorkoutSet)
     /** Closes the open session now; null if none is open. The summary includes the record count. */
     suspend fun finishSession(): SessionSummary?
-    /** Undo of finish: endedAt = null, only if no other session is open. */
+    /**
+     * Undo of finish: endedAt = null, only if no other session is open. Also remembers (in memory) that this
+     * session never auto-finishes again, and clears [pendingSummarySessionId].
+     */
     suspend fun reopenSession(sessionId: Long)
+    /**
+     * Same as [finishSession], but null unless there is an open session with a routine, auto-finish was not
+     * disabled for it (see [reopenSession]) and the routine is complete ([com.boratreino.core.model.RoutineCompletionRules]).
+     */
+    suspend fun finishIfRoutineComplete(): SessionSummary?
+    /** The session whose summary Today should show: set by [finishSession] and [finishIfRoutineComplete]; null otherwise. In memory. */
+    val pendingSummarySessionId: Flow<Long?>
+    suspend fun consumePendingSummary()
+    /**
+     * Deletes ALL sets of the machine in the open session (returned for undo) and hides the machine for today
+     * ([skipMachineToday]); empty and no-op when no session is open.
+     */
+    suspend fun discardMachineToday(machineId: Long): List<WorkoutSet>
+    /** Undo of [discardMachineToday]: restores the sets and un-skips the machine. */
+    suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>)
     /** Hides the machine from today's ficha for this training only (kept in memory). */
     suspend fun skipMachineToday(machineId: Long)
     suspend fun unskipMachineToday(machineId: Long)

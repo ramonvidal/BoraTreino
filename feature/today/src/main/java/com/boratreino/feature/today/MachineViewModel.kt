@@ -107,6 +107,9 @@ internal sealed interface MachineEvent {
     /** The warm-up sets are written; the screen offers Undo with [outcome]. */
     data class WarmupsLogged(val outcome: RepeatOutcome) : MachineEvent
     data object Failed : MachineEvent
+
+    /** The logged set completed the whole routine and the training finished by itself; the screen goes back to Today. */
+    data object RoutineFinished : MachineEvent
 }
 
 private const val RECORD_SHOWN_MILLIS = 4_000L
@@ -290,6 +293,7 @@ class MachineViewModel @Inject constructor(
         warmupOn.value = false
         eventChannel.send(MachineEvent.Logged(logged.record))
         startRest(machine)
+        if (draft.type != SetType.WARMUP) finishIfComplete()
         val newRecord = logged.record ?: return
         record.value = newRecord
         viewModelScope.launch {
@@ -328,6 +332,24 @@ class MachineViewModel @Inject constructor(
         training.logCardio(machineId, draft)
         cardioOverride.value = null
         eventChannel.send(MachineEvent.Logged())
+        finishIfComplete()
+    }
+
+    /**
+     * After a working set is written: when it completed every item of the routine the repository finishes the
+     * training (as Done does), the rest timer stops and the screen goes back to Today. A failure here is reported
+     * by [write]; the set is already saved.
+     */
+    private suspend fun finishIfComplete() {
+        training.finishIfRoutineComplete() ?: return
+        try {
+            restTimer.skip()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Finishing the session matters more than the timer.
+        }
+        eventChannel.send(MachineEvent.RoutineFinished)
     }
 
     internal fun stepMinutes(up: Boolean) {
@@ -471,6 +493,14 @@ class MachineViewModel @Inject constructor(
         write {
             training.deleteSet(e.set)
             eventChannel.send(MachineEvent.SetRemoved(e.set))
+        }
+    }
+
+    /** Long-press menu on a logged set row: deletes it at once; the screen offers Undo. */
+    internal fun deleteSet(set: WorkoutSet) {
+        write {
+            training.deleteSet(set)
+            eventChannel.send(MachineEvent.SetRemoved(set))
         }
     }
 

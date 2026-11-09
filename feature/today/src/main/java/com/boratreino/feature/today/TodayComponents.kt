@@ -2,7 +2,12 @@ package com.boratreino.feature.today
 
 import android.content.res.Resources
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -34,6 +39,7 @@ internal fun Resources.machinesAndSets(machines: Int, sets: Int, records: Int = 
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 /** A tappable white card with a title and an optional grey line, at least 64 dp tall. */
 @Composable
 internal fun MachineRow(
@@ -44,13 +50,12 @@ internal fun MachineRow(
     trailing: (@Composable () -> Unit)? = null,
     highlighted: Boolean = false,
     leading: (@Composable () -> Unit)? = null,
+    /** A long press; when set, the whole card handles tap and long press itself. */
+    onLongClick: (() -> Unit)? = null,
 ) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        border = if (highlighted) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
+    val border = if (highlighted) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+    val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
+    val content: @Composable ColumnScope.() -> Unit = {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -71,6 +76,17 @@ internal fun MachineRow(
             }
             trailing?.invoke()
         }
+    }
+    if (onLongClick == null) {
+        Card(onClick = onClick, modifier = modifier.fillMaxWidth(), border = border, colors = colors, content = content)
+    } else {
+        Card(
+            modifier = modifier.fillMaxWidth().clip(CardDefaults.shape)
+                .combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick),
+            border = border,
+            colors = colors,
+            content = content,
+        )
     }
 }
 

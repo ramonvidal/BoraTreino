@@ -50,6 +50,15 @@ fun NavGraphBuilder.todayGraph(
         route = MACHINE_ROUTE,
         arguments = listOf(navArgument(MACHINE_ID_ARG) { type = NavType.LongType }),
     ) {
-        MachineScreen(onBack = { navController.popBackStack() }, onEdit = onEditMachine)
+        MachineScreen(
+            onBack = { navController.popBackStack() },
+            onEdit = onEditMachine,
+            // The training finished by itself: back to Today, which shows the summary.
+            onRoutineFinished = {
+                if (!navController.popBackStack(TODAY_ROUTE, inclusive = false)) {
+                    navController.navigate(TODAY_ROUTE) { launchSingleTop = true }
+                }
+            },
+        )
     }
 }
