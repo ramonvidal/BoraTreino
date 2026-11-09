@@ -27,6 +27,7 @@ import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.boratreino.core.model.RoutineUpdate
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.model.SetSummary
@@ -134,6 +135,10 @@ internal sealed interface TodayEvent {
     data class Removed(val routineName: String, val item: RoutineItem) : TodayEvent
     /** The whole routine was logged like last time; the screen offers Undo. */
     data class Repeated(val outcome: RepeatOutcome) : TodayEvent
+    /** The finished session would change its routine; the screen offers "Update" (never required). */
+    data class RoutineUpdateOffer(val routineId: Long, val sessionId: Long) : TodayEvent
+    /** The routine was updated from the training; the screen offers Undo. */
+    data class RoutineUpdated(val routineId: Long, val update: RoutineUpdate) : TodayEvent
     data object Failed : TodayEvent
 }
 
@@ -399,6 +404,21 @@ class TodayViewModel @Inject constructor(
             }
         }
     }
+
+    /** After a finish that was not undone: sends the update offer when the session's routine would change. */
+    internal fun offerRoutineUpdate(sessionId: Long) = launchSafely {
+        val routineId = training.sessionRoutineId(sessionId) ?: return@launchSafely
+        training.routineUpdateOffer(sessionId) ?: return@launchSafely
+        eventChannel.send(TodayEvent.RoutineUpdateOffer(routineId, sessionId))
+    }
+
+    internal fun updateRoutine(routineId: Long, sessionId: Long) = launchSafely {
+        val update = routineRepository.updateRoutineFromSession(routineId, sessionId)
+        if (!update.isEmpty) eventChannel.send(TodayEvent.RoutineUpdated(routineId, update))
+    }
+
+    internal fun undoRoutineUpdate(routineId: Long, update: RoutineUpdate) =
+        launchSafely { routineRepository.undoRoutineUpdate(routineId, update.previousItems) }
 
     internal fun reopen(sessionId: Long) {
         viewModelScope.launch {

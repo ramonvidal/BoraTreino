@@ -13,6 +13,9 @@
     <string name="today_done">Done</string>
     <string name="today_machines_and_sets">%1$s · %2$s</string>
     <string name="today_training_now">Training now · %1$s</string>
+    <string name="today_update_routine_offer">Update your routine with this training</string>
+    <string name="today_update_routine_action">Update</string>
+    <string name="today_routine_updated">Routine updated</string>
     <string name="today_done_snackbar">Done: %1$s</string>
     <plurals name="today_machines">
         <item quantity="one">%d machine</item>

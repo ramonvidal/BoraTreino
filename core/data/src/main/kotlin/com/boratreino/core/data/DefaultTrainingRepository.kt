@@ -460,6 +460,11 @@ internal class DefaultTrainingRepository @Inject constructor(
         store.summary(open.id).copy(recordCount = RecordRules.countRecords(sessionSets, earlier))
     }
 
+    override suspend fun sessionRoutineId(sessionId: Long): Long? {
+        val routineId = store.session(sessionId)?.routineId ?: return null
+        return routineId.takeIf { id -> store.allRoutines().any { it.id == id } }
+    }
+
     override suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate? {
         val routineId = store.session(sessionId)?.routineId ?: return null
         if (store.allRoutines().none { it.id == routineId }) return null

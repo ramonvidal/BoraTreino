@@ -96,6 +96,9 @@ internal fun TodayScreen(
     val resources = LocalContext.current.resources
     val undoLabel = stringResource(CoreUiR.string.undo)
     val failedText = stringResource(CoreUiR.string.error_generic)
+    val updateOfferText = stringResource(R.string.today_update_routine_offer)
+    val updateLabel = stringResource(R.string.today_update_routine_action)
+    val updatedText = stringResource(R.string.today_routine_updated)
 
     // Leaving the screen ends edit mode.
     DisposableEffect(viewModel) { onDispose { viewModel.finishEditing() } }
@@ -108,7 +111,22 @@ internal fun TodayScreen(
                         R.string.today_done_snackbar,
                         resources.machinesAndSets(event.summary.machineCount, event.summary.setCount, event.summary.recordCount),
                     )
-                    if (snackbar.showUndo(text, undoLabel)) viewModel.reopen(event.summary.sessionId)
+                    if (snackbar.showUndo(text, undoLabel)) {
+                        viewModel.reopen(event.summary.sessionId)
+                    } else {
+                        // Not undone: quietly offer to bring the routine in line with this training.
+                        viewModel.offerRoutineUpdate(event.summary.sessionId)
+                    }
+                }
+                is TodayEvent.RoutineUpdateOffer -> launch {
+                    if (snackbar.showUndo(updateOfferText, updateLabel)) {
+                        viewModel.updateRoutine(event.routineId, event.sessionId)
+                    }
+                }
+                is TodayEvent.RoutineUpdated -> launch {
+                    if (snackbar.showUndo(updatedText, undoLabel)) {
+                        viewModel.undoRoutineUpdate(event.routineId, event.update)
+                    }
                 }
                 is TodayEvent.Skipped -> launch {
                     val text = resources.getString(R.string.today_skipped, event.machine.name)

@@ -77,4 +77,6 @@ interface TrainingRepository {
      * session has no routine, the routine is gone, or nothing would change.
      */
     suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate?
+    /** The routine the session was trained on; null for a free session or when it no longer exists. */
+    suspend fun sessionRoutineId(sessionId: Long): Long?
 }
