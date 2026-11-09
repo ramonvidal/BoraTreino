@@ -339,7 +339,7 @@ class ExerciseLibraryRulesTest {
     fun `the display name is the Portuguese one only when asked for it`() {
         assertEquals("Supino reto com barra", bench.displayName(portuguese = true))
         assertEquals("Barbell Bench Press", bench.displayName(portuguese = false))
-        assertEquals("Plain", exercise("X", "Plain", " ", ).copy(namePt = " ").displayName(portuguese = true))
+        assertEquals("Plain", exercise("X", "Plain", " ").displayName(portuguese = true))
     }
 
     // Starter links

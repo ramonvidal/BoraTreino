@@ -1,6 +1,5 @@
 package com.boratreino.core.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -136,10 +135,13 @@ private val PlainShapes = Shapes(
     extraLarge = RoundedCornerShape(20.dp),
 )
 
-/** The app has its own look, so the phone's wallpaper colours (dynamic color) are not used. */
+/**
+ * The app has its own look, so the phone's wallpaper colours (dynamic color) are not used. It also stays in the light look
+ * whatever the phone's dark mode says (the owner's choice); [darkTheme] is only turned on by tests and previews.
+ */
 @Composable
 fun BoraTreinoTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) DarkColors else LightColors

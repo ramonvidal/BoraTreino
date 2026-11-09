@@ -192,6 +192,41 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun `a machine's exercise library link survives an export and an import`() = runTest {
+        val linked = seed.copy(machines = listOf(seed.machines[0].copy(libraryId = "Leg_Press"), seed.machines[1]))
+        store.replaceAll(linked)
+        val exported = repo.export()
+        store.replaceAll(other)
+
+        val preview = repo.preview(exported)
+        assertTrue(preview is BackupPreview.Ready)
+        repo.import((preview as BackupPreview.Ready).data)
+
+        assertEquals(linked.machines, store.exportAll().machines)
+        assertEquals("Leg_Press", store.exportAll().machines.single { it.id == 1L }.libraryId)
+    }
+
+    @Test
+    fun `a version 4 backup imports with no library links`() = runTest {
+        val v4 = """
+            {"app":"boratreino","version":4,"machines":[{"id":1,"name":"Leg press","muscleGroup":"LEGS","kind":"WEIGHT_REPS","stepKg":5.0,"setupNote":null,"restSeconds":null,"archived":false}],
+             "plans":[{"id":1,"scheduleMode":"IN_TURN","trainingDays":[]}],
+             "routines":[{"id":1,"planId":1,"name":"Routine A","shortName":"A","position":0,"weekdays":[]}],
+             "items":[{"routineId":1,"machineId":1,"position":0,"targetSets":3,"repsMin":8,"repsMax":12}],
+             "sessions":[],"sets":[],"plannedWorkouts":[]}
+        """.trimIndent()
+
+        val preview = repo.preview(v4)
+        assertTrue(preview is BackupPreview.Ready)
+        repo.import((preview as BackupPreview.Ready).data)
+
+        val machine = store.exportAll().machines.single()
+        assertEquals("Leg press", machine.name)
+        assertNull(machine.libraryId)
+        assertEquals(1, store.exportAll().routines.size)
+    }
+
+    @Test
     fun `a backup with a planned workout for a missing routine previews as invalid`() {
         val broken = BackupCodec.encode(seed.copy(plannedWorkouts = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 99L))), now)
 
@@ -257,9 +292,9 @@ class BackupRepositoryTest {
 
     @Test
     fun `a newer backup previews as too new`() {
-        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":5,\"machines\":\"odd\"}")
+        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":6,\"machines\":\"odd\"}")
 
-        assertEquals(BackupPreview.TooNew(5), preview)
+        assertEquals(BackupPreview.TooNew(6), preview)
     }
 
     @Test

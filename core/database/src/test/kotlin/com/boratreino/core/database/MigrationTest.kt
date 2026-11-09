@@ -13,8 +13,8 @@ import org.robolectric.annotation.Config
 
 /**
  * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays; migration
- * 3 -> 4 adds planned_workouts; 4 -> 5 makes its key (date, routineId). Needs schemas/.../2.json, 3.json, 4.json
- * and 5.json, which Room writes on the first build with those versions (the schemas folder is a test asset).
+ * 3 -> 4 adds planned_workouts; 4 -> 5 makes its key (date, routineId); 5 -> 6 adds machines.libraryId. Needs
+ * schemas/.../2.json to 6.json, which Room writes on the first build with those versions (the schemas folder is a test asset).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -373,6 +373,98 @@ class MigrationTest {
             c.moveToNext()
             assertEquals("2026-11-13", c.getString(0))
             assertEquals(2L, c.getLong(1))
+        }
+    }
+
+
+    // 5 -> 6: machines get a library id, empty for every machine that was there.
+
+    private fun SupportSQLiteDatabase.insertV5Data() {
+        execSQL(
+            "INSERT INTO machines (id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived) " +
+                "VALUES (1, 'Leg press', 'LEGS', 'WEIGHT_REPS', 5.0, NULL, NULL, 0)",
+        )
+        execSQL(
+            "INSERT INTO machines (id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived) " +
+                "VALUES (2, 'Pull-ups', 'BACK', 'BODYWEIGHT_REPS', 2.5, 'Bar 2', 90, 1)",
+        )
+        execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note) VALUES (1, 1000, NULL, NULL, NULL)")
+        execSQL(
+            "INSERT INTO workout_sets (id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, loggedAt, type) " +
+                "VALUES (7, 1, 1, 0, 120.5, 12, NULL, NULL, NULL, 123456, 'NORMAL')",
+        )
+    }
+
+    @Test
+    fun `migrating 5 to 6 keeps the machines, their sets and their details`() {
+        helper.createDatabase(name, 5).apply {
+            insertV5Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 6, true, MIGRATION_5_6)
+
+        db.query("SELECT id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived FROM machines ORDER BY id").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            assertEquals("Leg press", c.getString(1))
+            assertEquals("LEGS", c.getString(2))
+            assertEquals("WEIGHT_REPS", c.getString(3))
+            assertEquals(5.0, c.getDouble(4), 0.0)
+            assertEquals(true, c.isNull(5))
+            assertEquals(true, c.isNull(6))
+            assertEquals(0, c.getInt(7))
+            c.moveToNext()
+            assertEquals("Pull-ups", c.getString(1))
+            assertEquals("Bar 2", c.getString(5))
+            assertEquals(90, c.getInt(6))
+            assertEquals(1, c.getInt(7))
+        }
+        db.query("SELECT COUNT(*) FROM workout_sets").use { c ->
+            c.moveToFirst()
+            assertEquals(1, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `after 5 to 6 every existing machine has no library id`() {
+        helper.createDatabase(name, 5).apply {
+            insertV5Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 6, true, MIGRATION_5_6)
+
+        db.query("SELECT COUNT(*) FROM machines WHERE libraryId IS NULL").use { c ->
+            c.moveToFirst()
+            assertEquals(2, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `after 5 to 6 a machine can carry a library id and one inserted without it has none`() {
+        helper.createDatabase(name, 5).apply {
+            insertV5Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 6, true, MIGRATION_5_6)
+
+        db.execSQL("UPDATE machines SET libraryId = 'Leg_Press' WHERE id = 1")
+        db.execSQL(
+            "INSERT INTO machines (name, muscleGroup, kind, stepKg, archived) VALUES ('Home rig', 'CORE', 'WEIGHT_REPS', 2.5, 0)",
+        )
+
+        db.query("SELECT name, libraryId FROM machines ORDER BY id").use { c ->
+            assertEquals(3, c.count)
+            c.moveToFirst()
+            assertEquals("Leg press", c.getString(0))
+            assertEquals("Leg_Press", c.getString(1))
+            c.moveToNext()
+            assertEquals("Pull-ups", c.getString(0))
+            assertEquals(true, c.isNull(1))
+            c.moveToNext()
+            assertEquals("Home rig", c.getString(0))
+            assertEquals(true, c.isNull(1))
         }
     }
 }
