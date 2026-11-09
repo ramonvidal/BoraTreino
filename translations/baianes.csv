@@ -565,6 +565,11 @@ feature/today,summary_update_routine,,Update your routine,Atualizar sua ficha
 feature/today,summary_routine_updated,,Routine updated,Ficha atualizada
 feature/today,summary_not_finished,,Not finished yet,Ainda não terminei
 feature/today,summary_close,,Close,Fechar
+feature/today,machine_menu_edit,,Edit,Editar
+feature/today,today_menu_edit,,Edit exercise,Editar aparelho
+feature/today,today_menu_skip,,Skip today,Pular hoje
+feature/today,today_menu_remove,,Remove from routine,Tirar da ficha
+feature/today,today_menu_removed_today,,Removed from today,Tirado de hoje
 feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível
 feature/update,update_install,,Install,Instalar
 feature/update,update_later,,Later,Depois

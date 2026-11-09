@@ -105,6 +105,11 @@
     <string name="summary_routine_updated">Ficha atualizada</string>
     <string name="summary_not_finished">Ainda não terminei</string>
     <string name="summary_close">Fechar</string>
+    <string name="machine_menu_edit">Editar</string>
+    <string name="today_menu_edit">Editar aparelho</string>
+    <string name="today_menu_skip">Pular hoje</string>
+    <string name="today_menu_remove">Tirar da ficha</string>
+    <string name="today_menu_removed_today">Tirado de hoje</string>
     <plurals name="today_machines">
         <item quantity="one">%d aparelho</item>
         <item quantity="other">%d aparelhos</item>
