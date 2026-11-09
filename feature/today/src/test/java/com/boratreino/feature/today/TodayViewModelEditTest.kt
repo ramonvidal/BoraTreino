@@ -72,6 +72,9 @@ class TodayViewModelEditTest {
         val open = MutableStateFlow<OpenSession?>(null)
         val chosen = mutableListOf<RoutineChoice>()
         var finished = 0
+        val skipped = mutableListOf<Long>()
+        val discarded = mutableListOf<Long>()
+        val undone = mutableListOf<Pair<Long, List<WorkoutSet>>>()
 
         override fun observeOpenSession(): Flow<OpenSession?> = open
         override fun observeTodayPlan(): Flow<TodayPlan> = plan
@@ -85,12 +88,28 @@ class TodayViewModelEditTest {
         override suspend fun updateSet(set: WorkoutSet) = Unit
         override suspend fun deleteSet(set: WorkoutSet) = Unit
         override suspend fun restoreSet(set: WorkoutSet) = Unit
+        private val pending = MutableStateFlow<Long?>(null)
         override suspend fun finishSession(): SessionSummary? {
             finished++
+            pending.value = 1L
             return SessionSummary(sessionId = 1L, machineCount = 1, setCount = 3)
         }
+        override suspend fun finishIfRoutineComplete(): SessionSummary? = null
+        override val pendingSummarySessionId: Flow<Long?> = pending
+        override suspend fun consumePendingSummary() {
+            pending.value = null
+        }
+        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> {
+            discarded += machineId
+            return open.value?.machines?.firstOrNull { it.machine.id == machineId }?.sets.orEmpty()
+        }
+        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) {
+            undone += machineId to sets
+        }
         override suspend fun reopenSession(sessionId: Long) = Unit
-        override suspend fun skipMachineToday(machineId: Long) = Unit
+        override suspend fun skipMachineToday(machineId: Long) {
+            skipped += machineId
+        }
         override suspend fun unskipMachineToday(machineId: Long) = Unit
         override fun observeRepeatOffer(): Flow<RepeatOffer?> = MutableStateFlow(null)
         override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
@@ -404,5 +423,68 @@ class TodayViewModelEditTest {
         runCurrent()
 
         assertEquals(listOf(item), routines.restored)
+    }
+
+    // The row menu: Skip today
+
+    @Test
+    fun `skip from the menu of a machine with sets deletes them and hides it`() = runTest {
+        val vm = open(withSession = true)
+        val sets = session().machines.single().sets
+
+        vm.skipFromMenu(sample.legPress.id)
+        runCurrent()
+
+        assertEquals(listOf(sample.legPress.id), training.discarded)
+        assertTrue(training.skipped.isEmpty())
+        assertEquals(listOf<TodayEvent>(TodayEvent.Discarded(sample.legPress, sets)), events)
+    }
+
+    @Test
+    fun `skip from the menu of a machine without sets just hides it`() = runTest {
+        val vm = open(withSession = true)
+
+        vm.skipFromMenu(sample.latPulldown.id)
+        runCurrent()
+
+        assertEquals(listOf(sample.latPulldown.id), training.skipped)
+        assertTrue(training.discarded.isEmpty())
+        assertEquals(listOf<TodayEvent>(TodayEvent.Skipped(sample.latPulldown)), events)
+    }
+
+    @Test
+    fun `skip from the menu with no open session just hides the machine`() = runTest {
+        val vm = open(withSession = false)
+
+        vm.skipFromMenu(sample.legPress.id)
+        runCurrent()
+
+        assertEquals(listOf(sample.legPress.id), training.skipped)
+        assertTrue(training.discarded.isEmpty())
+    }
+
+    @Test
+    fun `skip from the menu of a machine not in the ficha does nothing`() = runTest {
+        val vm = open(withSession = true)
+
+        vm.skipFromMenu(sample.pullUps.id)
+        runCurrent()
+
+        assertTrue(training.skipped.isEmpty())
+        assertTrue(training.discarded.isEmpty())
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `undo of a discard gives the deleted sets back and shows the machine again`() = runTest {
+        val vm = open(withSession = true)
+        val sets = session().machines.single().sets
+        vm.skipFromMenu(sample.legPress.id)
+        runCurrent()
+
+        vm.undoDiscard(sample.legPress.id, sets)
+        runCurrent()
+
+        assertEquals(listOf(sample.legPress.id to sets), training.undone)
     }
 }

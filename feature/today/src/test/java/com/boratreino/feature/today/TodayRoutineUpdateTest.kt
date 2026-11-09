@@ -83,6 +83,7 @@ class TodayRoutineUpdateTest {
         var sessionRoutine: Long? = 7L,
         var offer: RoutineUpdate? = null,
     ) : TrainingRepository {
+        private val pending = MutableStateFlow<Long?>(null)
         override fun observeOpenSession(): Flow<OpenSession?> = MutableStateFlow(null)
         override fun observeTodayPlan(): Flow<TodayPlan> = MutableStateFlow(
             TodayPlan(ScheduleMode.IN_TURN, emptyList(), null, RoutineChoice.Free, null, restDay = false),
@@ -95,7 +96,17 @@ class TodayRoutineUpdateTest {
         override suspend fun updateSet(set: WorkoutSet) = Unit
         override suspend fun deleteSet(set: WorkoutSet) = Unit
         override suspend fun restoreSet(set: WorkoutSet) = Unit
-        override suspend fun finishSession(): SessionSummary? = SessionSummary(sessionId = 3L, machineCount = 3, setCount = 9, recordCount = 0)
+        override suspend fun finishSession(): SessionSummary? {
+            pending.value = 3L
+            return SessionSummary(sessionId = 3L, machineCount = 3, setCount = 9, recordCount = 0)
+        }
+        override suspend fun finishIfRoutineComplete(): SessionSummary? = null
+        override val pendingSummarySessionId: Flow<Long?> = pending
+        override suspend fun consumePendingSummary() {
+            pending.value = null
+        }
+        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
+        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit

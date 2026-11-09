@@ -90,6 +90,11 @@ class TodayViewModelWarmupCountTest {
         override suspend fun deleteSet(set: WorkoutSet) = Unit
         override suspend fun restoreSet(set: WorkoutSet) = Unit
         override suspend fun finishSession(): SessionSummary? = null
+        override suspend fun finishIfRoutineComplete(): SessionSummary? = null
+        override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
+        override suspend fun consumePendingSummary() = Unit
+        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
+        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit

@@ -72,6 +72,15 @@ class TodayViewModelSummaryTest {
     private class SummaryTraining(var summary: TrainingSummary?) : TrainingRepository {
         val reopened = mutableListOf<Long>()
         var finishedSessions = 0
+        var summaryLoads = 0
+        private val pending = MutableStateFlow<Long?>(null)
+        override val pendingSummarySessionId: Flow<Long?> = pending
+        val pendingNow: Long? get() = pending.value
+
+        /** The repository sets the pending session itself, as an automatic finish does. */
+        fun announce(id: Long) {
+            pending.value = id
+        }
 
         override fun observeOpenSession(): Flow<OpenSession?> = MutableStateFlow(null)
         override fun observeTodayPlan(): Flow<TodayPlan> = MutableStateFlow(
@@ -87,8 +96,15 @@ class TodayViewModelSummaryTest {
         override suspend fun restoreSet(set: WorkoutSet) = Unit
         override suspend fun finishSession(): SessionSummary? {
             finishedSessions++
+            pending.value = 12L
             return SessionSummary(sessionId = 12L, machineCount = 2, setCount = 6, recordCount = 1)
         }
+        override suspend fun finishIfRoutineComplete(): SessionSummary? = null
+        override suspend fun consumePendingSummary() {
+            pending.value = null
+        }
+        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
+        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
         override suspend fun reopenSession(sessionId: Long) {
             reopened += sessionId
         }
@@ -100,7 +116,10 @@ class TodayViewModelSummaryTest {
         override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
         override suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate? = null
         override suspend fun sessionRoutineId(sessionId: Long): Long? = null
-        override suspend fun trainingSummary(sessionId: Long): TrainingSummary? = summary
+        override suspend fun trainingSummary(sessionId: Long): TrainingSummary? {
+            summaryLoads++
+            return summary
+        }
     }
 
     private class NoRoutines : RoutineRepository {
@@ -230,6 +249,7 @@ class TodayViewModelSummaryTest {
 
         assertNull(latest.summary)
         assertEquals(listOf(sessionId), training.reopened)
+        assertNull(training.pendingNow)
     }
 
     @Test
@@ -289,5 +309,65 @@ class TodayViewModelSummaryTest {
         assertEquals(loaded, latest.summary?.summary)
         assertNull(latest.summary?.routineUpdate)
         assertEquals(listOf<TodayEvent>(TodayEvent.Finished(finished)), events)
+    }
+
+    @Test
+    fun `a pending session from the repository opens its sheet without Done`() = runTest {
+        viewModel()
+
+        training.announce(sessionId)
+        runCurrent()
+
+        assertEquals(loaded, latest.summary?.summary)
+        assertEquals(0, training.finishedSessions)
+        assertTrue(events.none { it is TodayEvent.Finished })
+    }
+
+    @Test
+    fun `the same pending session opens the sheet once`() = runTest {
+        viewModel()
+
+        training.announce(sessionId)
+        runCurrent()
+        training.announce(sessionId)
+        runCurrent()
+
+        assertEquals(1, training.summaryLoads)
+    }
+
+    @Test
+    fun `Done loads the summary once, through the pending session`() = runTest {
+        val vm = viewModel()
+
+        vm.finish()
+        runCurrent()
+
+        assertEquals(1, training.summaryLoads)
+        assertEquals(loaded, latest.summary?.summary)
+    }
+
+    @Test
+    fun `dismissing the sheet consumes the pending session`() = runTest {
+        val vm = viewModel()
+        training.announce(sessionId)
+        runCurrent()
+
+        vm.dismissSummary()
+        runCurrent()
+
+        assertNull(training.pendingNow)
+        assertNull(latest.summary)
+    }
+
+    @Test
+    fun `a pending session that cannot be loaded opens no sheet`() = runTest {
+        training.summary = null
+        viewModel()
+
+        training.announce(sessionId)
+        runCurrent()
+
+        assertNull(latest.summary)
+        assertTrue(events.none { it is TodayEvent.Finished })
     }
 }
