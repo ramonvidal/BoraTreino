@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.StatsPeriod
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,9 +52,26 @@ class StatsContentTest {
     }
 
     @Test
+    fun `the muscle groups card is the first card, above the summary`() {
+        showPage()
+
+        val week = compose.onNodeWithText("Muscle groups this week").fetchSemanticsNode().positionInRoot.y
+        val summary = compose.onNodeWithText("Summary").fetchSemanticsNode().positionInRoot.y
+        assertTrue(week < summary)
+    }
+
+    @Test
+    fun `the muscle groups card is left out of an empty period`() {
+        showPage(StatsSamples.state(StatsSamples.empty))
+
+        compose.onNodeWithText("Muscle groups this week").assertDoesNotExist()
+    }
+
+    @Test
     fun `the cards come with their titles`() {
         showPage()
         listOf(
+            "Muscle groups this week",
             "Summary",
             "Weekly volume",
             "Hard sets per muscle group",

@@ -58,6 +58,7 @@ class TodayViewModelRepeatTest {
 
     private class RepeatTraining : TrainingRepository {
     override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
+    override suspend fun trainingSummary(sessionId: Long): com.boratreino.core.model.TrainingSummary? = null
     override suspend fun sessionRoutineId(sessionId: Long): Long? = null
 
         val plan = MutableStateFlow(

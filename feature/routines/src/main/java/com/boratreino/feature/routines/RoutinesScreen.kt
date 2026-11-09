@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -133,7 +134,8 @@ internal fun RoutinesContent(
     initialPage: RoutinesPage? = null,
 ) {
     var chosen by rememberSaveable { mutableStateOf(initialPage?.name) }
-    Column(modifier) {
+    // This tab has no Scaffold of its own, so it keeps itself clear of the status bar.
+    Column(modifier.statusBarsPadding()) {
         Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
             Text(stringResource(R.string.routines_title), style = MaterialTheme.typography.headlineMedium)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(top = 12.dp)) {

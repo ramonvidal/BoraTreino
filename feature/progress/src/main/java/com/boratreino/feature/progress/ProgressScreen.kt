@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -61,7 +62,8 @@ internal fun ProgressShell(
 ) {
     var chosen by rememberSaveable { mutableStateOf(ProgressPage.MACHINES.name) }
     val page = ProgressPage.entries.firstOrNull { it.name == chosen } ?: ProgressPage.MACHINES
-    Column(modifier.fillMaxSize()) {
+    // statusBarsPadding keeps the switch clear of the status bar and consumes that inset, so the pages' own Scaffolds do not add it again below the switch.
+    Column(modifier.fillMaxSize().statusBarsPadding()) {
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
             ProgressPage.entries.forEachIndexed { index, option ->
                 SegmentedButton(

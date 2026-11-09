@@ -28,6 +28,8 @@ import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetsChange
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.model.TodayPlan
+import com.boratreino.core.model.TrainingSummary
+import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.notify.RestTimerState
 import kotlinx.coroutines.Dispatchers
@@ -45,9 +47,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -57,8 +59,9 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
- * After a finished training with a routine: the offer to update the routine, the update, and its undo, as the
- * Today view model hands them to the screen. Written from the behaviour, not from the view model's code.
+ * The routine update in the "Training complete" sheet: offered only when it would change the routine, applied
+ * by "Update your routine", and undone by the sheet's Undo. Written from the view model's public surface
+ * (finish, state.summary, applyRoutineUpdate, undoRoutineUpdate), not from its code.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -72,6 +75,7 @@ class TodayRoutineUpdateTest {
         additions = listOf(Addition(9L, 2)),
         previousItems = previous,
     )
+    private val finished = SessionSummary(sessionId = sessionId, machineCount = 3, setCount = 9, recordCount = 0)
 
     /** Training whose finished session has [sessionRoutine] and an offer of [offer] (null when nothing would change). */
     private class UpdateTraining(
@@ -87,10 +91,10 @@ class TodayRoutineUpdateTest {
         override suspend fun closeStaleSession() = Unit
         override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used by this test")
         override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used by this test")
-        override suspend fun updateSet(set: com.boratreino.core.model.WorkoutSet) = Unit
-        override suspend fun deleteSet(set: com.boratreino.core.model.WorkoutSet) = Unit
-        override suspend fun restoreSet(set: com.boratreino.core.model.WorkoutSet) = Unit
-        override suspend fun finishSession(): SessionSummary? = null
+        override suspend fun updateSet(set: WorkoutSet) = Unit
+        override suspend fun deleteSet(set: WorkoutSet) = Unit
+        override suspend fun restoreSet(set: WorkoutSet) = Unit
+        override suspend fun finishSession(): SessionSummary? = SessionSummary(sessionId = 3L, machineCount = 3, setCount = 9, recordCount = 0)
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit
@@ -100,6 +104,18 @@ class TodayRoutineUpdateTest {
         override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
         override suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate? = offer
         override suspend fun sessionRoutineId(sessionId: Long): Long? = sessionRoutine
+        override suspend fun trainingSummary(sessionId: Long): TrainingSummary? =
+            TrainingSummary(
+                sessionId = sessionId,
+                routineName = "Routine A",
+                date = LocalDate.of(2026, 11, 5),
+                durationMinutes = 50,
+                workingSets = 9,
+                volumeKg = 3000.0,
+                machineCount = 3,
+                records = emptyList(),
+                previous = null,
+            )
     }
 
     /** Records what the view model asks of the routines; the update answers [answer]. */
@@ -158,6 +174,7 @@ class TodayRoutineUpdateTest {
     private lateinit var training: UpdateTraining
     private lateinit var routines: UpdateRoutines
     private val events = mutableListOf<TodayEvent>()
+    private var latest: TodayUiState = TodayUiState()
 
     @Before
     fun setUp() {
@@ -174,21 +191,28 @@ class TodayRoutineUpdateTest {
     private fun TestScope.viewModel(): TodayViewModel {
         val vm = TodayViewModel(training, NoMachines(), routines, IdleRest(), FakeHistory(), FakeBodySettings(), TodayTestClock)
         backgroundScope.launch { vm.events.collect { events += it } }
+        backgroundScope.launch { vm.state.collect { latest = it } }
         runCurrent()
         return vm
     }
 
-    // The offer
+    /** Done: the session closes and the sheet opens with its offer. */
+    private fun TestScope.finishTraining(vm: TodayViewModel) {
+        vm.finish()
+        runCurrent()
+    }
+
+    // The offer in the sheet
 
     @Test
-    fun `a finished routine session whose routine would change is offered an update`() = runTest {
+    fun `a routine that would change is offered an update in the sheet`() = runTest {
         training.offer = change
         val vm = viewModel()
 
-        vm.offerRoutineUpdate(sessionId)
-        runCurrent()
+        finishTraining(vm)
 
-        assertEquals(listOf<TodayEvent>(TodayEvent.RoutineUpdateOffer(routineId, sessionId)), events)
+        assertTrue(requireNotNull(latest.summary).canUpdateRoutine)
+        assertNull(latest.summary?.routineUpdate)
     }
 
     @Test
@@ -196,10 +220,9 @@ class TodayRoutineUpdateTest {
         training.offer = null
         val vm = viewModel()
 
-        vm.offerRoutineUpdate(sessionId)
-        runCurrent()
+        finishTraining(vm)
 
-        assertTrue(events.isEmpty())
+        assertEquals(false, latest.summary?.canUpdateRoutine)
     }
 
     @Test
@@ -208,66 +231,92 @@ class TodayRoutineUpdateTest {
         training.offer = change
         val vm = viewModel()
 
-        vm.offerRoutineUpdate(sessionId)
-        runCurrent()
+        finishTraining(vm)
 
-        assertTrue(events.isEmpty())
+        assertEquals(false, latest.summary?.canUpdateRoutine)
+    }
+
+    @Test
+    fun `the sheet shows the finished training it was opened with`() = runTest {
+        val vm = viewModel()
+
+        finishTraining(vm)
+
+        assertEquals(sessionId, latest.summary?.summary?.sessionId)
+        assertEquals("Routine A", latest.summary?.summary?.routineName)
     }
 
     // The update
 
     @Test
-    fun `accepting the offer updates the routine from the session and announces what changed`() = runTest {
+    fun `Update your routine applies the update from the session and the sheet shows it as updated`() = runTest {
+        training.offer = change
         val vm = viewModel()
+        finishTraining(vm)
 
-        vm.updateRoutine(routineId, sessionId)
+        vm.applyRoutineUpdate()
         runCurrent()
 
         assertEquals(listOf(routineId to sessionId), routines.updated)
-        assertEquals(listOf<TodayEvent>(TodayEvent.RoutineUpdated(routineId, change)), events)
+        assertEquals(change, latest.summary?.routineUpdate)
+        assertEquals(false, latest.summary?.canUpdateRoutine)
     }
 
     @Test
-    fun `an update that changes nothing announces nothing`() = runTest {
+    fun `an update that changes nothing shows no updated state`() = runTest {
+        training.offer = change
         routines.answer = RoutineUpdate(emptyList(), emptyList())
         val vm = viewModel()
+        finishTraining(vm)
 
-        vm.updateRoutine(routineId, sessionId)
+        vm.applyRoutineUpdate()
         runCurrent()
 
         assertEquals(listOf(routineId to sessionId), routines.updated)
-        assertTrue(events.isEmpty())
+        assertNull(latest.summary?.routineUpdate)
+        assertEquals(false, latest.summary?.canUpdateRoutine)
     }
 
     // Undo
 
     @Test
-    fun `undoing the update puts back the routine's previous items`() = runTest {
+    fun `Undo puts back the routine's previous items and offers the update again`() = runTest {
+        training.offer = change
         val vm = viewModel()
+        finishTraining(vm)
+        vm.applyRoutineUpdate()
+        runCurrent()
 
-        vm.undoRoutineUpdate(routineId, change)
+        vm.undoRoutineUpdate()
         runCurrent()
 
         assertEquals(listOf(routineId to previous), routines.undone)
-        assertTrue(events.isEmpty())
+        assertNull(latest.summary?.routineUpdate)
+        assertTrue(requireNotNull(latest.summary).canUpdateRoutine)
     }
 
     @Test
-    fun `the offer, the update and the undo follow in that order`() = runTest {
+    fun `Undo does nothing when no update was applied`() = runTest {
         training.offer = change
         val vm = viewModel()
+        finishTraining(vm)
 
-        vm.offerRoutineUpdate(sessionId)
-        runCurrent()
-        vm.updateRoutine(routineId, sessionId)
-        runCurrent()
-        vm.undoRoutineUpdate(routineId, change)
+        vm.undoRoutineUpdate()
         runCurrent()
 
-        assertEquals(
-            listOf<TodayEvent>(TodayEvent.RoutineUpdateOffer(routineId, sessionId), TodayEvent.RoutineUpdated(routineId, change)),
-            events,
-        )
-        assertEquals(listOf(routineId to previous), routines.undone)
+        assertTrue(routines.undone.isEmpty())
+    }
+
+    @Test
+    fun `the routine update announces nothing as an event, the sheet carries it`() = runTest {
+        training.offer = change
+        val vm = viewModel()
+        finishTraining(vm)
+        vm.applyRoutineUpdate()
+        runCurrent()
+        vm.undoRoutineUpdate()
+        runCurrent()
+
+        assertEquals(listOf<TodayEvent>(TodayEvent.Finished(finished)), events)
     }
 }
