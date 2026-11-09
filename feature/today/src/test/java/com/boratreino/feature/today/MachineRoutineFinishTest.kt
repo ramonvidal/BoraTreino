@@ -20,6 +20,7 @@ import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineUpdate
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.SetDraft
+import com.boratreino.core.model.SetType
 import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.TrainingSummary
 import com.boratreino.core.model.WorkoutSet
