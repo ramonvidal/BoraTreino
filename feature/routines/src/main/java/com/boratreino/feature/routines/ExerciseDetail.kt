@@ -142,13 +142,13 @@ internal fun ExerciseDetailDialog(
                 if (exercise.primaryMuscles.isNotEmpty()) {
                     DetailLine(
                         stringResource(R.string.library_detail_primary),
-                        exercise.primaryMuscles.joinToString(", ") { libraryMuscleLabel(it) },
+                        exercise.primaryMuscles.map { libraryMuscleLabel(it) }.joinToString(", "),
                     )
                 }
                 if (exercise.secondaryMuscles.isNotEmpty()) {
                     DetailLine(
                         stringResource(R.string.library_detail_secondary),
-                        exercise.secondaryMuscles.joinToString(", ") { libraryMuscleLabel(it) },
+                        exercise.secondaryMuscles.map { libraryMuscleLabel(it) }.joinToString(", "),
                     )
                 }
                 DetailLine(stringResource(R.string.library_detail_equipment), exercise.equipment.label())
