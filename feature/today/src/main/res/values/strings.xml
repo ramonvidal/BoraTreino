@@ -150,4 +150,8 @@
     <string name="summary_not_finished">Not finished yet</string>
     <string name="summary_close">Close</string>
     <string name="machine_menu_edit">Edit</string>
+    <string name="today_menu_edit">Edit exercise</string>
+    <string name="today_menu_skip">Skip today</string>
+    <string name="today_menu_remove">Remove from routine</string>
+    <string name="today_menu_removed_today">Removed from today</string>
 </resources>

@@ -17,6 +17,7 @@ import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.EnergyRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.SessionSets
+import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.settings.BodySettings
 import java.time.Clock
 import java.time.LocalDate
@@ -141,6 +142,9 @@ internal sealed interface TodayEvent {
     data class Finished(val summary: SessionSummary) : TodayEvent
     /** Skipped for this training; the screen offers Undo. */
     data class Skipped(val machine: Machine) : TodayEvent
+
+    /** Skipped from the row menu after sets were logged: those [sets] were deleted; Undo restores them. */
+    data class Discarded(val machine: Machine, val sets: List<WorkoutSet>) : TodayEvent
 
     /** Taken out of the ficha [routineName]; Undo puts [item] back. */
     data class Removed(val routineName: String, val item: RoutineItem) : TodayEvent
@@ -292,6 +296,19 @@ class TodayViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
     init {
+        // The summary sheet follows the repository: Done and the automatic finish both set the pending id.
+        viewModelScope.launch {
+            training.pendingSummarySessionId.distinctUntilChanged().collect { id ->
+                if (id == null) return@collect
+                try {
+                    openSummary(id)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    eventChannel.send(TodayEvent.Failed)
+                }
+            }
+        }
         viewModelScope.launch {
             try {
                 training.closeStaleSession()
@@ -322,6 +339,23 @@ class TodayViewModel @Inject constructor(
             eventChannel.send(TodayEvent.Skipped(machine))
         }
     }
+
+    /** The row menu's "Skip today": with sets logged, deletes them (Undo restores); otherwise just hides the machine. */
+    internal fun skipFromMenu(machineId: Long) {
+        val row = state.value.routines?.machines?.firstOrNull { it.machine.id == machineId } ?: return
+        launchSafely {
+            if (row.setCount > 0) {
+                val sets = training.discardMachineToday(machineId)
+                eventChannel.send(TodayEvent.Discarded(row.machine, sets))
+            } else {
+                training.skipMachineToday(machineId)
+                eventChannel.send(TodayEvent.Skipped(row.machine))
+            }
+        }
+    }
+
+    internal fun undoDiscard(machineId: Long, sets: List<WorkoutSet>) =
+        launchSafely { training.undoDiscardMachineToday(machineId, sets) }
 
     internal fun unskip(machineId: Long) = launchSafely { training.unskipMachineToday(machineId) }
 
@@ -409,7 +443,6 @@ class TodayViewModel @Inject constructor(
                 }
                 val summary = training.finishSession() ?: return@launch
                 eventChannel.send(TodayEvent.Finished(summary))
-                openSummary(summary.sessionId)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -427,6 +460,7 @@ class TodayViewModel @Inject constructor(
 
     internal fun dismissSummary() {
         summaryState.value = null
+        launchSafely { training.consumePendingSummary() }
     }
 
     /** Asks the screen to draw and share the picture of the open summary. */
@@ -478,6 +512,7 @@ class TodayViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 training.reopenSession(sessionId)
+                training.consumePendingSummary()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

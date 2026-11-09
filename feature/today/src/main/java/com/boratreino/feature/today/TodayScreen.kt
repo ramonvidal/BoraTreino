@@ -58,6 +58,12 @@ import androidx.compose.ui.Alignment
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.BoraChip
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -78,6 +84,10 @@ internal data class TodayActions(
     val onChooseRoutine: (RoutineChoice) -> Unit = {},
     val onSkipMachine: (machineId: Long) -> Unit = {},
     val onSkipToday: () -> Unit = {},
+    /** The row menu: opens the machine editor like the pencil. */
+    val onEditMachine: (machineId: Long) -> Unit = {},
+    /** The row menu's "Skip today": deletes the sets already logged (with Undo) or hides the machine. */
+    val onMenuSkip: (machineId: Long) -> Unit = {},
     val onRemoveFromRoutine: () -> Unit = {},
     val onDismissSkip: () -> Unit = {},
     val onRepeatSame: () -> Unit = {},
@@ -90,6 +100,7 @@ internal fun TodayScreen(
     onOpenMachine: (Long) -> Unit,
     onAllMachines: () -> Unit,
     onEditRoutine: (Long) -> Unit,
+    onEditMachine: (Long) -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -118,6 +129,10 @@ internal fun TodayScreen(
                 is TodayEvent.Skipped -> launch {
                     val text = resources.getString(R.string.today_skipped, event.machine.name)
                     if (snackbar.showUndo(text, undoLabel)) viewModel.unskip(event.machine.id)
+                }
+                is TodayEvent.Discarded -> launch {
+                    val text = resources.getString(R.string.today_menu_removed_today)
+                    if (snackbar.showUndo(text, undoLabel)) viewModel.undoDiscard(event.machine.id, event.sets)
                 }
                 is TodayEvent.Removed -> launch {
                     val text = resources.getString(R.string.today_removed_from, event.routineName)
@@ -154,6 +169,8 @@ internal fun TodayScreen(
             onChooseRoutine = viewModel::choose,
             onSkipMachine = viewModel::askSkip,
             onSkipToday = viewModel::skipToday,
+            onEditMachine = onEditMachine,
+            onMenuSkip = viewModel::skipFromMenu,
             onRemoveFromRoutine = viewModel::removeFromRoutine,
             onDismissSkip = viewModel::dismissSkip,
             onRepeatSame = { viewModel.repeatLast(RepeatMode.SAME) },
@@ -563,6 +580,8 @@ private fun EditBar(actions: TodayActions) {
 
 private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions, editing: Boolean) {
     itemsIndexed(routines.machines, key = { _, row -> "rm${row.machine.id}" }) { index, row ->
+        var menuOpen by rememberSaveable(row.machine.id) { mutableStateOf(false) }
+        Box {
         MachineRow(
             title = row.machine.name,
             supporting = if (row.machine.kind == MachineKind.CARDIO) {
@@ -573,6 +592,7 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
             onClick = { if (!editing) actions.onOpenMachine(row.machine.id) },
             highlighted = row.highlighted && !editing,
             leading = { RowThumb(row.machine) },
+            onLongClick = if (editing) null else ({ menuOpen = true }),
             trailing = {
                 when {
                     editing -> Row(verticalAlignment = Alignment.CenterVertically) {
@@ -610,6 +630,21 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
                 }
             },
         )
+        DropdownMenu(expanded = menuOpen && !editing, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.today_menu_edit)) },
+                onClick = { menuOpen = false; actions.onEditMachine(row.machine.id) },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.today_menu_skip)) },
+                onClick = { menuOpen = false; actions.onMenuSkip(row.machine.id) },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.today_menu_remove)) },
+                onClick = { menuOpen = false; actions.onRemoveMachine(row.machine.id) },
+            )
+        }
+        }
     }
 }
 

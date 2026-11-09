@@ -39,8 +39,8 @@ internal fun Resources.machinesAndSets(machines: Int, sets: Int, records: Int = 
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 /** A tappable white card with a title and an optional grey line, at least 64 dp tall. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun MachineRow(
     title: String,

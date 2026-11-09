@@ -34,6 +34,7 @@ fun NavGraphBuilder.todayGraph(
             onOpenMachine = { navController.navigate(machineRoute(it)) },
             onAllMachines = { navController.navigate(PICKER_ROUTE) },
             onEditRoutine = onEditRoutine,
+            onEditMachine = onEditMachine,
         )
     }
     composable(PICKER_ROUTE) {
