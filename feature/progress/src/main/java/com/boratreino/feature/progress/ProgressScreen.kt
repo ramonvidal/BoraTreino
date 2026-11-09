@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -148,17 +149,31 @@ private fun SoftCard(modifier: Modifier = Modifier, content: @Composable () -> U
     ) { content() }
 }
 
-/** "This month: 9 trainings · 4 records". */
+/** "This month": three big numbers, each with a small label. */
 @Composable
 private fun SummaryCard(state: ProgressUiState) {
-    val trainings = pluralStringResource(R.plurals.progress_trainings, state.trainingsThisMonth, state.trainingsThisMonth)
-    val records = pluralStringResource(R.plurals.progress_records, state.recordsThisMonth, state.recordsThisMonth)
     SoftCard {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.progress_this_month), style = MaterialTheme.typography.titleMedium)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                BigNumber(state.trainingsThisMonth, stringResource(R.string.progress_stat_trainings), Modifier.weight(1f))
+                BigNumber(state.recordsThisMonth, stringResource(R.string.progress_stat_records), Modifier.weight(1f))
+                BigNumber(state.setsThisMonth, stringResource(R.string.progress_stat_sets), Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun BigNumber(value: Int, label: String, modifier: Modifier = Modifier) {
+    Column(modifier.heightIn(min = 56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            stringResource(R.string.progress_summary, trainings, records),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(16.dp),
+            value.toString(),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
         )
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

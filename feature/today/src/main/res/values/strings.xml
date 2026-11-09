@@ -122,4 +122,31 @@
     <string name="machine_no_previous">-</string>
     <string name="machine_record_mark">Record</string>
     <string name="machine_type_value">Type the number</string>
+
+    <!-- Training summary sheet and share picture -->
+    <string name="summary_title">Training complete</string>
+    <string name="summary_free_training">Free training</string>
+    <string name="summary_duration">Duration</string>
+    <string name="summary_sets">Sets</string>
+    <string name="summary_volume">Volume</string>
+    <string name="summary_machines">Machines</string>
+    <string name="summary_minutes_value">%1$d min</string>
+    <string name="summary_kg_value">%1$s kg</string>
+    <string name="summary_tonnes_value">%1$s t</string>
+    <string name="summary_no_value">-</string>
+    <string name="summary_records_title">Records</string>
+    <string name="summary_record_heaviest">%1$s: Heaviest %2$s kg</string>
+    <string name="summary_record_most_reps">%1$s: Most reps %2$d at %3$s kg</string>
+    <string name="summary_compare_title">Compared with last time</string>
+    <string name="summary_compare_volume_up">Volume +%1$d %% vs last time</string>
+    <string name="summary_compare_volume_down">Volume -%1$d %% vs last time</string>
+    <string name="summary_compare_volume_same">Volume same as last time</string>
+    <string name="summary_compare_sets_up">Sets +%1$d</string>
+    <string name="summary_compare_sets_down">Sets -%1$d</string>
+    <string name="summary_compare_sets_same">Sets same as last time</string>
+    <string name="summary_share">Share</string>
+    <string name="summary_update_routine">Update your routine</string>
+    <string name="summary_routine_updated">Routine updated</string>
+    <string name="summary_not_finished">Not finished yet</string>
+    <string name="summary_close">Close</string>
 </resources>

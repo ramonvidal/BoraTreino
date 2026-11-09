@@ -28,6 +28,13 @@
         <item quantity="one">%d set</item>
         <item quantity="other">%d sets</item>
     </plurals>
+    <string name="progress_this_month">This month</string>
+    <string name="progress_stat_trainings">Trainings</string>
+    <string name="progress_stat_records">Records</string>
+    <string name="progress_stat_sets">Sets</string>
+    <string name="stats_week_muscles_title">Muscle groups this week</string>
+    <string name="stats_week_muscle_sets">%1$s: %2$d sets</string>
+    <string name="stats_week_muscle_sets_one">%1$s: %2$d set</string>
     <string name="progress_detail">%1$s · %2$s · %3$s</string>
     <string name="progress_detail_pair">%1$s · %2$s</string>
     <string name="progress_trend_weight">Trend: %1$s to %2$s kg</string>

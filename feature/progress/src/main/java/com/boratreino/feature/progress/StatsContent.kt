@@ -59,6 +59,7 @@ internal fun StatsContent(
             item(key = "empty") { StatsEmptyCard() }
             return@LazyColumn
         }
+        item(key = "week-muscles") { WeekMusclesCard(report) }
         item(key = "summary") { SummaryCard(report) }
         if (report.muscleWeeks.any { it.volumeKg > 0 }) {
             item(key = "volume") { WeeklyVolumeCard(report) }
@@ -110,7 +111,7 @@ private fun periodLabel(period: StatsPeriod): String = stringResource(
 )
 
 @Composable
-private fun StatsCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun StatsCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),

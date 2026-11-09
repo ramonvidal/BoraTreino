@@ -41,6 +41,8 @@ internal data class ProgressUiState(
     val today: LocalDate = LocalDate.of(2000, 1, 1),
     val trainingsThisMonth: Int = 0,
     val recordsThisMonth: Int = 0,
+    /** Working sets of strength machines logged this month (from the machines' session points). */
+    val setsThisMonth: Int = 0,
     val improved: List<ImprovedRow> = emptyList(),
     val machines: List<MachineRow> = emptyList(),
     /** This week's cardio totals; null when there is nothing to show. */
@@ -77,6 +79,13 @@ internal fun buildProgressState(overview: ProgressOverview, today: LocalDate): P
         today = today,
         trainingsThisMonth = overview.trainingsThisMonth,
         recordsThisMonth = overview.recordsThisMonth,
+        setsThisMonth = overview.machines
+            .filter { it.metric != ProgressMetric.MINUTES }
+            .sumOf { progress ->
+                progress.points
+                    .filter { it.date.year == today.year && it.date.month == today.month }
+                    .sumOf { it.setCount }
+            },
         improved = improved,
         machines = machines,
         cardioThisWeek = overview.cardioThisWeek?.takeIf { it.minutes > 0 || it.calories > 0 },
