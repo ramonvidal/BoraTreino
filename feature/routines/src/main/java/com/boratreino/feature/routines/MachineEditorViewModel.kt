@@ -3,10 +3,12 @@ package com.boratreino.feature.routines
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.boratreino.core.data.ExerciseLibraryRepository
 import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.settings.AppLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +32,11 @@ internal data class MachineEditorUiState(
     /** Rest after each set in seconds; null = the default from Settings. */
     val restSeconds: Int? = null,
     val archived: Boolean = false,
+    /** The library exercise the machine came from, kept on Save. */
+    val libraryId: String? = null,
+    /** Its instructions (English); empty when there are none. */
+    val steps: List<String> = emptyList(),
+    val portuguese: Boolean = false,
     /** True once the name has been edited (or a save was tried), so the error doesn't show on an untouched new form. */
     val nameTouched: Boolean = false,
     val done: Boolean = false,
@@ -60,6 +67,7 @@ internal data class MachineEditorCallbacks(
 @HiltViewModel
 class MachineEditorViewModel @Inject constructor(
     private val machines: MachineRepository,
+    private val library: ExerciseLibraryRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val machineId: Long = savedState.get<Long>(MACHINE_ID_ARG)?.takeIf { it != NEW_MACHINE } ?: 0L
@@ -67,7 +75,9 @@ class MachineEditorViewModel @Inject constructor(
     /** The stored machine, kept so Save carries over what the form doesn't edit (rest time). */
     private var original: Machine? = null
 
-    private val _uiState = MutableStateFlow(MachineEditorUiState(loading = machineId != 0L))
+    private val _uiState = MutableStateFlow(
+        MachineEditorUiState(loading = machineId != 0L, portuguese = AppLanguage.current() == AppLanguage.BAIANES),
+    )
     internal val uiState: StateFlow<MachineEditorUiState> = _uiState
 
     init {
@@ -89,8 +99,12 @@ class MachineEditorViewModel @Inject constructor(
                             setupNote = machine.setupNote.orEmpty(),
                             restSeconds = machine.restSeconds,
                             archived = machine.archived,
+                            libraryId = machine.libraryId,
                         )
                     }
+                    // The instructions load after the form is usable; a missing library just shows no card.
+                    val exercise = machine.libraryId?.let { library.byId(it) }
+                    if (exercise != null) _uiState.update { it.copy(steps = exercise.steps) }
                 }
             }
         }
@@ -132,6 +146,7 @@ class MachineEditorViewModel @Inject constructor(
                 setupNote = s.setupNote.trim().ifEmpty { null },
                 restSeconds = s.restSeconds,
                 archived = s.archived,
+                libraryId = s.libraryId,
             )
         } catch (e: IllegalArgumentException) {
             // The model's own rules (blank name) say no: show the inline error instead of crashing.

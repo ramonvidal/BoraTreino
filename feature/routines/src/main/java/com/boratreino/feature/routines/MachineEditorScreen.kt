@@ -197,6 +197,10 @@ internal fun MachineEditorContent(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             )
 
+            if (state.steps.isNotEmpty()) {
+                HowToCard(steps = state.steps, portuguese = state.portuguese)
+            }
+
             Button(
                 onClick = callbacks.onSave,
                 enabled = state.canSave,

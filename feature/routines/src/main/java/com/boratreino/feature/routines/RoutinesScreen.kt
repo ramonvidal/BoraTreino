@@ -1,6 +1,17 @@
 package com.boratreino.feature.routines
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import com.boratreino.core.model.LibraryEquipment
+import com.boratreino.core.model.LibraryLevel
+import com.boratreino.core.model.MuscleGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +64,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.ScheduleMode
-import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.shortLabel
@@ -87,6 +97,14 @@ internal fun RoutinesScreen(
             onTrainingDaysChange = viewModel::setTrainingDays,
             onSearchStarters = viewModel::searchStarters,
             onToggleStarter = viewModel::toggleStarter,
+            onToggleLibrary = viewModel::toggleLibrary,
+            onGroupFilter = viewModel::setGroupFilter,
+            onEquipmentFilter = viewModel::setEquipmentFilter,
+            onLevelFilter = viewModel::setLevelFilter,
+            onClearFilters = viewModel::clearFilters,
+            onShowDetail = viewModel::showDetail,
+            onDismissDetail = viewModel::dismissDetail,
+            onAddDetail = viewModel::addDetail,
             onAddSelectedStarters = viewModel::addSelectedStarters,
             onDeleteMachine = viewModel::deleteMachine,
             onConfirmDelete = viewModel::confirmDelete,
@@ -153,6 +171,12 @@ internal fun RoutinesContent(
         onArchiveInstead = callbacks.onArchiveInstead,
         onDismiss = callbacks.onDismissDelete,
     )
+    ExerciseDetailDialog(
+        detail = state.detail,
+        portuguese = state.portuguese,
+        onAdd = callbacks.onAddDetail,
+        onDismiss = callbacks.onDismissDetail,
+    )
     val routineDelete = state.routineDelete
     if (routineDelete != null) {
         AlertDialog(
@@ -213,34 +237,33 @@ private fun RoutinesPageList(state: RoutinesUiState, callbacks: RoutinesCallback
     }
 }
 
-/** Gym page: every machine and exercise the gym has, grouped by muscle, plus the starter list. */
+/** Gym page: every machine and exercise the gym has, grouped by muscle, plus the exercise picker. */
 @Composable
 private fun GymPageList(state: RoutinesUiState, callbacks: RoutinesCallbacks, modifier: Modifier = Modifier) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { InfoCard(title = stringResource(R.string.routines_intro_title), body = stringResource(R.string.routines_intro_body)) }
-        item {
+    // No spacedBy: the picker's rows must sit flush, so the other items add their own gap.
+    LazyColumn(modifier = modifier, contentPadding = PaddingValues(16.dp)) {
+        spaced("intro") { InfoCard(title = stringResource(R.string.routines_intro_title), body = stringResource(R.string.routines_intro_body)) }
+        spaced("heading") {
             SectionTitle(stringResource(R.string.routines_gym_heading, state.gymCount))
         }
         items(state.machineGroups, key = { "g-" + it.muscleGroup.name }) { group ->
-            GroupCard(title = group.muscleGroup.label()) {
-                group.machines.forEachIndexed { index, machine ->
-                    if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    MachineRow(
-                        machine = machine,
-                        onClick = { callbacks.onEditMachine(machine.id) },
-                        onDelete = { callbacks.onDeleteMachine(machine) },
-                    )
+            Box(Modifier.padding(bottom = 12.dp)) {
+                GroupCard(title = group.muscleGroup.label()) {
+                    group.machines.forEachIndexed { index, machine ->
+                        if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        MachineRow(
+                            machine = machine,
+                            onClick = { callbacks.onEditMachine(machine.id) },
+                            onDelete = { callbacks.onDeleteMachine(machine) },
+                        )
+                    }
                 }
             }
         }
-        if (state.starterGroups.isNotEmpty() || state.startersSearch.isNotBlank()) {
-            item { StartersCard(state, callbacks) }
+        if (state.pickerAvailable) {
+            pickerItems(state, callbacks)
         }
-        item {
+        spaced("new-machine") {
             Button(
                 onClick = callbacks.onNewMachine,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
@@ -250,7 +273,7 @@ private fun GymPageList(state: RoutinesUiState, callbacks: RoutinesCallbacks, mo
             }
         }
         if (state.archived.isNotEmpty()) {
-            item {
+            spaced("archived-header") {
                 FoldHeader(
                     title = stringResource(R.string.routines_archived) + " (${state.archived.size})",
                     expanded = state.archivedExpanded,
@@ -258,7 +281,7 @@ private fun GymPageList(state: RoutinesUiState, callbacks: RoutinesCallbacks, mo
                 )
             }
             if (state.archivedExpanded) {
-                item {
+                spaced("archived") {
                     GroupCard(title = null) {
                         state.archived.forEachIndexed { index, machine ->
                             if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -273,6 +296,11 @@ private fun GymPageList(state: RoutinesUiState, callbacks: RoutinesCallbacks, mo
             }
         }
     }
+}
+
+/** One item with the usual 12 dp gap below it. */
+private fun LazyListScope.spaced(key: Any, content: @Composable () -> Unit) {
+    item(key = key) { Box(Modifier.padding(bottom = 12.dp)) { content() } }
 }
 
 /** A grey card with a short explanation, with an optional bold title. */
@@ -293,11 +321,79 @@ private fun InfoCard(title: String?, body: String) {
     }
 }
 
-/** "Add from the list": folded card with search, checkbox rows and "Add N selected". */
+private val PickerTopShape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
+private val PickerBottomShape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
+
+/**
+ * The exercise picker, as flat items of the Gym list so only the visible rows are composed:
+ * a folded header (search and filters inside when open), then the rows by muscle group.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+private fun LazyListScope.pickerItems(state: RoutinesUiState, callbacks: RoutinesCallbacks) {
+    val fill = Modifier.fillMaxWidth()
+    item(key = "picker-header") {
+        PickerHeader(state, callbacks, Modifier.padding(bottom = if (state.startersExpanded) 0.dp else 12.dp))
+    }
+    if (!state.startersExpanded) return
+    if (state.selectedCount > 0) {
+        stickyHeader(key = "picker-add") {
+            val label = LocalContext.current.resources
+                .getQuantityString(R.plurals.routines_add_selected, state.selectedCount, state.selectedCount)
+            Box(fill.background(MaterialTheme.colorScheme.surfaceContainer).padding(horizontal = 16.dp, vertical = 4.dp)) {
+                Button(
+                    onClick = callbacks.onAddSelectedStarters,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                ) { Text(label) }
+            }
+        }
+    }
+    if (state.pickerGroups.isEmpty()) {
+        item(key = "picker-empty") {
+            Text(
+                stringResource(R.string.routines_no_matches),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = fill.background(MaterialTheme.colorScheme.surfaceContainer).padding(16.dp),
+            )
+        }
+    }
+    state.pickerGroups.forEach { group ->
+        item(key = "ph-" + group.muscleGroup.name) {
+            Text(
+                group.muscleGroup.label(),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = fill.background(MaterialTheme.colorScheme.surfaceContainer)
+                    .padding(start = 16.dp, top = 12.dp, end = 16.dp),
+            )
+        }
+        items(group.rows, key = { it.key }) { row ->
+            PickerRowItem(
+                row = row,
+                checked = if (row.starter != null) row.starter.name in state.selectedStarters else row.libraryId in state.selectedLibrary,
+                onToggle = {
+                    if (row.starter != null) callbacks.onToggleStarter(row.starter) else row.libraryId?.let(callbacks.onToggleLibrary)
+                },
+                onInfo = { callbacks.onShowDetail(row) },
+            )
+        }
+    }
+    item(key = "picker-end") {
+        Box(Modifier.padding(bottom = 12.dp)) {
+            Box(
+                Modifier.fillMaxWidth().height(12.dp).clip(PickerBottomShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
+            )
+        }
+    }
+}
+
+/** "Add from the list": the fold header and, when open, search, filters and the count. */
 @Composable
-private fun StartersCard(state: RoutinesUiState, callbacks: RoutinesCallbacks) {
+private fun PickerHeader(state: RoutinesUiState, callbacks: RoutinesCallbacks, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
+        shape = if (state.startersExpanded) PickerTopShape else CardDefaults.shape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -308,61 +404,133 @@ private fun StartersCard(state: RoutinesUiState, callbacks: RoutinesCallbacks) {
             )
             if (state.startersExpanded) {
                 OutlinedTextField(
-                    value = state.startersSearch,
+                    value = state.filter.query,
                     onValueChange = callbacks.onSearchStarters,
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(stringResource(R.string.routines_search)) },
                     singleLine = true,
                 )
-                if (state.starterGroups.isEmpty()) {
+                FilterChipRow(
+                    title = stringResource(R.string.library_filter_group),
+                    options = MuscleGroup.entries,
+                    selected = state.filter.group,
+                    onSelect = callbacks.onGroupFilter,
+                ) { it.label() }
+                FilterChipRow(
+                    title = stringResource(R.string.library_filter_equipment),
+                    options = LibraryEquipment.entries,
+                    selected = state.filter.equipment,
+                    onSelect = callbacks.onEquipmentFilter,
+                ) { it.label() }
+                FilterChipRow(
+                    title = stringResource(R.string.library_filter_level),
+                    options = LibraryLevel.entries,
+                    selected = state.filter.level,
+                    onSelect = callbacks.onLevelFilter,
+                ) { it.label() }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val count = LocalContext.current.resources
+                        .getQuantityString(R.plurals.library_count, state.pickerCount, state.pickerCount)
                     Text(
-                        stringResource(R.string.routines_no_matches),
+                        count,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 8.dp),
+                        modifier = Modifier.weight(1f),
                     )
-                }
-                state.starterGroups.forEach { group ->
-                    Text(
-                        group.muscleGroup.label(),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                    group.starters.forEach { starter ->
-                        StarterRow(
-                            starter = starter,
-                            name = starter.displayName(state.portuguese),
-                            checked = starter.name in state.selectedStarters,
-                            onClick = { callbacks.onToggleStarter(starter) },
-                        )
+                    if (state.filter.group != null || state.filter.equipment != null || state.filter.level != null) {
+                        TextButton(onClick = callbacks.onClearFilters, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(stringResource(R.string.library_filter_clear))
+                        }
                     }
                 }
-                val count = state.selectedStarters.size
-                if (count > 0) {
-                    val label = LocalContext.current.resources
-                        .getQuantityString(R.plurals.routines_add_selected, count, count)
-                    Button(
-                        onClick = callbacks.onAddSelectedStarters,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    ) { Text(label) }
-                }
-                androidx.compose.foundation.layout.Spacer(Modifier.size(4.dp))
             }
         }
     }
 }
 
+/** A titled, sideways-scrolling row of chips: "All" plus one per option; tapping the chosen one clears it. */
 @Composable
-private fun StarterRow(starter: StarterMachine, name: String, checked: Boolean, onClick: () -> Unit) {
+private fun <T> FilterChipRow(
+    title: String,
+    options: List<T>,
+    selected: T?,
+    onSelect: (T?) -> Unit,
+    optionLabel: @Composable (T) -> String,
+) {
+    Column {
+        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(
+                selected = selected == null,
+                onClick = { onSelect(null) },
+                label = { Text(stringResource(R.string.library_filter_all)) },
+                modifier = Modifier.heightIn(min = 40.dp),
+            )
+            options.forEach { option ->
+                FilterChip(
+                    selected = option == selected,
+                    onClick = { onSelect(if (option == selected) null else option) },
+                    label = { Text(optionLabel(option)) },
+                    modifier = Modifier.heightIn(min = 40.dp),
+                )
+            }
+        }
+    }
+}
+
+/** One exercise: the row toggles it (one tap); the info button opens "How to do it". Added ones are marked. */
+@Composable
+private fun PickerRowItem(row: PickerRow, checked: Boolean, onToggle: () -> Unit, onInfo: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).clickable(onClick = onClick),
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.padding(end = 8.dp))
-        // The picture is looked up by the English name, whichever name is shown.
-        MachineThumb(name = starter.name, muscleGroup = starter.muscleGroup, size = 40.dp)
-        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 12.dp))
+        Row(
+            Modifier.weight(1f).defaultMinSize(minHeight = 56.dp)
+                .clickable(enabled = !row.added, onClick = onToggle)
+                .padding(start = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (row.added) {
+                Box(Modifier.size(48.dp).padding(end = 8.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        painterResource(CoreUiR.drawable.ic_check),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.padding(end = 8.dp))
+            }
+            val starter = row.starter
+            // The picture is looked up by the English name, whichever name is shown. Library-only entries have none.
+            if (starter != null) {
+                MachineThumb(name = starter.name, muscleGroup = starter.muscleGroup, size = 40.dp)
+            }
+            Column(Modifier.weight(1f).padding(start = if (starter != null) 12.dp else 0.dp, top = 4.dp, bottom = 4.dp)) {
+                Text(
+                    row.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (row.added) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                )
+                val subtitle = if (row.added) stringResource(R.string.library_added) else row.equipment?.label()
+                if (subtitle != null) {
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        if (row.libraryId != null) {
+            IconButton(onClick = onInfo) {
+                Icon(
+                    painterResource(R.drawable.ic_info),
+                    contentDescription = stringResource(R.string.library_info, row.name),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
@@ -511,7 +679,7 @@ private fun GroupCard(title: String?, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun FoldHeader(title: String, expanded: Boolean, onClick: () -> Unit) {
+internal fun FoldHeader(title: String, expanded: Boolean, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
