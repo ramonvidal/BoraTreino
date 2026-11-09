@@ -11,6 +11,9 @@
     <string name="today_done">Concluir</string>
     <string name="today_machines_and_sets">%1$s · %2$s</string>
     <string name="today_training_now">Treinando agora · %1$s</string>
+    <string name="today_update_routine_offer">Atualizar sua ficha com este treino</string>
+    <string name="today_update_routine_action">Atualizar</string>
+    <string name="today_routine_updated">Ficha atualizada</string>
     <string name="today_done_snackbar">Feito: %1$s</string>
     <string name="today_free">Livre</string>
     <string name="today_next_up">Próxima: %1$s</string>
