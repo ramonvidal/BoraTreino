@@ -156,7 +156,10 @@ class RoutinesLibraryViewModelTest {
         openPicker(vm)
 
         assertTrue(vm.uiState.value.startersExpanded)
-        assertTrue(vm.keys().containsAll(listOf("s:Barbell bench press", "s:Dumbbell lateral raise", "l:Zottman_Curl", "l:Running")))
+        // "Running" is a starter ("Running (outdoor)", Portuguese "Corrida") with a same-named Portuguese name, so the
+        // library entry is shown as that starter, not as its own row.
+        assertTrue(vm.keys().containsAll(listOf("s:Barbell bench press", "s:Dumbbell lateral raise", "l:Zottman_Curl", "s:Running (outdoor)")))
+        assertFalse(vm.keys().contains("l:Running"))
         val groups = vm.uiState.value.pickerGroups.map { it.muscleGroup }
         assertEquals(groups.sorted(), groups)
         assertTrue(MuscleGroup.CARDIO in groups)
@@ -224,13 +227,14 @@ class RoutinesLibraryViewModelTest {
         val vm = viewModel()
         openPicker(vm)
 
-        vm.searchStarters("corrida")
+        // Accents in the query are dropped on both sides: this library-only entry matches its Portuguese name.
+        vm.searchStarters("ROSCA ZÓTTMAN")
         runCurrent()
-        assertEquals(listOf("l:Running"), vm.keys())
+        assertEquals(listOf("l:Zottman_Curl"), vm.keys())
 
-        vm.searchStarters("elevacao")
+        vm.searchStarters("rosca zottman")
         runCurrent()
-        assertEquals(listOf("s:Dumbbell lateral raise"), vm.keys())
+        assertEquals(listOf("l:Zottman_Curl"), vm.keys())
     }
 
     @Test

@@ -43,7 +43,7 @@ import org.robolectric.annotation.Config
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class MachineEditorHowToTest {
     private val steps = listOf("Stand tall.", "Curl the weight up.")
     private val zottman = LibraryExercise(
@@ -165,6 +165,7 @@ class MachineEditorHowToTest {
 
         // The clickable header row (merged with its title) is the click target; the title alone is not.
         compose.onNode(hasClickAction() and hasText("How to do it")).performClick()
+        compose.waitForIdle()
 
         compose.onNodeWithText("Stand tall.").assertExists()
         compose.onNodeWithText("Curl the weight up.").assertExists()
