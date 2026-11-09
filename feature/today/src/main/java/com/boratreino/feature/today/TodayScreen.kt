@@ -396,6 +396,7 @@ private fun LazyListScope.sessionHeader(
                         LinearProgressIndicator(
                             progress = { if (total == 0) 0f else doneCount.toFloat() / total },
                             modifier = Modifier.fillMaxWidth(),
+                            drawStopIndicator = {},
                         )
                     }
                 }
