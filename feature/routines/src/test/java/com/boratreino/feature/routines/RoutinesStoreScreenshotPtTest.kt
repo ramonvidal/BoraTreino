@@ -94,7 +94,7 @@ class RoutinesStoreScreenshotPtTest {
         .filter { it.namePt !in gymNames }
         .groupBy { it.muscleGroup }
         .toSortedMap()
-        .map { (group, list) -> StarterGroup(group, list) }
+        .map { (group, list) -> pickerGroupOf(group, list) }
 
     private fun routine(id: Long, name: String, shortName: String, position: Int) =
         Routine(id = id, planId = 1L, name = name, shortName = shortName, position = position, weekdays = emptySet())
@@ -109,7 +109,7 @@ class RoutinesStoreScreenshotPtTest {
             ),
             scheduleMode = ScheduleMode.IN_TURN,
             machineGroups = machineGroups,
-            starterGroups = starters,
+            pickerGroups = starters,
             startersExpanded = false,
             gymCount = 8,
         )

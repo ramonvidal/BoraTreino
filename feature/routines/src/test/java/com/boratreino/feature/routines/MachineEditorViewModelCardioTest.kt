@@ -62,10 +62,10 @@ class MachineEditorViewModelCardioTest {
     }
 
     private fun newMachine(repo: FakeMachines = FakeMachines()) =
-        MachineEditorViewModel(repo, SavedStateHandle(mapOf(MACHINE_ID_ARG to NEW_MACHINE)))
+        MachineEditorViewModel(repo, FakeExerciseLibrary(), SavedStateHandle(mapOf(MACHINE_ID_ARG to NEW_MACHINE)))
 
     private fun existing(machine: Machine, repo: FakeMachines = FakeMachines(machine)) =
-        MachineEditorViewModel(repo, SavedStateHandle(mapOf(MACHINE_ID_ARG to machine.id)))
+        MachineEditorViewModel(repo, FakeExerciseLibrary(), SavedStateHandle(mapOf(MACHINE_ID_ARG to machine.id)))
 
     @Test
     fun `a new machine starts as legs with weights`() {

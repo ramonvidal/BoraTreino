@@ -136,3 +136,14 @@ internal fun fakeRoutine(id: Long, name: String, shortName: String, position: In
 
 internal fun fakeItem(routineId: Long, machineId: Long, position: Int, sets: Int = 3, min: Int = 8, max: Int = 12) =
     RoutineItem(routineId = routineId, machineId = machineId, position = position, targetSets = sets, repsMin = min, repsMax = max)
+
+/** The exercise library from a list, for the picker and the machine editor. */
+internal class FakeExerciseLibrary(private val exercises: List<com.boratreino.core.model.LibraryExercise> = emptyList()) :
+    com.boratreino.core.data.ExerciseLibraryRepository {
+    override suspend fun all(): List<com.boratreino.core.model.LibraryExercise> = exercises
+    override suspend fun byId(id: String): com.boratreino.core.model.LibraryExercise? = exercises.firstOrNull { it.id == id }
+}
+
+/** The picker rows of one muscle group's starters that are not added yet. */
+internal fun pickerGroupOf(group: MuscleGroup, starters: List<StarterMachine>): PickerGroup =
+    PickerGroup(group, starters.map { PickerRow(key = "s:" + it.name, name = it.name, group = group, starter = it) })

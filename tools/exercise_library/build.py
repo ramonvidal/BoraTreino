@@ -52,7 +52,7 @@ def main():
             "id": x["id"], "name": name, "pt": pt[name],
             "equip": EQUIPMENT[x.get("equipment")], "level": LEVELS[x["level"]],
             "cat": x["category"], "mech": x.get("mechanic"), "force": x.get("force"),
-            "pm": x["primaryMuscles"], "sm": x["secondaryMuscles"], "steps": x["instructions"],
+            "pm": x["primaryMuscles"], "sm": x["secondaryMuscles"], "steps": [s.strip() for s in x["instructions"] if s.strip()],
         })
     extra = set(pt) - {x["name"] for x in data}
     if extra:

@@ -41,7 +41,7 @@ class RoutinesTrainingDaysViewModelTest {
     )
 
     private fun TestScope.viewModel(repo: FakeRoutineRepository): RoutinesViewModel {
-        val vm = RoutinesViewModel(FakeMachineRepository(emptyList()), repo)
+        val vm = RoutinesViewModel(FakeMachineRepository(emptyList()), repo, FakeExerciseLibrary())
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect { } }
         runCurrent()
         return vm

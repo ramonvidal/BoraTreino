@@ -43,7 +43,7 @@ class RoutinesPtScreenshotTest {
         StarterMachines.all
             .filter { it.muscleGroup == group && it.name !in added }
             .takeIf { it.isNotEmpty() }
-            ?.let { StarterGroup(group, it) }
+            ?.let { pickerGroupOf(group, it) }
     }
 
     @Test
@@ -62,7 +62,7 @@ class RoutinesPtScreenshotTest {
                 MachineGroup(MuscleGroup.SHOULDERS, listOf(shoulderPress)),
                 MachineGroup(MuscleGroup.ARMS, listOf(cableCurl)),
             ),
-            starterGroups = starters,
+            pickerGroups = starters,
             gymCount = 8,
         )
         compose.setContent {

@@ -55,7 +55,7 @@ class RoutinesTabScreenshotTest {
         StarterMachines.all
             .filter { it.muscleGroup == group && it.name !in added }
             .takeIf { it.isNotEmpty() }
-            ?.let { StarterGroup(group, it) }
+            ?.let { pickerGroupOf(group, it) }
     }
 
     @Test
@@ -75,7 +75,7 @@ class RoutinesTabScreenshotTest {
                 MachineGroup(MuscleGroup.SHOULDERS, listOf(shoulderPress)),
                 MachineGroup(MuscleGroup.ARMS, listOf(cableCurl)),
             ),
-            starterGroups = starters,
+            pickerGroups = starters,
             gymCount = 8,
         ),
         RoutinesPage.ROUTINES,
@@ -93,7 +93,7 @@ class RoutinesTabScreenshotTest {
                 MachineGroup(MuscleGroup.ARMS, listOf(cableCurl)),
             ),
             archived = listOf(hackSquat),
-            starterGroups = starters,
+            pickerGroups = starters,
             archivedExpanded = true,
             startersExpanded = true,
             gymCount = 8,

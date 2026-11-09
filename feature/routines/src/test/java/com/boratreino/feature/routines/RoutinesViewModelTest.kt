@@ -45,7 +45,7 @@ class RoutinesViewModelTest {
     )
 
     private fun TestScope.viewModel(repo: FakeRoutineRepository, subscribe: Boolean = true): RoutinesViewModel {
-        val vm = RoutinesViewModel(FakeMachineRepository(listOf(legPress, latPulldown)), repo)
+        val vm = RoutinesViewModel(FakeMachineRepository(listOf(legPress, latPulldown)), repo, FakeExerciseLibrary())
         if (subscribe) {
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiState.collect { } }
             runCurrent()

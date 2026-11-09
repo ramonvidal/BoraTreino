@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.boratreino.core.model.LibraryFilter
 import com.boratreino.core.model.StarterMachines
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import org.junit.Rule
@@ -59,8 +60,8 @@ class RoutinesGymScreenshotTest {
             "routines-starters-selected",
             GymSamples.populated.copy(
                 startersExpanded = true,
-                startersSearch = "sup",
-                starterGroups = GymSamples.startersGrouped(StarterMachines.search("sup", GymSamples.startersNotAdded)),
+                filter = LibraryFilter(query = "sup"),
+                pickerGroups = GymSamples.pickerGroups(StarterMachines.search("sup", GymSamples.startersNotAdded)),
                 selectedStarters = selected,
             ),
         )
@@ -73,8 +74,8 @@ class RoutinesGymScreenshotTest {
             "routines-starters-nomatch",
             GymSamples.populated.copy(
                 startersExpanded = true,
-                startersSearch = "zzz",
-                starterGroups = emptyList(),
+                filter = LibraryFilter(query = "zzz"),
+                pickerGroups = emptyList(),
             ),
         )
         compose.onNodeWithText("No matches.").assertExists()

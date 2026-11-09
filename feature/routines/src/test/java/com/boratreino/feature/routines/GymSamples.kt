@@ -56,8 +56,11 @@ internal object GymSamples {
     /** Starters the gym does not have yet. */
     val startersNotAdded: List<StarterMachine> = StarterMachines.all.filter { it.name !in gymNames }
 
-    fun startersGrouped(list: List<StarterMachine>): List<StarterGroup> =
-        list.groupBy { it.muscleGroup }.toSortedMap().map { (group, starters) -> StarterGroup(group, starters) }
+    /** The picker rows of [list] (starters only), by muscle group, as the view model builds them. */
+    fun pickerGroups(list: List<StarterMachine>): List<PickerGroup> =
+        list.groupBy { it.muscleGroup }.toSortedMap().map { (group, starters) ->
+            PickerGroup(group, starters.map { PickerRow(key = "s:" + it.name, name = it.name, group = group, starter = it) })
+        }
 
     private fun routine(id: Long, name: String, shortName: String, position: Int) =
         Routine(id = id, planId = 1L, name = name, shortName = shortName, position = position, weekdays = emptySet())
@@ -68,19 +71,20 @@ internal object GymSamples {
         RoutineRow(routine(3L, "Treino C", "C", 2), machineCount = 3, machineNames = listOf("Chest press", "Shoulder press", "Pull-ups")),
     )
 
-    /** The gym populated, the starter list folded, the routines below. */
+    /** The gym populated, the picker folded, the routines below. */
     val populated = RoutinesUiState(
         routines = routines,
         scheduleMode = ScheduleMode.IN_TURN,
         machineGroups = machineGroups,
-        starterGroups = startersGrouped(startersNotAdded),
+        pickerAvailable = true,
         startersExpanded = false,
         gymCount = 8,
     )
 
-    /** Nothing registered yet: the starter list is open and there are no routines. */
+    /** Nothing registered yet: the picker is open and there are no routines. */
     val emptyGym = RoutinesUiState(
-        starterGroups = startersGrouped(StarterMachines.all),
+        pickerGroups = pickerGroups(StarterMachines.all),
+        pickerAvailable = true,
         startersExpanded = true,
         gymCount = 0,
     )
