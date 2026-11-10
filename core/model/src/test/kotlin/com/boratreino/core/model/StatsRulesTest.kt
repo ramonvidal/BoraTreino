@@ -873,4 +873,214 @@ class StatsRulesTest {
         assertEquals(d(11, 2), inUtc.recency.first { it.muscleGroup == MuscleGroup.CHEST }.lastTrained)
         assertEquals(d(11, 1), inSaoPaulo.recency.first { it.muscleGroup == MuscleGroup.CHEST }.lastTrained)
     }
+
+    // Body insights: strength now, strength index, balance
+
+    /** A weight machine with a library id (the Log helper has none). */
+    private fun machineIn(
+        log: Log,
+        libraryId: String?,
+        group: MuscleGroup = MuscleGroup.CHEST,
+        kind: MachineKind = MachineKind.WEIGHT_REPS,
+    ): Long {
+        val id = log.machines.size + 1L
+        log.machines += Machine(id, "Machine $id", group, kind, 2.5, null, null, false, libraryId)
+        return id
+    }
+
+    private fun exercise(id: String, force: String?, vararg primary: String) = LibraryExercise(
+        id = id,
+        name = id,
+        namePt = id,
+        equipment = LibraryEquipment.MACHINE,
+        level = LibraryLevel.BEGINNER,
+        category = "strength",
+        mechanic = null,
+        force = force,
+        primaryMuscles = primary.toList(),
+        secondaryMuscles = emptyList(),
+        steps = emptyList(),
+    )
+
+    private fun reportWithLibrary(
+        log: Log,
+        period: StatsPeriod,
+        library: Map<String, LibraryExercise> = emptyMap(),
+    ): StatsReport = StatsRules.report(period, today, DayOfWeek.MONDAY, 3, log.machines, log.sessions, log.sets, utc, library)
+
+    /** Monday of week [i] of the 13 week period that ends this week (from 10 Aug 2026). */
+    private fun weekOf(i: Int): LocalDate = d(8, 10).plusWeeks(i.toLong())
+
+    @Test
+    fun `strength now is the best estimate of each non-cardio machine in the last window, best first`() {
+        val log = Log()
+        val press = log.machine()
+        val curl = log.machine()
+        // Four weeks: the last window is the two weeks from Monday 26 Oct.
+        log.lift(d(10, 27), press, 100.0, 1)   // 100 in the window: the best
+        log.lift(d(11, 3), press, 80.0, 4)     // 90.7 in the window, below it
+        log.lift(d(11, 2), curl, 20.0, 10)     // 26.7
+        log.lift(d(10, 13), curl, 200.0, 1)    // first window only: not counted
+
+        val now = report(log).strengthNow
+
+        assertEquals(listOf(press, curl), now.map { it.machine.id })
+        assertEquals(100.0, now[0].estimate1rm, 1e-9)
+        assertEquals(20.0 * (1 + 10 / 30.0), now[1].estimate1rm, 1e-9)
+    }
+
+    @Test
+    fun `strength now leaves out cardio machines and timed sets`() {
+        val log = Log()
+        val rower = machineIn(log, null, MuscleGroup.CARDIO, MachineKind.CARDIO)
+        val press = log.machine()
+        log.lift(d(11, 3), rower, 50.0, 10)
+        val timed = log.session(d(11, 3))
+        log.set(timed, press, 60.0, 8, seconds = 600)
+
+        assertTrue(report(log).strengthNow.isEmpty())
+    }
+
+    @Test
+    fun `strength index starts at exactly 100 and follows a machine that rises 10 percent`() {
+        val log = Log()
+        val press = log.machine()
+        for (i in 0 until 13) {
+            log.lift(weekOf(i).plusDays(1), press, if (i >= 6) 110.0 else 100.0, 1)
+        }
+
+        val index = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).strengthIndex
+
+        assertEquals(13, index.size)
+        assertEquals(weekOf(0), index.first().weekStart)
+        assertEquals(100.0, index.first().percent, 0.0)
+        assertEquals(100.0, index[5].percent, 1e-9)
+        assertEquals(110.0, index[6].percent, 1e-9)
+        assertEquals(110.0, index.last().percent, 1e-9)
+    }
+
+    @Test
+    fun `a machine that starts later does not move the index`() {
+        val log = Log()
+        val press = log.machine()
+        val row = log.machine()
+        for (i in 0 until 13) log.lift(weekOf(i).plusDays(1), press, 100.0, 1)
+        for (i in 6 until 13) log.lift(weekOf(i).plusDays(2), row, 50.0, 10)
+
+        val index = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).strengthIndex
+
+        assertEquals(13, index.size)
+        index.forEach { assertEquals(100.0, it.percent, 1e-9) }
+    }
+
+    @Test
+    fun `weeks without a value for a machine are skipped in the index`() {
+        val log = Log()
+        val press = log.machine()
+        log.lift(weekOf(0).plusDays(1), press, 100.0, 1)
+        log.lift(weekOf(9).plusDays(1), press, 120.0, 1)
+
+        val index = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).strengthIndex
+
+        // The trailing four weeks of the first set run out after week 3; the next value is week 9.
+        assertEquals(listOf(0, 1, 2, 3, 9, 10, 11, 12).map { weekOf(it) }, index.map { it.weekStart })
+        assertEquals(120.0, index[4].percent, 1e-9)
+    }
+
+    @Test
+    fun `strength index and strength now are empty without any estimate`() {
+        val warmUpOnly = Log()
+        val press = warmUpOnly.machine()
+        warmUpOnly.lift(d(11, 3), press, 20.0, 10, SetType.WARMUP)
+        val cardioOnly = Log()
+        cardioOnly.cardio(d(11, 3), cardioOnly.machine(MuscleGroup.CARDIO, MachineKind.CARDIO))
+
+        for (log in listOf(Log(), warmUpOnly, cardioOnly)) {
+            val r = reportWithLibrary(log, StatsPeriod.THREE_MONTHS)
+            assertTrue(r.strengthIndex.isEmpty())
+            assertTrue(r.strengthNow.isEmpty())
+        }
+    }
+
+    @Test
+    fun `balance by machine group when a machine has no library data`() {
+        val log = Log()
+        val chest = log.machine(MuscleGroup.CHEST)
+        val shoulders = log.machine(MuscleGroup.SHOULDERS)
+        val back = log.machine(MuscleGroup.BACK)
+        val outsideLibrary = machineIn(log, "not-in-library", MuscleGroup.BACK)
+        val legs = log.machine(MuscleGroup.LEGS)
+        val arms = log.machine(MuscleGroup.ARMS)
+        val core = log.machine(MuscleGroup.CORE)
+        repeat(2) { log.lift(d(11, 3), chest, 60.0, 8) }
+        log.lift(d(11, 3), shoulders, 20.0, 10)
+        repeat(2) { log.lift(d(11, 3), back, 50.0, 10) }
+        log.lift(d(11, 3), outsideLibrary, 50.0, 10)
+        repeat(4) { log.lift(d(11, 3), legs, 80.0, 10) }
+        repeat(2) { log.lift(d(11, 3), arms, 12.0, 10) }
+        repeat(5) { log.lift(d(11, 3), core, 10.0, 15) }
+
+        val balance = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).balance
+
+        assertEquals(3, balance.pushSets)      // chest, shoulders
+        assertEquals(3, balance.pullSets)      // back
+        assertEquals(8, balance.upperSets)     // chest, shoulders, back, arms
+        assertEquals(4, balance.lowerSets)     // legs
+        assertEquals(0, balance.quadSets)
+        assertEquals(0, balance.hamstringSets)
+        assertEquals(5, balance.unclassifiedSets) // core
+    }
+
+    @Test
+    fun `balance by library exercise: force decides push and pull, primary muscles decide the rest`() {
+        val library = listOf(
+            exercise("bench", "push", "chest", "triceps"),
+            exercise("row", "pull", "lats", "biceps"),
+            exercise("leg-extension", null, "quadriceps"),
+            exercise("leg-curl", null, "hamstrings"),
+            exercise("crunch", null, "abdominals"),
+        ).associateBy { it.id }
+        val log = Log()
+        val bench = machineIn(log, "bench", MuscleGroup.CHEST)
+        val row = machineIn(log, "row", MuscleGroup.CHEST)          // the group alone would say push
+        val legExtension = machineIn(log, "leg-extension", MuscleGroup.LEGS)
+        val legCurl = machineIn(log, "leg-curl", MuscleGroup.LEGS)
+        val crunch = machineIn(log, "crunch", MuscleGroup.CORE)
+        repeat(2) { log.lift(d(11, 3), bench, 60.0, 8) }
+        repeat(3) { log.lift(d(11, 3), row, 50.0, 10) }
+        repeat(4) { log.lift(d(11, 3), legExtension, 40.0, 12) }
+        log.lift(d(11, 3), legCurl, 30.0, 10)
+        repeat(2) { log.lift(d(11, 3), crunch, 20.0, 15) }
+
+        val balance = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS, library).balance
+
+        assertEquals(2, balance.pushSets)
+        assertEquals(3, balance.pullSets)
+        assertEquals(5, balance.upperSets)
+        assertEquals(5, balance.lowerSets)
+        assertEquals(4, balance.quadSets)
+        assertEquals(1, balance.hamstringSets)
+        assertEquals(2, balance.unclassifiedSets)
+    }
+
+    @Test
+    fun `balance covers the last four weeks only, and every week of a shorter period`() {
+        val log = Log()
+        val chest = log.machine(MuscleGroup.CHEST)
+        log.lift(d(10, 11), chest, 60.0, 8)                     // week 8 of the 13: outside
+        log.lift(d(10, 13), chest, 60.0, 8)                     // week 9: the first of the last four
+        log.lift(d(11, 3), chest, 20.0, 10, SetType.WARMUP)    // warm ups never count
+
+        val longPeriod = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).balance
+        val shortPeriod = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).balance
+
+        assertEquals(1, longPeriod.pushSets)
+        assertEquals(1, longPeriod.upperSets)
+        assertEquals(1, shortPeriod.pushSets)
+    }
+
+    @Test
+    fun `balance is all zero with no sets`() {
+        assertEquals(BalanceStats(0, 0, 0, 0, 0, 0, 0), reportWithLibrary(Log(), StatsPeriod.FOUR_WEEKS).balance)
+    }
 }

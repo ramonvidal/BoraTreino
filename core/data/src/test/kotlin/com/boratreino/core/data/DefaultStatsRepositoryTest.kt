@@ -1,5 +1,8 @@
 package com.boratreino.core.data
 
+import com.boratreino.core.model.LibraryEquipment
+import com.boratreino.core.model.LibraryExercise
+import com.boratreino.core.model.LibraryLevel
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
@@ -28,13 +31,41 @@ class DefaultStatsRepositoryTest {
     private val thursday: Instant = Instant.parse("2026-11-05T12:00:00Z")
     private lateinit var store: FakeWorkoutStore
     private lateinit var clock: TestClock
+    private lateinit var library: FakeLibrary
     private lateinit var repo: StatsRepository
+
+    /** Serves a fixed list and counts how often it is read. */
+    private class FakeLibrary(private val exercises: List<LibraryExercise> = emptyList()) : ExerciseLibraryRepository {
+        var reads = 0
+
+        override suspend fun all(): List<LibraryExercise> {
+            reads++
+            return exercises
+        }
+
+        override suspend fun byId(id: String): LibraryExercise? = exercises.firstOrNull { it.id == id }
+    }
+
+    private fun exercise(id: String, force: String?, vararg primary: String) = LibraryExercise(
+        id = id,
+        name = id,
+        namePt = id,
+        equipment = LibraryEquipment.MACHINE,
+        level = LibraryLevel.BEGINNER,
+        category = "strength",
+        mechanic = null,
+        force = force,
+        primaryMuscles = primary.toList(),
+        secondaryMuscles = emptyList(),
+        steps = emptyList(),
+    )
 
     @Before
     fun setUp() {
         store = FakeWorkoutStore()
         clock = TestClock(thursday)
-        repo = DefaultStatsRepository(store, clock)
+        library = FakeLibrary()
+        repo = DefaultStatsRepository(store, clock, library)
     }
 
     private suspend fun machine(
@@ -129,7 +160,7 @@ class DefaultStatsRepositoryTest {
     fun `a session at 23 30 the day before is that day in the clock's zone`() = runTest {
         // 02:30 UTC on 5 November is 23:30 on 4 November in Sao Paulo (UTC-3).
         clock = TestClock(thursday, ZoneId.of("America/Sao_Paulo"))
-        repo = DefaultStatsRepository(store, clock)
+        repo = DefaultStatsRepository(store, clock, library)
         val bench = machine("Bench press")
         val s = session(Instant.parse("2026-11-05T02:30:00Z"))
         set(s, bench, 50.0, 10, Instant.parse("2026-11-05T02:35:00Z"))
@@ -154,7 +185,7 @@ class DefaultStatsRepositoryTest {
     fun `today is read in the clock's zone`() = runTest {
         // 01:00 UTC on 6 November is still 5 November in Sao Paulo.
         clock = TestClock(Instant.parse("2026-11-06T01:00:00Z"), ZoneId.of("America/Sao_Paulo"))
-        repo = DefaultStatsRepository(store, clock)
+        repo = DefaultStatsRepository(store, clock, library)
 
         assertEquals(LocalDate.of(2026, 11, 5), repo.observeStats(StatsPeriod.FOUR_WEEKS, 3).first().to)
     }
@@ -177,5 +208,37 @@ class DefaultStatsRepositoryTest {
 
         assertEquals(1100.0, after.weeks.sumOf { it.volumeKg }, 1e-9)
         assertNull(after.strength.firstOrNull())
+    }
+
+    @Test
+    fun `the strength now list holds the best estimate of each machine in the last window`() = runTest {
+        val bench = machine("Bench press")
+        val s = session(Instant.parse("2026-11-03T10:00:00Z"))
+        set(s, bench, 80.0, 5, Instant.parse("2026-11-03T10:05:00Z"))
+
+        val report = repo.observeStats(StatsPeriod.FOUR_WEEKS, 3).first()
+
+        assertEquals(listOf(bench), report.strengthNow.map { it.machine.id })
+        assertEquals(80.0 * (1 + 5 / 30.0), report.strengthNow.single().estimate1rm, 1e-9)
+    }
+
+    @Test
+    fun `the library is read once and its force classifies a machine in the balance`() = runTest {
+        library = FakeLibrary(listOf(exercise("row", "pull", "lats")))
+        repo = DefaultStatsRepository(store, clock, library)
+        val row = store.saveMachine(
+            Machine(0, "Row", MuscleGroup.CHEST, MachineKind.WEIGHT_REPS, 2.5, null, null, false, "row"),
+        )
+        val s = session(Instant.parse("2026-11-03T10:00:00Z"))
+        set(s, row, 50.0, 10, Instant.parse("2026-11-03T10:05:00Z"))
+
+        val first = repo.observeStats(StatsPeriod.FOUR_WEEKS, 3).first()
+        val second = repo.observeStats(StatsPeriod.FOUR_WEEKS, 3).first()
+
+        // The group says chest (push); the library says pull.
+        assertEquals(1, first.balance.pullSets)
+        assertEquals(0, first.balance.pushSets)
+        assertEquals(1, second.balance.pullSets)
+        assertEquals(1, library.reads)
     }
 }
