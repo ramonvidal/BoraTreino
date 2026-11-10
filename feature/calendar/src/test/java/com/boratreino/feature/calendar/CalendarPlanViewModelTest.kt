@@ -140,7 +140,7 @@ class CalendarPlanViewModelTest {
     }
 
     @Test
-    fun `the routines of a day are listed by position, whatever order they were planned in`() = runTest {
+    fun `the routines of a day are listed in the order they were planned, a new one at the end`() = runTest {
         start()
         viewModel.selectDay(nextWeek)
         viewModel.openPlanChooser()
@@ -149,7 +149,7 @@ class CalendarPlanViewModelTest {
         viewModel.plan(1L)
         runCurrent()
 
-        assertEquals(listOf(plannedA, plannedB), state.planned[nextWeek])
+        assertEquals(listOf(plannedB, plannedA), state.planned[nextWeek])
     }
 
     @Test
@@ -212,13 +212,90 @@ class CalendarPlanViewModelTest {
     }
 
     @Test
-    fun `several plans on one date that appear in the data are all shown`() = runTest {
+    fun `several plans on one date that appear in the data are all shown, in the stored order`() = runTest {
         start()
 
-        routines.plannedFlow.value = listOf(PlannedWorkout(nextWeek, 2L), PlannedWorkout(nextWeek, 1L))
+        routines.plannedFlow.value = listOf(PlannedWorkout(nextWeek, 2L, 0), PlannedWorkout(nextWeek, 1L, 1))
         runCurrent()
 
+        assertEquals(listOf(plannedB, plannedA), state.planned[nextWeek])
+    }
+
+    // Reordering the plans of the selected day
+
+    private fun TestScope.planABOnNextWeek() {
+        viewModel.selectDay(nextWeek)
+        viewModel.openPlanChooser()
+        viewModel.plan(1L)
+        viewModel.openPlanChooser()
+        viewModel.plan(2L)
+        runCurrent()
+    }
+
+    @Test
+    fun `moving the first routine up does nothing`() = runTest {
+        start()
+        planABOnNextWeek()
+
+        viewModel.reorderPlanned(1L, up = true)
+        runCurrent()
+
+        assertTrue(routines.reorderCalls.isEmpty())
         assertEquals(listOf(plannedA, plannedB), state.planned[nextWeek])
+    }
+
+    @Test
+    fun `moving the last routine down does nothing`() = runTest {
+        start()
+        planABOnNextWeek()
+
+        viewModel.reorderPlanned(2L, up = false)
+        runCurrent()
+
+        assertTrue(routines.reorderCalls.isEmpty())
+        assertEquals(listOf(plannedA, plannedB), state.planned[nextWeek])
+    }
+
+    @Test
+    fun `moving the second routine up hands the whole new order to the repository`() = runTest {
+        start()
+        planABOnNextWeek()
+
+        viewModel.reorderPlanned(2L, up = true)
+        runCurrent()
+
+        assertEquals(listOf(nextWeek to listOf(2L, 1L)), routines.reorderCalls)
+        assertEquals(listOf(plannedB, plannedA), state.planned[nextWeek])
+    }
+
+    @Test
+    fun `moving the first routine down swaps it with the next one`() = runTest {
+        start()
+        planABOnNextWeek()
+
+        viewModel.reorderPlanned(1L, up = false)
+        runCurrent()
+
+        assertEquals(listOf(nextWeek to listOf(2L, 1L)), routines.reorderCalls)
+        assertEquals(listOf(plannedB, plannedA), state.planned[nextWeek])
+    }
+
+    @Test
+    fun `a reorder changes only the selected day`() = runTest {
+        start()
+        planABOnNextWeek()
+        viewModel.selectDay(today)
+        viewModel.openPlanChooser()
+        viewModel.plan(2L)
+        runCurrent()
+        viewModel.selectDay(nextWeek)
+        runCurrent()
+
+        viewModel.reorderPlanned(2L, up = true)
+        runCurrent()
+
+        assertEquals(listOf(nextWeek to listOf(2L, 1L)), routines.reorderCalls)
+        assertEquals(listOf(plannedB), state.planned[today])
     }
 
     @Test

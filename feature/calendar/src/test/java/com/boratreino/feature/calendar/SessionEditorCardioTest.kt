@@ -177,6 +177,7 @@ class SessionEditorCardioTest {
             kotlinx.coroutines.flow.flowOf(emptyList())
         override suspend fun planWorkout(date: java.time.LocalDate, routineId: Long) = Unit
         override suspend fun unplanWorkout(date: java.time.LocalDate, routineId: Long) = Unit
+        override suspend fun reorderPlanned(date: java.time.LocalDate, routineIds: List<Long>) = Unit
         override suspend fun restoreItem(item: com.boratreino.core.model.RoutineItem) = Unit
     }
 

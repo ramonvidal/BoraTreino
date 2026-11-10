@@ -156,6 +156,26 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun `the order of planned workouts on one day survives an export and an import`() = runTest {
+        val planned = seed.copy(
+            plannedWorkouts = listOf(
+                PlannedWorkout(LocalDate.of(2026, 11, 4), 2L, 0),
+                PlannedWorkout(LocalDate.of(2026, 11, 4), 1L, 1),
+            ),
+        )
+        store.replaceAll(planned)
+        val exported = repo.export()
+        val otherStore = FakeWorkoutStore()
+        val otherRepo = repoOn(otherStore, TestClock(now, zone))
+
+        val decoded = BackupCodec.decode(exported) as BackupDecodeResult.Ok
+        otherRepo.import(decoded.data)
+
+        assertEquals(planned, otherStore.exportAll())
+        assertEquals(planned.plannedWorkouts, otherStore.observePlannedWorkouts().first())
+    }
+
+    @Test
     fun `a backup that plans the same routine twice on one day previews as invalid`() = runTest {
         val twice = seed.copy(
             plannedWorkouts = listOf(PlannedWorkout(LocalDate.of(2026, 11, 4), 1L), PlannedWorkout(LocalDate.of(2026, 11, 4), 1L)),
@@ -292,9 +312,9 @@ class BackupRepositoryTest {
 
     @Test
     fun `a newer backup previews as too new`() {
-        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":6,\"machines\":\"odd\"}")
+        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":7,\"machines\":\"odd\"}")
 
-        assertEquals(BackupPreview.TooNew(6), preview)
+        assertEquals(BackupPreview.TooNew(7), preview)
     }
 
     @Test

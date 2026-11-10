@@ -650,17 +650,61 @@ class TodayPlanTest {
     private val mondayDate = LocalDate.of(2026, 11, 2)
 
     @Test
-    fun `with several routines planned today the first by position is suggested`() = runTest {
+    fun `with several routines planned today the first in the owner's order is suggested, not the first by routine position`() = runTest {
         val a = routine("A", machine("Leg press"))
         val b = routine("B", machine("Lat pulldown"))
-        routines.planWorkout(mondayDate, b)
+        routines.planWorkout(mondayDate, b) // planned first, so first in the order
         routines.planWorkout(mondayDate, a)
 
         val plan = plan()
 
-        assertEquals(a, plan.suggested?.id)
-        assertEquals(a, plan.active?.routine?.id)
+        assertEquals(b, plan.suggested?.id)
+        assertEquals(b, plan.active?.routine?.id)
         assertTrue(plan.plannedToday)
+    }
+
+    @Test
+    fun `after the first planned routine in the owner's order has a closed session today, the next in that order is suggested`() = runTest {
+        val press = machine("Leg press")
+        val lat = machine("Lat pulldown")
+        val a = routine("A", press)
+        val b = routine("B", lat)
+        routines.planWorkout(mondayDate, b)
+        routines.planWorkout(mondayDate, a)
+        finishedSession(lat) // B, which is first in the owner's order
+
+        assertEquals(a, plan().suggested?.id)
+    }
+
+    @Test
+    fun `reordering today's planned routines flips the suggestion`() = runTest {
+        val a = routine("A", machine("Leg press"))
+        val b = routine("B", machine("Lat pulldown"))
+        routines.planWorkout(mondayDate, a)
+        routines.planWorkout(mondayDate, b)
+        assertEquals(a, plan().suggested?.id)
+
+        routines.reorderPlanned(mondayDate, listOf(b, a))
+
+        assertEquals(b, plan().suggested?.id)
+        assertEquals(b, plan().active?.routine?.id)
+    }
+
+    @Test
+    fun `on a rest day the upcoming training is the first planned routine in the owner's order`() = runTest {
+        val a = routine("A", machine("Leg press"))
+        val b = routine("B", machine("Lat pulldown"))
+        routines.setTrainingDays(monWedFri)
+        val wednesday = LocalDate.of(2026, 11, 4)
+        routines.planWorkout(wednesday, b) // planned first, although b comes after a by routine position
+        routines.planWorkout(wednesday, a)
+        clock.now = tuesday
+
+        val plan = plan()
+
+        assertTrue(plan.restDay)
+        assertEquals(wednesday, plan.upcoming?.date)
+        assertEquals(b, plan.upcoming?.routine?.id)
     }
 
     @Test

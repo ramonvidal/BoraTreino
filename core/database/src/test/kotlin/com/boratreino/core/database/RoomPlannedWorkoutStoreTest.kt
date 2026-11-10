@@ -66,7 +66,7 @@ class RoomPlannedWorkoutStoreTest {
     }
 
     @Test
-    fun `two routines planned on the same date are both kept, by routine`() = runTest {
+    fun `two routines planned on the same date are both kept, each at the end of the date's order`() = runTest {
         val a = routine("A", 0)
         val b = routine("B", 1)
 
@@ -74,9 +74,103 @@ class RoomPlannedWorkoutStoreTest {
         store.setPlannedWorkout(nov4, a)
 
         assertEquals(
-            listOf(PlannedWorkout(nov4, a), PlannedWorkout(nov4, b)),
+            listOf(PlannedWorkout(nov4, b, 0), PlannedWorkout(nov4, a, 1)),
             store.observePlannedWorkouts().first(),
         )
+    }
+
+    @Test
+    fun `a new plan takes the position after the highest one on its date, not after the number of plans`() = runTest {
+        val a = routine("A", 0)
+        val b = routine("B", 1)
+        val c = routine("C", 2)
+        store.setPlannedWorkout(nov4, a)
+        store.setPlannedWorkout(nov4, b)
+        store.setPlannedWorkout(nov4, c)
+        store.reorderPlannedWorkouts(nov4, listOf(c))
+        store.clearPlannedWorkout(nov4, a)
+
+        store.setPlannedWorkout(nov4, a)
+
+        // c is 0, b is 1, and a is added after the highest: 2.
+        assertEquals(
+            listOf(PlannedWorkout(nov4, c, 0), PlannedWorkout(nov4, b, 1), PlannedWorkout(nov4, a, 2)),
+            store.observePlannedWorkouts().first(),
+        )
+    }
+
+    @Test
+    fun `reordering the routines of a date changes the order they are observed in`() = runTest {
+        val a = routine("A", 0)
+        val b = routine("B", 1)
+        val c = routine("C", 2)
+        store.setPlannedWorkout(nov4, a)
+        store.setPlannedWorkout(nov4, b)
+        store.setPlannedWorkout(nov4, c)
+
+        store.reorderPlannedWorkouts(nov4, listOf(c, a, b))
+
+        assertEquals(
+            listOf(PlannedWorkout(nov4, c, 0), PlannedWorkout(nov4, a, 1), PlannedWorkout(nov4, b, 2)),
+            store.observePlannedWorkouts().first(),
+        )
+        assertEquals(
+            listOf(PlannedWorkout(nov4, c, 0), PlannedWorkout(nov4, a, 1), PlannedWorkout(nov4, b, 2)),
+            store.exportAll().plannedWorkouts,
+        )
+    }
+
+    @Test
+    fun `a reorder ignores ids that are not planned on that date and leaves other dates alone`() = runTest {
+        val a = routine("A", 0)
+        val b = routine("B", 1)
+        val c = routine("C", 2)
+        store.setPlannedWorkout(nov4, a)
+        store.setPlannedWorkout(nov4, b)
+        store.setPlannedWorkout(nov12, c)
+
+        store.reorderPlannedWorkouts(nov4, listOf(999L, c, b))
+        store.reorderPlannedWorkouts(nov12, listOf(a))
+
+        // c is not planned on the 4th, 999 does not exist: b takes 0, a keeps 0 and the tie goes by routine id.
+        assertEquals(
+            listOf(PlannedWorkout(nov4, a, 0), PlannedWorkout(nov4, b, 0), PlannedWorkout(nov12, c, 0)),
+            store.observePlannedWorkouts().first(),
+        )
+    }
+
+    @Test
+    fun `a reorder with a partial list moves only the given routines`() = runTest {
+        val a = routine("A", 0)
+        val b = routine("B", 1)
+        val c = routine("C", 2)
+        store.setPlannedWorkout(nov4, a)
+        store.setPlannedWorkout(nov4, b)
+        store.setPlannedWorkout(nov4, c)
+
+        store.reorderPlannedWorkouts(nov4, listOf(c))
+
+        // c takes 0; a and b keep 0 and 1.
+        assertEquals(
+            listOf(PlannedWorkout(nov4, a, 0), PlannedWorkout(nov4, c, 0), PlannedWorkout(nov4, b, 1)),
+            store.observePlannedWorkouts().first(),
+        )
+    }
+
+    @Test
+    fun `planned positions survive a backup round trip, read in the stored order`() = runTest {
+        val a = routine("A", 0)
+        val b = routine("B", 1)
+        store.setPlannedWorkout(nov4, a)
+        store.setPlannedWorkout(nov4, b)
+        store.reorderPlannedWorkouts(nov4, listOf(b, a))
+
+        val exported = store.exportAll()
+        store.replaceAll(exported)
+
+        assertEquals(listOf(PlannedWorkout(nov4, b, 0), PlannedWorkout(nov4, a, 1)), exported.plannedWorkouts)
+        assertEquals(exported.plannedWorkouts, store.exportAll().plannedWorkouts)
+        assertEquals(exported.plannedWorkouts, store.observePlannedWorkouts().first())
     }
 
     @Test
@@ -99,7 +193,7 @@ class RoomPlannedWorkoutStoreTest {
 
         store.clearPlannedWorkout(nov4, a)
 
-        assertEquals(listOf(PlannedWorkout(nov4, b)), store.observePlannedWorkouts().first())
+        assertEquals(listOf(PlannedWorkout(nov4, b, 1)), store.observePlannedWorkouts().first())
     }
 
     @Test
@@ -124,7 +218,7 @@ class RoomPlannedWorkoutStoreTest {
 
         store.deleteRoutine(a)
 
-        assertEquals(listOf(PlannedWorkout(nov4, b)), store.observePlannedWorkouts().first())
+        assertEquals(listOf(PlannedWorkout(nov4, b, 1)), store.observePlannedWorkouts().first())
     }
 
     @Test

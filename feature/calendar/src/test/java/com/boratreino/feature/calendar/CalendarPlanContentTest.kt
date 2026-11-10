@@ -5,7 +5,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -209,6 +211,67 @@ class CalendarPlanContentTest {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))))
 
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/calendar-planned-two-routines.png")
+    }
+
+    // Order of several plans on one day
+
+    @Test
+    fun `a single plan has no move arrows`() {
+        show(state(nextWeek, planned = mapOf(nextWeek to listOf(planB))))
+
+        compose.onAllNodesWithContentDescription("Move up").assertCountEquals(0)
+        compose.onAllNodesWithContentDescription("Move down").assertCountEquals(0)
+    }
+
+    @Test
+    fun `with two plans each card has its move arrows`() {
+        show(state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))))
+
+        compose.onAllNodesWithContentDescription("Move up").assertCountEquals(2)
+        compose.onAllNodesWithContentDescription("Move down").assertCountEquals(2)
+    }
+
+    @Test
+    fun `the first card cannot move up and the last card cannot move down`() {
+        show(state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))))
+
+        compose.onAllNodesWithContentDescription("Move up")[0].assertIsNotEnabled()
+        compose.onAllNodesWithContentDescription("Move up")[1].assertIsEnabled()
+        compose.onAllNodesWithContentDescription("Move down")[0].assertIsEnabled()
+        compose.onAllNodesWithContentDescription("Move down")[1].assertIsNotEnabled()
+    }
+
+    @Test
+    fun `tapping move up on the second card asks to move that routine up`() {
+        var moved: Pair<Long, Boolean>? = null
+        show(
+            state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))),
+            CalendarActions(onMovePlanned = { id, up -> moved = id to up }),
+        )
+
+        compose.onAllNodesWithContentDescription("Move up")[1].performClick()
+
+        assertEquals(2L to true, moved)
+    }
+
+    @Test
+    fun `tapping move down on the first card asks to move that routine down`() {
+        var moved: Pair<Long, Boolean>? = null
+        show(
+            state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))),
+            CalendarActions(onMovePlanned = { id, up -> moved = id to up }),
+        )
+
+        compose.onAllNodesWithContentDescription("Move down")[0].performClick()
+
+        assertEquals(1L to false, moved)
+    }
+
+    @Test
+    fun `the plans of a day with two routines draw their move arrows on a tall screen`() {
+        show(state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))))
+
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/calendar-planned-order.png")
     }
 
     // Past days

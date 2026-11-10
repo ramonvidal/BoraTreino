@@ -328,10 +328,22 @@ internal class FakeWorkoutStore : WorkoutStore {
 
     override fun observePlannedWorkouts(): Flow<List<PlannedWorkout>> = observe { planned.sortedWith(PLANNED_ORDER) }
 
-    /** Several routines per date; a (date, routine) pair already there is ignored. */
+    /** Several routines per date; a (date, routine) pair already there is ignored. A new plan goes to the end of the date's order. */
     override suspend fun setPlannedWorkout(date: LocalDate, routineId: Long) {
-        val entry = PlannedWorkout(date, routineId)
-        if (entry !in planned) planned += entry
+        if (planned.none { it.date == date && it.routineId == routineId }) {
+            val next = planned.filter { it.date == date }.maxOfOrNull { it.position }?.plus(1) ?: 0
+            planned += PlannedWorkout(date, routineId, next)
+        }
+        changed()
+    }
+
+    /** Positions 0..n-1 for the ids planned on [date], in the given order; other plans and unknown ids untouched. */
+    override suspend fun reorderPlannedWorkouts(date: LocalDate, routineIds: List<Long>) {
+        val plannedIds = planned.filter { it.date == date }.map { it.routineId }.toSet()
+        routineIds.distinct().filter { it in plannedIds }.forEachIndexed { index, id ->
+            val i = planned.indexOfFirst { it.date == date && it.routineId == id }
+            planned[i] = planned[i].copy(position = index)
+        }
         changed()
     }
 
@@ -470,5 +482,5 @@ internal class FakeWorkoutStore : WorkoutStore {
     override suspend fun <T> inTransaction(block: suspend () -> T): T = block()
 }
 
-/** Planned workouts by date, then routine: the order the store reads them in. */
-private val PLANNED_ORDER = compareBy<PlannedWorkout>({ it.date }, { it.routineId })
+/** Planned workouts by date, then position, then routine: the order the store reads them in. */
+private val PLANNED_ORDER = compareBy<PlannedWorkout>({ it.date }, { it.position }, { it.routineId })

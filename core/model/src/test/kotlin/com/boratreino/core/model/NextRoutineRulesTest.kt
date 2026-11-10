@@ -206,6 +206,7 @@ class NextRoutineRulesTest {
     // upcoming
 
     private val monday = LocalDate.of(2026, 11, 2)
+    private val wednesday = LocalDate.of(2026, 11, 4)
     private val friday = LocalDate.of(2026, 11, 6)
     private val saturday = LocalDate.of(2026, 11, 7)
 
@@ -549,4 +550,63 @@ class NextRoutineRulesTest {
 
         assertEquals(UpcomingTraining(LocalDate.of(2026, 11, 3), weekScheduled[2]), upcoming)
     }
+
+    @Test
+    fun `upcoming, the lowest planned position wins over the routine position`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(wednesday, 1L, position = 1), PlannedWorkout(wednesday, 3L, position = 0)),
+        )
+
+        // C (routine position 2) is first in the owner's order, so it beats A (routine position 0).
+        assertEquals(UpcomingTraining(wednesday, weekScheduled[2]), upcoming)
+    }
+
+    @Test
+    fun `upcoming, a tie in the planned position goes to the lower routine position`() {
+        val upcoming = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = listOf(PlannedWorkout(wednesday, 3L, position = 0), PlannedWorkout(wednesday, 1L, position = 0)),
+        )
+
+        assertEquals(UpcomingTraining(wednesday, weekScheduled[0]), upcoming)
+    }
+
+    @Test
+    fun `upcoming, the planned order of one date does not change the other dates`() {
+        val planned = listOf(
+            PlannedWorkout(friday, 1L, position = 0),
+            PlannedWorkout(friday, 3L, position = 1),
+        )
+
+        val beforeWednesday = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = monday,
+            planned = planned,
+        )
+        val afterWednesday = NextRoutineRules.upcoming(
+            ScheduleMode.WEEKDAYS,
+            weekScheduled,
+            lastRoutineId = null,
+            trainingDays = emptySet(),
+            after = wednesday,
+            planned = planned,
+        )
+
+        // Wednesday is not planned: the schedule gives B. Friday's plans only matter on Friday.
+        assertEquals(UpcomingTraining(wednesday, weekScheduled[1]), beforeWednesday)
+        assertEquals(UpcomingTraining(friday, weekScheduled[0]), afterWednesday)
+    }
 }
+

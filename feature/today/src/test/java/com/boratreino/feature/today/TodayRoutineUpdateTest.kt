@@ -158,6 +158,7 @@ class TodayRoutineUpdateTest {
         override fun observePlanned(): Flow<List<PlannedWorkout>> = flowOf(emptyList())
         override suspend fun planWorkout(date: LocalDate, routineId: Long) = Unit
         override suspend fun unplanWorkout(date: LocalDate, routineId: Long) = Unit
+        override suspend fun reorderPlanned(date: LocalDate, routineIds: List<Long>) = Unit
     }
 
     private class NoMachines : MachineRepository {

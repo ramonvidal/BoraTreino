@@ -726,14 +726,24 @@ class RoutineRepositoryTest {
     }
 
     @Test
-    fun `several routines can be planned on the same date`() = runTest {
+    fun `several routines can be planned on the same date, each added at the end of that date's order`() = runTest {
         val a = save("Treino A", "A", machine("Leg press"))
         val b = save("Treino B", "B", machine("Leg curl"))
 
         routines.planWorkout(nov5, b)
         routines.planWorkout(nov5, a)
 
-        assertEquals(listOf(PlannedWorkout(nov5, a), PlannedWorkout(nov5, b)), routines.observePlanned().first())
+        assertEquals(listOf(PlannedWorkout(nov5, b, 0), PlannedWorkout(nov5, a, 1)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `a new plan goes after the others on its date only`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+        routines.planWorkout(nov12, b)
+        routines.planWorkout(nov5, a)
+
+        assertEquals(listOf(PlannedWorkout(nov5, a, 0), PlannedWorkout(nov12, b, 0)), routines.observePlanned().first())
     }
 
     @Test
@@ -755,7 +765,7 @@ class RoutineRepositoryTest {
 
         routines.unplanWorkout(nov5, a)
 
-        assertEquals(listOf(PlannedWorkout(nov5, b)), routines.observePlanned().first())
+        assertEquals(listOf(PlannedWorkout(nov5, b, 1)), routines.observePlanned().first())
     }
 
     @Test
@@ -810,5 +820,77 @@ class RoutineRepositoryTest {
         routines.deleteRoutine(a)
 
         assertEquals(listOf(PlannedWorkout(nov12, b)), routines.observePlanned().first())
+    }
+
+    @Test
+    fun `reordering the routines of a date changes the order they are observed in`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+        val c = save("Treino C", "C", machine("Leg extension"))
+        routines.planWorkout(nov5, a)
+        routines.planWorkout(nov5, b)
+        routines.planWorkout(nov5, c)
+
+        routines.reorderPlanned(nov5, listOf(c, a, b))
+
+        assertEquals(
+            listOf(PlannedWorkout(nov5, c, 0), PlannedWorkout(nov5, a, 1), PlannedWorkout(nov5, b, 2)),
+            routines.observePlanned().first(),
+        )
+    }
+
+    @Test
+    fun `a partial reorder moves only the given routines and leaves the others where they were`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+        val c = save("Treino C", "C", machine("Leg extension"))
+        routines.planWorkout(nov5, a)
+        routines.planWorkout(nov5, b)
+        routines.planWorkout(nov5, c)
+
+        routines.reorderPlanned(nov5, listOf(b))
+
+        // b takes position 0; a and c keep theirs (0 and 2). The tie at 0 is broken by routine id.
+        assertEquals(
+            listOf(PlannedWorkout(nov5, a, 0), PlannedWorkout(nov5, b, 0), PlannedWorkout(nov5, c, 2)),
+            routines.observePlanned().first(),
+        )
+    }
+
+    @Test
+    fun `unknown and unplanned ids in a reorder are ignored`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+        val c = save("Treino C", "C", machine("Leg extension"))
+        val d = save("Treino D", "D", machine("Leg raise"))
+        routines.planWorkout(nov5, a)
+        routines.planWorkout(nov5, b)
+        routines.planWorkout(nov5, c)
+
+        routines.reorderPlanned(nov5, listOf(999L, d, c, a))
+
+        // Only c and a are planned here: c takes 0, a takes 1; b keeps 1 and the tie goes by routine id.
+        assertEquals(
+            listOf(PlannedWorkout(nov5, c, 0), PlannedWorkout(nov5, a, 1), PlannedWorkout(nov5, b, 1)),
+            routines.observePlanned().first(),
+        )
+    }
+
+    @Test
+    fun `a reorder leaves the other dates untouched`() = runTest {
+        val a = save("Treino A", "A", machine("Leg press"))
+        val b = save("Treino B", "B", machine("Leg curl"))
+        val c = save("Treino C", "C", machine("Leg extension"))
+        routines.planWorkout(nov5, a)
+        routines.planWorkout(nov5, b)
+        routines.planWorkout(nov12, c)
+
+        routines.reorderPlanned(nov5, listOf(b, a))
+        routines.reorderPlanned(nov12, listOf(a)) // a is not planned on the 12th: nothing changes there
+
+        assertEquals(
+            listOf(PlannedWorkout(nov5, b, 0), PlannedWorkout(nov5, a, 1), PlannedWorkout(nov12, c, 0)),
+            routines.observePlanned().first(),
+        )
     }
 }

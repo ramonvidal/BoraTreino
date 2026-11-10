@@ -13,8 +13,9 @@ import org.robolectric.annotation.Config
 
 /**
  * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays; migration
- * 3 -> 4 adds planned_workouts; 4 -> 5 makes its key (date, routineId); 5 -> 6 adds machines.libraryId. Needs
- * schemas/.../2.json to 6.json, which Room writes on the first build with those versions (the schemas folder is a test asset).
+ * 3 -> 4 adds planned_workouts; 4 -> 5 makes its key (date, routineId); 5 -> 6 adds machines.libraryId; 6 -> 7 adds
+ * planned_workouts.position. Needs schemas/.../2.json to 7.json, which Room writes on the first build with those versions
+ * (the schemas folder is a test asset; 7.json is written by CI, so the 6 -> 7 tests fail until it is committed).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -465,6 +466,80 @@ class MigrationTest {
             c.moveToNext()
             assertEquals("Home rig", c.getString(0))
             assertEquals(true, c.isNull(1))
+        }
+    }
+
+    // 6 -> 7: planned workouts get an explicit order inside their date; old rows get 0 and keep the routine order.
+
+    private fun SupportSQLiteDatabase.insertV6Data() {
+        insertV3Data()
+        execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 2)")
+        execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-12', 1)")
+        execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-13', 1)")
+    }
+
+    @Test
+    fun `migrating 6 to 7 keeps the planned workouts and gives each one position 0`() {
+        helper.createDatabase(name, 6).apply {
+            insertV6Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 7, true, MIGRATION_6_7)
+
+        db.query("SELECT date, routineId, position FROM planned_workouts ORDER BY date, routineId").use { c ->
+            assertEquals(3, c.count)
+            c.moveToFirst()
+            assertEquals("2026-11-12", c.getString(0))
+            assertEquals(1L, c.getLong(1))
+            assertEquals(0, c.getInt(2))
+            c.moveToNext()
+            assertEquals("2026-11-12", c.getString(0))
+            assertEquals(2L, c.getLong(1))
+            assertEquals(0, c.getInt(2))
+            c.moveToNext()
+            assertEquals("2026-11-13", c.getString(0))
+            assertEquals(1L, c.getLong(1))
+            assertEquals(0, c.getInt(2))
+        }
+    }
+
+    @Test
+    fun `after 6 to 7 planned workouts of one date fall back to routine id order`() {
+        helper.createDatabase(name, 6).apply {
+            insertV6Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 7, true, MIGRATION_6_7)
+
+        db.query("SELECT routineId FROM planned_workouts WHERE date = '2026-11-12' ORDER BY position, routineId").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            c.moveToNext()
+            assertEquals(2L, c.getLong(0))
+        }
+    }
+
+    @Test
+    fun `after 6 to 7 a planned workout inserted without a position gets 0 and an explicit position is kept`() {
+        helper.createDatabase(name, 6).apply {
+            insertV6Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 7, true, MIGRATION_6_7)
+
+        db.execSQL("INSERT INTO planned_workouts (date, routineId) VALUES ('2026-11-14', 2)")
+        db.execSQL("INSERT INTO planned_workouts (date, routineId, position) VALUES ('2026-11-14', 1, 5)")
+
+        db.query("SELECT routineId, position FROM planned_workouts WHERE date = '2026-11-14' ORDER BY position").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(2L, c.getLong(0))
+            assertEquals(0, c.getInt(1))
+            c.moveToNext()
+            assertEquals(1L, c.getLong(0))
+            assertEquals(5, c.getInt(1))
         }
     }
 }
