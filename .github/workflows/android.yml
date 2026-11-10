@@ -95,6 +95,8 @@ jobs:
         with:
           name: screenshots
           path: screenshots/
+          # The release keeps the files; the artifact is only a short-lived copy (Actions storage is limited).
+          retention-days: 2
 
       # sideload = the GitHub APK (with the updater); play = the Google Play bundle (no updater,
       # no network). assemblePlayDebug makes sure the play flavor also compiles as an APK.
@@ -123,6 +125,7 @@ jobs:
         with:
           name: boratreino-debug-apk
           path: app/build/outputs/apk/sideload/debug/*.apk
+          retention-days: 2
 
       # Signed with the upload key when the secrets exist, otherwise with a throwaway key: never
       # upload that one to Google Play.
@@ -130,6 +133,7 @@ jobs:
         with:
           name: boratreino-play-aab
           path: app/build/outputs/bundle/playRelease/*.aab
+          retention-days: 2
 
       # One release per build, tagged v0.<build>, so update apps such as Obtainium see a new
       # version each time. GitHub's fixed link always serves the newest one:
