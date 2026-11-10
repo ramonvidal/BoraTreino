@@ -5,6 +5,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /** How far back the statistics look. */
@@ -51,6 +52,23 @@ data class RepRangeShare(val range: RepRange, val sets: Int, val percent: Double
 
 data class SessionTimes(val sessionsCounted: Int, val averageMinutes: Int?, val averageMinutesBetweenSets: Double?)
 
+/** A machine's best estimated one-rep max over the last window of the period. */
+data class MachineEstimate(val machine: Machine, val estimate1rm: Double)
+
+/** A value indexed to 100.0 at the first point of a series. */
+data class IndexPoint(val weekStart: LocalDate, val percent: Double)
+
+/** Working non-cardio sets of the last weeks of the period, split by opposites. */
+data class BalanceStats(
+    val pushSets: Int,
+    val pullSets: Int,
+    val upperSets: Int,
+    val lowerSets: Int,
+    val quadSets: Int,
+    val hamstringSets: Int,
+    val unclassifiedSets: Int,
+)
+
 data class StatsReport(
     val period: StatsPeriod,
     /** First day of the first week of the period. */
@@ -74,6 +92,11 @@ data class StatsReport(
     /** All four ranges, enum order, percent 0..100, summing to 100 (all 0 when there are no sets). */
     val repRanges: List<RepRangeShare>,
     val times: SessionTimes,
+    /** Best estimate per non-cardio machine over the last window of the period, best first. */
+    val strengthNow: List<MachineEstimate> = emptyList(),
+    /** Average strength of all machines per week, 100.0 at the first point; oldest first. */
+    val strengthIndex: List<IndexPoint> = emptyList(),
+    val balance: BalanceStats = BalanceStats(0, 0, 0, 0, 0, 0, 0),
 )
 
 /** Statistics over the sets, sessions and machines already logged. Working sets only; pure functions. */
@@ -83,6 +106,7 @@ object StatsRules {
     private const val PLATEAU_MIN_SESSIONS = 6
     private const val PLATEAU_AFTER_SESSIONS = 4
     private const val MAX_GAP_MINUTES = 15L
+    private const val BALANCE_WEEKS = 4
 
     /** A set with the date of its session and its machine. */
     private class Entry(val set: WorkoutSet, val machine: Machine, val date: LocalDate, val session: Session)
@@ -96,6 +120,7 @@ object StatsRules {
         sessions: List<Session>,
         sets: List<WorkoutSet>,
         zone: ZoneId = ZoneId.systemDefault(),
+        library: Map<String, LibraryExercise> = emptyMap(),
     ): StatsReport {
         val machineById = machines.associateBy { it.id }
         val sessionById = sessions.associateBy { it.id }
@@ -129,6 +154,9 @@ object StatsRules {
             plateaus = plateaus(all),
             repRanges = repRanges(inPeriod),
             times = times(sessions, dateOf, from, today, sets),
+            strengthNow = strengthNow(inPeriod, from, weekCount),
+            strengthIndex = strengthIndex(inPeriod, from, weekCount),
+            balance = balance(inPeriod, from, weekCount, library),
         )
     }
 
@@ -221,6 +249,89 @@ object StatsRules {
             }
             .sortedByDescending { it.changePercent }
     }
+
+    private fun isNonCardio(e: Entry): Boolean = e.machine.kind != MachineKind.CARDIO && !CardioRules.isCardio(e.set)
+
+    /** Best estimate of each non-cardio machine over the same last window as the strength trend. */
+    private fun strengthNow(inPeriod: List<Entry>, from: LocalDate, weekCount: Int): List<MachineEstimate> {
+        val window = minOf(MAX_STRENGTH_WINDOW_WEEKS, weekCount / 2).coerceAtLeast(1)
+        val lastStart = from.plusWeeks((weekCount - window).toLong())
+        return inPeriod.filter { isNonCardio(it) && it.date >= lastStart }
+            .groupBy { it.machine }
+            .mapNotNull { (machine, entries) -> entries.bestEstimate()?.let { MachineEstimate(machine, it) } }
+            .sortedByDescending { it.estimate1rm }
+    }
+
+    /** Mean of each machine's trailing-4-week best estimate relative to its own first value, per week. */
+    private fun strengthIndex(inPeriod: List<Entry>, from: LocalDate, weekCount: Int): List<IndexPoint> {
+        val byMachine = inPeriod.filter(::isNonCardio).groupBy { it.machine }
+        val values = byMachine.values.map { entries ->
+            (0 until weekCount).map { i ->
+                val start = from.plusWeeks(maxOf(0, i - MAX_STRENGTH_WINDOW_WEEKS + 1).toLong())
+                val endExclusive = from.plusWeeks((i + 1).toLong())
+                entries.filter { it.date >= start && it.date < endExclusive }.bestEstimate()
+            }
+        }
+        val raw = (0 until weekCount).mapNotNull { i ->
+            val ratios = values.mapNotNull { v ->
+                val baseline = v.firstOrNull { it != null } ?: return@mapNotNull null
+                v[i]?.let { it / baseline }
+            }
+            if (ratios.isEmpty()) null else from.plusWeeks(i.toLong()) to ratios.average() * 100.0
+        }
+        if (raw.isEmpty()) return emptyList()
+        val first = raw.first().second
+        return raw.mapIndexed { index, (week, value) ->
+            IndexPoint(week, if (index == 0) 100.0 else value / first * 100.0)
+        }
+    }
+
+    private fun balance(
+        inPeriod: List<Entry>,
+        from: LocalDate,
+        weekCount: Int,
+        library: Map<String, LibraryExercise>,
+    ): BalanceStats {
+        val lastStart = from.plusWeeks((weekCount - minOf(BALANCE_WEEKS, weekCount)).toLong())
+        var push = 0; var pull = 0; var upper = 0; var lower = 0; var quad = 0; var ham = 0; var unclassified = 0
+        for (e in inPeriod) {
+            if (!isStrengthSet(e) || e.machine.kind == MachineKind.CARDIO || e.date < lastStart) continue
+            val exercise = e.machine.libraryId?.let { library[it] }
+            val isPush: Boolean
+            val isPull: Boolean
+            val isUpper: Boolean
+            val isLower: Boolean
+            if (exercise != null) {
+                val muscles = exercise.primaryMuscles.map { it.trim().lowercase(Locale.ROOT) }
+                val force = exercise.force?.trim()?.lowercase(Locale.ROOT)
+                isPush = force == "push"
+                isPull = force == "pull"
+                isUpper = muscles.any { it in UPPER_MUSCLES }
+                isLower = muscles.any { it in LOWER_MUSCLES }
+                if ("quadriceps" in muscles) quad++
+                if ("hamstrings" in muscles) ham++
+            } else {
+                when (e.machine.muscleGroup) {
+                    MuscleGroup.CHEST, MuscleGroup.SHOULDERS -> { isPush = true; isPull = false; isUpper = true; isLower = false }
+                    MuscleGroup.BACK -> { isPush = false; isPull = true; isUpper = true; isLower = false }
+                    MuscleGroup.LEGS -> { isPush = false; isPull = false; isUpper = false; isLower = true }
+                    MuscleGroup.ARMS -> { isPush = false; isPull = false; isUpper = true; isLower = false }
+                    MuscleGroup.CORE, MuscleGroup.CARDIO -> { isPush = false; isPull = false; isUpper = false; isLower = false }
+                }
+            }
+            if (isPush) push++
+            if (isPull) pull++
+            if (isUpper) upper++
+            if (isLower) lower++
+            if (!isPush && !isPull && !isUpper && !isLower) unclassified++
+        }
+        return BalanceStats(push, pull, upper, lower, quad, ham, unclassified)
+    }
+
+    private val UPPER_MUSCLES = setOf(
+        "chest", "shoulders", "lats", "middle back", "lower back", "traps", "biceps", "triceps", "forearms", "abdominals",
+    ).minus("abdominals")
+    private val LOWER_MUSCLES = setOf("quadriceps", "hamstrings", "glutes", "calves", "adductors", "abductors")
 
     private fun List<Entry>.bestEstimate(): Double? = mapNotNull { OneRepMaxRules.estimate(it.set) }.maxOrNull()
 
