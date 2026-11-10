@@ -3,11 +3,16 @@ package com.boratreino.feature.progress
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.data.StatsRepository
+import com.boratreino.core.model.BodyProfile
 import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerSettings
+import com.boratreino.core.model.Sex
 import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
+import com.boratreino.core.model.WeightEntry
+import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.settings.TrainingSettings
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -67,11 +72,29 @@ class StatsViewModelTest {
         override suspend fun setWarmupCalculator(enabled: Boolean) = Unit
     }
 
+    /** Body settings on state flows: the profile and the weight entries (newest first, as stored). */
+    private class FakeBody(profile: BodyProfile? = null, weights: List<WeightEntry> = emptyList()) : BodySettings {
+        val profileFlow = MutableStateFlow(profile)
+        val weightsFlow = MutableStateFlow(weights)
+        override val profile: Flow<BodyProfile?> get() = profileFlow
+        override val weights: Flow<List<WeightEntry>> get() = weightsFlow
+        override val showEnergyEstimate: Flow<Boolean> = MutableStateFlow(true)
+        override suspend fun setProfile(profile: BodyProfile) {
+            profileFlow.value = profile
+        }
+        override suspend fun addWeight(date: LocalDate, kg: Double) = Unit
+        override suspend fun setShowEnergyEstimate(show: Boolean) = Unit
+    }
+
     private val repository = FakeStatsRepository()
     private val settings = FakeSettings()
+    private val body = FakeBody()
 
-    private fun TestScope.viewModel(handle: SavedStateHandle = SavedStateHandle()): StatsViewModel {
-        val vm = StatsViewModel(repository, settings, handle)
+    private fun TestScope.viewModel(
+        handle: SavedStateHandle = SavedStateHandle(),
+        bodySettings: BodySettings = body,
+    ): StatsViewModel {
+        val vm = StatsViewModel(repository, settings, bodySettings, handle)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect { } }
         runCurrent()
         return vm
@@ -79,7 +102,7 @@ class StatsViewModelTest {
 
     @Test
     fun `before anything is collected the state is the empty initial one`() = runTest(dispatcher) {
-        val vm = StatsViewModel(repository, settings, SavedStateHandle())
+        val vm = StatsViewModel(repository, settings, body, SavedStateHandle())
         val state = vm.state.value
         assertFalse(state.loaded)
         assertNull(state.report)
@@ -169,5 +192,45 @@ class StatsViewModelTest {
         runCurrent()
         val other = viewModel(SavedStateHandle())
         assertEquals(StatsPeriod.THREE_MONTHS, other.state.value.period)
+    }
+
+    // Body weight
+
+    private val profile = BodyProfile(Sex.MALE, 1990, 178, 82.0)
+
+    @Test
+    fun `the body weight is the newest weight entry, and the entries are passed on as stored`() = runTest(dispatcher) {
+        val entries = listOf(WeightEntry(LocalDate.of(2026, 11, 2), 78.5), WeightEntry(LocalDate.of(2026, 10, 1), 80.0))
+        val vm = viewModel(bodySettings = FakeBody(profile, entries))
+
+        assertEquals(78.5, vm.state.value.bodyWeightKg!!, 1e-9)
+        assertEquals(entries, vm.state.value.weights)
+    }
+
+    @Test
+    fun `without weight entries the profile's weight is the body weight`() = runTest(dispatcher) {
+        val vm = viewModel(bodySettings = FakeBody(profile))
+
+        assertEquals(82.0, vm.state.value.bodyWeightKg!!, 1e-9)
+        assertTrue(vm.state.value.weights.isEmpty())
+    }
+
+    @Test
+    fun `without a profile or any entry the body weight is null`() = runTest(dispatcher) {
+        val vm = viewModel(bodySettings = FakeBody())
+
+        assertNull(vm.state.value.bodyWeightKg)
+        assertTrue(vm.state.value.weights.isEmpty())
+    }
+
+    @Test
+    fun `a weight entry added while the page is open changes the body weight at once`() = runTest(dispatcher) {
+        val fake = FakeBody(profile)
+        val vm = viewModel(bodySettings = fake)
+
+        fake.weightsFlow.value = listOf(WeightEntry(LocalDate.of(2026, 11, 3), 81.0))
+        runCurrent()
+
+        assertEquals(81.0, vm.state.value.bodyWeightKg!!, 1e-9)
     }
 }

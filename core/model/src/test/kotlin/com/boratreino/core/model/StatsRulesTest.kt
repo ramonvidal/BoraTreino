@@ -974,6 +974,21 @@ class StatsRulesTest {
     }
 
     @Test
+    fun `a machine that joins after another has risen does not move the index`() {
+        val log = Log()
+        val press = log.machine()
+        val row = log.machine()
+        for (i in 0 until 13) log.lift(weekOf(i).plusDays(1), press, if (i >= 6) 110.0 else 100.0, 1)
+        for (i in 7 until 13) log.lift(weekOf(i).plusDays(2), row, 50.0, 10)
+
+        val index = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).strengthIndex
+
+        // Week 6: the press alone is at 110. Week 7: the row joins at its own first value; the index stays at 110.
+        assertEquals(110.0, index[6].percent, 1e-9)
+        assertEquals(110.0, index[7].percent, 1e-9)
+    }
+
+    @Test
     fun `weeks without a value for a machine are skipped in the index`() {
         val log = Log()
         val press = log.machine()
