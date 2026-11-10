@@ -21,7 +21,7 @@ import org.robolectric.annotation.Config
 
 /** What the Stats page says and does, checked on the text it shows. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "en-w500dp-h3000dp")
+@Config(sdk = [34], qualifiers = "en-w500dp-h6000dp")
 class StatsContentTest {
     @get:Rule
     val compose = createComposeRule()
