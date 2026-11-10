@@ -424,6 +424,9 @@ private fun PlanRow(planned: List<PlannedUi>, routines: List<RoutineChoiceUi>, a
                 Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (item.shortName.isNotBlank()) {
+                    TrainedBadge(item.shortName, routineTone(item.routineId), selected = false, modifier = Modifier.padding(end = 12.dp))
+                }
                 Text(
                     stringResource(R.string.calendar_planned, item.name),
                     modifier = Modifier.weight(1f),
@@ -464,7 +467,17 @@ private fun PlanChooserDialog(routines: List<RoutineChoiceUi>, actions: Calendar
                         onClick = { actions.onPlan(routine.id) },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                     ) {
-                        Text(routine.name, Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                        // The letter first: with a rotation the owner thinks "A, B, C", not the names.
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            if (routine.shortName.isNotBlank()) {
+                                TrainedBadge(routine.shortName, routineTone(routine.id), selected = false)
+                            }
+                            Text(routine.name, Modifier.weight(1f), textAlign = TextAlign.Start)
+                        }
                     }
                 }
             }

@@ -66,7 +66,7 @@ class CalendarPlanViewModelTest {
     fun `the chooser lists the routines by name`() = runTest {
         start()
 
-        assertEquals(listOf(RoutineChoiceUi(1L, "Treino A"), RoutineChoiceUi(2L, "Treino B")), state.routines)
+        assertEquals(listOf(RoutineChoiceUi(1L, "Treino A", "A"), RoutineChoiceUi(2L, "Treino B", "B")), state.routines)
     }
 
     @Test

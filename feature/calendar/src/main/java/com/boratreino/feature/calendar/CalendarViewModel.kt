@@ -50,7 +50,8 @@ internal data class DayEnergyUi(val kcal: Int, val kind: DayKind)
 internal data class PlannedUi(val routineId: Long, val name: String, val shortName: String)
 
 /** One routine in the "Plan a workout" chooser. */
-internal data class RoutineChoiceUi(val id: Long, val name: String)
+/** A routine the owner can plan: its letter ([shortName], as in the rotation) and its name. */
+internal data class RoutineChoiceUi(val id: Long, val name: String, val shortName: String = "")
 
 /** The planned routines (today and later) with the routine choices, as one value for combine(). */
 private data class PlanningData(val planned: Map<LocalDate, List<PlannedUi>>, val routines: List<RoutineChoiceUi>)
@@ -160,7 +161,7 @@ class CalendarViewModel @Inject constructor(
                 // observePlanned() already comes ordered by date, position and routine: keep that order.
                 .mapNotNull { p -> byId[p.routineId]?.let { r -> p.date to PlannedUi(r.id, r.name, r.shortName) } }
                 .groupBy({ it.first }, { it.second }),
-            routines = routines.map { RoutineChoiceUi(it.id, it.name) },
+            routines = routines.map { RoutineChoiceUi(it.id, it.name, it.shortName) },
         )
     }
 

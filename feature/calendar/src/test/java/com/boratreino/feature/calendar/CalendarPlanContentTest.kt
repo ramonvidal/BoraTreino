@@ -179,23 +179,26 @@ class CalendarPlanContentTest {
     fun `a planned day with no session shows its short name on the grid`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planB))))
 
-        compose.onNodeWithText("B").assertExists()
+        // Once on the grid and once on the day's "Planned" card (the letter leads the card too).
+        compose.onAllNodesWithText("B").assertCountEquals(2)
     }
 
     @Test
     fun `a day with two routines planned shows the first short name and a +1 cue on the grid`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))))
 
-        compose.onNodeWithText("A").assertExists()
+        // Grid: the first letter and "+1"; the second letter only on its "Planned" card below.
+        compose.onAllNodesWithText("A").assertCountEquals(2)
         compose.onNodeWithText("+1").assertExists()
-        compose.onNodeWithText("B").assertDoesNotExist()
+        compose.onAllNodesWithText("B").assertCountEquals(1)
     }
 
     @Test
     fun `a day with a session shows its trained badge, not the plan marker`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planB)), dayLabels = mapOf(nextWeek to "A")))
 
-        compose.onNodeWithText("B").assertDoesNotExist()
+        // "B" is only on the day's "Planned" card, not on the grid; the grid shows the trained "A".
+        compose.onAllNodesWithText("B").assertCountEquals(1)
         compose.onNodeWithText("A").assertExists()
     }
 
