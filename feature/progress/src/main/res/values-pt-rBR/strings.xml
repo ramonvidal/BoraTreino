@@ -92,6 +92,37 @@
     <string name="stats_times_title">Duração do treino</string>
     <string name="stats_average_session">Treino médio: %1$d min</string>
     <string name="stats_between_sets">Cerca de %1$s min entre séries</string>
+    <string name="stats_body_title">Mapa do corpo</string>
+    <string name="stats_body_note">Séries de trabalho nas últimas 4 semanas</string>
+    <string name="stats_body_front">Frente</string>
+    <string name="stats_body_back">Costas</string>
+    <string name="stats_body_legend_0">Sem séries</string>
+    <string name="stats_body_legend_1">1 a 9 séries</string>
+    <string name="stats_body_legend_2">10 a 19 séries</string>
+    <string name="stats_body_legend_3">20 ou mais séries</string>
+    <string name="stats_body_extremes">Mais treinado: %1$s (%2$d séries); menos: %3$s (%4$d)</string>
+    <string name="stats_relative_title">Força por peso corporal</string>
+    <string name="stats_relative_hint">Registre seu peso nas Configurações pra ver a força por peso corporal.</string>
+    <string name="stats_relative_value">%1$s ×</string>
+    <string name="stats_relative_note">Vezes o seu peso corporal (%1$s kg), pelo 1RM estimado</string>
+    <string name="stats_vs_weight_title">Peso corporal e força juntos</string>
+    <string name="stats_vs_weight_strength">Força</string>
+    <string name="stats_vs_weight_body">Peso corporal</string>
+    <string name="stats_vs_weight_summary">Peso corporal %1$s kg (%2$s %%), força %3$s %%</string>
+    <string name="stats_vs_weight_summary_strength">Força %1$s %%</string>
+    <string name="stats_vs_weight_description">Linhas indexadas em 100 na primeira semana, em %1$d semanas. %2$s</string>
+    <string name="stats_vs_weight_note">As duas linhas começam em 100 na primeira semana.</string>
+    <string name="stats_balance_title">Equilíbrio entre opostos</string>
+    <string name="stats_balance_push">Empurrar</string>
+    <string name="stats_balance_pull">Puxar</string>
+    <string name="stats_balance_upper">Parte superior</string>
+    <string name="stats_balance_lower">Parte inferior</string>
+    <string name="stats_balance_quads">Quadríceps</string>
+    <string name="stats_balance_hamstrings">Posteriores da coxa</string>
+    <string name="stats_balance_left">%1$s %2$d</string>
+    <string name="stats_balance_right">%2$d %1$s</string>
+    <string name="stats_balance_ratio">%1$s : 1</string>
+    <string name="stats_balance_note">Séries de trabalho nas últimas 4 semanas. Muitos programas buscam volume parecido de empurrar e puxar.</string>
     <plurals name="progress_trainings">
         <item quantity="one">%d treino</item>
         <item quantity="other">%d treinos</item>
@@ -127,5 +158,9 @@
     <plurals name="stats_plateau">
         <item quantity="one">%1$s: sem evolução em %2$d treino</item>
         <item quantity="other">%1$s: sem evolução em %2$d treinos</item>
+    </plurals>
+    <plurals name="stats_balance_unclassified">
+        <item quantity="one">%d série não pôde ser classificada</item>
+        <item quantity="other">%d séries não puderam ser classificadas</item>
     </plurals>
 </resources>
