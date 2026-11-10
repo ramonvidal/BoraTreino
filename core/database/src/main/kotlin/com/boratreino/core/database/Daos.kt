@@ -257,8 +257,14 @@ internal interface RoutineDao {
 
 @Dao
 internal interface PlannedWorkoutDao {
-    @Query("SELECT * FROM planned_workouts ORDER BY date ASC, routineId ASC")
+    @Query("SELECT * FROM planned_workouts ORDER BY date ASC, position ASC, routineId ASC")
     fun observeAll(): Flow<List<PlannedWorkoutEntity>>
+
+    @Query("SELECT MAX(position) FROM planned_workouts WHERE date = :date")
+    suspend fun maxPosition(date: String): Int?
+
+    @Query("UPDATE planned_workouts SET position = :position WHERE date = :date AND routineId = :routineId")
+    suspend fun setPosition(date: String, routineId: Long, position: Int)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(planned: PlannedWorkoutEntity)

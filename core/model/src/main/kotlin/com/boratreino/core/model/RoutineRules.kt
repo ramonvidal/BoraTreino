@@ -49,7 +49,7 @@ object NextRoutineRules {
      * the first routine when there is none or it no longer exists. WEEKDAYS: the first routine (by position)
      * whose weekdays contain today's day; null on a rest day. Null when there are no routines.
      * IN_TURN with non-empty [trainingDays] that do not contain [today] is a rest day (null).
-     * The first routine of [planned] (planned for today's date, ordered by position by the caller) that is not in
+     * The first routine of [planned] (planned for today's date, in the order the owner set, given by the caller) that is not in
      * [doneToday] (ids of routines already trained today) beats all of this, even on a rest day. When every planned
      * routine is done, or none is planned, the schedule rule applies.
      */
@@ -78,8 +78,8 @@ object NextRoutineRules {
     /**
      * The first date strictly after [after] (looking at most 7 days ahead) that is a training day, with the
      * routine suggested then. Null when there is none or no routines. A routine in [planned] for a date
-     * (when it exists in [routines]) wins over the schedule on that date; with several on one date, the routine with the
-     * lowest position wins.
+     * (when it exists in [routines]) wins over the schedule on that date; with several on one date, the one with the
+     * lowest planned position (then routine position) wins.
      */
     fun upcoming(
         mode: ScheduleMode,
@@ -92,9 +92,9 @@ object NextRoutineRules {
         if (routines.isEmpty()) return null
         val byId = routines.associateBy { it.id }
         val plannedByDate = planned
-            .mapNotNull { p -> byId[p.routineId]?.let { p.date to it } }
-            .groupBy({ it.first }, { it.second })
-            .mapValues { (_, list) -> list.minBy { it.position } }
+            .mapNotNull { p -> byId[p.routineId]?.let { r -> Triple(p.date, p.position, r) } }
+            .groupBy({ it.first }, { it.second to it.third })
+            .mapValues { (_, list) -> list.minWith(compareBy({ it.first }, { it.second.position })).second }
         for (offset in 1L..7L) {
             val date = after.plusDays(offset)
             val routine = plannedByDate[date]

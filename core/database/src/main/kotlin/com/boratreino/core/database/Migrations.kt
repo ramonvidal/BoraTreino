@@ -50,3 +50,10 @@ internal val MIGRATION_5_6: Migration = object : Migration(5, 6) {
         db.execSQL("ALTER TABLE machines ADD COLUMN libraryId TEXT")
     }
 }
+
+/** Version 7: planned workouts of the same date have an explicit order. */
+internal val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE planned_workouts ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
+    }
+}

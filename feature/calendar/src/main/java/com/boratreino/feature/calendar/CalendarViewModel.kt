@@ -157,9 +157,9 @@ class CalendarViewModel @Inject constructor(
         PlanningData(
             planned = plannedList
                 .filter { !it.date.isBefore(today) }
-                .mapNotNull { p -> byId[p.routineId]?.let { r -> Triple(p.date, r.position, PlannedUi(r.id, r.name, r.shortName)) } }
-                .sortedBy { it.second }
-                .groupBy({ it.first }, { it.third }),
+                // observePlanned() already comes ordered by date, position and routine: keep that order.
+                .mapNotNull { p -> byId[p.routineId]?.let { r -> p.date to PlannedUi(r.id, r.name, r.shortName) } }
+                .groupBy({ it.first }, { it.second }),
             routines = routines.map { RoutineChoiceUi(it.id, it.name) },
         )
     }
@@ -267,6 +267,17 @@ class CalendarViewModel @Inject constructor(
     internal fun unplan(routineId: Long) {
         val day = browsing.value.selected
         write { routineRepository.unplanWorkout(day, routineId) }
+    }
+
+    /** Moves a planned routine one place up or down among the selected day's plans, keeping the stored order otherwise. */
+    internal fun reorderPlanned(routineId: Long, up: Boolean) {
+        val day = browsing.value.selected
+        val ids = state.value.planned[day].orEmpty().map { it.routineId }.toMutableList()
+        val from = ids.indexOf(routineId)
+        val to = if (up) from - 1 else from + 1
+        if (from < 0 || to !in ids.indices) return
+        ids[from] = ids[to].also { ids[to] = ids[from] }
+        write { routineRepository.reorderPlanned(day, ids) }
     }
 
     // Sessions of the selected day.

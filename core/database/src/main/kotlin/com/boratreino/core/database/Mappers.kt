@@ -132,6 +132,6 @@ internal fun RoutinePlan.toEntity() = RoutinePlanEntity(
     trainingDays = trainingDays.sorted().joinToString(",") { it.name },
 )
 
-internal fun PlannedWorkoutEntity.toModel() = PlannedWorkout(date = LocalDate.parse(date), routineId = routineId)
+internal fun PlannedWorkoutEntity.toModel() = PlannedWorkout(date = LocalDate.parse(date), routineId = routineId, position = position)
 
-internal fun PlannedWorkout.toEntity() = PlannedWorkoutEntity(date = date.toString(), routineId = routineId)
+internal fun PlannedWorkout.toEntity() = PlannedWorkoutEntity(date = date.toString(), routineId = routineId, position = position)

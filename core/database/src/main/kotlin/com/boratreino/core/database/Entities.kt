@@ -95,6 +95,8 @@ internal data class RoutineItemEntity(
 internal data class PlannedWorkoutEntity(
     val date: String,
     val routineId: Long,
+    /** Order inside the date, 0-based; ties by the routine's own position. */
+    @ColumnInfo(defaultValue = "0") val position: Int = 0,
 )
 
 @Entity(

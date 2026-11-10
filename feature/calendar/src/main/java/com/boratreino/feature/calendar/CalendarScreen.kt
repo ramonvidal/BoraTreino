@@ -1,5 +1,6 @@
 package com.boratreino.feature.calendar
 
+import com.boratreino.core.ui.MoveButtons
 import com.boratreino.core.ui.summaryLabel
 import com.boratreino.core.ui.showUndo
 import androidx.compose.foundation.background
@@ -88,6 +89,7 @@ internal data class CalendarActions(
     val onDismissPlanChooser: () -> Unit = {},
     val onPlan: (routineId: Long) -> Unit = {},
     val onUnplan: (routineId: Long) -> Unit = {},
+    val onMovePlanned: (routineId: Long, up: Boolean) -> Unit = { _, _ -> },
 )
 
 @Composable
@@ -133,6 +135,7 @@ internal fun CalendarScreen(
             onDismissPlanChooser = viewModel::dismissPlanChooser,
             onPlan = viewModel::plan,
             onUnplan = viewModel::unplan,
+            onMovePlanned = viewModel::reorderPlanned,
         ),
         snackbarHostState = snackbar,
     )
@@ -412,7 +415,7 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
 /** Today or later: a quiet card per planned routine with Remove, then "Plan a workout" while routines are left. */
 @Composable
 private fun PlanRow(planned: List<PlannedUi>, routines: List<RoutineChoiceUi>, actions: CalendarActions) {
-    planned.forEach { item ->
+    planned.forEachIndexed { index, item ->
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
@@ -426,6 +429,14 @@ private fun PlanRow(planned: List<PlannedUi>, routines: List<RoutineChoiceUi>, a
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
                 )
+                if (planned.size >= 2) {
+                    MoveButtons(
+                        canMoveUp = index > 0,
+                        canMoveDown = index < planned.lastIndex,
+                        onUp = { actions.onMovePlanned(item.routineId, true) },
+                        onDown = { actions.onMovePlanned(item.routineId, false) },
+                    )
+                }
                 TextButton(onClick = { actions.onUnplan(item.routineId) }, modifier = Modifier.heightIn(min = 48.dp)) {
                     Text(stringResource(R.string.calendar_plan_remove))
                 }

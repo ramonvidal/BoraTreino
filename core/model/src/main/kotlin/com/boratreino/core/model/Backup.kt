@@ -48,7 +48,7 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 5
+    const val FORMAT_VERSION = 6
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {
@@ -120,10 +120,11 @@ object BackupCodec {
                     "type" to it.type.name,
                 )
             },
-            "plannedWorkouts" to data.plannedWorkouts.sortedWith(compareBy({ it.date }, { it.routineId })).map {
+            "plannedWorkouts" to data.plannedWorkouts.sortedWith(compareBy({ it.date }, { it.position }, { it.routineId })).map {
                 linkedMapOf(
                     "date" to it.date.toString(),
                     "routineId" to it.routineId,
+                    "position" to it.position,
                 )
             },
         )
@@ -250,7 +251,7 @@ object BackupCodec {
             null -> emptyList()
             is List<*> -> raw.map {
                 val o = it as? Map<*, *> ?: problem("\"plannedWorkouts\" must hold objects")
-                PlannedWorkout(dateOf(stringOf(o, "date"), "date"), longOf(o, "routineId"))
+                PlannedWorkout(dateOf(stringOf(o, "date"), "date"), longOf(o, "routineId"), optInt(o, "position") ?: 0)
             }
             else -> problem("\"plannedWorkouts\" must be a list")
         }
@@ -268,7 +269,7 @@ object BackupCodec {
         if (plannedWorkouts.any { it.routineId !in routineIds }) {
             problem("A planned workout points to a missing routine")
         }
-        if (plannedWorkouts.toSet().size != plannedWorkouts.size) {
+        if (plannedWorkouts.map { it.date to it.routineId }.toSet().size != plannedWorkouts.size) {
             problem("The same routine is planned twice on the same day")
         }
         if (sets.any { it.sessionId !in sessionIds }) problem("A set points to a missing session")

@@ -12,6 +12,7 @@ import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
 import java.time.Instant
@@ -249,7 +250,19 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
         plannedDao.observeAll().map { list -> list.map { it.toModel() } }
 
     override suspend fun setPlannedWorkout(date: LocalDate, routineId: Long) {
-        plannedDao.insert(PlannedWorkout(date, routineId).toEntity())
+        db.withTransaction {
+            val next = (plannedDao.maxPosition(date.toString()) ?: -1) + 1
+            plannedDao.insert(PlannedWorkout(date, routineId, next).toEntity())
+        }
+    }
+
+    override suspend fun reorderPlannedWorkouts(date: LocalDate, routineIds: List<Long>) {
+        db.withTransaction {
+            val planned = plannedDao.observeAll().first().filter { it.date == date.toString() }.map { it.routineId }.toSet()
+            routineIds.distinct().filter { it in planned }.forEachIndexed { index, id ->
+                plannedDao.setPosition(date.toString(), id, index)
+            }
+        }
     }
 
     override suspend fun clearPlannedWorkout(date: LocalDate, routineId: Long) {
