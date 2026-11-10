@@ -154,4 +154,9 @@
     <string name="today_menu_skip">Skip today</string>
     <string name="today_menu_remove">Remove from routine</string>
     <string name="today_menu_removed_today">Removed from today</string>
+    <string name="machine_complete_title">Exercise complete</string>
+    <string name="machine_complete_sets">%1$d of %2$d sets</string>
+    <string name="machine_next_title">Next exercises</string>
+    <string name="machine_complete_back">Back to the list</string>
+    <string name="machine_complete_extra">Add an extra set</string>
 </resources>

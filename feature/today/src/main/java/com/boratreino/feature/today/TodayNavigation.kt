@@ -54,6 +54,10 @@ fun NavGraphBuilder.todayGraph(
         MachineScreen(
             onBack = { navController.popBackStack() },
             onEdit = onEditMachine,
+            // The next exercise replaces this screen, so Back goes to where this one was opened from.
+            onOpenMachine = { id ->
+                navController.navigate(machineRoute(id)) { popUpTo(MACHINE_ROUTE) { inclusive = true } }
+            },
             // The training finished by itself: back to Today, which shows the summary.
             onRoutineFinished = {
                 if (!navController.popBackStack(TODAY_ROUTE, inclusive = false)) {

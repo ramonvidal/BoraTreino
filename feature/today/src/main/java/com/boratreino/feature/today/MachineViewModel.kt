@@ -3,6 +3,7 @@ package com.boratreino.feature.today
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RepeatOutcome
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
@@ -22,6 +23,7 @@ import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WarmupRules
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.model.working
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
@@ -95,7 +97,24 @@ internal data class MachineUiState(
     val restSeconds: Int? = null,
     /** Length of the running rest in seconds (for the progress bar); 0 when unknown. */
     val restTotalSeconds: Int = 0,
-)
+    /** Working sets this machine is programmed for in the active routine; null = not in it. */
+    val programmedSets: Int? = null,
+    /** Working sets (warm-ups excluded) of this machine in the open session. */
+    val doneSets: Int = 0,
+    /** The remaining exercises of the active routine (not complete, not skipped, not this one), in order. */
+    val nextExercises: List<NextExerciseUi> = emptyList(),
+    /** "Add an extra set" was tapped on this visit: the Log panel is back although the exercise is complete. */
+    val extraSet: Boolean = false,
+) {
+    /** The exercise is in the routine and has all its programmed working sets. */
+    val exerciseComplete: Boolean get() = programmedSets != null && doneSets >= programmedSets
+}
+
+/** One of the exercises still to do in the active routine, offered when this one is complete. */
+internal data class NextExerciseUi(val machine: Machine, val target: RoutineItem)
+
+/** At most this many next exercises are offered. */
+private const val NEXT_EXERCISES_SHOWN = 4
 
 internal sealed interface MachineEvent {
     /** The set is written; the screen gives the haptic tick (a stronger one when [record] is set). */
@@ -118,6 +137,7 @@ private const val RECORD_SHOWN_MILLIS = 4_000L
 class MachineViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val training: TrainingRepository,
+    machines: MachineRepository,
     private val restTimer: RestTimer,
     private val settings: TrainingSettings,
     private val clock: Clock,
@@ -138,6 +158,7 @@ class MachineViewModel @Inject constructor(
     private val record = MutableStateFlow<Record?>(null)
     private val warmupOn = MutableStateFlow(false)
     private val warmupDialog = MutableStateFlow(false)
+    private val extraSet = MutableStateFlow(false)
 
     /** Fires once when a rest countdown reaches zero; the screen gives a haptic. */
     internal val restFinished: Flow<Unit> = restTimer.finished
@@ -182,19 +203,40 @@ class MachineViewModel @Inject constructor(
 
     private val inputs: Flow<Inputs> = combine(draftOverride, editor, pad, record, cardioInput, ::Inputs)
 
+    private data class Toggles(val warmupOn: Boolean, val warmupDialog: Boolean, val extraSet: Boolean)
+
+    private val toggles: Flow<Toggles> = combine(warmupOn, warmupDialog, extraSet, ::Toggles)
+
+    /** The routine's other exercises still to do, in order; empty when the machine is not in the routine. */
+    private val nextExercises: Flow<List<NextExerciseUi>> = combine(
+        training.observeTodayPlan(),
+        training.observeOpenSession(),
+        machines.observeMachines(includeArchived = true),
+    ) { plan, open, all ->
+        val done = open?.machines.orEmpty().associate { it.machine.id to it.sets.working().size }
+        val byId = all.associateBy { it.id }
+        plan.active?.items.orEmpty()
+            .sortedBy { it.position }
+            .filter { it.machineId != machineId && it.machineId !in plan.skipped && (done[it.machineId] ?: 0) < it.targetSets }
+            .mapNotNull { item -> byId[item.machineId]?.let { NextExerciseUi(it, item) } }
+            .take(NEXT_EXERCISES_SHOWN)
+    }
+
     private val logState: Flow<MachineUiState> = combine(
         training.observeMachineLog(machineId),
         inputs,
-        warmupOn,
+        toggles,
         settings.warmupCalculator,
-        warmupDialog,
-    ) { log, input, warmup, calculator, dialog ->
+        nextExercises,
+    ) { log, input, toggle, calculator, next ->
+        val warmup = toggle.warmupOn
+        val dialog = toggle.warmupDialog
         val override = input.override
         val editing = input.editing
         val padding = input.padding
         val newRecord = input.newRecord
         val cardio = input.cardio
-        if (log == null) {
+        val base = if (log == null) {
             MachineUiState(loaded = true)
         } else if (log.machine.kind == MachineKind.CARDIO) {
             val prefill = CardioRules.prefill(log.lastTime, log.thisSession)
@@ -238,6 +280,12 @@ class MachineViewModel @Inject constructor(
                 record = newRecord,
             )
         }
+        base.copy(
+            programmedSets = log?.target?.targetSets,
+            doneSets = log?.thisSession.orEmpty().working().size,
+            nextExercises = if (log?.target != null) next else emptyList(),
+            extraSet = toggle.extraSet,
+        )
     }
 
     internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds) { ui, rest ->
@@ -286,13 +334,37 @@ class MachineViewModel @Inject constructor(
 
     private fun typeFor(s: MachineUiState): SetType = if (s.warmupOn) SetType.WARMUP else SetType.NORMAL
 
+    /** The working set about to be logged is the one that completes (or follows) the programmed sets of this exercise. */
+    private fun completesExercise(working: Boolean): Boolean {
+        val s = state.value
+        val programmed = s.programmedSets ?: return false
+        return working && s.doneSets + 1 >= programmed
+    }
+
+    /** Stops a rest still running from the previous set. Never lets a failure here touch logging. */
+    private fun stopRest() {
+        try {
+            restTimer.skip()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // The timer is a comfort; the set is already saved.
+        }
+    }
+
+    internal fun showExtraSet() {
+        extraSet.value = true
+    }
+
     private suspend fun log(draft: SetDraft) {
         val machine = state.value.machine
+        // Decided from the state before the write.
+        val completes = completesExercise(draft.type != SetType.WARMUP)
         val logged = training.logSet(machineId, draft)
         draftOverride.value = null
         warmupOn.value = false
         eventChannel.send(MachineEvent.Logged(logged.record))
-        startRest(machine)
+        if (completes) stopRest() else startRest(machine)
         if (draft.type != SetType.WARMUP) finishIfComplete()
         val newRecord = logged.record ?: return
         record.value = newRecord
@@ -329,9 +401,11 @@ class MachineViewModel @Inject constructor(
     }
 
     private suspend fun logCardioDraft(draft: CardioDraft) {
+        val completes = completesExercise(working = true)
         training.logCardio(machineId, draft)
         cardioOverride.value = null
         eventChannel.send(MachineEvent.Logged())
+        if (completes) stopRest()
         finishIfComplete()
     }
 

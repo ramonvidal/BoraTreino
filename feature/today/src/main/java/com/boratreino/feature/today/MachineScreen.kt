@@ -13,6 +13,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.DropdownMenu
@@ -67,6 +68,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -122,6 +124,8 @@ internal data class MachineActions(
     val onSaveEditor: () -> Unit = {},
     val onDeleteEditor: () -> Unit = {},
     val onDeleteSet: (WorkoutSet) -> Unit = {},
+    val onOpenNext: (machineId: Long) -> Unit = {},
+    val onExtraSet: () -> Unit = {},
     val onDismissEditor: () -> Unit = {},
     val onSkipRest: () -> Unit = {},
     val onExtendRest: () -> Unit = {},
@@ -145,6 +149,7 @@ internal fun MachineScreen(
     onBack: () -> Unit,
     onEdit: (machineId: Long) -> Unit,
     onRoutineFinished: () -> Unit = onBack,
+    onOpenMachine: (machineId: Long) -> Unit = {},
     viewModel: MachineViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -216,6 +221,8 @@ internal fun MachineScreen(
             onSaveEditor = viewModel::saveEditor,
             onDeleteEditor = viewModel::deleteEditor,
             onDeleteSet = viewModel::deleteSet,
+            onOpenNext = onOpenMachine,
+            onExtraSet = viewModel::showExtraSet,
             onDismissEditor = viewModel::closeEditor,
             onSkipRest = viewModel::skipRest,
             onExtendRest = viewModel::extendRest,
@@ -271,7 +278,11 @@ internal fun MachineContent(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (state.loaded && machine != null) {
-                if (isCardio) CardioLogPanel(state, actions) else LogPanel(machine, state, actions)
+                when {
+                    state.exerciseComplete && !state.extraSet -> CompletePanel(state, actions)
+                    isCardio -> CardioLogPanel(state, actions)
+                    else -> LogPanel(machine, state, actions)
+                }
             }
         },
     ) { innerPadding ->
@@ -629,12 +640,16 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 stringResource(R.string.today_same_again),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 draftText(machine, same.weightKg, same.reps),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.titleMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -647,8 +662,93 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                     onClick = actions.onLogSet,
                     modifier = Modifier.weight(if (same != null) 1.2f else 1f).heightIn(min = 64.dp),
                 ) {
-                    Text(stringResource(R.string.today_log_set), style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        stringResource(R.string.today_log_set),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleLarge,
+                    )
                 }
+            }
+        }
+    }
+}
+
+/** Replaces the Log panel when the exercise has all its programmed sets: what is next, one tap each. */
+@Composable
+private fun CompletePanel(state: MachineUiState, actions: MachineActions) {
+    val programmed = state.programmedSets ?: return
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        tonalElevation = 0.dp,
+        shadowElevation = 4.dp,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().heightIn(max = 380.dp).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(
+                    painterResource(CoreUiR.drawable.ic_check),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Column {
+                    Text(
+                        stringResource(R.string.machine_complete_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        stringResource(R.string.machine_complete_sets, minOf(state.doneSets, programmed), programmed),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (state.nextExercises.isNotEmpty()) {
+                Text(
+                    stringResource(R.string.machine_next_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                state.nextExercises.forEach { next ->
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .heightIn(min = 52.dp)
+                            .clickable { actions.onOpenNext(next.machine.id) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        MachineThumb(next.machine, size = 40.dp)
+                        Text(
+                            next.machine.name,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            targetText(next.target),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            Button(onClick = actions.onBack, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                Text(
+                    stringResource(R.string.machine_complete_back),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            TextButton(onClick = actions.onExtraSet, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text(stringResource(R.string.machine_complete_extra))
             }
         }
     }
@@ -753,12 +853,16 @@ private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 stringResource(R.string.today_same_again),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 cardioText(same.minutes, same.calories, same.distanceM),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.titleMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -771,7 +875,12 @@ private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
                     enabled = CardioRules.canLog(state.cardio),
                     modifier = Modifier.weight(1f).heightIn(min = 64.dp),
                 ) {
-                    Text(stringResource(R.string.today_log), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.today_log),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                 }
             }
         }
