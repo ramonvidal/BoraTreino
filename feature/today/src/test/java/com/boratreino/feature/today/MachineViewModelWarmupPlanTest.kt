@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -100,8 +100,8 @@ class MachineViewModelWarmupPlanTest {
         override suspend fun updateSet(set: WorkoutSet) = Unit
         override suspend fun deleteSet(set: WorkoutSet) = Unit
         override suspend fun restoreSet(set: WorkoutSet) = Unit
-        override fun observeOpenSession(): Flow<OpenSession?> = emptyFlow()
-        override fun observeTodayPlan(): Flow<TodayPlan> = emptyFlow()
+        override fun observeOpenSession(): Flow<OpenSession?> = flowOf(null)
+        override fun observeTodayPlan(): Flow<TodayPlan> = flowOf(noRoutineTodayPlan())
         override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
         override suspend fun closeStaleSession() = Unit
         override suspend fun finishSession(): SessionSummary? = null
@@ -181,6 +181,7 @@ class MachineViewModelWarmupPlanTest {
         viewModel = MachineViewModel(
             SavedStateHandle(mapOf(MACHINE_ID_ARG to machine.id)),
             training,
+            FakeMachineLibrary(),
             rest,
             settings,
             Clock.fixed(now, ZoneOffset.UTC),
