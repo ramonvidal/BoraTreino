@@ -27,6 +27,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.boratreino.core.model.BodyInsightRules
 import com.boratreino.core.model.MuscleRecency
 import com.boratreino.core.model.Record
 import com.boratreino.core.model.RepRange
@@ -60,6 +61,18 @@ internal fun StatsContent(
             return@LazyColumn
         }
         item(key = "week-muscles") { WeekMusclesCard(report) }
+        if (BodyInsightRules.bodyMap(report.muscleWeeks, report.weeks).values.any { it > 0 }) {
+            item(key = "body-map") { BodyMapCard(report) }
+        }
+        if (hasRelativeStrength(state)) {
+            item(key = "relative-strength") { RelativeStrengthCard(state) }
+        }
+        if (hasStrengthChart(report)) {
+            item(key = "strength-vs-weight") { StrengthVsWeightCard(state) }
+        }
+        if (hasBalance(report.balance)) {
+            item(key = "balance") { BalanceCard(report.balance) }
+        }
         item(key = "summary") { SummaryCard(report) }
         if (report.muscleWeeks.any { it.volumeKg > 0 }) {
             item(key = "volume") { WeeklyVolumeCard(report) }
