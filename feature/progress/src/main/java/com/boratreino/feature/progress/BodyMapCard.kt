@@ -110,21 +110,24 @@ private fun BodyFigure(label: String, shades: Map<MuscleGroup, Int>, front: Bool
             val stroke = Stroke(1.5.dp.toPx())
             fun shadeOf(group: MuscleGroup): Int = shades.getValue(group).coerceIn(0, MAX_SHADE)
 
-            // Head: never painted.
-            drawCircle(headFill, radius = 13f * scale, center = Offset(50f * scale, 16f * scale))
             val figure = Figure(this, scale, fills, outline, stroke)
+            // Head, neck and pelvis: neutral light grey with an outline, never shaded.
+            drawCircle(headFill, radius = 14f * scale, center = Offset(50f * scale, 17f * scale))
+            drawCircle(outline, radius = 14f * scale, center = Offset(50f * scale, 17f * scale), style = stroke)
+            figure.neutral(45f, 30f, 10f, 12f, 3f, headFill)
+            figure.neutral(33f, 123f, 34f, 18f, 8f, headFill)
             if (front) {
-                figure.roundRect(shadeOf(MuscleGroup.CHEST), 31f, 38f, 38f, 40f, 8f)
-                figure.roundRect(shadeOf(MuscleGroup.CORE), 33f, 81f, 34f, 42f, 8f)
+                figure.roundRect(shadeOf(MuscleGroup.CHEST), 34f, 41f, 32f, 38f, 8f)
+                figure.roundRect(shadeOf(MuscleGroup.CORE), 35f, 82f, 30f, 38f, 8f)
             } else {
-                figure.roundRect(shadeOf(MuscleGroup.BACK), 31f, 38f, 38f, 85f, 10f)
+                figure.roundRect(shadeOf(MuscleGroup.BACK), 34f, 41f, 32f, 79f, 10f)
             }
-            figure.circle(shadeOf(MuscleGroup.SHOULDERS), 24f, 47f, 11f)
-            figure.circle(shadeOf(MuscleGroup.SHOULDERS), 76f, 47f, 11f)
-            figure.roundRect(shadeOf(MuscleGroup.ARMS), 8f, 58f, 14f, 72f, 7f)
-            figure.roundRect(shadeOf(MuscleGroup.ARMS), 78f, 58f, 14f, 72f, 7f)
-            figure.roundRect(shadeOf(MuscleGroup.LEGS), 31f, 128f, 18f, 84f, 9f)
-            figure.roundRect(shadeOf(MuscleGroup.LEGS), 51f, 128f, 18f, 84f, 9f)
+            figure.circle(shadeOf(MuscleGroup.SHOULDERS), 22f, 49f, 11f)
+            figure.circle(shadeOf(MuscleGroup.SHOULDERS), 78f, 49f, 11f)
+            figure.roundRect(shadeOf(MuscleGroup.ARMS), 6f, 62f, 14f, 70f, 7f)
+            figure.roundRect(shadeOf(MuscleGroup.ARMS), 80f, 62f, 14f, 70f, 7f)
+            figure.roundRect(shadeOf(MuscleGroup.LEGS), 33f, 138f, 16f, 78f, 8f)
+            figure.roundRect(shadeOf(MuscleGroup.LEGS), 51f, 138f, 16f, 78f, 8f)
         }
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -148,6 +151,13 @@ private class Figure(
                 style,
             )
         }
+    }
+
+    fun neutral(x: Float, y: Float, w: Float, h: Float, radius: Float, fill: Color) {
+        val topLeft = Offset(x * scale, y * scale)
+        val size = Size(w * scale, h * scale)
+        scope.drawRoundRect(fill, topLeft, size, CornerRadius(radius * scale), Fill)
+        scope.drawRoundRect(outline, topLeft, size, CornerRadius(radius * scale), stroke)
     }
 
     fun circle(shade: Int, cx: Float, cy: Float, r: Float) {
