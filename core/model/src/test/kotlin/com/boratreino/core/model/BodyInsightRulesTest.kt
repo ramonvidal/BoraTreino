@@ -210,14 +210,116 @@ class BodyInsightRulesTest {
         assertTrue(none.values.all { it == 0 })
     }
 
+    // Shades of average sets a week
+
     @Test
-    fun `shade steps are 0, 1 to 9, 10 to 19 and 20 or more`() {
-        assertEquals(0, BodyInsightRules.shade(0))
-        assertEquals(1, BodyInsightRules.shade(1))
-        assertEquals(1, BodyInsightRules.shade(9))
-        assertEquals(2, BodyInsightRules.shade(10))
-        assertEquals(2, BodyInsightRules.shade(19))
-        assertEquals(3, BodyInsightRules.shade(20))
-        assertEquals(3, BodyInsightRules.shade(57))
+    fun `shade is 0 for no sets, 1 under 5 a week, 2 from 5 to under 10 and 3 from 10 a week`() {
+        assertEquals(0, BodyInsightRules.shade(0.0))
+        assertEquals(1, BodyInsightRules.shade(0.5))
+        assertEquals(1, BodyInsightRules.shade(4.99))
+        assertEquals(2, BodyInsightRules.shade(5.0))
+        assertEquals(2, BodyInsightRules.shade(9.99))
+        assertEquals(3, BodyInsightRules.shade(10.0))
+        assertEquals(3, BodyInsightRules.shade(57.0))
+    }
+
+    // Muscle load: average effective sets a week over every week of the report
+
+    /** A report with [weekCount] weeks from 10 Aug 2026 and the given muscle weeks; the rest is empty. */
+    private fun reportOf(
+        weekCount: Int,
+        muscleWeeks: List<MuscleWeek> = emptyList(),
+        indirectWeeks: List<IndirectWeek> = emptyList(),
+    ): StatsReport = StatsReport(
+        period = StatsPeriod.THREE_MONTHS,
+        from = d(8, 10),
+        to = d(11, 5),
+        weeks = (0 until weekCount).map { i ->
+            WeekStats(d(8, 10).plusWeeks(i.toLong()), sessions = 0, trainingDays = 0, workingSets = 0, volumeKg = 0.0)
+        },
+        muscleWeeks = muscleWeeks,
+        recency = emptyList(),
+        consistency = Consistency(0, 0, 3, 0.0, null, 0),
+        strength = emptyList(),
+        overallStrengthPercent = null,
+        records = emptyList(),
+        plateaus = emptyList(),
+        repRanges = emptyList(),
+        times = SessionTimes(0, null, null),
+        indirectWeeks = indirectWeeks,
+    )
+
+    private fun indirectWeek(week: LocalDate, group: MuscleGroup, sets: Int) = IndirectWeek(week, group, sets)
+
+    @Test
+    fun `muscle load averages direct sets over every week of the report, empty weeks included`() {
+        val report = reportOf(
+            weekCount = 13,
+            muscleWeeks = listOf(
+                muscleWeek(weekOf(0), MuscleGroup.CHEST, 26),
+                muscleWeek(weekOf(5), MuscleGroup.CHEST, 13),
+            ),
+        )
+
+        assertEquals(3.0, BodyInsightRules.muscleLoad(report).getValue(MuscleGroup.CHEST), 1e-9)   // 39 over 13 weeks
+        assertEquals(3.0, BodyInsightRules.directLoad(report).getValue(MuscleGroup.CHEST), 1e-9)
+    }
+
+    @Test
+    fun `the same sets give a smaller average over a longer report`() {
+        val lastWeek = listOf(muscleWeek(weekOf(12), MuscleGroup.LEGS, 12))
+
+        val fourWeeks = BodyInsightRules.muscleLoad(reportOf(4, muscleWeeks = lastWeek))
+        val threeMonths = BodyInsightRules.muscleLoad(reportOf(13, muscleWeeks = lastWeek))
+
+        assertEquals(3.0, fourWeeks.getValue(MuscleGroup.LEGS), 1e-9)
+        assertEquals(12.0 / 13.0, threeMonths.getValue(MuscleGroup.LEGS), 1e-9)
+    }
+
+    @Test
+    fun `indirect sets count as half a set in the muscle load but not in the direct load`() {
+        val report = reportOf(
+            weekCount = 2,
+            muscleWeeks = listOf(muscleWeek(weekOf(1), MuscleGroup.ARMS, 4)),
+            indirectWeeks = listOf(indirectWeek(weekOf(0), MuscleGroup.ARMS, 10)),
+        )
+
+        // (4 direct + 0.5 x 10 indirect) / 2 weeks
+        assertEquals(4.5, BodyInsightRules.muscleLoad(report).getValue(MuscleGroup.ARMS), 1e-9)
+        assertEquals(2.0, BodyInsightRules.directLoad(report).getValue(MuscleGroup.ARMS), 1e-9)
+        assertEquals(0.5, StatsRules.INDIRECT_WEIGHT, 0.0)
+    }
+
+    @Test
+    fun `a group worked only indirectly has a load but no direct load`() {
+        val report = reportOf(
+            weekCount = 1,
+            indirectWeeks = listOf(indirectWeek(weekOf(0), MuscleGroup.SHOULDERS, 3)),
+        )
+
+        assertEquals(1.5, BodyInsightRules.muscleLoad(report).getValue(MuscleGroup.SHOULDERS), 1e-9)
+        assertEquals(0.0, BodyInsightRules.directLoad(report).getValue(MuscleGroup.SHOULDERS), 0.0)
+    }
+
+    @Test
+    fun `muscle load has all seven groups and is 0 for an empty report`() {
+        val empty = reportOf(weekCount = 0, muscleWeeks = listOf(muscleWeek(weekOf(0), MuscleGroup.CHEST, 9)))
+
+        assertEquals(MuscleGroup.entries.toSet(), BodyInsightRules.muscleLoad(empty).keys)
+        assertEquals(MuscleGroup.entries.toSet(), BodyInsightRules.directLoad(empty).keys)
+        assertTrue(BodyInsightRules.muscleLoad(empty).values.all { it == 0.0 })
+        assertTrue(BodyInsightRules.directLoad(empty).values.all { it == 0.0 })
+    }
+
+    @Test
+    fun `muscle load is 0 for cardio`() {
+        val report = reportOf(
+            weekCount = 4,
+            muscleWeeks = listOf(muscleWeek(weekOf(0), MuscleGroup.CARDIO, 6)),
+            indirectWeeks = listOf(indirectWeek(weekOf(0), MuscleGroup.CARDIO, 6)),
+        )
+
+        assertEquals(0.0, BodyInsightRules.muscleLoad(report).getValue(MuscleGroup.CARDIO), 0.0)
+        assertEquals(0.0, BodyInsightRules.directLoad(report).getValue(MuscleGroup.CARDIO), 0.0)
     }
 }

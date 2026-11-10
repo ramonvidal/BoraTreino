@@ -55,7 +55,7 @@ class StatsContentTest {
     fun `the muscle groups card is the first card, above the summary`() {
         showPage()
 
-        val week = compose.onNodeWithText("Muscle groups this week").fetchSemanticsNode().positionInRoot.y
+        val week = compose.onNodeWithText("Muscle groups").fetchSemanticsNode().positionInRoot.y
         val summary = compose.onNodeWithText("Summary").fetchSemanticsNode().positionInRoot.y
         assertTrue(week < summary)
     }
@@ -64,14 +64,15 @@ class StatsContentTest {
     fun `the muscle groups card is left out of an empty period`() {
         showPage(StatsSamples.state(StatsSamples.empty))
 
-        compose.onNodeWithText("Muscle groups this week").assertDoesNotExist()
+        compose.onNodeWithText("Muscle groups").assertDoesNotExist()
     }
 
     @Test
     fun `the cards come with their titles`() {
         showPage()
         listOf(
-            "Muscle groups this week",
+            "Muscle groups",
+            "Body map",
             "Summary",
             "Weekly volume",
             "Hard sets per muscle group",

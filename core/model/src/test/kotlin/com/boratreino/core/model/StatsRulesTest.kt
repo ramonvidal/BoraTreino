@@ -1079,23 +1079,150 @@ class StatsRulesTest {
     }
 
     @Test
-    fun `balance covers the last four weeks only, and every week of a shorter period`() {
+    fun `balance covers every week of the period, not only the last four`() {
         val log = Log()
         val chest = log.machine(MuscleGroup.CHEST)
-        log.lift(d(10, 11), chest, 60.0, 8)                     // week 8 of the 13: outside
-        log.lift(d(10, 13), chest, 60.0, 8)                     // week 9: the first of the last four
+        log.lift(d(8, 3), chest, 60.0, 8)                      // the week before the 13 weeks: outside
+        log.lift(d(10, 11), chest, 60.0, 8)                    // week 8 of the 13: counts for the period
+        log.lift(d(10, 13), chest, 60.0, 8)                    // week 9
         log.lift(d(11, 3), chest, 20.0, 10, SetType.WARMUP)    // warm ups never count
 
         val longPeriod = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).balance
         val shortPeriod = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).balance
 
-        assertEquals(1, longPeriod.pushSets)
-        assertEquals(1, longPeriod.upperSets)
+        assertEquals(2, longPeriod.pushSets)
+        assertEquals(2, longPeriod.upperSets)
         assertEquals(1, shortPeriod.pushSets)
     }
 
     @Test
     fun `balance is all zero with no sets`() {
         assertEquals(BalanceStats(0, 0, 0, 0, 0, 0, 0), reportWithLibrary(Log(), StatsPeriod.FOUR_WEEKS).balance)
+    }
+
+    // Indirect work
+
+    private fun indirectOf(indirect: List<IndirectWeek>): Map<MuscleGroup, Int> =
+        indirect.groupBy { it.muscleGroup }.mapValues { (_, weeks) -> weeks.sumOf { it.sets } }
+
+    @Test
+    fun `a library exercise's secondary muscles count as their groups, own group left out and each group once per set`() {
+        val library = mapOf(
+            "row" to exercise("row", "pull", "lats").copy(
+                secondaryMuscles = listOf("biceps", "middle back", "shoulders", "neck", "unknown muscle"),
+            ),
+        )
+        val log = Log()
+        val row = machineIn(log, "row", MuscleGroup.BACK)
+        repeat(2) { log.lift(d(11, 3), row, 50.0, 10) }
+
+        val indirect = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS, library).indirectWeeks
+
+        assertEquals(
+            listOf(
+                IndirectWeek(d(11, 2), MuscleGroup.SHOULDERS, 2),   // shoulders and neck: one group per set
+                IndirectWeek(d(11, 2), MuscleGroup.ARMS, 2),        // biceps
+            ),
+            indirect,
+        )
+    }
+
+    @Test
+    fun `a library exercise with no secondary muscles adds no indirect work, even on a chest machine`() {
+        val library = mapOf("fly" to exercise("fly", "push", "chest"))
+        val log = Log()
+        val fly = machineIn(log, "fly", MuscleGroup.CHEST)
+        log.lift(d(11, 3), fly, 20.0, 12)
+
+        assertTrue(reportWithLibrary(log, StatsPeriod.FOUR_WEEKS, library).indirectWeeks.isEmpty())
+    }
+
+    @Test
+    fun `without library data a machine adds the default groups of its own group`() {
+        val log = Log()
+        log.lift(d(11, 3), log.machine(MuscleGroup.CHEST), 60.0, 8)
+        log.lift(d(11, 3), log.machine(MuscleGroup.BACK), 50.0, 10)
+        log.lift(d(11, 3), log.machine(MuscleGroup.SHOULDERS), 20.0, 10)
+        log.lift(d(11, 3), log.machine(MuscleGroup.ARMS), 12.0, 10)
+        log.lift(d(11, 3), log.machine(MuscleGroup.LEGS), 80.0, 10)
+        log.lift(d(11, 3), log.machine(MuscleGroup.CORE), 10.0, 15)
+
+        val indirect = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks
+
+        // chest and back: shoulders and arms; shoulders: arms; legs: core; arms and core: none
+        assertEquals(mapOf(MuscleGroup.SHOULDERS to 2, MuscleGroup.ARMS to 3, MuscleGroup.CORE to 1), indirectOf(indirect))
+    }
+
+    @Test
+    fun `a library id that is not in the library falls back to the default groups`() {
+        val log = Log()
+        val back = machineIn(log, "not-in-library", MuscleGroup.BACK)
+        log.lift(d(11, 3), back, 50.0, 10)
+
+        assertEquals(
+            listOf(
+                IndirectWeek(d(11, 2), MuscleGroup.SHOULDERS, 1),
+                IndirectWeek(d(11, 2), MuscleGroup.ARMS, 1),
+            ),
+            reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks,
+        )
+    }
+
+    @Test
+    fun `warm ups, cardio and timed sets never add indirect work`() {
+        val log = Log()
+        val chest = log.machine(MuscleGroup.CHEST)
+        val legs = log.machine(MuscleGroup.LEGS)
+        val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
+        log.lift(d(11, 3), chest, 20.0, 10, SetType.WARMUP)
+        log.lift(d(11, 3), legs, 20.0, 10, SetType.WARMUP)
+        log.cardio(d(11, 3), bike)
+        val timed = log.session(d(11, 3))
+        log.set(timed, legs, null, null, seconds = 300)
+        log.lift(d(11, 3), chest, 60.0, 8)                      // the one working set
+
+        assertEquals(
+            listOf(
+                IndirectWeek(d(11, 2), MuscleGroup.SHOULDERS, 1),
+                IndirectWeek(d(11, 2), MuscleGroup.ARMS, 1),
+            ),
+            reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks,
+        )
+    }
+
+    @Test
+    fun `indirect work is empty when no set works another group, and only sets of the period count`() {
+        val log = Log()
+        log.lift(d(11, 3), log.machine(MuscleGroup.ARMS), 12.0, 10)   // arms have no default indirect group
+        log.lift(d(9, 1), log.machine(MuscleGroup.CHEST), 60.0, 8)    // before the four weeks
+
+        assertTrue(reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks.isEmpty())
+        assertEquals(
+            listOf(
+                IndirectWeek(d(8, 31), MuscleGroup.SHOULDERS, 1),   // the week of 1 Sep
+                IndirectWeek(d(8, 31), MuscleGroup.ARMS, 1),
+            ),
+            reportWithLibrary(log, StatsPeriod.THREE_MONTHS).indirectWeeks,
+        )
+    }
+
+    @Test
+    fun `indirect weeks are counted per week and sorted by week then group`() {
+        val log = Log()
+        val legs = log.machine(MuscleGroup.LEGS)     // default: core
+        val chest = log.machine(MuscleGroup.CHEST)   // default: shoulders and arms
+        log.lift(d(10, 14), legs, 80.0, 10)          // week of 12 Oct
+        log.lift(d(10, 28), chest, 60.0, 8)          // week of 26 Oct
+        log.lift(d(11, 3), legs, 80.0, 10)           // week of 2 Nov
+
+        assertEquals(
+            listOf(
+                IndirectWeek(d(10, 12), MuscleGroup.CORE, 1),
+                IndirectWeek(d(10, 26), MuscleGroup.SHOULDERS, 1),
+                IndirectWeek(d(10, 26), MuscleGroup.ARMS, 1),
+                IndirectWeek(d(11, 2), MuscleGroup.CORE, 1),
+            ),
+            reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks,
+        )
     }
 }

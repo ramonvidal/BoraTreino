@@ -59,7 +59,7 @@ class BalanceCardTest {
         showCard { BalanceCard(BodyInsightSamples.balance) }
 
         compose.onNodeWithText(
-            "Working sets in the last 4 weeks. Many programs aim for similar push and pull volume.",
+            "Working sets in this period. Many programs aim for similar push and pull volume.",
         ).assertIsDisplayed()
     }
 

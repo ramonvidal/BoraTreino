@@ -11,10 +11,7 @@ import com.boratreino.core.model.StatsReport
 import com.boratreino.core.model.WeightEntry
 import java.time.LocalDate
 
-/**
- * Fixtures for the body cards, on top of [StatsSamples.full]: 13 weeks from Monday 10 Aug 2026, so the last four
- * weeks are weeks 9 to 12 (from Monday 12 Oct).
- */
+/** Fixtures for the body cards, on top of [StatsSamples.full]: a 13 week period from Monday 10 Aug 2026. */
 internal object BodyInsightSamples {
     private val full = StatsSamples.full
 
@@ -24,18 +21,18 @@ internal object BodyInsightSamples {
         MuscleWeek(weekStart(index), group, count, count * 100.0)
 
     /**
-     * Legs 10 a week in the last four weeks (40); chest 2 in each of weeks 10 to 12 (6); shoulders 15 in week 9;
-     * arms 1 in week 11; core none. Back has 12 sets in week 6, outside the last four weeks (0).
+     * Averages over the 13 weeks: legs 10 a week (10.0, the solid shade); chest 8 a week (8.0); back 12 in week 6
+     * (0.9); shoulders 3 in week 9 (0.2); arms 1 in week 11 (0.1); core none (0.0).
      */
     val muscleWeeks: List<MuscleWeek> = buildList {
-        (9..12).forEach { add(sets(it, MuscleGroup.LEGS, 10)) }
-        (10..12).forEach { add(sets(it, MuscleGroup.CHEST, 2)) }
-        add(sets(9, MuscleGroup.SHOULDERS, 15))
-        add(sets(11, MuscleGroup.ARMS, 1))
+        (0..12).forEach { add(sets(it, MuscleGroup.LEGS, 10)) }
+        (0..12).forEach { add(sets(it, MuscleGroup.CHEST, 8)) }
         add(sets(6, MuscleGroup.BACK, 12))
+        add(sets(9, MuscleGroup.SHOULDERS, 3))
+        add(sets(11, MuscleGroup.ARMS, 1))
     }
 
-    /** The full report with [muscleWeeks]: the body map reads legs 40, chest 6, back 0, shoulders 15, arms 1, core 0. */
+    /** The full report with [muscleWeeks]: the body map reads legs 10.0, chest 8.0, back 0.9, shoulders 0.2, arms 0.1, core 0.0. */
     val bodyMapReport: StatsReport = full.copy(muscleWeeks = muscleWeeks)
 
     private fun machine(id: Long, name: String, group: MuscleGroup = MuscleGroup.LEGS, kind: MachineKind = MachineKind.WEIGHT_REPS) =
