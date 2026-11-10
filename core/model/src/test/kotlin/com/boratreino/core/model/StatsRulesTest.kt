@@ -1047,7 +1047,7 @@ class StatsRulesTest {
     }
 
     @Test
-    fun `balance by library exercise: force decides push and pull, primary muscles decide the rest`() {
+    fun `balance by library exercise - force decides push and pull, primary muscles decide the rest`() {
         val library = listOf(
             exercise("bench", "push", "chest", "triceps"),
             exercise("row", "pull", "lats", "biceps"),
