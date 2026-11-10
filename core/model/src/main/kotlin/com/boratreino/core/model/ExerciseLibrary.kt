@@ -28,15 +28,7 @@ data class LibraryExercise(
         get() = if (category == CARDIO_CATEGORY) {
             MuscleGroup.CARDIO
         } else {
-            when (primaryMuscles.firstOrNull()?.trim()?.lowercase(Locale.ROOT)) {
-                "quadriceps", "hamstrings", "calves", "glutes", "adductors", "abductors" -> MuscleGroup.LEGS
-                "chest" -> MuscleGroup.CHEST
-                "lats", "middle back", "lower back", "traps" -> MuscleGroup.BACK
-                "shoulders", "neck" -> MuscleGroup.SHOULDERS
-                "biceps", "triceps", "forearms" -> MuscleGroup.ARMS
-                "abdominals" -> MuscleGroup.CORE
-                else -> MuscleGroup.CORE
-            }
+            primaryMuscles.firstOrNull()?.let(::libraryMuscleGroup) ?: MuscleGroup.CORE
         }
 
     val kind: MachineKind
@@ -56,6 +48,17 @@ data class LibraryExercise(
     private companion object {
         const val CARDIO_CATEGORY = "cardio"
     }
+}
+
+/** The app group of a library muscle name (trimmed, case-insensitive); null for an unknown name. */
+fun libraryMuscleGroup(muscle: String): MuscleGroup? = when (muscle.trim().lowercase(Locale.ROOT)) {
+    "quadriceps", "hamstrings", "calves", "glutes", "adductors", "abductors" -> MuscleGroup.LEGS
+    "chest" -> MuscleGroup.CHEST
+    "lats", "middle back", "lower back", "traps" -> MuscleGroup.BACK
+    "shoulders", "neck" -> MuscleGroup.SHOULDERS
+    "biceps", "triceps", "forearms" -> MuscleGroup.ARMS
+    "abdominals" -> MuscleGroup.CORE
+    else -> null
 }
 
 data class LibraryFilter(

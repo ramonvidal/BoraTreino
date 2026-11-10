@@ -58,7 +58,10 @@ data class MachineEstimate(val machine: Machine, val estimate1rm: Double)
 /** A value indexed to 100.0 at the first point of a series. */
 data class IndexPoint(val weekStart: LocalDate, val percent: Double)
 
-/** Working non-cardio sets of the last weeks of the period, split by opposites. */
+/** Number of working sets of a week that worked [muscleGroup] indirectly (as a secondary muscle). */
+data class IndirectWeek(val weekStart: LocalDate, val muscleGroup: MuscleGroup, val sets: Int)
+
+/** Working non-cardio sets of the whole period, split by opposites. */
 data class BalanceStats(
     val pushSets: Int,
     val pullSets: Int,
@@ -97,6 +100,8 @@ data class StatsReport(
     /** Average strength of all machines per week, 100.0 at the first point; oldest first. */
     val strengthIndex: List<IndexPoint> = emptyList(),
     val balance: BalanceStats = BalanceStats(0, 0, 0, 0, 0, 0, 0),
+    /** Only (week, group) pairs with sets > 0, by week then group; indirect work of the period's working sets. */
+    val indirectWeeks: List<IndirectWeek> = emptyList(),
 )
 
 /** Statistics over the sets, sessions and machines already logged. Working sets only; pure functions. */
@@ -106,7 +111,17 @@ object StatsRules {
     private const val PLATEAU_MIN_SESSIONS = 6
     private const val PLATEAU_AFTER_SESSIONS = 4
     private const val MAX_GAP_MINUTES = 15L
-    private const val BALANCE_WEEKS = 4
+
+    /** Indirect sets count as half a set: an approximation, not a measurement. */
+    const val INDIRECT_WEIGHT = 0.5
+
+    /** Secondary groups of a machine without library data, by its own group. */
+    private val DEFAULT_INDIRECT: Map<MuscleGroup, List<MuscleGroup>> = mapOf(
+        MuscleGroup.CHEST to listOf(MuscleGroup.SHOULDERS, MuscleGroup.ARMS),
+        MuscleGroup.BACK to listOf(MuscleGroup.SHOULDERS, MuscleGroup.ARMS),
+        MuscleGroup.SHOULDERS to listOf(MuscleGroup.ARMS),
+        MuscleGroup.LEGS to listOf(MuscleGroup.CORE),
+    )
 
     /** A set with the date of its session and its machine. */
     private class Entry(val set: WorkoutSet, val machine: Machine, val date: LocalDate, val session: Session)
@@ -156,7 +171,8 @@ object StatsRules {
             times = times(sessions, dateOf, from, today, sets),
             strengthNow = strengthNow(inPeriod, from, weekCount),
             strengthIndex = strengthIndex(inPeriod, from, weekCount),
-            balance = balance(inPeriod, from, weekCount, library),
+            balance = balance(inPeriod, library),
+            indirectWeeks = indirectWeeks(inPeriod, library, firstDayOfWeek),
         )
     }
 
@@ -203,6 +219,31 @@ object StatsRules {
                 MuscleWeek(key.first, key.second, entries.size, entries.sumOf { volumeOf(it.set) })
             }
             .sortedWith(compareBy({ it.weekStart }, { it.muscleGroup }))
+
+    private fun indirectGroups(machine: Machine, library: Map<String, LibraryExercise>): Set<MuscleGroup> {
+        val exercise = machine.libraryId?.let { library[it] }
+        val groups = if (exercise != null) {
+            exercise.secondaryMuscles.mapNotNull(::libraryMuscleGroup)
+        } else {
+            DEFAULT_INDIRECT[machine.muscleGroup].orEmpty()
+        }
+        return groups.filter { it != machine.muscleGroup && it != MuscleGroup.CARDIO }.toSet()
+    }
+
+    private fun indirectWeeks(
+        inPeriod: List<Entry>,
+        library: Map<String, LibraryExercise>,
+        first: DayOfWeek,
+    ): List<IndirectWeek> {
+        val counts = HashMap<Pair<LocalDate, MuscleGroup>, Int>()
+        for (e in inPeriod) {
+            if (!isStrengthSet(e) || e.machine.kind == MachineKind.CARDIO) continue
+            val week = WeekGoalRules.weekStart(e.date, first)
+            for (group in indirectGroups(e.machine, library)) counts.merge(week to group, 1, Int::plus)
+        }
+        return counts.map { (key, n) -> IndirectWeek(key.first, key.second, n) }
+            .sortedWith(compareBy({ it.weekStart }, { it.muscleGroup }))
+    }
 
     private fun recency(all: List<Entry>, today: LocalDate): List<MuscleRecency> {
         val lastByGroup = all.filter { it.set.isWorking }
@@ -297,16 +338,10 @@ object StatsRules {
         return points
     }
 
-    private fun balance(
-        inPeriod: List<Entry>,
-        from: LocalDate,
-        weekCount: Int,
-        library: Map<String, LibraryExercise>,
-    ): BalanceStats {
-        val lastStart = from.plusWeeks((weekCount - minOf(BALANCE_WEEKS, weekCount)).toLong())
+    private fun balance(inPeriod: List<Entry>, library: Map<String, LibraryExercise>): BalanceStats {
         var push = 0; var pull = 0; var upper = 0; var lower = 0; var quad = 0; var ham = 0; var unclassified = 0
         for (e in inPeriod) {
-            if (!isStrengthSet(e) || e.machine.kind == MachineKind.CARDIO || e.date < lastStart) continue
+            if (!isStrengthSet(e) || e.machine.kind == MachineKind.CARDIO) continue
             val exercise = e.machine.libraryId?.let { library[it] }
             val isPush: Boolean
             val isPull: Boolean

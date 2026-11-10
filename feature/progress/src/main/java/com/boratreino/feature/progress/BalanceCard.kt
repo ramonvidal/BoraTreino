@@ -39,7 +39,7 @@ internal fun hasBalance(balance: BalanceStats): Boolean =
         balance.upperSets + balance.lowerSets > 0 ||
         balance.quadSets + balance.hamstringSets > 0
 
-/** Two-part bars of the last weeks' working sets: push vs pull, upper vs lower, quads vs hamstrings. */
+/** Two-part bars of the period's working sets: push vs pull, upper vs lower, quads vs hamstrings. */
 @Composable
 internal fun BalanceCard(balance: BalanceStats, modifier: Modifier = Modifier) {
     val pairs = balancePairs(balance)

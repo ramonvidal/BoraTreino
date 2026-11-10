@@ -61,7 +61,7 @@ internal fun StatsContent(
             return@LazyColumn
         }
         item(key = "week-muscles") { WeekMusclesCard(report) }
-        if (BodyInsightRules.bodyMap(report.muscleWeeks, report.weeks).values.any { it > 0 }) {
+        if (BodyInsightRules.muscleLoad(report).values.any { it > 0 }) {
             item(key = "body-map") { BodyMapCard(report) }
         }
         if (hasRelativeStrength(state)) {

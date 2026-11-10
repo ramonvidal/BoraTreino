@@ -4,9 +4,9 @@ import java.time.LocalDate
 
 /** Summaries that relate training to the body: relative strength, body-weight index, body map shades. Pure functions. */
 object BodyInsightRules {
-    /** Working-set counts at which a muscle group's shade steps up (1..9, 10..19, 20+). */
-    private const val SHADE_2_FROM = 10
-    private const val SHADE_3_FROM = 20
+    /** Average weekly effective sets at which a muscle group's shade steps up (under 5, 5 up to 10, 10+). */
+    private const val SHADE_2_FROM = 5.0
+    private const val SHADE_3_FROM = 10.0
 
     /** Weighted machines only; ratio = estimate / body weight, best first. Empty when [bodyWeightKg] <= 0. */
     fun relativeStrength(
@@ -55,11 +55,33 @@ object BodyInsightRules {
         return MuscleGroup.entries.associateWith { sets[it] ?: 0 }
     }
 
-    /** 0 for none, 1 for 1..9 sets, 2 for 10..19, 3 for 20 or more. */
-    fun shade(sets: Int): Int = when {
-        sets <= 0 -> 0
-        sets < SHADE_2_FROM -> 1
-        sets < SHADE_3_FROM -> 2
+    /**
+     * Average effective sets per week over all weeks of [report]: direct + [StatsRules.INDIRECT_WEIGHT] x indirect.
+     * All groups present; 0.0 when the report has no weeks. Cardio stays 0.0.
+     */
+    fun muscleLoad(report: StatsReport): Map<MuscleGroup, Double> = load(report, StatsRules.INDIRECT_WEIGHT)
+
+    /** Same as [muscleLoad] but direct sets only. */
+    fun directLoad(report: StatsReport): Map<MuscleGroup, Double> = load(report, 0.0)
+
+    private fun load(report: StatsReport, indirectWeight: Double): Map<MuscleGroup, Double> {
+        val weekCount = report.weeks.size
+        val direct = report.muscleWeeks.groupBy { it.muscleGroup }.mapValues { (_, w) -> w.sumOf { it.workingSets } }
+        val indirect = report.indirectWeeks.groupBy { it.muscleGroup }.mapValues { (_, w) -> w.sumOf { it.sets } }
+        return MuscleGroup.entries.associateWith { group ->
+            if (weekCount == 0 || group == MuscleGroup.CARDIO) {
+                0.0
+            } else {
+                ((direct[group] ?: 0) + indirectWeight * (indirect[group] ?: 0)) / weekCount
+            }
+        }
+    }
+
+    /** 0 for none, 1 under 5 sets a week, 2 for 5 up to 10, 3 for 10 or more. */
+    fun shade(setsPerWeek: Double): Int = when {
+        setsPerWeek <= 0.0 -> 0
+        setsPerWeek < SHADE_2_FROM -> 1
+        setsPerWeek < SHADE_3_FROM -> 2
         else -> 3
     }
 }

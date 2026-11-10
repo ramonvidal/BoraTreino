@@ -25,12 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.boratreino.core.model.BodyInsightRules
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.ui.label
-
-private const val LIGHT_MAX = 4
-private const val MEDIUM_MAX = 9
 
 /** Working sets this week per muscle group: the report's current (last) week; zero for groups not trained. */
 internal fun weekSetsByGroup(report: StatsReport): Map<MuscleGroup, Int> {
@@ -39,40 +37,44 @@ internal fun weekSetsByGroup(report: StatsReport): Map<MuscleGroup, Int> {
     return MuscleGroup.entries.associateWith { group -> sets[group].orEmpty().sumOf { it.workingSets } }
 }
 
-/** One row of seven rounded squares, shaded by this week's working sets. */
+/** One row of seven rounded squares, shaded by the average effective sets a week over the period. */
 @Composable
 internal fun WeekMusclesCard(report: StatsReport, modifier: Modifier = Modifier) {
-    val sets = weekSetsByGroup(report)
+    val load = BodyInsightRules.muscleLoad(report)
+    val direct = BodyInsightRules.directLoad(report)
     val names = MuscleGroup.entries.associateWith { it.label() }
     val description = MuscleGroup.entries.map { group ->
         stringResource(
-            if (sets.getValue(group) == 1) R.string.stats_week_muscle_sets_one else R.string.stats_week_muscle_sets,
+            R.string.stats_week_muscle_sets,
             names.getValue(group),
-            sets.getValue(group),
+            formatOneDecimal(load.getValue(group)),
+            formatOneDecimal(direct.getValue(group)),
         )
     }.joinToString(", ")
     StatsCard(stringResource(R.string.stats_week_muscles_title), modifier) {
+        NoteLine(stringResource(R.string.stats_week_muscles_note))
         Row(
             Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = description },
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             MuscleGroup.entries.forEach { group ->
-                MuscleSquare(names.getValue(group), sets.getValue(group), Modifier.weight(1f))
+                MuscleSquare(names.getValue(group), load.getValue(group), Modifier.weight(1f))
             }
         }
     }
 }
 
 @Composable
-private fun MuscleSquare(name: String, sets: Int, modifier: Modifier = Modifier) {
+private fun MuscleSquare(name: String, sets: Double, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
-    val fill: Color = when {
-        sets <= 0 -> Color.Transparent
-        sets <= LIGHT_MAX -> lerp(colors.surface, colors.primary, 0.25f)
-        sets <= MEDIUM_MAX -> lerp(colors.surface, colors.primary, 0.55f)
+    val shade = BodyInsightRules.shade(sets)
+    val fill: Color = when (shade) {
+        0 -> Color.Transparent
+        1 -> lerp(colors.surface, colors.primary, 0.25f)
+        2 -> lerp(colors.surface, colors.primary, 0.55f)
         else -> colors.primary
     }
-    val numberColor = if (sets > MEDIUM_MAX) colors.onPrimary else colors.onSurface
+    val numberColor = if (shade >= 3) colors.onPrimary else colors.onSurface
     val shape = RoundedCornerShape(10.dp)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -81,10 +83,10 @@ private fun MuscleSquare(name: String, sets: Int, modifier: Modifier = Modifier)
                 .aspectRatio(1f)
                 .heightIn(min = 36.dp)
                 .background(fill, shape)
-                .then(if (sets <= 0) Modifier.border(BorderStroke(1.5.dp, colors.outlineVariant), shape) else Modifier),
+                .then(if (shade == 0) Modifier.border(BorderStroke(1.5.dp, colors.outlineVariant), shape) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
-            Text(sets.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = numberColor)
+            Text(formatOneDecimal(sets), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = numberColor)
         }
         Text(
             name,

@@ -47,16 +47,18 @@ private const val FIGURE_HEIGHT = 220f
 private const val MIN_SHADE = 1
 private const val MAX_SHADE = 3
 
-/** Working sets of the last 4 weeks per muscle group, drawn on a front and a back figure. */
+/** Average effective sets a week over the period per muscle group, drawn on a front and a back figure. */
 @Composable
 internal fun BodyMapCard(report: StatsReport, modifier: Modifier = Modifier) {
-    val sets = BodyInsightRules.bodyMap(report.muscleWeeks, report.weeks)
+    val sets = BodyInsightRules.muscleLoad(report)
     val names = MapGroups.associateWith { it.label() }
+    val direct = BodyInsightRules.directLoad(report)
     val description = MapGroups.map { group ->
         stringResource(
-            if (sets.getValue(group) == 1) R.string.stats_week_muscle_sets_one else R.string.stats_week_muscle_sets,
+            R.string.stats_week_muscle_sets,
             names.getValue(group),
-            sets.getValue(group),
+            formatOneDecimal(sets.getValue(group)),
+            formatOneDecimal(direct.getValue(group)),
         )
     }.joinToString(", ")
     val shades = MapGroups.associateWith { BodyInsightRules.shade(sets.getValue(it)) }
@@ -77,9 +79,9 @@ internal fun BodyMapCard(report: StatsReport, modifier: Modifier = Modifier) {
                 stringResource(
                     R.string.stats_body_extremes,
                     names.getValue(most),
-                    sets.getValue(most),
+                    formatOneDecimal(sets.getValue(most)),
                     names.getValue(least),
-                    sets.getValue(least),
+                    formatOneDecimal(sets.getValue(least)),
                 ),
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -88,7 +90,7 @@ internal fun BodyMapCard(report: StatsReport, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun NoteLine(text: String) {
+internal fun NoteLine(text: String) {
     Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
