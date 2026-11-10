@@ -262,28 +262,36 @@ object StatsRules {
             .sortedByDescending { it.estimate1rm }
     }
 
-    /** Mean of each machine's trailing-4-week best estimate relative to its own first value, per week. */
+    /**
+     * Chain-linked strength index, 100.0 at the first week with a value. A machine's value in a week is its best
+     * estimate over the trailing 4 weeks ending that week. Each next point is the previous index times the mean of
+     * value(this week) / value(previous week) over the machines that have a value in both weeks, so a machine joining
+     * or leaving does not move the index. With no such machine the previous index carries forward; weeks without any
+     * machine value get no point.
+     */
     private fun strengthIndex(inPeriod: List<Entry>, from: LocalDate, weekCount: Int): List<IndexPoint> {
-        val byMachine = inPeriod.filter(::isNonCardio).groupBy { it.machine }
-        val values = byMachine.values.map { entries ->
+        val values = inPeriod.filter(::isNonCardio).groupBy { it.machine }.values.map { entries ->
             (0 until weekCount).map { i ->
                 val start = from.plusWeeks(maxOf(0, i - MAX_STRENGTH_WINDOW_WEEKS + 1).toLong())
                 val endExclusive = from.plusWeeks((i + 1).toLong())
                 entries.filter { it.date >= start && it.date < endExclusive }.bestEstimate()
             }
         }
-        val raw = (0 until weekCount).mapNotNull { i ->
-            val ratios = values.mapNotNull { v ->
-                val baseline = v.firstOrNull { it != null } ?: return@mapNotNull null
-                v[i]?.let { it / baseline }
+        val points = ArrayList<IndexPoint>()
+        var index = 100.0
+        for (i in 0 until weekCount) {
+            if (values.none { it[i] != null }) continue
+            if (points.isNotEmpty()) {
+                val ratios = values.mapNotNull { v ->
+                    val now = v[i]
+                    val before = if (i > 0) v[i - 1] else null
+                    if (now != null && before != null) now / before else null
+                }
+                if (ratios.isNotEmpty()) index *= ratios.average()
             }
-            if (ratios.isEmpty()) null else from.plusWeeks(i.toLong()) to ratios.average() * 100.0
+            points.add(IndexPoint(from.plusWeeks(i.toLong()), index))
         }
-        if (raw.isEmpty()) return emptyList()
-        val first = raw.first().second
-        return raw.mapIndexed { index, (week, value) ->
-            IndexPoint(week, if (index == 0) 100.0 else value / first * 100.0)
-        }
+        return points
     }
 
     private fun balance(
