@@ -120,10 +120,14 @@ internal class DefaultTrainingRepository @Inject constructor(
         if (previous != null && previous != date) resetChoice()
     }
 
-    /** Routines planned on [date] that exist in [all], by position. */
+    /** Routines planned on [date] that exist in [all], in the owner's order (planned position, then routine position). */
     private fun plannedOn(date: LocalDate, planned: List<PlannedWorkout>, all: List<Routine>): List<Routine> {
         val byId = all.associateBy { it.id }
-        return planned.filter { it.date == date }.mapNotNull { byId[it.routineId] }.distinct().sortedBy { it.position }
+        return planned.filter { it.date == date }
+            .mapNotNull { p -> byId[p.routineId]?.let { p.position to it } }
+            .sortedWith(compareBy({ it.first }, { it.second.position }))
+            .map { it.second }
+            .distinct()
     }
 
     /** Ids of the routines of the CLOSED sessions started on [date]; an open session does not count as done. */

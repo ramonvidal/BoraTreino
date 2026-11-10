@@ -49,10 +49,12 @@ interface RoutineRepository {
     /** Undo of [updateRoutineFromSession]: puts [previousItems] back (items of machines since deleted are dropped). */
     suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<RoutineItem>)
 
-    /** Workouts planned ahead, ordered by date, then routine. */
+    /** Workouts planned ahead, ordered by date, then planned position, then routine. */
     fun observePlanned(): Flow<List<PlannedWorkout>>
     /** Adds the routine to [date]'s plans (several per date); ignored when already planned or the routine does not exist. */
     suspend fun planWorkout(date: LocalDate, routineId: Long)
+    /** Sets the order of the routines planned on [date] to [routineIds] (others untouched, unknown ids ignored). */
+    suspend fun reorderPlanned(date: LocalDate, routineIds: List<Long>)
     /** Removes [routineId]'s plan on [date]; other routines planned that day stay. */
     suspend fun unplanWorkout(date: LocalDate, routineId: Long)
 }

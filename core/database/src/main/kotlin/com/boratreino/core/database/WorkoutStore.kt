@@ -156,10 +156,12 @@ interface WorkoutStore {
 
     // Planned workouts
 
-    /** Workouts planned ahead, ordered by date, then routine id. */
+    /** Workouts planned ahead, ordered by date, then position, then routine id. */
     fun observePlannedWorkouts(): Flow<List<PlannedWorkout>>
-    /** Plans [routineId] on [date] besides what is planned there; ignored if already planned. The routine must exist. */
+    /** Plans [routineId] on [date] at the end of that day's order (max position + 1, 0 for the first); ignored if already planned. The routine must exist. */
     suspend fun setPlannedWorkout(date: LocalDate, routineId: Long)
+    /** Gives the ids in [routineIds] that are planned on [date] positions 0..n-1 in that order, in one transaction; other plans are untouched, unknown ids ignored. */
+    suspend fun reorderPlannedWorkouts(date: LocalDate, routineIds: List<Long>)
     /** Removes [routineId]'s plan on [date]; other routines planned that day stay. */
     suspend fun clearPlannedWorkout(date: LocalDate, routineId: Long)
 

@@ -209,6 +209,10 @@ internal class DefaultRoutineRepository @Inject constructor(
         }
     }
 
+    override suspend fun reorderPlanned(date: LocalDate, routineIds: List<Long>) {
+        store.reorderPlannedWorkouts(date, routineIds)
+    }
+
     override suspend fun unplanWorkout(date: LocalDate, routineId: Long) {
         store.clearPlannedWorkout(date, routineId)
     }

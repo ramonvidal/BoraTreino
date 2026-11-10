@@ -260,6 +260,9 @@ internal interface PlannedWorkoutDao {
     @Query("SELECT * FROM planned_workouts ORDER BY date ASC, position ASC, routineId ASC")
     fun observeAll(): Flow<List<PlannedWorkoutEntity>>
 
+    @Query("SELECT routineId FROM planned_workouts WHERE date = :date")
+    suspend fun routineIdsOn(date: String): List<Long>
+
     @Query("SELECT MAX(position) FROM planned_workouts WHERE date = :date")
     suspend fun maxPosition(date: String): Int?
 
