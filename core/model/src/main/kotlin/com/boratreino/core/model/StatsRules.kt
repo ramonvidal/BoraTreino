@@ -329,8 +329,8 @@ object StatsRules {
     }
 
     private val UPPER_MUSCLES = setOf(
-        "chest", "shoulders", "lats", "middle back", "lower back", "traps", "biceps", "triceps", "forearms", "abdominals",
-    ).minus("abdominals")
+        "chest", "shoulders", "lats", "middle back", "lower back", "traps", "biceps", "triceps", "forearms",
+    )
     private val LOWER_MUSCLES = setOf("quadriceps", "hamstrings", "glutes", "calves", "adductors", "abductors")
 
     private fun List<Entry>.bestEstimate(): Double? = mapNotNull { OneRepMaxRules.estimate(it.set) }.maxOrNull()

@@ -1,6 +1,7 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
+import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.model.StatsRules
@@ -17,7 +18,15 @@ import javax.inject.Inject
 internal class DefaultStatsRepository @Inject constructor(
     private val store: WorkoutStore,
     private val clock: Clock,
+    private val library: ExerciseLibraryRepository,
 ) : StatsRepository {
+
+    /** The exercise library never changes while the app runs; loaded on first use. */
+    @Volatile
+    private var libraryById: Map<String, LibraryExercise>? = null
+
+    private suspend fun libraryMap(): Map<String, LibraryExercise> =
+        libraryById ?: library.all().associateBy { it.id }.also { libraryById = it }
 
     override fun observeStats(period: StatsPeriod, weeklyGoal: Int): Flow<StatsReport> =
         combine(
@@ -34,6 +43,7 @@ internal class DefaultStatsRepository @Inject constructor(
                 sessions = sessions,
                 sets = sets,
                 zone = clock.zone,
+                library = libraryMap(),
             )
         }.flowOn(Dispatchers.Default)
 
