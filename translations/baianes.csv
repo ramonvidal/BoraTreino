@@ -603,6 +603,11 @@ feature/today,today_menu_edit,,Edit exercise,Editar aparelho
 feature/today,today_menu_skip,,Skip today,Pular hoje
 feature/today,today_menu_remove,,Remove from routine,Tirar da ficha
 feature/today,today_menu_removed_today,,Removed from today,Tirado de hoje
+feature/today,machine_complete_title,,Exercise complete,Exercício completo
+feature/today,machine_complete_sets,,%1$d of %2$d sets,%1$d de %2$d séries
+feature/today,machine_next_title,,Next exercises,Próximos exercícios
+feature/today,machine_complete_back,,Back to the list,Voltar à lista
+feature/today,machine_complete_extra,,Add an extra set,Fazer uma série extra
 feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível
 feature/update,update_install,,Install,Instalar
 feature/update,update_later,,Later,Depois

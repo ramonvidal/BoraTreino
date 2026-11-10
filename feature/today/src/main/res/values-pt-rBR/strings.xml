@@ -110,6 +110,11 @@
     <string name="today_menu_skip">Pular hoje</string>
     <string name="today_menu_remove">Tirar da ficha</string>
     <string name="today_menu_removed_today">Tirado de hoje</string>
+    <string name="machine_complete_title">Exercício completo</string>
+    <string name="machine_complete_sets">%1$d de %2$d séries</string>
+    <string name="machine_next_title">Próximos exercícios</string>
+    <string name="machine_complete_back">Voltar à lista</string>
+    <string name="machine_complete_extra">Fazer uma série extra</string>
     <plurals name="today_machines">
         <item quantity="one">%d aparelho</item>
         <item quantity="other">%d aparelhos</item>
