@@ -147,9 +147,9 @@ feature/progress,progress_this_month,,This month,Este mês
 feature/progress,progress_stat_trainings,,Trainings,Treinos
 feature/progress,progress_stat_records,,Records,Recordes
 feature/progress,progress_stat_sets,,Sets,Séries
-feature/progress,stats_week_muscles_title,,Muscle groups this week,Grupos musculares nesta semana
-feature/progress,stats_week_muscle_sets,,%1$s: %2$d sets,%1$s: %2$d séries
-feature/progress,stats_week_muscle_sets_one,,%1$s: %2$d set,%1$s: %2$d série
+feature/progress,stats_week_muscles_title,,Muscle groups,Grupos musculares
+feature/progress,stats_week_muscles_note,,Average sets per week in this period (indirect sets count as half),Média de séries por semana neste período (as séries indiretas contam como meia)
+feature/progress,stats_week_muscle_sets,,%1$s: %2$s sets a week (%3$s direct),%1$s: %2$s séries por semana (%3$s diretas)
 feature/progress,progress_detail,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
 feature/progress,progress_detail_pair,,%1$s · %2$s,%1$s · %2$s
 feature/progress,progress_trend_weight,,Trend: %1$s to %2$s kg,Tendência: %1$s a %2$s kg
@@ -234,14 +234,14 @@ feature/progress,stats_times_title,,Session length,Duração do treino
 feature/progress,stats_average_session,,Average session: %1$d min,Treino médio: %1$d min
 feature/progress,stats_between_sets,,About %1$s min between sets,Cerca de %1$s min entre séries
 feature/progress,stats_body_title,,Body map,Mapa do corpo
-feature/progress,stats_body_note,,Working sets in the last 4 weeks,Séries de trabalho nas últimas 4 semanas
+feature/progress,stats_body_note,,Average sets per week in this period (indirect sets count as half),Média de séries por semana neste período (as séries indiretas contam como meia)
 feature/progress,stats_body_front,,Front,Frente
 feature/progress,stats_body_back,,Back,Costas
 feature/progress,stats_body_legend_0,,No sets,Sem séries
-feature/progress,stats_body_legend_1,,1 to 9 sets,1 a 9 séries
-feature/progress,stats_body_legend_2,,10 to 19 sets,10 a 19 séries
-feature/progress,stats_body_legend_3,,20 or more sets,20 ou mais séries
-feature/progress,stats_body_extremes,,Most trained: %1$s (%2$d sets); least: %3$s (%4$d),Mais treinado: %1$s (%2$d séries); menos: %3$s (%4$d)
+feature/progress,stats_body_legend_1,,Under 5 a week,Menos de 5 por semana
+feature/progress,stats_body_legend_2,,5 to 9 a week,5 a 9 por semana
+feature/progress,stats_body_legend_3,,10 or more a week,10 ou mais por semana
+feature/progress,stats_body_extremes,,Most trained: %1$s (%2$s a week); least: %3$s (%4$s a week),Mais treinado: %1$s (%2$s por semana); menos: %3$s (%4$s por semana)
 feature/progress,stats_relative_title,,Strength per body weight,Força por peso corporal
 feature/progress,stats_relative_hint,,Log your weight in Settings to see strength per body weight.,Registre seu peso nas Configurações pra ver a força por peso corporal.
 feature/progress,stats_relative_value,,%1$s ×,%1$s ×
@@ -263,7 +263,7 @@ feature/progress,stats_balance_hamstrings,,Hamstrings,Posteriores da coxa
 feature/progress,stats_balance_left,,%1$s %2$d,%1$s %2$d
 feature/progress,stats_balance_right,,%2$d %1$s,%2$d %1$s
 feature/progress,stats_balance_ratio,,%1$s : 1,%1$s : 1
-feature/progress,stats_balance_note,,Working sets in the last 4 weeks. Many programs aim for similar push and pull volume.,Séries de trabalho nas últimas 4 semanas. Muitos programas buscam volume parecido de empurrar e puxar.
+feature/progress,stats_balance_note,,Working sets in this period. Many programs aim for similar push and pull volume.,Séries de trabalho neste período. Muitos programas buscam volume parecido de empurrar e puxar.
 feature/progress,stats_balance_unclassified,one,%d set could not be classified,%d série não pôde ser classificada
 feature/progress,stats_balance_unclassified,other,%d sets could not be classified,%d séries não puderam ser classificadas
 feature/routines,routines_title,,Routines,Fichas
