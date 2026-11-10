@@ -525,8 +525,8 @@ private fun SetTable(
                     }
                 }
             }
-            // The set about to be logged.
-            Row(
+            // The set about to be logged (none while the complete panel is up).
+            if (!state.exerciseComplete || state.extraSet) Row(
                 Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
