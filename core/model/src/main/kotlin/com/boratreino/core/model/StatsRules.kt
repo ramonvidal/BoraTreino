@@ -279,17 +279,20 @@ object StatsRules {
         }
         val points = ArrayList<IndexPoint>()
         var index = 100.0
+        // The week of the previous point: a gap with no data compares with the last week that had some.
+        var previousWeek = -1
         for (i in 0 until weekCount) {
             if (values.none { it[i] != null }) continue
-            if (points.isNotEmpty()) {
+            if (previousWeek >= 0) {
                 val ratios = values.mapNotNull { v ->
                     val now = v[i]
-                    val before = if (i > 0) v[i - 1] else null
+                    val before = v[previousWeek]
                     if (now != null && before != null) now / before else null
                 }
                 if (ratios.isNotEmpty()) index *= ratios.average()
             }
             points.add(IndexPoint(from.plusWeeks(i.toLong()), index))
+            previousWeek = i
         }
         return points
     }
