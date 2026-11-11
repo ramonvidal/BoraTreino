@@ -192,6 +192,9 @@ Keeps the current structure (table above, fixed panel below), with these changes
 5. **Wording**: "exercício / exercise" everywhere instead of "aparelho / machine"; "Sem ficha / No routine"
    instead of "Free".
 6. **Stats** split into Corpo / Força / Hábito, with a sticky period and a highlights strip.
+8. **Look approved** (mock-ups of 11 November): the yellow hero card, charcoal buttons, the amount of yellow.
+   **Body map**: the strongest level is **green** (the app's success colour), not charcoal: light yellow, yellow,
+   then green.
 
 ## 7. How I would build it
 
