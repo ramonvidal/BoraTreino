@@ -84,6 +84,12 @@ feature/calendar,calendar_goal_title,,Weekly goal,Meta semanal
 feature/calendar,calendar_goal_label,,Training days per week,Dias de treino por semana
 feature/calendar,calendar_previous_month,,Previous month,Mês anterior
 feature/calendar,calendar_next_month,,Next month,Próximo mês
+feature/calendar,calendar_schedule_title,,Which routine is next,Qual ficha vem agora
+feature/calendar,calendar_schedule_in_turn,,In turn,Em rodízio
+feature/calendar,calendar_schedule_weekdays,,On weekdays,Por dia da semana
+feature/calendar,calendar_training_days,,Training days,Dias de treino
+feature/calendar,calendar_training_days_hint,,Rotation moves to the next routine on these days. If you skip a day the routine stays the next one.,"O rodízio passa pra próxima ficha nesses dias. Se você pular um dia, a ficha continua sendo a próxima."
+feature/calendar,calendar_schedule_weekdays_hint,,Choose each routine's days when you edit it.,Escolha os dias de cada ficha na hora de editar.
 feature/calendar,calendar_free_training,,Free training,Treino livre
 feature/calendar,calendar_session_summary,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
 feature/calendar,calendar_time_range,,%1$s–%2$s,%1$s–%2$s
@@ -273,17 +279,18 @@ feature/routines,routines_mode_in_turn,,In turn,Em rodízio
 feature/routines,routines_mode_weekdays,,On weekdays,Por dia da semana
 feature/routines,routines_move_up,,Move %1$s up,Subir %1$s
 feature/routines,routines_move_down,,Move %1$s down,Descer %1$s
-feature/routines,routines_machine_count,one,%1$d machine,%1$d aparelho
-feature/routines,routines_machine_count,other,%1$d machines,%1$d aparelhos
-feature/routines,routines_new_machine,,New machine,Novo aparelho
+feature/routines,routines_machine_count,one,%1$d exercise,%1$d exercício
+feature/routines,routines_machine_count,other,%1$d exercises,%1$d exercícios
+feature/routines,routines_new_machine,,New exercise,Novo exercício
+feature/routines,routines_add_exercises,,Add exercises,Adicionar exercícios
 feature/routines,routines_archived,,Archived,Arquivados
 feature/routines,routines_add_from_list,,Add from the list,Adicionar da lista
 feature/routines,routines_expand,,Show,Mostrar
 feature/routines,routines_collapse,,Hide,Ocultar
-feature/routines,editor_title_new,,New machine,Novo aparelho
-feature/routines,editor_title_edit,,Edit machine,Editar aparelho
+feature/routines,editor_title_new,,New exercise,Novo exercício
+feature/routines,editor_title_edit,,Edit exercise,Editar exercício
 feature/routines,editor_name,,Name,Nome
-feature/routines,editor_name_error,,Give the machine a name.,Dê um nome ao aparelho.
+feature/routines,editor_name_error,,Give the exercise a name.,Dê um nome ao exercício.
 feature/routines,editor_muscle_group,,Muscle group,Grupo muscular
 feature/routines,editor_kind,,Kind,Tipo
 feature/routines,editor_kind_weights,,Weights,Com carga
@@ -304,10 +311,10 @@ feature/routines,routine_name,,Name,Nome
 feature/routines,routine_name_error,,Give the routine a name.,Dê um nome à ficha.
 feature/routines,routine_short_name,,Short name,Nome curto
 feature/routines,routine_weekdays,,Weekdays,Dias da semana
-feature/routines,routine_machines,,Machines,Aparelhos
-feature/routines,routine_no_machines,,No machines yet.,Nenhum aparelho ainda.
-feature/routines,routine_add_machine,,Add machine,Adicionar aparelho
-feature/routines,routine_add_machine_empty,,All your machines are already in this routine.,Todos os seus aparelhos já estão nesta ficha.
+feature/routines,routine_machines,,Exercises,Exercícios
+feature/routines,routine_no_machines,,No exercises yet.,Nenhum exercício ainda.
+feature/routines,routine_add_machine,,Add exercise,Adicionar exercício
+feature/routines,routine_add_machine_empty,,All your exercises are already in this routine.,Todos os seus exercícios já estão nesta ficha.
 feature/routines,routine_sets,,Sets,Séries
 feature/routines,routine_reps_min,,Reps from,Repetições de
 feature/routines,routine_reps_max,,Reps to,Repetições até
@@ -320,13 +327,13 @@ feature/routines,routine_delete_body,,Your logged sets are kept.,As séries que 
 feature/routines,routine_delete_confirm,,Delete,Apagar
 feature/routines,routines_intro_title,,Your gym,Sua academia
 feature/routines,routines_intro_body,,Register every machine and exercise your gym has. Your routines (fichas) are built from this list.,Cadastre cada aparelho e exercício da sua academia. Suas fichas são montadas a partir dessa lista.
-feature/routines,routines_gym_heading,,Machines and exercises \u00b7 %1$d,Aparelhos e exercícios · %1$d
+feature/routines,routines_gym_heading,,Exercises \u00b7 %1$d,Exercícios · %1$d
 feature/routines,routines_section,,Routines,Fichas
-feature/routines,routines_search,,Search,Buscar
+feature/routines,routines_search,,Search exercises,Buscar exercícios
 feature/routines,routines_no_matches,,No matches.,Nada encontrado.
 feature/routines,routines_delete_machine,,Delete %1$s,Apagar %1$s
-feature/routines,routines_add_selected,one,Add %1$d selected,Adicionar %1$d selecionado
-feature/routines,routines_add_selected,other,Add %1$d selected,Adicionar %1$d selecionados
+feature/routines,routines_add_selected,one,Add %1$d,Adicionar %1$d
+feature/routines,routines_add_selected,other,Add %1$d,Adicionar %1$d
 feature/routines,editor_delete,,Delete,Apagar
 feature/routines,delete_title,,Delete %1$s?,Apagar %1$s?
 feature/routines,delete_also_removed,,It will also be removed from: %1$s.,Ele também será removido de: %1$s.
@@ -336,12 +343,12 @@ feature/routines,delete_has_sets,other,"%1$s has %2$d logged sets, so deleting i
 feature/routines,delete_archive_advice,,Archive it instead: it disappears from your lists and keeps its history.,Arquive em vez disso: ele some das suas listas e mantém o histórico.
 feature/routines,delete_archive,,Archive,Arquivar
 feature/routines,routine_picker_title,,From your gym's list,Da lista da sua academia
-feature/routines,routine_picker_note,,Missing one? Add it first in Machines and exercises.,Faltou algum? Adicione antes em Aparelhos e exercícios.
+feature/routines,routine_picker_note,,"Missing one? Add it first in Routines, Gym.","Faltou algum? Adicione antes em Fichas, Academia."
 feature/routines,routines_page_routines,,Routines,Fichas
 feature/routines,routines_page_gym,,Gym,Academia
-feature/routines,routines_hint,,"A routine is one workout, like Legs or Push. Tap one to choose its machines, sets and reps.","Uma ficha é um treino, tipo Pernas ou Empurrar. Toque numa pra escolher os aparelhos, séries e repetições."
+feature/routines,routines_hint,,"A routine is one workout, like Legs or Push. Tap one to choose its exercises, sets and reps.","Uma ficha é um treino, tipo Pernas ou Empurrar. Toque numa pra escolher os exercícios, séries e repetições."
 feature/routines,routines_empty_title,,No routines yet,Nenhuma ficha ainda
-feature/routines,routines_empty_body,,"Make your first routine, then add machines from your gym.",Faça sua primeira ficha e depois ponha os aparelhos da sua academia.
+feature/routines,routines_empty_body,,"Make your first routine, then add exercises from your gym.",Faça sua primeira ficha e depois ponha os exercícios da sua academia.
 feature/routines,routines_menu,,More options for %1$s,Mais opções de %1$s
 feature/routines,routines_menu_edit,,Edit,Editar
 feature/routines,routines_menu_move_up,,Move up,Subir
@@ -357,7 +364,7 @@ feature/routines,library_filter_group,,Muscle group,Grupo muscular
 feature/routines,library_filter_equipment,,Equipment,Equipamento
 feature/routines,library_filter_level,,Level,Nível
 feature/routines,library_filter_all,,All,Todos
-feature/routines,library_filter_clear,,Clear filters,Limpar filtros
+feature/routines,library_filter_clear,,Clear,Limpar
 feature/routines,library_count,one,%1$d exercise,%1$d exercício
 feature/routines,library_count,other,%1$d exercises,%1$d exercícios
 feature/routines,library_added,,Added,Adicionado
