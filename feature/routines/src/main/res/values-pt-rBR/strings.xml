@@ -8,6 +8,9 @@
     <string name="routines_mode_weekdays">Por dia da semana</string>
     <string name="routines_move_up">Subir %1$s</string>
     <string name="routines_move_down">Descer %1$s</string>
+    <string name="routines_next_pill">Próxima</string>
+    <string name="routines_last_trained_today">Treinada hoje</string>
+    <string name="routines_last_trained_yesterday">Treinada ontem</string>
     <string name="routines_new_machine">Novo exercício</string>
     <string name="routines_add_exercises">Adicionar exercícios</string>
     <string name="routines_archived">Arquivados</string>
@@ -134,6 +137,10 @@
     <plurals name="routines_machine_count">
         <item quantity="one">%1$d exercício</item>
         <item quantity="other">%1$d exercícios</item>
+    </plurals>
+    <plurals name="routines_last_trained_days">
+        <item quantity="one">Treinada há %1$d dia</item>
+        <item quantity="other">Treinada há %1$d dias</item>
     </plurals>
     <plurals name="routines_add_selected">
         <item quantity="one">Adicionar %1$d</item>

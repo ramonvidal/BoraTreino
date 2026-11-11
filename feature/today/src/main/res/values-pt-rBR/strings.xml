@@ -6,6 +6,7 @@
     <string name="today_energy_day">Cerca de %1$s kcal hoje</string>
     <string name="today_energy_rest">Dia de descanso: cerca de %1$s kcal</string>
     <string name="today_pick_to_start">Escolha um exercício para começar</string>
+    <string name="today_setup">Configure em 3 passos</string>
     <string name="today_all_machines">Todos os exercícios</string>
     <string name="today_add_machine">Adicionar exercício</string>
     <string name="today_done">Concluir</string>
@@ -115,7 +116,7 @@
     <string name="summary_not_finished">Ainda não terminei</string>
     <string name="summary_close">Fechar</string>
     <string name="machine_menu_edit">Editar</string>
-    <string name="today_menu_edit">Editar aparelho</string>
+    <string name="today_menu_edit">Editar exercício</string>
     <string name="today_menu_skip">Pular hoje</string>
     <string name="today_menu_remove">Tirar da ficha</string>
     <string name="today_menu_removed_today">Tirado de hoje</string>

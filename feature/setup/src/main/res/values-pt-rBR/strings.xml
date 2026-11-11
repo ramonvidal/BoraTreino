@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
+<resources>
+    <string name="setup_step_of">Passo %1$d de %2$d</string>
+    <string name="setup_next">Próximo</string>
+    <string name="setup_back">Voltar</string>
+    <string name="setup_skip">Pular</string>
+    <string name="setup_finish">Concluir</string>
+    <string name="setup_gym_title">O que sua academia tem?</string>
+    <string name="setup_gym_hint">Marque os exercícios que você consegue fazer. Dá pra adicionar mais depois.</string>
+    <string name="setup_search">Buscar exercícios</string>
+    <string name="setup_routine_title">Sua primeira ficha</string>
+    <string name="setup_routine_hint">Desmarque o que você não quer nela.</string>
+    <string name="setup_routine_name">Nome da ficha</string>
+    <string name="setup_routine_default_name">Treino A</string>
+    <string name="setup_routine_none">Você não escolheu nenhum exercício, então não dá pra criar a ficha agora. Você pode fazer uma depois, na aba Fichas.</string>
+    <string name="setup_days_title">Quando você treina?</string>
+    <string name="setup_days_hint">Escolha os dias de treino. Deixe vazio pra treinar qualquer dia.</string>
+    <plurals name="setup_selected_count">
+        <item quantity="one">%1$d exercício selecionado</item>
+        <item quantity="other">%1$d exercícios selecionados</item>
+    </plurals>
+</resources>

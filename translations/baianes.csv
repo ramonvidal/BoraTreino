@@ -76,6 +76,11 @@ core/ui,set_type_warmup,,Warm-up,Aquecimento
 core/ui,set_type_drop,,Drop set,Drop set
 core/ui,set_type_failure,,Failure,Falha
 feature/calendar,calendar_week_progress,,This week: %1$d of %2$d,Semana: %1$d de %2$d
+feature/calendar,calendar_week_title,,This week,Esta semana
+feature/calendar,calendar_week_goal,,%1$d of %2$d,%1$d de %2$d
+feature/calendar,calendar_week_preview,,This week: %1$s,Esta semana: %1$s
+feature/calendar,calendar_legend_trained,,Trained,Treinado
+feature/calendar,calendar_legend_planned,,Planned,Agendado
 feature/calendar,calendar_streak,one,Streak: %d week,Sequência: %d semana
 feature/calendar,calendar_streak,other,Streak: %d weeks,Sequência: %d semanas
 feature/calendar,calendar_streak_start,one,Train %d day this week to start a streak,Treine %d dia nesta semana pra começar uma sequência
@@ -90,37 +95,38 @@ feature/calendar,calendar_schedule_weekdays,,On weekdays,Por dia da semana
 feature/calendar,calendar_training_days,,Training days,Dias de treino
 feature/calendar,calendar_training_days_hint,,Rotation moves to the next routine on these days. If you skip a day the routine stays the next one.,"O rodízio passa pra próxima ficha nesses dias. Se você pular um dia, a ficha continua sendo a próxima."
 feature/calendar,calendar_schedule_weekdays_hint,,Choose each routine's days when you edit it.,Escolha os dias de cada ficha na hora de editar.
-feature/calendar,calendar_free_training,,Free training,Treino livre
+feature/calendar,calendar_free_training,,No routine,Sem ficha
+feature/calendar,calendar_session_counts,,%1$s · %2$s,%1$s · %2$s
 feature/calendar,calendar_session_summary,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
 feature/calendar,calendar_time_range,,%1$s–%2$s,%1$s–%2$s
 feature/calendar,calendar_time_open,,"%1$s, training now","%1$s, treinando agora"
 feature/calendar,calendar_edit,,Edit,Editar
 feature/calendar,calendar_delete,,Delete,Apagar
 feature/calendar,calendar_nothing_logged,,Nothing logged,Nada registrado
-feature/calendar,calendar_add_training,,Add a training,Adicionar treino
+feature/calendar,calendar_add_training,,Add a workout,Adicionar treino
 feature/calendar,calendar_plan_workout,,Plan a workout,Agendar um treino
 feature/calendar,calendar_plan_title,,Plan a workout,Agendar um treino
 feature/calendar,calendar_planned,,Planned: %1$s,Agendado: %1$s
 feature/calendar,calendar_plan_change,,Change,Trocar
 feature/calendar,calendar_plan_remove,,Remove,Remover
-feature/calendar,calendar_delete_title,,Delete this training?,Apagar este treino?
-feature/calendar,calendar_delete_message,,The training and all its sets will be removed.,O treino e todas as séries dele serão removidos.
-feature/calendar,calendar_deleted,,Training deleted,Treino apagado
-feature/calendar,calendar_machines,one,%d machine,%d aparelho
-feature/calendar,calendar_machines,other,%d machines,%d aparelhos
+feature/calendar,calendar_delete_title,,Delete this workout?,Apagar este treino?
+feature/calendar,calendar_delete_message,,The workout and all its sets will be removed.,O treino e todas as séries dele serão removidos.
+feature/calendar,calendar_deleted,,Workout deleted,Treino apagado
+feature/calendar,calendar_machines,one,%d exercise,%d exercício
+feature/calendar,calendar_machines,other,%d exercises,%d exercícios
 feature/calendar,calendar_sets,one,%d set,%d série
 feature/calendar,calendar_sets,other,%d sets,%d séries
-feature/calendar,calendar_free,,Free,Livre
+feature/calendar,calendar_free,,No routine,Sem ficha
 feature/calendar,calendar_energy_day,,About %1$s kcal that day,Cerca de %1$s kcal nesse dia
 feature/calendar,calendar_energy_rest,,Rest day: about %1$s kcal,Dia de descanso: cerca de %1$s kcal
-feature/calendar,calendar_no_sets,,No sets yet. Add a machine to start.,Nenhuma série ainda. Adicione um aparelho pra começar.
+feature/calendar,calendar_no_sets,,No sets yet. Add an exercise to start.,Nenhuma série ainda. Adicione um exercício pra começar.
 feature/calendar,calendar_repeat_same,,Same as last time,Igual à última vez
 feature/calendar,calendar_repeat_suggested,,"Same, with suggested weights","Igual, com as cargas sugeridas"
 feature/calendar,calendar_nothing_to_repeat,,Nothing to copy from an earlier training,Não tem treino anterior pra copiar
 feature/calendar,calendar_add_set,,Add set,Adicionar série
-feature/calendar,calendar_add_machine,,Add machine,Adicionar aparelho
-feature/calendar,calendar_pick_machine,,Pick a machine,Escolha um aparelho
-feature/calendar,calendar_no_machines,,No machines yet,Nenhum aparelho ainda
+feature/calendar,calendar_add_machine,,Add exercise,Adicionar exercício
+feature/calendar,calendar_pick_machine,,Pick an exercise,Escolha um exercício
+feature/calendar,calendar_no_machines,,No exercises yet,Nenhum exercício ainda
 feature/calendar,calendar_session_not_found,,This training no longer exists,Esse treino não existe mais
 feature/calendar,calendar_edit_set,,Edit set,Editar série
 feature/calendar,calendar_set_removed,,Set removed,Série removida
@@ -281,6 +287,11 @@ feature/routines,routines_move_up,,Move %1$s up,Subir %1$s
 feature/routines,routines_move_down,,Move %1$s down,Descer %1$s
 feature/routines,routines_machine_count,one,%1$d exercise,%1$d exercício
 feature/routines,routines_machine_count,other,%1$d exercises,%1$d exercícios
+feature/routines,routines_next_pill,,Next,Próxima
+feature/routines,routines_last_trained_today,,Last trained today,Treinada hoje
+feature/routines,routines_last_trained_yesterday,,Last trained yesterday,Treinada ontem
+feature/routines,routines_last_trained_days,one,Last trained %1$d day ago,Treinada há %1$d dia
+feature/routines,routines_last_trained_days,other,Last trained %1$d days ago,Treinada há %1$d dias
 feature/routines,routines_new_machine,,New exercise,Novo exercício
 feature/routines,routines_add_exercises,,Add exercises,Adicionar exercícios
 feature/routines,routines_archived,,Archived,Arquivados
@@ -489,11 +500,29 @@ feature/settings,settings_body_log_weight_dialog,,Today's weight (kg),Peso de ho
 feature/settings,settings_body_recent_weights,,Recent weights,Pesos recentes
 feature/settings,settings_body_show_estimate,,Show daily energy estimate,Mostrar estimativa de energia diária
 feature/settings,settings_body_range_error,,Enter a value from %1$s to %2$s,Digite um valor de %1$s a %2$s
+feature/setup,setup_step_of,,Step %1$d of %2$d,Passo %1$d de %2$d
+feature/setup,setup_next,,Next,Próximo
+feature/setup,setup_back,,Back,Voltar
+feature/setup,setup_skip,,Skip,Pular
+feature/setup,setup_finish,,Finish,Concluir
+feature/setup,setup_gym_title,,What does your gym have?,O que sua academia tem?
+feature/setup,setup_gym_hint,,Tick the exercises you can do. You can add more later.,Marque os exercícios que você consegue fazer. Dá pra adicionar mais depois.
+feature/setup,setup_search,,Search exercises,Buscar exercícios
+feature/setup,setup_selected_count,one,%1$d exercise selected,%1$d exercício selecionado
+feature/setup,setup_selected_count,other,%1$d exercises selected,%1$d exercícios selecionados
+feature/setup,setup_routine_title,,Your first routine,Sua primeira ficha
+feature/setup,setup_routine_hint,,Untick what you do not want in it.,Desmarque o que você não quer nela.
+feature/setup,setup_routine_name,,Routine name,Nome da ficha
+feature/setup,setup_routine_default_name,,Routine A,Treino A
+feature/setup,setup_routine_none,,"You did not pick any exercises, so there is no routine to create now. You can make one later in the Routines tab.","Você não escolheu nenhum exercício, então não dá pra criar a ficha agora. Você pode fazer uma depois, na aba Fichas."
+feature/setup,setup_days_title,,When do you train?,Quando você treina?
+feature/setup,setup_days_hint,,Pick your training days. Leave it empty to train any day.,Escolha os dias de treino. Deixe vazio pra treinar qualquer dia.
 feature/today,today_app_name,,Bora pro Treino!,Bora pro Treino!
 feature/today,today_open_settings,,Settings,Ajustes
 feature/today,today_energy_day,,About %1$s kcal today,Cerca de %1$s kcal hoje
 feature/today,today_energy_rest,,Rest day: about %1$s kcal,Dia de descanso: cerca de %1$s kcal
 feature/today,today_pick_to_start,,Pick an exercise to start,Escolha um exercício para começar
+feature/today,today_setup,,Set up in 3 steps,Configure em 3 passos
 feature/today,today_all_machines,,All exercises,Todos os exercícios
 feature/today,today_add_machine,,Add exercise,Adicionar exercício
 feature/today,today_done,,Done,Concluir
@@ -615,7 +644,7 @@ feature/today,summary_routine_updated,,Routine updated,Ficha atualizada
 feature/today,summary_not_finished,,Not finished yet,Ainda não terminei
 feature/today,summary_close,,Close,Fechar
 feature/today,machine_menu_edit,,Edit,Editar
-feature/today,today_menu_edit,,Edit exercise,Editar aparelho
+feature/today,today_menu_edit,,Edit exercise,Editar exercício
 feature/today,today_menu_skip,,Skip today,Pular hoje
 feature/today,today_menu_remove,,Remove from routine,Tirar da ficha
 feature/today,today_menu_removed_today,,Removed from today,Tirado de hoje

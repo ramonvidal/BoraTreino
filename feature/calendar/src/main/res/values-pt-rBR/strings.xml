@@ -2,6 +2,11 @@
 <!-- Baianês. Made from translations/baianes.csv by translations/i18n.py: edit the table, not this file. -->
 <resources>
     <string name="calendar_week_progress">Semana: %1$d de %2$d</string>
+    <string name="calendar_week_title">Esta semana</string>
+    <string name="calendar_week_goal">%1$d de %2$d</string>
+    <string name="calendar_week_preview">Esta semana: %1$s</string>
+    <string name="calendar_legend_trained">Treinado</string>
+    <string name="calendar_legend_planned">Agendado</string>
     <string name="calendar_goal_title">Meta semanal</string>
     <string name="calendar_goal_label">Dias de treino por semana</string>
     <string name="calendar_previous_month">Mês anterior</string>
@@ -12,7 +17,8 @@
     <string name="calendar_training_days">Dias de treino</string>
     <string name="calendar_training_days_hint">O rodízio passa pra próxima ficha nesses dias. Se você pular um dia, a ficha continua sendo a próxima.</string>
     <string name="calendar_schedule_weekdays_hint">Escolha os dias de cada ficha na hora de editar.</string>
-    <string name="calendar_free_training">Treino livre</string>
+    <string name="calendar_free_training">Sem ficha</string>
+    <string name="calendar_session_counts">%1$s · %2$s</string>
     <string name="calendar_session_summary">%1$s · %2$s · %3$s</string>
     <string name="calendar_time_range">%1$s–%2$s</string>
     <string name="calendar_time_open">%1$s, treinando agora</string>
@@ -28,17 +34,17 @@
     <string name="calendar_delete_title">Apagar este treino?</string>
     <string name="calendar_delete_message">O treino e todas as séries dele serão removidos.</string>
     <string name="calendar_deleted">Treino apagado</string>
-    <string name="calendar_free">Livre</string>
+    <string name="calendar_free">Sem ficha</string>
     <string name="calendar_energy_day">Cerca de %1$s kcal nesse dia</string>
     <string name="calendar_energy_rest">Dia de descanso: cerca de %1$s kcal</string>
-    <string name="calendar_no_sets">Nenhuma série ainda. Adicione um aparelho pra começar.</string>
+    <string name="calendar_no_sets">Nenhuma série ainda. Adicione um exercício pra começar.</string>
     <string name="calendar_repeat_same">Igual à última vez</string>
     <string name="calendar_repeat_suggested">Igual, com as cargas sugeridas</string>
     <string name="calendar_nothing_to_repeat">Não tem treino anterior pra copiar</string>
     <string name="calendar_add_set">Adicionar série</string>
-    <string name="calendar_add_machine">Adicionar aparelho</string>
-    <string name="calendar_pick_machine">Escolha um aparelho</string>
-    <string name="calendar_no_machines">Nenhum aparelho ainda</string>
+    <string name="calendar_add_machine">Adicionar exercício</string>
+    <string name="calendar_pick_machine">Escolha um exercício</string>
+    <string name="calendar_no_machines">Nenhum exercício ainda</string>
     <string name="calendar_session_not_found">Esse treino não existe mais</string>
     <string name="calendar_edit_set">Editar série</string>
     <string name="calendar_set_removed">Série removida</string>
@@ -57,8 +63,8 @@
         <item quantity="other">Treine %d dias nesta semana pra começar uma sequência</item>
     </plurals>
     <plurals name="calendar_machines">
-        <item quantity="one">%d aparelho</item>
-        <item quantity="other">%d aparelhos</item>
+        <item quantity="one">%d exercício</item>
+        <item quantity="other">%d exercícios</item>
     </plurals>
     <plurals name="calendar_sets">
         <item quantity="one">%d série</item>
