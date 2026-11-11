@@ -6,12 +6,12 @@ import com.boratreino.core.model.MuscleGroup
 // Outlines from react-body-highlighter (MIT License, Copyright (c) 2020 GV79).
 // See THIRD_PARTY_NOTICES.md.
 
-/** One piece of the body on the 100 x 200 grid; [group] is null for pieces that are never shaded (head, knees). */
+/** One piece of the body on the 100 x 220 grid; [group] is null for pieces that are never shaded (head, knees). */
 internal class BodyShape(val group: MuscleGroup?, val points: FloatArray)
 
 internal object BodyMapShapes {
     const val WIDTH = 100f
-    const val HEIGHT = 200f
+    const val HEIGHT = 220f
 
     val front: List<BodyShape> = listOf(
         BodyShape(MuscleGroup.CHEST, floatArrayOf(51.8f, 41.6f, 51f, 55.1f, 58f, 58f, 67.8f, 55.5f, 70.6f, 47.3f, 62f, 41.6f)),
