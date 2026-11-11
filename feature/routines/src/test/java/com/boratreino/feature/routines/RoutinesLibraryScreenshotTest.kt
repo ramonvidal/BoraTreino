@@ -3,8 +3,10 @@ package com.boratreino.feature.routines
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -13,7 +15,6 @@ import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.LibraryFilter
 import com.boratreino.core.model.LibraryLevel
 import com.boratreino.core.model.MuscleGroup
-import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.StarterMachines
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -23,8 +24,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * The exercise picker with filters and the "How to do it" dialog, in English and Portuguese. Saved to
- * build/outputs/roborazzi.
+ * The full-screen exercise library ([ExerciseLibraryContent]) in its states, and the "How to do it" dialog.
+ * Saved to build/outputs/roborazzi.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
@@ -60,11 +61,8 @@ class RoutinesLibraryScreenshotTest {
         added = added,
     )
 
-    /** The Routines tab on the gym page, the picker open, filtered to dumbbell arm exercises. */
+    /** The library filtered to dumbbell arm exercises, with one of them already in the gym. */
     private val filtered = GymSamples.populated.copy(
-        startersExpanded = true,
-        pickerAvailable = true,
-        scheduleMode = ScheduleMode.IN_TURN,
         filter = LibraryFilter(group = MuscleGroup.ARMS, equipment = LibraryEquipment.DUMBBELL),
         pickerGroups = listOf(
             PickerGroup(
@@ -78,15 +76,14 @@ class RoutinesLibraryScreenshotTest {
         ),
     )
 
-    private fun setTab(state: RoutinesUiState) {
+    private fun setLibrary(state: RoutinesUiState) {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    RoutinesContent(
+                    ExerciseLibraryContent(
                         state = state,
                         callbacks = RoutinesCallbacks(),
                         modifier = Modifier.fillMaxSize(),
-                        initialPage = RoutinesPage.GYM,
                     )
                 }
             }
@@ -94,27 +91,59 @@ class RoutinesLibraryScreenshotTest {
     }
 
     @Test
-    fun `the picker with filters shows the chosen chips, the count, the clear button and the added mark`() {
-        setTab(filtered)
+    fun `the library with filters shows the chosen chips, the count, the Clear button and the added mark`() {
+        setLibrary(filtered)
 
-        compose.onNodeWithText("Clear filters").assertExists()
+        compose.onNodeWithText("Clear").assertExists()
+        // The chip shows the chosen group, and the results list has its heading too.
+        compose.onAllNodesWithText("Arms").assertCountEquals(2)
         compose.onNodeWithText("3 exercises").assertExists()
         compose.onNodeWithText("Added").assertExists()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-library-filtered.png")
     }
 
     @Test
-    fun `without filters there is no clear button`() {
-        setTab(filtered.copy(filter = LibraryFilter()))
+    fun `without filters there is no Clear button`() {
+        setLibrary(filtered.copy(filter = LibraryFilter()))
 
-        compose.onNodeWithText("Clear filters").assertDoesNotExist()
+        compose.onNodeWithText("Clear").assertDoesNotExist()
+        compose.onNodeWithText("Muscle group").assertExists()
     }
 
     @Test
     fun `a single exercise is counted in the singular`() {
-        setTab(filtered.copy(pickerGroups = listOf(PickerGroup(MuscleGroup.ARMS, listOf(pickerRow("l:Zottman_Curl", "Zottman Curl", "Zottman_Curl"))))))
+        setLibrary(filtered.copy(pickerGroups = listOf(PickerGroup(MuscleGroup.ARMS, listOf(pickerRow("l:Zottman_Curl", "Zottman Curl", "Zottman_Curl"))))))
 
         compose.onNodeWithText("1 exercise").assertExists()
+    }
+
+    @Test
+    fun `an empty search says there are no matches`() {
+        setLibrary(
+            GymSamples.populated.copy(
+                filter = LibraryFilter(query = "zzz"),
+                pickerGroups = emptyList(),
+            ),
+        )
+
+        compose.onNodeWithText("No matches.").assertExists()
+        compose.onNodeWithText("0 exercises").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-library-nomatch.png")
+    }
+
+    @Test
+    fun `with three exercises ticked the sticky button says Add 3`() {
+        val selected = setOf("Barbell bench press", "Incline barbell bench press", "Decline bench press")
+        setLibrary(
+            GymSamples.populated.copy(
+                filter = LibraryFilter(query = "sup"),
+                pickerGroups = GymSamples.pickerGroups(StarterMachines.search("sup", GymSamples.startersNotAdded)),
+                selectedStarters = selected,
+            ),
+        )
+
+        compose.onNodeWithText("Add 3").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-library-selected.png")
     }
 
     @Test

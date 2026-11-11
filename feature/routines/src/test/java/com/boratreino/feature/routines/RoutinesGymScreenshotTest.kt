@@ -9,15 +9,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.boratreino.core.model.LibraryFilter
-import com.boratreino.core.model.StarterMachines
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** "Your gym" on the Routines tab: the register-first list, starter selection and the delete questions; saved to build/outputs/roborazzi. */
+/** The Academia page of the Routines tab: the exercise list and the delete questions; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class RoutinesGymScreenshotTest {
@@ -47,39 +45,11 @@ class RoutinesGymScreenshotTest {
     @Test
     fun `routines gym empty`() {
         shoot("routines-gym-empty", GymSamples.emptyGym)
-        compose.onNodeWithText("Your gym").assertExists()
+        compose.onNodeWithText("Exercises \u00b7 0").assertExists()
     }
 
     @Test
     fun `routines gym populated`() = shoot("routines-gym", GymSamples.populated)
-
-    @Test
-    fun `routines starters with three selected`() {
-        val selected = setOf("Barbell bench press", "Incline barbell bench press", "Decline bench press")
-        shoot(
-            "routines-starters-selected",
-            GymSamples.populated.copy(
-                startersExpanded = true,
-                filter = LibraryFilter(query = "sup"),
-                pickerGroups = GymSamples.pickerGroups(StarterMachines.search("sup", GymSamples.startersNotAdded)),
-                selectedStarters = selected,
-            ),
-        )
-        compose.onNodeWithText("Add 3 selected").assertExists()
-    }
-
-    @Test
-    fun `routines starters with no match`() {
-        shoot(
-            "routines-starters-nomatch",
-            GymSamples.populated.copy(
-                startersExpanded = true,
-                filter = LibraryFilter(query = "zzz"),
-                pickerGroups = emptyList(),
-            ),
-        )
-        compose.onNodeWithText("No matches.").assertExists()
-    }
 
     @Test
     fun `delete confirm dialog names the routines it leaves`() {

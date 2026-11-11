@@ -13,6 +13,7 @@ import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 
 /**
  * Routines and planned workouts in memory, kept the way the repository keeps them: several routines per
@@ -28,17 +29,27 @@ internal class PlanRoutines(private val routines: List<Routine> = emptyList()) :
     val planCalls = mutableListOf<Pair<LocalDate, Long>>()
     val unplanCalls = mutableListOf<Pair<LocalDate, Long>>()
     val reorderCalls = mutableListOf<Pair<LocalDate, List<Long>>>()
+    val scheduleModeCalls = mutableListOf<ScheduleMode>()
+    val trainingDayCalls = mutableListOf<Set<DayOfWeek>>()
 
-    private val plan = RoutinePlan(1L, ScheduleMode.IN_TURN)
+    private val plan = MutableStateFlow(RoutinePlan(1L, ScheduleMode.IN_TURN))
 
     override fun observePlan(): Flow<RoutinePlanWithRoutines> =
-        flowOf(RoutinePlanWithRoutines(plan, routines.map { RoutineWithItems(it, emptyList()) }))
+        plan.map { current -> RoutinePlanWithRoutines(current, routines.map { RoutineWithItems(it, emptyList()) }) }
 
     override fun observeRoutine(id: Long): Flow<RoutineWithItems?> =
         flowOf(routines.firstOrNull { it.id == id }?.let { RoutineWithItems(it, emptyList()) })
 
-    override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
-    override suspend fun setTrainingDays(days: Set<DayOfWeek>) = Unit
+    override suspend fun setScheduleMode(mode: ScheduleMode) {
+        scheduleModeCalls += mode
+        plan.value = plan.value.copy(scheduleMode = mode)
+    }
+
+    override suspend fun setTrainingDays(days: Set<DayOfWeek>) {
+        trainingDayCalls += days
+        plan.value = plan.value.copy(trainingDays = days)
+    }
+
     override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long = 0L
     override suspend fun deleteRoutine(id: Long) = Unit
     override suspend fun moveRoutine(id: Long, up: Boolean) = Unit

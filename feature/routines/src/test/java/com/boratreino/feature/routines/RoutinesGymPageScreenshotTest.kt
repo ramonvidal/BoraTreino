@@ -43,9 +43,10 @@ class RoutinesGymPageScreenshotTest {
         setTab(GymSamples.populated, RoutinesPage.GYM)
         shoot("routines-gym-page")
 
-        compose.onNodeWithText("Your gym").assertExists()
+        compose.onNodeWithText("Exercises \u00b7 8").assertExists()
         compose.onNodeWithText("Leg press").assertExists()
-        compose.onNodeWithText("New machine").assertExists()
+        compose.onNodeWithText("Add exercises").assertExists()
+        compose.onNodeWithText("New exercise").assertExists()
     }
 
     @Test
@@ -54,7 +55,7 @@ class RoutinesGymPageScreenshotTest {
         setTab(GymSamples.emptyGym, page = null)
         shoot("routines-gym-page-empty")
 
-        compose.onNodeWithText("Your gym").assertExists()
+        compose.onNodeWithText("Exercises \u00b7 0").assertExists()
         compose.onNodeWithText("Which routine is next").assertDoesNotExist()
     }
 
@@ -68,7 +69,7 @@ class RoutinesGymPageScreenshotTest {
     fun `gym page large font`() {
         setTab(GymSamples.populated, RoutinesPage.GYM, fontScale = 1.6f)
         shoot("routines-gym-page-large-font")
-        compose.onNodeWithText("Your gym").assertExists()
+        compose.onNodeWithText("Exercises \u00b7 8").assertExists()
     }
 }
 
@@ -93,7 +94,7 @@ class RoutinesGymPagePtScreenshotTest {
                 }
             }
         }
-        compose.onNodeWithText("Sua academia").assertExists()
+        compose.onNodeWithText("Aparelhos e exercícios · 8").assertExists()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-gym-page-pt.png")
     }
 
@@ -110,7 +111,7 @@ class RoutinesGymPagePtScreenshotTest {
                 }
             }
         }
-        compose.onNodeWithText("Sua academia").assertExists()
+        compose.onNodeWithText("Aparelhos e exercícios · 0").assertExists()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-gym-page-empty-pt.png")
     }
 }

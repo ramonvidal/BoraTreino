@@ -65,10 +65,26 @@ internal object GymSamples {
     private fun routine(id: Long, name: String, shortName: String, position: Int) =
         Routine(id = id, planId = 1L, name = name, shortName = shortName, position = position, weekdays = emptySet())
 
+    /** The Fichas cards: the exercises' muscle groups (distinct, in routine order) and the count. */
     val routines: List<RoutineRow> = listOf(
-        RoutineRow(routine(1L, "Treino A", "A", 0), machineCount = 4, machineNames = listOf("Leg press", "Leg extension", "Hack squat", "Leg curl")),
-        RoutineRow(routine(2L, "Treino B", "B", 1), machineCount = 4, machineNames = listOf("Lat pulldown", "Seated row", "Pull-ups", "Cable biceps curl")),
-        RoutineRow(routine(3L, "Treino C", "C", 2), machineCount = 3, machineNames = listOf("Chest press", "Shoulder press", "Pull-ups")),
+        RoutineRow(
+            routine(1L, "Treino A", "A", 0),
+            machineCount = 4,
+            machineNames = listOf("Leg press", "Leg extension", "Hack squat", "Leg curl"),
+            muscleGroups = listOf(MuscleGroup.LEGS),
+        ),
+        RoutineRow(
+            routine(2L, "Treino B", "B", 1),
+            machineCount = 4,
+            machineNames = listOf("Lat pulldown", "Seated row", "Pull-ups", "Cable biceps curl"),
+            muscleGroups = listOf(MuscleGroup.BACK, MuscleGroup.ARMS),
+        ),
+        RoutineRow(
+            routine(3L, "Treino C", "C", 2),
+            machineCount = 3,
+            machineNames = listOf("Chest press", "Shoulder press", "Pull-ups"),
+            muscleGroups = listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.BACK),
+        ),
     )
 
     /** The gym populated, the picker folded, the routines below. */

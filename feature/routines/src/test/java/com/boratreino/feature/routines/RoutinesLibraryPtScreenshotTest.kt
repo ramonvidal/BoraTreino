@@ -23,8 +23,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * The exercise picker and "How to do it" in Portuguese (Baianes strings). The steps stay in English, with
- * the note saying so. Saved to build/outputs/roborazzi.
+ * The full-screen exercise library and "How to do it" in Portuguese (Baianes strings). The steps stay in
+ * English, with the note saying so. Saved to build/outputs/roborazzi.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "pt-rBR-w411dp-h1600dp")
@@ -59,9 +59,6 @@ class RoutinesLibraryPtScreenshotTest {
     )
 
     private val filtered = GymSamples.populated.copy(
-        startersExpanded = true,
-        pickerAvailable = true,
-        scheduleMode = ScheduleMode.IN_TURN,
         filter = LibraryFilter(group = MuscleGroup.ARMS, equipment = LibraryEquipment.DUMBBELL),
         pickerGroups = listOf(
             PickerGroup(
@@ -79,11 +76,10 @@ class RoutinesLibraryPtScreenshotTest {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    RoutinesContent(
+                    ExerciseLibraryContent(
                         state = filtered,
                         callbacks = RoutinesCallbacks(),
                         modifier = Modifier.fillMaxSize(),
-                        initialPage = RoutinesPage.GYM,
                     )
                 }
             }

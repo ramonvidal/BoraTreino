@@ -25,7 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The Routines page of the Routines tab: cards, the 3-dot menu, next-routine card, empty state; saved to build/outputs/roborazzi. */
+/** The Fichas page of the Routines tab: cards with their muscle group pills, the 3-dot menu, empty state; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class RoutinesPageScreenshotTest {
@@ -59,13 +59,23 @@ class RoutinesPageScreenshotTest {
 
         compose.onNodeWithText("Treino A").assertExists()
         compose.onNodeWithText("Treino C").assertExists()
-        compose.onAllNodesWithText("4 machines").assertCountEquals(2)
-        compose.onNodeWithText("3 machines").assertExists()
-        compose.onNodeWithText("Leg press, Leg extension, Hack squat, Leg curl").assertExists()
-        compose.onNodeWithText("Which routine is next").assertExists()
-        compose.onNodeWithText("In turn").assertExists()
-        compose.onNodeWithText("On weekdays").assertExists()
+        compose.onAllNodesWithText("4 exercises").assertCountEquals(2)
+        compose.onNodeWithText("3 exercises").assertExists()
+        compose.onNodeWithText("Legs").assertExists()
+        compose.onAllNodesWithText("Back").assertCountEquals(2)
+        compose.onNodeWithText("Arms").assertExists()
+        compose.onNodeWithText("Chest").assertExists()
+        compose.onNodeWithText("Shoulders").assertExists()
         compose.onNodeWithText("New routine").assertExists()
+    }
+
+    @Test
+    fun `the schedule is not drawn on the Fichas page any more`() {
+        setTab(GymSamples.populated)
+
+        compose.onNodeWithText("Which routine is next").assertDoesNotExist()
+        compose.onNodeWithText("In turn").assertDoesNotExist()
+        compose.onNodeWithText("On weekdays").assertDoesNotExist()
     }
 
     @Test
@@ -101,7 +111,8 @@ class RoutinesPageScreenshotTest {
     fun `routines page on weekdays mode`() {
         setTab(GymSamples.populated.copy(scheduleMode = ScheduleMode.WEEKDAYS))
         shoot("routines-page-weekdays")
-        compose.onNodeWithText("On weekdays").assertExists()
+        compose.onNodeWithText("On weekdays").assertDoesNotExist()
+        compose.onNodeWithText("Treino A").assertExists()
     }
 
     @Test
@@ -182,14 +193,14 @@ class RoutinesPageScreenshotTest {
         setTab(GymSamples.populated, page = null)
 
         compose.onNodeWithText("New routine").assertExists()
-        compose.onNodeWithText("Your gym").assertDoesNotExist()
+        compose.onNodeWithText("Exercises \u00b7 8").assertDoesNotExist()
     }
 
     @Test
     fun `the switch starts on Gym on a fresh install`() {
         setTab(GymSamples.emptyGym, page = null)
 
-        compose.onNodeWithText("Your gym").assertExists()
+        compose.onNodeWithText("Exercises \u00b7 0").assertExists()
         compose.onNodeWithText("Which routine is next").assertDoesNotExist()
     }
 
@@ -199,7 +210,7 @@ class RoutinesPageScreenshotTest {
 
         compose.onNodeWithText("Gym").performClick()
 
-        compose.onNodeWithText("Your gym").assertExists()
+        compose.onNodeWithText("Exercises \u00b7 8").assertExists()
         compose.onNodeWithText("Which routine is next").assertDoesNotExist()
     }
 
@@ -208,7 +219,7 @@ class RoutinesPageScreenshotTest {
         setTab(GymSamples.populated.copy(loaded = false), page = null)
 
         compose.onNodeWithText("New routine").assertDoesNotExist()
-        compose.onNodeWithText("Your gym").assertDoesNotExist()
+        compose.onNodeWithText("Exercises \u00b7 8").assertDoesNotExist()
         compose.onNodeWithText("Gym").assertExists()
     }
 }
@@ -234,7 +245,7 @@ class RoutinesPagePtScreenshotTest {
     fun `routines page pt`() {
         setTab(GymSamples.populated.copy(portuguese = true), RoutinesPage.ROUTINES)
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-page-pt.png")
-        compose.onNodeWithText("Qual ficha vem agora").assertExists()
+        compose.onNodeWithText("Qual ficha vem agora").assertDoesNotExist()
         compose.onNodeWithText("Nova ficha").assertExists()
     }
 
