@@ -18,6 +18,8 @@ import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.SessionSummary
+import com.boratreino.core.model.RoutineUpdate
+import com.boratreino.core.model.TrainingSummary
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.Suggestion
@@ -105,6 +107,9 @@ class MachineViewModelLogTypeTest {
         override suspend fun consumePendingSummary() = Unit
         override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
         override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate? = null
+        override suspend fun sessionRoutineId(sessionId: Long): Long? = null
+        override suspend fun trainingSummary(sessionId: Long): TrainingSummary? = null
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit
