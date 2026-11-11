@@ -13,11 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/** A small rounded badge with a routine's short name; green-tinted when [selected], grey otherwise. */
+/** A small rounded badge with a routine's short name; yellow (Brand) when [selected], Tile grey otherwise; the text is always Ink. */
 @Composable
 fun RoutineBadge(shortName: String, selected: Boolean = false, modifier: Modifier = Modifier) {
     val container = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-    val content = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val content = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
     Surface(modifier = modifier, shape = RoundedCornerShape(10.dp), color = container, contentColor = content) {
         Box(Modifier.defaultMinSize(minWidth = 32.dp, minHeight = 32.dp).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
             Text(shortName, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)

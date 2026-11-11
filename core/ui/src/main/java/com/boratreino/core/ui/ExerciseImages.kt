@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -42,11 +44,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.ExerciseImages
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.StarterMachines
+import kotlin.math.roundToInt
 
 /** The pictures are square, this many pixels on a side. */
 private const val SOURCE_PX = 360
@@ -113,9 +117,64 @@ private fun ExerciseTile(slug: String?, frame: Int, targetSize: Dp, description:
     }
 }
 
+/** The fixed pastel behind a muscle group's tile when the exercise has no picture. */
+private fun MuscleGroup.tileColor(): Color = when (this) {
+    MuscleGroup.LEGS -> Color(0xFFDCE8F2)
+    MuscleGroup.CHEST -> Color(0xFFF6DDE5)
+    MuscleGroup.BACK -> Color(0xFFE3EBD7)
+    MuscleGroup.SHOULDERS -> Color(0xFFF7E6C4)
+    MuscleGroup.ARMS -> Color(0xFFE6DDF2)
+    MuscleGroup.CORE -> Color(0xFFF9E1D4)
+    MuscleGroup.CARDIO -> Color(0xFFD8EEEA)
+}
+
 /**
- * A small tile with the picture of the machine named [name] (white background in both themes), or a
- * neutral tile when there is none. Same footprint either way. [onClick] only applies when a picture exists.
+ * The ONE exercise thumbnail: a 14 dp rounded tile. With a picture ([imageSlug]) the line drawing is multiplied onto
+ * the `Tile` colour; without one the tile takes the muscle group's pastel and shows the group glyph in Ink.
+ * [contentDescription] is optional; it is empty (decorative) by default.
+ */
+@Composable
+fun ThumbTile(
+    imageSlug: String?,
+    muscleGroup: MuscleGroup,
+    modifier: Modifier = Modifier,
+    size: Dp = 48.dp,
+    contentDescription: String? = null,
+) {
+    val context = LocalContext.current
+    val targetPx = with(LocalDensity.current) { size.roundToPx() }
+    val sampleSize = ExerciseBitmaps.sampleSizeFor(targetPx)
+    val bitmap = remember(imageSlug, sampleSize) {
+        if (imageSlug == null) null else ExerciseBitmaps.load(context, imageSlug, 1, sampleSize)
+    }
+    val described = if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier
+    val shape = RoundedCornerShape(14.dp)
+    if (bitmap != null) {
+        Canvas(modifier.size(size).clip(shape).background(MaterialTheme.colorScheme.surfaceVariant).then(described)) {
+            drawImage(
+                image = bitmap,
+                dstSize = IntSize(this.size.width.roundToInt(), this.size.height.roundToInt()),
+                blendMode = BlendMode.Multiply,
+            )
+        }
+    } else {
+        Box(
+            modifier.size(size).clip(shape).background(muscleGroup.tileColor()).then(described),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_today),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
+/**
+ * A small tile with the picture of the machine named [name], or the muscle group's tile when there is none
+ * (see [ThumbTile]). Same footprint either way. [onClick] only applies when a picture exists.
  */
 @Composable
 fun MachineThumb(
@@ -128,7 +187,7 @@ fun MachineThumb(
     val slug = remember(name) { StarterMachines.imageFor(name) }
     val description = if (slug != null) stringResource(R.string.exercise_image_description, name) else stringResource(R.string.exercise_no_image)
     val clickable = if (slug != null && onClick != null) Modifier.clickable(onClick = onClick) else Modifier
-    ExerciseTile(slug, frame = 1, targetSize = size, description = description, modifier = modifier.size(size).then(clickable))
+    ThumbTile(slug, muscleGroup, modifier = modifier.then(clickable), size = size, contentDescription = description)
 }
 
 /** [MachineThumb] for a stored machine. */

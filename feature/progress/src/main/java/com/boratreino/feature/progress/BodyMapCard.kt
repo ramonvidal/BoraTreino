@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -31,6 +30,7 @@ import com.boratreino.core.model.BodyInsightRules
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.ui.label
+import com.boratreino.core.ui.theme.Sunny
 
 /** The groups the body map paints; CARDIO has no place on a body. */
 private val MapGroups = listOf(
@@ -94,11 +94,11 @@ internal fun NoteLine(text: String) {
     Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-/** Index 0 is "no sets" (drawn as an outline only); 1 to 3 are the filled steps, light to solid. */
+/** Index 0 is "no sets" (drawn as an outline only); 1 to 3 are the filled steps: light yellow, yellow, green. */
 @Composable
 private fun bodyShadeColors(): List<Color> {
     val c = MaterialTheme.colorScheme
-    return listOf(Color.Transparent, lerp(c.surface, c.primary, 0.25f), lerp(c.surface, c.primary, 0.55f), c.primary)
+    return listOf(Color.Transparent, Sunny.BrandSoft, c.primaryContainer, c.secondary)
 }
 
 @Composable

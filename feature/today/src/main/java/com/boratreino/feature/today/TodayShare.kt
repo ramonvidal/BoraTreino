@@ -108,10 +108,11 @@ internal fun summaryTexts(resources: Resources, summary: TrainingSummary, locale
 
 private const val WIDTH = 1080
 private const val HEIGHT = 1350
+// Sunny tokens (see core/ui theme): Ok green, Page, Ink, Muted.
 private const val GREEN = 0xFF2E6B52.toInt()
-private const val PAGE = 0xFFF4F4F2.toInt()
-private const val INK = 0xFF1C1C1C.toInt()
-private const val GREY = 0xFF636360.toInt()
+private const val PAGE = 0xFFFAF7F0.toInt()
+private const val INK = 0xFF1F1B16.toInt()
+private const val GREY = 0xFF6B645A.toInt()
 
 /**
  * Draws the 1080 x 1350 share picture with plain android.graphics and writes it to

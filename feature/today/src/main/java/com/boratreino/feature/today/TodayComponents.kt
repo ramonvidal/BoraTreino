@@ -53,7 +53,7 @@ internal fun MachineRow(
     /** A long press; when set, the whole card handles tap and long press itself. */
     onLongClick: (() -> Unit)? = null,
 ) {
-    val border = if (highlighted) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+    val border = if (highlighted) BorderStroke(2.dp, MaterialTheme.colorScheme.primaryContainer) else null
     val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
     val content: @Composable ColumnScope.() -> Unit = {
         Row(

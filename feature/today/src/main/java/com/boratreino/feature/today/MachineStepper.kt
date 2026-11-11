@@ -130,8 +130,8 @@ private fun BigStepButton(icon: Int, description: String, onStep: () -> Unit, mo
     Surface(
         modifier = modifier.heightIn(min = 48.dp).holdRepeat(description, onStep),
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Box(Modifier.fillMaxWidth().heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
             Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(24.dp))

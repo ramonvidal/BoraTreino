@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -21,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.BalanceStats
 
 /** The muted blue-grey of the second part of a balance bar; readable on the white card. */
-private val SecondPartColor = Color(0xFF6F8CA3)
 
 /** One pair of opposites: the names and the counts of its two sides. */
 private data class BalancePair(val firstName: String, val first: Int, val secondName: String, val second: Int)
@@ -66,6 +64,7 @@ internal fun BalanceCard(balance: BalanceStats, modifier: Modifier = Modifier) {
 @Composable
 private fun BalanceBar(pair: BalancePair) {
     val first = MaterialTheme.colorScheme.primary
+    val second = MaterialTheme.colorScheme.primaryContainer
     val track = StatsPalette.track()
     val ratio = if (pair.first > 0 && pair.second > 0) {
         stringResource(R.string.stats_balance_ratio, formatOneDecimal(pair.first.toDouble() / pair.second))
@@ -97,13 +96,13 @@ private fun BalanceBar(pair: BalancePair) {
                 val rightStart = left + gap
                 drawRoundRect(first, Offset.Zero, Size(left, size.height), radius)
                 drawRoundRect(
-                    SecondPartColor,
+                    second,
                     Offset(rightStart, 0f),
                     Size((size.width - rightStart).coerceAtLeast(size.height / 2f), size.height),
                     radius,
                 )
             } else {
-                drawRoundRect(if (pair.first > 0) first else SecondPartColor, Offset.Zero, size, radius)
+                drawRoundRect(if (pair.first > 0) first else second, Offset.Zero, size, radius)
             }
         }
         if (ratio != null) {

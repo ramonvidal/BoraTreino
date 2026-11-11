@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,17 +28,18 @@ fun SmallStepper(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onMinus) {
+        IconButton(onClick = onMinus, colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurface)) {
             Icon(painterResource(R.drawable.ic_remove), contentDescription = stringResource(R.string.stepper_minus, contentDescription))
         }
         Text(
             value,
             modifier = Modifier.defaultMinSize(minWidth = 28.dp).semantics { this.contentDescription = contentDescription },
             style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
         )
-        IconButton(onClick = onPlus) {
+        IconButton(onClick = onPlus, colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurface)) {
             Icon(painterResource(R.drawable.ic_add), contentDescription = stringResource(R.string.stepper_plus, contentDescription))
         }
     }

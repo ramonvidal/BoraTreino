@@ -39,8 +39,8 @@ fun RestBanner(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.secondary,
     ) {
         Column(Modifier.fillMaxWidth()) {
             Row(
@@ -52,16 +52,18 @@ fun RestBanner(
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
                 )
-                TextButton(onClick = onExtend, modifier = Modifier.heightIn(min = 48.dp)) {
+                TextButton(onClick = onExtend, modifier = Modifier.heightIn(min = 48.dp), colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary)) {
                     Text(stringResource(R.string.rest_extend, RestTimerRules.EXTEND_SECONDS))
                 }
-                TextButton(onClick = onSkip, modifier = Modifier.heightIn(min = 48.dp)) {
+                TextButton(onClick = onSkip, modifier = Modifier.heightIn(min = 48.dp), colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary)) {
                     Text(stringResource(R.string.rest_skip))
                 }
             }
             LinearProgressIndicator(
                 progress = { RestTimerRules.progress(remainingSeconds, totalSeconds) },
                 modifier = Modifier.fillMaxWidth().heightIn(max = 4.dp),
+                color = MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             )
         }
     }
@@ -79,8 +81,8 @@ fun RestCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.secondary,
         ),
     ) {
         Column(
@@ -97,16 +99,19 @@ fun RestCard(
             LinearProgressIndicator(
                 progress = { RestTimerRules.progress(remainingSeconds, totalSeconds) },
                 modifier = Modifier.fillMaxWidth().heightIn(max = 8.dp),
+                color = MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = onExtend,
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
                 ) { Text(stringResource(R.string.rest_extend, RestTimerRules.EXTEND_SECONDS)) }
                 Button(
                     onClick = onSkip,
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                    colors = ButtonDefaults.buttonColors(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary),
                 ) { Text(stringResource(R.string.rest_skip)) }
             }
         }

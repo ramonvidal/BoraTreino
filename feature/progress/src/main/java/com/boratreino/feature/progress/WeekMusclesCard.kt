@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -29,6 +28,7 @@ import com.boratreino.core.model.BodyInsightRules
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.ui.label
+import com.boratreino.core.ui.theme.Sunny
 
 /** Working sets this week per muscle group: the report's current (last) week; zero for groups not trained. */
 internal fun weekSetsByGroup(report: StatsReport): Map<MuscleGroup, Int> {
@@ -70,11 +70,11 @@ private fun MuscleSquare(name: String, sets: Double, modifier: Modifier = Modifi
     val shade = BodyInsightRules.shade(sets)
     val fill: Color = when (shade) {
         0 -> Color.Transparent
-        1 -> lerp(colors.surface, colors.primary, 0.25f)
-        2 -> lerp(colors.surface, colors.primary, 0.55f)
-        else -> colors.primary
+        1 -> Sunny.BrandSoft
+        2 -> colors.primaryContainer
+        else -> colors.secondary
     }
-    val numberColor = if (shade >= 3) colors.onPrimary else colors.onSurface
+    val numberColor = if (shade >= 3) colors.onSecondary else colors.onSurface
     val shape = RoundedCornerShape(10.dp)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(

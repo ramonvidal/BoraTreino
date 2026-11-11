@@ -1,4 +1,4 @@
 <resources>
-    <!-- Window colour before Compose draws: ChoreMe's page colour (see core/ui theme). -->
-    <color name="window_background">#F4F4F2</color>
+    <!-- Window colour before Compose draws: the Sunny page colour (see core/ui theme). -->
+    <color name="window_background">#FAF7F0</color>
 </resources>

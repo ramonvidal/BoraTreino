@@ -397,6 +397,7 @@ private fun LazyListScope.sessionHeader(
                             progress = { if (total == 0) 0f else doneCount.toFloat() / total },
                             modifier = Modifier.fillMaxWidth(),
                             drawStopIndicator = {},
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                     }
                 }
@@ -621,7 +622,7 @@ private fun LazyListScope.routineRows(routines: RoutineUi, actions: TodayActions
                     row.done -> Icon(
                         painterResource(CoreUiR.drawable.ic_check),
                         contentDescription = stringResource(R.string.today_machine_done),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.secondary,
                     )
                     row.setCount > 0 && row.machine.kind != MachineKind.CARDIO -> Text(
                         stringResource(R.string.today_progress, row.setCount, row.target.targetSets),

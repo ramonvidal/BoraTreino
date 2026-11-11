@@ -30,11 +30,11 @@ internal fun trendDescription(metric: ProgressMetric, values: List<Double>): Str
     }
 }
 
-/** A 72 x 28 dp sparkline: no axes, no labels; the last point is a primary dot. */
+/** A 72 x 28 dp sparkline: no axes, no labels; the last point is a yellow (Brand) dot. */
 @Composable
 internal fun TrendLine(values: List<Double>, description: String, modifier: Modifier = Modifier) {
     val lineColor = MaterialTheme.colorScheme.outline
-    val dotColor = MaterialTheme.colorScheme.primary
+    val dotColor = MaterialTheme.colorScheme.primaryContainer
     Canvas(
         modifier
             .size(width = 72.dp, height = 28.dp)

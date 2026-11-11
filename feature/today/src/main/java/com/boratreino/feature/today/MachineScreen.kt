@@ -456,7 +456,7 @@ private fun SetTable(
                     ) {
                         val flash = remember { Animatable(if (fresh) 1f else 0f) }
                         LaunchedEffect(Unit) { if (fresh) flash.animateTo(0f, tween(600)) }
-                        val tint = MaterialTheme.colorScheme.primary
+                        val tint = MaterialTheme.colorScheme.primaryContainer
                         var menuOpen by remember { mutableStateOf(false) }
                         Box {
                         Row(
@@ -493,14 +493,14 @@ private fun SetTable(
                                     painterResource(CoreUiR.drawable.ic_check),
                                     contentDescription = null,
                                     modifier = Modifier.padding(start = 6.dp).size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.secondary,
                                 )
                                 if (set.id == recordId) {
                                     Icon(
                                         painterResource(CoreUiR.drawable.ic_emoji_events),
                                         contentDescription = stringResource(R.string.machine_record_mark),
                                         modifier = Modifier.padding(start = 4.dp).size(18.dp),
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = MaterialTheme.colorScheme.secondary,
                                     )
                                 }
                             }
@@ -560,8 +560,8 @@ private fun RestBar(remainingSeconds: Int, totalSeconds: Int, onExtend: () -> Un
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.secondary,
     ) {
         Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -581,6 +581,7 @@ private fun RestBar(remainingSeconds: Int, totalSeconds: Int, onExtend: () -> Un
                 progress = { RestTimerRules.progress(remainingSeconds, totalSeconds) },
                 modifier = Modifier.fillMaxWidth().padding(end = 12.dp).heightIn(max = 4.dp),
                 drawStopIndicator = {},
+                color = MaterialTheme.colorScheme.secondary,
             )
         }
     }
@@ -693,7 +694,7 @@ private fun CompletePanel(state: MachineUiState, actions: MachineActions) {
                     painterResource(CoreUiR.drawable.ic_check),
                     contentDescription = null,
                     modifier = Modifier.size(28.dp),
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.secondary,
                 )
                 Column {
                     Text(
@@ -995,8 +996,8 @@ private fun RecordCard(text: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
     ) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),

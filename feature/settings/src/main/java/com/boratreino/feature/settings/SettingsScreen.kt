@@ -60,6 +60,7 @@ import com.boratreino.core.model.Sex
 import com.boratreino.core.notify.NotificationPermission
 import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.ui.BoraChip
+import com.boratreino.core.ui.BoraSwitchColors
 import com.boratreino.core.ui.ExerciseCredit
 import com.boratreino.core.ui.SmallStepper
 import com.boratreino.core.ui.shortLabel
@@ -289,7 +290,7 @@ internal fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolea
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = null)
+        Switch(checked = checked, onCheckedChange = null, colors = BoraSwitchColors())
     }
 }
 

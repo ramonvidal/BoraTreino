@@ -33,8 +33,8 @@ import com.boratreino.core.ui.label
 
 /**
  * Colors of the Stats charts, all derived from the theme so they follow light and dark mode:
- * the green accent (primary) and tints of it toward the page colour (lighter) or the text colour
- * (darker), plus greys. [amber] is the one fixed hue, tuned per brightness for the recency dots.
+ * the Sunny trio (Brand yellow = primaryContainer, Ink = primary, Ok green = secondary) and tints of
+ * them toward the page colour, plus greys. [amber] is the one fixed hue, tuned per brightness for the recency dots.
  */
 internal object StatsPalette {
     @Composable
@@ -42,12 +42,12 @@ internal object StatsPalette {
         val c = MaterialTheme.colorScheme
         return mapOf(
             MuscleGroup.LEGS to c.primary,
-            MuscleGroup.CHEST to lerp(c.primary, c.surface, 0.4f),
-            MuscleGroup.BACK to lerp(c.primary, c.onSurface, 0.45f),
-            MuscleGroup.SHOULDERS to lerp(c.primary, c.surface, 0.7f),
-            MuscleGroup.ARMS to c.onSurfaceVariant,
-            MuscleGroup.CORE to c.outline,
-            MuscleGroup.CARDIO to lerp(c.outline, c.surface, 0.55f),
+            MuscleGroup.CHEST to c.primaryContainer,
+            MuscleGroup.BACK to c.secondary,
+            MuscleGroup.SHOULDERS to lerp(c.primary, c.surface, 0.55f),
+            MuscleGroup.ARMS to lerp(c.primaryContainer, c.surface, 0.5f),
+            MuscleGroup.CORE to lerp(c.secondary, c.surface, 0.5f),
+            MuscleGroup.CARDIO to c.outline,
         )
     }
 
@@ -55,7 +55,7 @@ internal object StatsPalette {
     @Composable
     fun rangeColors(): List<Color> {
         val c = MaterialTheme.colorScheme
-        return listOf(c.primary, lerp(c.primary, c.surface, 0.4f), c.outline, lerp(c.outline, c.surface, 0.55f))
+        return listOf(c.primaryContainer, c.secondary, c.primary, c.outline)
     }
 
     @Composable

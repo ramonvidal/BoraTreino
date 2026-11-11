@@ -20,12 +20,12 @@ private val BlueGrey = Color(0xFF52708A)
 private val Amber = Color(0xFF9A6B00)
 private val Plum = Color(0xFF7A4B6E)
 
-/** One of four muted tones for a routine (green accent, blue-grey, amber, plum); never red. */
+/** One of four muted tones for a routine (Ok green, blue-grey, amber, plum); never red. */
 @Composable
 internal fun routineTone(routineId: Long?): Color {
-    if (routineId == null) return MaterialTheme.colorScheme.primary
+    if (routineId == null) return MaterialTheme.colorScheme.secondary
     return when (Math.floorMod(routineId, TONE_COUNT.toLong()).toInt()) {
-        0 -> MaterialTheme.colorScheme.primary
+        0 -> MaterialTheme.colorScheme.secondary
         1 -> BlueGrey
         2 -> Amber
         else -> Plum

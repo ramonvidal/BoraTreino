@@ -106,7 +106,7 @@ internal fun TrainingSummaryContent(
         val records = texts.records.take(SHEET_RECORDS)
         if (records.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(texts.recordsTitle, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(texts.recordsTitle, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
                 records.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
             }
         }

@@ -223,7 +223,7 @@ private fun ImprovedRowItem(row: ImprovedRow, onOpen: (Long) -> Unit) {
                     painterResource(CoreUiR.drawable.ic_arrow_upward),
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.secondary,
                 )
                 Text(
                     deltaText(row.metric, row.improvement.delta),

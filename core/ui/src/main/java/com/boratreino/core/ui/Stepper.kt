@@ -129,8 +129,8 @@ private fun StepperButton(@DrawableRes icon: Int, description: String, onStep: (
                 }
             },
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Icon(
             painter = painterResource(icon),

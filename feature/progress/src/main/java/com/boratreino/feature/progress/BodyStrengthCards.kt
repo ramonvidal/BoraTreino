@@ -109,8 +109,8 @@ internal fun StrengthVsWeightCard(state: StatsUiState, modifier: Modifier = Modi
     val strengthName = stringResource(R.string.stats_vs_weight_strength)
     val weightName = stringResource(R.string.stats_vs_weight_body)
     val description = stringResource(R.string.stats_vs_weight_description, report.weeks.size, summary)
-    val accent = MaterialTheme.colorScheme.primary
-    val grey = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    val accent = MaterialTheme.colorScheme.secondary
+    val grey = MaterialTheme.colorScheme.primary
     StatsCard(stringResource(R.string.stats_vs_weight_title), modifier) {
         Column(
             Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },

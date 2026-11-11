@@ -200,7 +200,7 @@ private fun WeekCard(state: CalendarUiState, onClick: () -> Unit) {
                             .size(20.dp)
                             .clip(CircleShape)
                             .background(
-                                if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                if (filled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
                             ),
                     )
                 }
