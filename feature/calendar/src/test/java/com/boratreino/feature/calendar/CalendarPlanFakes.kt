@@ -9,6 +9,7 @@ import com.boratreino.core.model.RoutinePlanWithRoutines
 import com.boratreino.core.model.RoutineWithItems
 import com.boratreino.core.model.ScheduleMode
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,13 @@ internal class PlanRoutines(private val routines: List<Routine> = emptyList()) :
     val trainingDayCalls = mutableListOf<Set<DayOfWeek>>()
 
     private val plan = MutableStateFlow(RoutinePlan(1L, ScheduleMode.IN_TURN))
+
+    /** The routine of the latest finished session, and each routine's latest start; the tests set them. */
+    val lastRoutineFlow = MutableStateFlow<Long?>(null)
+    val lastTrainedFlow = MutableStateFlow<Map<Long, Instant>>(emptyMap())
+
+    override fun observeLastRoutineId(): Flow<Long?> = lastRoutineFlow
+    override fun observeLastTrained(): Flow<Map<Long, Instant>> = lastTrainedFlow
 
     override fun observePlan(): Flow<RoutinePlanWithRoutines> =
         plan.map { current -> RoutinePlanWithRoutines(current, routines.map { RoutineWithItems(it, emptyList()) }) }

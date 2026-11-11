@@ -91,6 +91,6 @@ class CalendarScreenshotTest {
         }
 
         compose.onNodeWithText("Nothing logged").assertDoesNotExist()
-        compose.onNodeWithText("Add a training").assertDoesNotExist()
+        compose.onNodeWithText("Add a workout").assertDoesNotExist()
     }
 }

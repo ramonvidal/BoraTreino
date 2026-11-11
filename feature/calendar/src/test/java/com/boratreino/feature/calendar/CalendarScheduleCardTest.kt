@@ -166,4 +166,24 @@ class CalendarScheduleCardTest {
 
         assertEquals(emptySet<DayOfWeek>(), reported)
     }
+
+    @Test
+    fun `the preview line lists the rest of this week's suggested trainings`() {
+        val preview = listOf(
+            UpcomingUi(LocalDate.of(2026, 11, 6), "A"),
+            UpcomingUi(LocalDate.of(2026, 11, 7), "B"),
+        )
+        show(state(ScheduleMode.IN_TURN).copy(weekPreview = preview))
+
+        compose.onNodeWithText(
+            "This week: ${dayLabel(DayOfWeek.FRIDAY)} A, ${dayLabel(DayOfWeek.SATURDAY)} B",
+        ).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the preview line is hidden when no training is left this week`() {
+        show(state(ScheduleMode.IN_TURN).copy(weekPreview = emptyList()))
+
+        compose.onNodeWithText("This week:", substring = true).assertDoesNotExist()
+    }
 }

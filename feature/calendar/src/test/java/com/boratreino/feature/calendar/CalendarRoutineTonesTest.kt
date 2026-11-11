@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -127,17 +129,18 @@ class CalendarRoutineTonesTest {
     }
 
     @Test
-    fun `a planned day shows the planned routine's short name`() {
+    fun `a planned day shows the planned routine's short name in the week strip and the grid`() {
+        // The planned day (12 November) is in the week of today (9 November): the strip and the grid both show it.
         shoot(coloured, "calendar-tones")
 
-        compose.onNodeWithText("D").assertExists()
+        compose.onAllNodesWithText("D").assertCountEquals(2)
     }
 
     @Test
-    fun `today's number is drawn with its ring and is still shown`() {
+    fun `today's number is drawn with its ring and is still shown in the strip and the grid`() {
         shoot(coloured, "calendar-tones")
 
-        compose.onNodeWithText("9").assertExists()
+        compose.onAllNodesWithText("9").assertCountEquals(2)
     }
 
     @Test

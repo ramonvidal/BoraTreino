@@ -68,10 +68,12 @@ internal class FakeTrainingSettings : TrainingSettings {
 /** Sessions by date; every date has a value (an empty list when nothing is stored). */
 internal class EnergyHistory : HistoryRepository {
     val days = MutableStateFlow<Map<LocalDate, List<SessionDetail>>>(emptyMap())
+    /** The days with a session (trained); empty unless a test sets them. */
+    val trainingDates = MutableStateFlow<Set<LocalDate>>(emptySet())
 
     override fun observeDay(date: LocalDate): Flow<List<SessionDetail>> = days.map { it[date].orEmpty() }
     override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = MutableStateFlow(emptyMap())
-    override fun observeTrainingDates(): Flow<Set<LocalDate>> = MutableStateFlow(emptySet())
+    override fun observeTrainingDates(): Flow<Set<LocalDate>> = trainingDates
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = emptyFlow()
     override suspend fun addSession(date: LocalDate, routineId: Long?): Long = 0L
     override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit

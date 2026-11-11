@@ -133,6 +133,8 @@ class SessionEditorRepeatTest {
             flowOf(RoutinePlanWithRoutines(RoutinePlan(1L, ScheduleMode.IN_TURN), emptyList()))
 
         override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = flowOf(null)
+        override fun observeLastRoutineId(): Flow<Long?> = flowOf(null)
+        override fun observeLastTrained(): Flow<Map<Long, java.time.Instant>> = flowOf(emptyMap())
         override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
         override suspend fun setTrainingDays(days: Set<java.time.DayOfWeek>) = Unit
         override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long = 0L

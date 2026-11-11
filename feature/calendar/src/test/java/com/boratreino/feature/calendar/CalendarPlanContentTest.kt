@@ -38,7 +38,7 @@ class CalendarPlanContentTest {
     private val yesterday = LocalDate.of(2026, 11, 4)
     private val nextWeek = LocalDate.of(2026, 11, 10)
 
-    private val routineChoices = listOf(RoutineChoiceUi(1L, "Treino A"), RoutineChoiceUi(2L, "Treino B"))
+    private val routineChoices = listOf(RoutineChoiceUi(1L, "Treino A", "A"), RoutineChoiceUi(2L, "Treino B", "B"))
     private val planA = PlannedUi(1L, "Treino A", "A")
     private val planB = PlannedUi(2L, "Treino B", "B")
 
@@ -80,7 +80,7 @@ class CalendarPlanContentTest {
         compose.onNodeWithText("Plan a workout").assertExists()
         compose.onNodeWithText("Plan a workout").assertIsEnabled()
         compose.onNodeWithText("Nothing logged").assertDoesNotExist()
-        compose.onNodeWithText("Add a training").assertDoesNotExist()
+        compose.onNodeWithText("Add a workout").assertDoesNotExist()
     }
 
     @Test
@@ -94,20 +94,20 @@ class CalendarPlanContentTest {
     }
 
     @Test
-    fun `today offers Plan a workout and also the Nothing logged card`() {
+    fun `today offers Plan a workout and Add a workout, with no Nothing logged card`() {
         show(state(today))
 
         compose.onNodeWithText("Plan a workout").assertExists()
-        compose.onNodeWithText("Nothing logged").assertExists()
-        compose.onNodeWithText("Add a training").assertExists()
+        compose.onNodeWithText("Add a workout").assertExists()
+        compose.onNodeWithText("Nothing logged").assertDoesNotExist()
     }
 
     @Test
-    fun `a future day with a plan shows its planned card with Remove and no Change button`() {
+    fun `a future day with a plan shows the routine as a row with Remove and no Change button`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planB))))
 
-        compose.onNodeWithText("Planned: Treino B").assertExists()
-        compose.onNodeWithText("Remove").assertExists()
+        compose.onNodeWithText("Treino B").assertExists()
+        compose.onAllNodesWithContentDescription("Remove").assertCountEquals(1)
         compose.onNodeWithText("Change").assertDoesNotExist()
     }
 
@@ -123,8 +123,8 @@ class CalendarPlanContentTest {
     fun `with every routine planned the Plan a workout button is hidden`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))))
 
-        compose.onNodeWithText("Planned: Treino A").assertExists()
-        compose.onNodeWithText("Planned: Treino B").assertExists()
+        compose.onNodeWithText("Treino A").assertExists()
+        compose.onNodeWithText("Treino B").assertExists()
         compose.onNodeWithText("Plan a workout").assertDoesNotExist()
     }
 
@@ -136,8 +136,8 @@ class CalendarPlanContentTest {
             CalendarActions(onUnplan = { removed = it }),
         )
 
-        compose.onAllNodesWithText("Remove").assertCountEquals(2)
-        compose.onAllNodesWithText("Remove")[0].performClick()
+        compose.onAllNodesWithContentDescription("Remove").assertCountEquals(2)
+        compose.onAllNodesWithContentDescription("Remove")[0].performClick()
 
         assertEquals(1L, removed)
     }
@@ -156,8 +156,9 @@ class CalendarPlanContentTest {
     fun `the chooser lists only the routines not planned on that day yet`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planA)), chooser = true))
 
-        compose.onNodeWithText("Treino B").assertExists()
-        compose.onNodeWithText("Treino A").assertDoesNotExist()
+        // Treino A is shown once: its row on the day. The chooser lists Treino B only.
+        compose.onAllNodesWithText("Treino A").assertCountEquals(1)
+        compose.onAllNodesWithText("Treino B").assertCountEquals(1)
     }
 
     @Test
@@ -176,20 +177,19 @@ class CalendarPlanContentTest {
     }
 
     @Test
-    fun `a planned day with no session shows its short name on the grid`() {
+    fun `a planned day with no session shows its short name on the grid and on its row`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planB))))
 
-        // Once on the grid and once on the day's "Planned" card (the letter leads the card too).
+        // Once on the grid and once on the day's row (the letter leads the row too).
         compose.onAllNodesWithText("B").assertCountEquals(2)
     }
 
     @Test
-    fun `a day with two routines planned shows the first short name and a +1 cue on the grid`() {
+    fun `a day with two routines planned shows the first short name on the grid, and each on its row`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planA, planB))))
 
-        // Grid: the first letter and "+1"; the second letter only on its "Planned" card below.
+        // Grid: the first letter; the rows: both letters. The second letter only on its row.
         compose.onAllNodesWithText("A").assertCountEquals(2)
-        compose.onNodeWithText("+1").assertExists()
         compose.onAllNodesWithText("B").assertCountEquals(1)
     }
 
@@ -197,9 +197,9 @@ class CalendarPlanContentTest {
     fun `a day with a session shows its trained badge, not the plan marker`() {
         show(state(nextWeek, planned = mapOf(nextWeek to listOf(planB)), dayLabels = mapOf(nextWeek to "A")))
 
-        // "B" is only on the day's "Planned" card, not on the grid; the grid shows the trained "A".
+        // "B" is only on the day's row, not on the grid; the grid shows the trained "A".
         compose.onAllNodesWithText("B").assertCountEquals(1)
-        compose.onNodeWithText("A").assertExists()
+        compose.onAllNodesWithText("A").assertCountEquals(1)
     }
 
     @Test
@@ -280,20 +280,20 @@ class CalendarPlanContentTest {
     // Past days
 
     @Test
-    fun `a past day shows no Plan a workout button and no planned card`() {
+    fun `a past day shows no Plan a workout button and no planned row`() {
         show(state(yesterday))
 
         compose.onNodeWithText("Plan a workout").assertDoesNotExist()
         compose.onNodeWithText("Change").assertDoesNotExist()
-        compose.onNodeWithText("Remove").assertDoesNotExist()
+        compose.onAllNodesWithContentDescription("Remove").assertCountEquals(0)
         compose.onNodeWithText("Nothing logged").assertExists()
     }
 
     @Test
-    fun `a past day with a plan in the state still shows no planned card`() {
+    fun `a past day with a plan in the state still shows no planned row`() {
         show(state(yesterday, planned = mapOf(yesterday to listOf(planA))))
 
-        compose.onNodeWithText("Planned: Treino A").assertDoesNotExist()
+        compose.onNodeWithText("Treino A").assertDoesNotExist()
         compose.onNodeWithText("Plan a workout").assertDoesNotExist()
     }
 }

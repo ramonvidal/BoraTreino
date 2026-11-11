@@ -167,7 +167,8 @@ class SessionEditorTypesScreenshotTest {
             }
         }
 
-        compose.onNodeWithText("Routine B · 2 machines · 6 sets").assertExists()
+        compose.onNodeWithText("Routine B").assertExists()
+        compose.onNodeWithText("2 exercises · 6 sets").assertExists()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/session-editor-types-day-card.png")
     }
 }
