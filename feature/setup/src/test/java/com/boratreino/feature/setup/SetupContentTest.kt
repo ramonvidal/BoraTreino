@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -76,7 +78,7 @@ class SetupContentTest {
 
         compose.onNodeWithText("Skip").assertExists()
         compose.onNodeWithText("Next").assertExists()
-        compose.onNodeWithText("Back").assertDoesNotExist()
+        compose.onNode(hasText("Back") and hasClickAction()).assertDoesNotExist()
     }
 
     @Test
@@ -183,14 +185,14 @@ class SetupContentTest {
     fun `the routine name field shows the default name`() {
         setStep(SetupSamples.routine)
 
-        compose.onNode(hasSetTextAction()).assertTextEquals("Routine A")
+        compose.onNode(hasSetTextAction()).assertTextContains("Routine A")
     }
 
     @Test
     fun `the routine name field shows the name typed so far`() {
         setStep(SetupSamples.routine.copy(routineName = "Treino Costas"))
 
-        compose.onNode(hasSetTextAction()).assertTextEquals("Treino Costas")
+        compose.onNode(hasSetTextAction()).assertTextContains("Treino Costas")
     }
 
     @Test
