@@ -21,7 +21,10 @@ class TodaySkipScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    /** Routine B in progress, with the close icon on the machines that have no sets yet. */
+    /**
+     * Routine B in progress; the machines with no sets yet carry canSkip. The row no longer shows a skip icon:
+     * skip and remove are in the long-press menu (see TodayRowMenuTest).
+     */
     private val withCloseIcons: TodayUiState = TodaySamples.routineBInProgress.let { state ->
         val routine = requireNotNull(state.routines)
         state.copy(routines = routine.copy(machines = routine.machines.map { it.copy(canSkip = it.setCount == 0) }))
@@ -38,7 +41,7 @@ class TodaySkipScreenshotTest {
     }
 
     @Test
-    fun `routine machines without sets offer skip or remove`() {
+    fun `routine rows without sets have no skip icon any more`() {
         setToday(withCloseIcons)
 
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-routine-skip.png")

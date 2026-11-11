@@ -77,7 +77,7 @@ class TodayTabScreenshotTest {
             }
         }
 
-        compose.onNodeWithText("Pick a machine to start").assertDoesNotExist()
-        compose.onNodeWithText("All machines").assertDoesNotExist()
+        compose.onNodeWithText("Pick an exercise to start").assertDoesNotExist()
+        compose.onNodeWithText("All exercises").assertDoesNotExist()
     }
 }

@@ -5,6 +5,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -21,8 +23,8 @@ import org.robolectric.annotation.Config
 import java.time.LocalDate
 
 /**
- * The Today header (date line and routine summary), the routine chips with their "Next" label and
- * the training card (progress line and Done); saved to build/outputs/roborazzi.
+ * The Today hero card (date line, routine name, "N of M exercises", the progress ring and the routine
+ * switcher pill) and the routine sheet with its "Next" label; saved to build/outputs/roborazzi.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
@@ -46,11 +48,15 @@ class TodayHeaderTest {
     private fun withChips(base: TodayUiState, vararg chips: RoutineChipUi): TodayUiState =
         base.copy(routines = requireNotNull(base.routines).copy(chips = chips.toList()))
 
+    /** Opens the routine sheet by tapping the switcher pill (it reads "Routine B" or "Routine B · next in rotation"). */
+    private fun openSwitcher() {
+        compose.onNode(hasClickAction() and hasText("Routine B", substring = true)).performClick()
+    }
+
     @Test
     fun `the header shows the date line when today is set`() {
         setContent(TodaySamples.routineBNotStarted.copy(today = monday))
 
-        compose.onNodeWithText("Bora pro Treino!").assertExists()
         compose.onNodeWithText("Monday", substring = true).assertExists()
         compose.onNodeWithText("November", substring = true).assertExists()
     }
@@ -64,28 +70,25 @@ class TodayHeaderTest {
     }
 
     @Test
-    fun `the routine summary is one line under the date`() {
+    fun `the hero shows the routine name and N of M exercises under the date`() {
         setContent(TodaySamples.routineBNotStarted.copy(today = monday))
 
-        compose.onNodeWithText("Routine B · 4 machines · 12 sets").assertExists()
+        // The hero title and the switcher pill both read "Routine B" while no routine is suggested.
+        compose.onAllNodesWithText("Routine B").assertCountEquals(2)
+        compose.onNodeWithText("0 of 4 exercises").assertExists()
+        compose.onNodeWithText("0%").assertExists()
     }
 
     @Test
-    fun `the suggested routine that is not selected carries a Next label`() {
-        setContent(
-            withChips(
-                TodaySamples.routineBNotStarted,
-                RoutineChipUi(1L, "A", selected = false, suggested = true),
-                RoutineChipUi(2L, "B", selected = true),
-                RoutineChipUi(3L, "C", selected = false),
-            ),
-        )
+    fun `the progress ring shows the percentage of exercises done`() {
+        setContent(TodaySamples.routineBInProgress.copy(today = monday))
 
-        compose.onAllNodesWithText("Next").assertCountEquals(1)
+        compose.onNodeWithText("1 of 4 exercises").assertExists()
+        compose.onNodeWithText("25%").assertExists()
     }
 
     @Test
-    fun `no Next label when the suggested routine is the selected one`() {
+    fun `the switcher pill says next in rotation for the suggested routine that is selected`() {
         setContent(
             withChips(
                 TodaySamples.routineBNotStarted,
@@ -95,61 +98,72 @@ class TodayHeaderTest {
             ),
         )
 
+        compose.onNodeWithText("Routine B · next in rotation").assertExists()
+    }
+
+    @Test
+    fun `the suggested routine in the sheet carries a Next label`() {
+        setContent(
+            withChips(
+                TodaySamples.routineBNotStarted,
+                RoutineChipUi(1L, "A", selected = false, suggested = true),
+                RoutineChipUi(2L, "B", selected = true),
+                RoutineChipUi(3L, "C", selected = false),
+            ),
+        )
+        openSwitcher()
+
+        compose.onAllNodesWithText("Next").assertCountEquals(1)
+    }
+
+    @Test
+    fun `no Next label on the sheet chips without a suggestion`() {
+        setContent(TodaySamples.routineBNotStarted)
+        openSwitcher()
+
         compose.onAllNodesWithText("Next").assertCountEquals(0)
     }
 
     @Test
-    fun `no Next label on the chips without a suggestion`() {
+    fun `the sheet chips show their short names and No routine`() {
         setContent(TodaySamples.routineBNotStarted)
-
-        compose.onAllNodesWithText("Next").assertCountEquals(0)
-    }
-
-    @Test
-    fun `the chips show their short names`() {
-        setContent(TodaySamples.routineBNotStarted)
+        openSwitcher()
 
         compose.onNodeWithText("A").assertExists()
         compose.onNodeWithText("B").assertExists()
         compose.onNodeWithText("C").assertExists()
-        compose.onNodeWithText("Free").assertExists()
+        compose.onNodeWithText("No routine").assertExists()
     }
 
     @Test
-    fun `the training card shows the routine name and N of M machines`() {
-        setContent(TodaySamples.routineBInProgress.copy(today = monday))
-
-        compose.onNodeWithText("Training now").assertExists()
-        compose.onNodeWithText("Routine B").assertExists()
-        compose.onNodeWithText("1 of 4 machines").assertExists()
-    }
-
-    @Test
-    fun `Done is enabled while machines are left and reports the finish`() {
+    fun `Finish training is enabled while exercises are left and reports the finish`() {
         var done = 0
         setContent(TodaySamples.routineBInProgress, TodayActions(onDone = { done++ }))
 
-        compose.onNodeWithText("Done").assertIsEnabled()
-        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithText("Finish training").assertIsEnabled()
+        compose.onNodeWithText("Finish training").performClick()
 
         assertEquals(1, done)
     }
 
     @Test
-    fun `Done is enabled once every machine is done and still reports the finish`() {
+    fun `once every exercise is done the hero button is Finish training and reports the finish`() {
         var done = 0
         val allDone = TodaySamples.routineBInProgress.copy(
+            heroPrimary = HeroAction.FINISH,
             routines = requireNotNull(TodaySamples.routineBInProgress.routines).copy(
                 machines = requireNotNull(TodaySamples.routineBInProgress.routines).machines.map {
-                    it.copy(done = true, highlighted = false)
+                    it.copy(done = true, highlighted = false, setCount = 3)
                 },
             ),
         )
         setContent(allDone.copy(today = monday), TodayActions(onDone = { done++ }))
 
-        compose.onNodeWithText("4 of 4 machines").assertExists()
-        compose.onNodeWithText("Done").assertIsEnabled()
-        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithText("4 of 4 exercises").assertExists()
+        compose.onNodeWithText("100%").assertExists()
+        compose.onAllNodesWithText("Finish training").assertCountEquals(1)
+        compose.onNodeWithText("Finish training").assertIsEnabled()
+        compose.onNodeWithText("Finish training").performClick()
 
         assertEquals(1, done)
     }
@@ -169,10 +183,11 @@ class TodayHeaderTest {
     }
 
     @Test
-    fun `the training card shot when every machine is done`() {
+    fun `the training card shot when every exercise is done`() {
         val base = TodaySamples.routineBInProgress
         val allDone = base.copy(
             today = monday,
+            heroPrimary = HeroAction.FINISH,
             routines = requireNotNull(base.routines).copy(
                 machines = requireNotNull(base.routines).machines.map { it.copy(done = true, highlighted = false) },
             ),

@@ -130,10 +130,10 @@ class TodayShareTest {
     }
 
     @Test
-    fun `the four numbers are duration, sets, volume and machines in that order`() {
+    fun `the four numbers are duration, sets, volume and exercises in that order`() {
         val texts = summaryTexts(context.resources, summary(minutes = 62), Locale.US)
 
-        assertEquals(listOf("Duration", "Sets", "Volume", "Machines"), texts.stats.map { it.label })
+        assertEquals(listOf("Duration", "Sets", "Volume", "Exercises"), texts.stats.map { it.label })
         assertEquals(listOf("62 min", "9", "980 kg", "3"), texts.stats.map { it.value })
     }
 

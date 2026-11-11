@@ -53,7 +53,10 @@ private val warmupBase = MachineUiState(
 
 private val withTypes = warmupBase.copy(sets = listOf(warmupSet, normalSet, dropSet, failureSet), reps = 8)
 
-/** The Warm-up chip, the labelled sets and the edit sheet's type chips; saved to build/outputs/roborazzi. */
+/**
+ * The "Set type" row of the log panel (it shows Warm-up while that type is picked), the labelled sets and the
+ * edit sheet's type chips; saved to build/outputs/roborazzi.
+ */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class MachineWarmupScreenshotTest {
@@ -79,62 +82,64 @@ class MachineWarmupScreenshotTest {
 
     private fun shoot(name: String) = compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
 
-    // The chip
+    // The Set type row
 
     @Test
-    fun `chip off`() {
+    fun `set type row shows Normal when nothing is picked`() {
         setContent(warmupBase)
-        compose.onNodeWithText("Warm-up").assertExists()
+        compose.onNodeWithText("Set type: Normal").assertExists()
         shoot("machine-warmup-off")
     }
 
     @Test
-    fun `chip on`() {
+    fun `set type row shows Warm-up once it is picked`() {
         setContent(warmupBase.copy(warmupOn = true))
-        compose.onNodeWithText("Warm-up").assertExists()
+        compose.onNodeWithText("Set type: Warm-up").assertExists()
         shoot("machine-warmup-on")
     }
 
     @Test
-    fun `chip off dark`() {
+    fun `set type row dark`() {
         setContent(warmupBase, dark = true)
         shoot("machine-warmup-off-dark")
     }
 
     @Test
-    fun `chip on dark`() {
+    fun `set type row with Warm-up dark`() {
         setContent(warmupBase.copy(warmupOn = true), dark = true)
         shoot("machine-warmup-on-dark")
     }
 
     @Test
-    fun `chip off large font`() {
+    fun `set type row large font`() {
         setContent(warmupBase, fontScale = 1.8f)
         shoot("machine-warmup-off-large-font")
     }
 
     @Test
-    fun `chip on large font`() {
+    fun `set type row with Warm-up large font`() {
         setContent(warmupBase.copy(warmupOn = true), fontScale = 1.8f)
         shoot("machine-warmup-on-large-font")
     }
 
     @Test
-    fun `tapping the chip calls back once`() {
-        var toggles = 0
-        setContent(warmupBase, MachineActions(onToggleWarmup = { toggles++ }))
+    fun `tapping Set type opens the sheet and picking Warm-up reports it`() {
+        val picked = mutableListOf<SetType>()
+        setContent(warmupBase, MachineActions(onSetType = { picked += it }))
 
+        compose.onNodeWithText("Set type: Normal").performClick()
         compose.onNodeWithText("Warm-up").performClick()
 
-        assertEquals(1, toggles)
+        assertEquals(listOf(SetType.WARMUP), picked)
     }
 
     @Test
-    fun `cardio machine has no Warm-up chip`() {
+    fun `cardio machine has no Warm-up choice`() {
         setContent(
             MachineUiState(loaded = true, machine = warmupTreadmill),
         )
         compose.onAllNodesWithText("Warm-up").assertCountEquals(0)
+        compose.onAllNodesWithText("Set type: Normal").assertCountEquals(0)
     }
 
     // Labelled sets
@@ -143,8 +148,8 @@ class MachineWarmupScreenshotTest {
     fun `sets list labels warm-up, drop and failure and leaves normal bare`() {
         setContent(withTypes)
 
-        // One label each in the list; the chip adds a second "Warm-up".
-        compose.onAllNodesWithText("Warm-up").assertCountEquals(2)
+        // One label each in the list; the Set type row says "Set type: Normal", not "Warm-up".
+        compose.onAllNodesWithText("Warm-up").assertCountEquals(1)
         compose.onNodeWithText("Drop set").assertExists()
         compose.onNodeWithText("Failure").assertExists()
         compose.onAllNodesWithText("Normal").assertCountEquals(0)

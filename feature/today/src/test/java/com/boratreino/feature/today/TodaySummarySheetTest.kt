@@ -100,7 +100,7 @@ class TodaySummarySheetTest {
     }
 
     @Test
-    fun `the four numbers show duration in minutes, sets, volume in kilograms and machines`() {
+    fun `the four numbers show duration in minutes, sets, volume in kilograms and exercises`() {
         setContent(SummaryUi(summary(minutes = 62, sets = 9, volumeKg = 980.0, machines = 3)))
 
         compose.onNodeWithText("62 min").assertExists()
@@ -110,7 +110,7 @@ class TodaySummarySheetTest {
         compose.onNodeWithText("Duration").assertExists()
         compose.onNodeWithText("Sets").assertExists()
         compose.onNodeWithText("Volume").assertExists()
-        compose.onNodeWithText("Machines").assertExists()
+        compose.onNodeWithText("Exercises").assertExists()
     }
 
     @Test

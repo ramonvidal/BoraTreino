@@ -121,6 +121,8 @@ class TodayStoreScreenshotPtTest {
             ),
         ),
         recent = emptyList(),
+        heroPrimary = HeroAction.CONTINUE,
+        nextExerciseId = cadeiraExtensora.id,
         routines = RoutineUi(
             chips = chips(treinoB.id),
             freeSelected = false,

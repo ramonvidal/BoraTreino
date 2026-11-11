@@ -44,39 +44,39 @@ class TodayEditScreenshotTest {
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
-    // Normal mode is as it was, plus the pencil
+    // Normal mode is as it was, plus the "Edit routine" text button in the list header
 
     @Test
-    fun `normal mode before a session offers the pencil and no move buttons`() {
+    fun `normal mode before a session offers Edit routine and no move buttons`() {
         shoot("today-edit-normal", notStarted)
 
-        compose.onNodeWithContentDescription("Edit this ficha").assertExists()
+        compose.onNodeWithText("Edit routine").assertExists()
         compose.onAllNodesWithContentDescription("Move up").assertCountEquals(0)
         compose.onNodeWithText("Edit sets and reps").assertDoesNotExist()
     }
 
     @Test
-    fun `normal mode during a session offers the pencil and the usual Done`() {
+    fun `normal mode during a session offers Edit routine and the usual Finish training`() {
         shoot("today-edit-normal-session", inProgress)
 
-        compose.onNodeWithContentDescription("Edit this ficha").assertExists()
-        compose.onNodeWithText("Done").assertExists()
+        compose.onNodeWithText("Edit routine").assertExists()
+        compose.onNodeWithText("Finish training").assertExists()
         compose.onNodeWithText("Edit sets and reps").assertDoesNotExist()
     }
 
     @Test
-    fun `Free has no pencil`() {
+    fun `a day without a routine has no Edit routine button`() {
         shoot("today-edit-free", TodaySamples.restDay)
 
-        compose.onNodeWithContentDescription("Edit this ficha").assertDoesNotExist()
+        compose.onNodeWithText("Edit routine").assertDoesNotExist()
     }
 
     @Test
-    fun `tapping the pencil asks to start editing`() {
+    fun `tapping Edit routine asks to start editing`() {
         var started = 0
         shoot("today-edit-pencil", notStarted, actions = TodayActions(onStartEditing = { started++ }))
 
-        compose.onNodeWithContentDescription("Edit this ficha").performClick()
+        compose.onNodeWithText("Edit routine").performClick()
 
         assertEquals(1, started)
     }
@@ -89,10 +89,10 @@ class TodayEditScreenshotTest {
 
         compose.onNodeWithText("Done").assertExists()
         compose.onNodeWithText("Edit sets and reps").assertExists()
-        compose.onNodeWithContentDescription("Edit this ficha").assertDoesNotExist()
+        compose.onNodeWithText("Edit routine").assertDoesNotExist()
         compose.onAllNodesWithContentDescription("Move up").assertCountEquals(4)
         compose.onAllNodesWithContentDescription("Move down").assertCountEquals(4)
-        compose.onNodeWithContentDescription("Remove Leg press from the ficha").assertExists()
+        compose.onNodeWithContentDescription("Remove Leg press from the routine").assertExists()
     }
 
     @Test
@@ -132,7 +132,7 @@ class TodayEditScreenshotTest {
         // The first row cannot go up (disabled), so its Move down is the first enabled arrow of that row.
         compose.onAllNodesWithContentDescription("Move down")[0].performClick()
         compose.onAllNodesWithContentDescription("Move up")[1].performClick()
-        compose.onNodeWithContentDescription("Remove Leg extension from the ficha").performClick()
+        compose.onNodeWithContentDescription("Remove Leg extension from the routine").performClick()
 
         assertEquals(listOf(TodaySamples.legPress.id to false, TodaySamples.legExtension.id to true), moves)
         assertEquals(listOf(TodaySamples.legExtension.id), removed)

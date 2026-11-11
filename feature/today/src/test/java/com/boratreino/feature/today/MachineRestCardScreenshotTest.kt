@@ -34,7 +34,7 @@ private fun machineState(restSeconds: Int?, total: Int) = MachineUiState(
     restTotalSeconds = total,
 )
 
-/** The machine screen with the rest bar under the info card; without a rest there is no bar. */
+/** The exercise screen with the rest bar above the steppers in the bottom panel; without a rest there is no bar. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class MachineRestCardScreenshotTest {
@@ -59,8 +59,8 @@ class MachineRestCardScreenshotTest {
         compose.onNodeWithText("Rest 1:12").assertExists()
         compose.onNodeWithText("+30 s").assertExists()
         compose.onNodeWithText("Skip").assertExists()
-        compose.onNodeWithText("Log set").assertExists()
-        compose.onNodeWithText("Same again").assertExists()
+        compose.onNodeWithText("Log 120 kg x 11").assertExists()
+        compose.onNodeWithText("Same again").assertDoesNotExist()
     }
 
     @Test
@@ -87,8 +87,8 @@ class MachineRestCardScreenshotTest {
         compose.onNodeWithText("Rest", substring = true).assertDoesNotExist()
         compose.onNodeWithText("+30 s").assertDoesNotExist()
         compose.onNodeWithText("Skip").assertDoesNotExist()
-        compose.onNodeWithText("Log set").assertExists()
-        compose.onNodeWithText("Same again").assertExists()
+        compose.onNodeWithText("Log 120 kg x 11").assertExists()
+        compose.onNodeWithText("Same again").assertDoesNotExist()
     }
 
     @Test
@@ -111,18 +111,15 @@ class MachineRestCardScreenshotTest {
     @Test
     fun `logging stays one tap with the card showing`() {
         var logged = 0
-        var same = 0
         shoot(
             "machine-rest-card-log",
             machineState(restSeconds = 72, total = 90),
-            actions = MachineActions(onLogSet = { logged++ }, onSameAgain = { same++ }),
+            actions = MachineActions(onLogSet = { logged++ }),
         )
 
-        compose.onNodeWithText("Log set").performClick()
-        compose.onNodeWithText("Same again").performClick()
+        compose.onNodeWithText("Log 120 kg x 11").performClick()
 
         assertEquals(1, logged)
-        assertEquals(1, same)
     }
 }
 

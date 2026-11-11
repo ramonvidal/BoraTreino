@@ -101,7 +101,7 @@ class MachineExerciseCompleteScreenTest {
         compose.onNodeWithText("Pull-ups").assertExists()
         compose.onNodeWithText("Back to the list").assertExists()
         compose.onNodeWithText("Add an extra set").assertExists()
-        compose.onNodeWithText("Log set").assertDoesNotExist()
+        compose.onNodeWithText("Log 120 kg x 12").assertDoesNotExist()
         compose.onNodeWithText("Same again").assertDoesNotExist()
     }
 
@@ -152,30 +152,30 @@ class MachineExerciseCompleteScreenTest {
     }
 
     @Test
-    fun `with an extra set the Log set button is shown again`() {
+    fun `with an extra set the Log button is shown again`() {
         var logged = 0
         setContent(complete.copy(extraSet = true), MachineActions(onLogSet = { logged++ }))
 
         compose.onNodeWithText("Exercise complete").assertDoesNotExist()
-        compose.onNodeWithText("Log set").performClick()
+        compose.onNodeWithText("Log 120 kg x 12").performClick()
 
         assertEquals(1, logged)
     }
 
     @Test
-    fun `the Log set button is shown while the exercise has sets to do`() {
+    fun `the Log button is shown while the exercise has sets to do`() {
         setContent(complete.copy(doneSets = 2))
 
-        compose.onNodeWithText("Log set").assertExists()
+        compose.onNodeWithText("Log 120 kg x 12").assertExists()
         compose.onNodeWithText("Exercise complete").assertDoesNotExist()
         compose.onNodeWithText("Add an extra set").assertDoesNotExist()
     }
 
     @Test
-    fun `the Log set button is shown for an exercise that is not in the routine`() {
+    fun `the Log button is shown for an exercise that is not in the routine`() {
         setContent(complete.copy(programmedSets = null, target = null, nextExercises = emptyList()))
 
-        compose.onNodeWithText("Log set").assertExists()
+        compose.onNodeWithText("Log 120 kg x 12").assertExists()
         compose.onNodeWithText("Exercise complete").assertDoesNotExist()
     }
 
@@ -187,7 +187,7 @@ class MachineExerciseCompleteScreenTest {
         compose.onNodeWithText("2 of 2 sets").assertExists()
         compose.onNodeWithText("Leg press").assertExists()
         compose.onNodeWithText("Back to the list").assertExists()
-        compose.onNodeWithText("Log").assertDoesNotExist()
+        compose.onNodeWithText("Log 20 min · 100 kcal").assertDoesNotExist()
         compose.onNodeWithText("Same again").assertDoesNotExist()
     }
 
@@ -195,7 +195,7 @@ class MachineExerciseCompleteScreenTest {
     fun `a cardio exercise still to do keeps its Log panel`() {
         setContent(cardioComplete.copy(doneSets = 1))
 
-        compose.onNodeWithText("Log").assertExists()
+        compose.onNodeWithText("Log 20 min · 100 kcal").assertExists()
         compose.onNodeWithText("Exercise complete").assertDoesNotExist()
     }
 
@@ -208,7 +208,7 @@ class MachineExerciseCompleteScreenTest {
     fun `the exercise complete shot`() = shoot("machine-exercise-complete", complete)
 
     @Test
-    fun `the logging panel with Same again and centred labels shot`() = shoot(
+    fun `the logging panel shot with one Log button`() = shoot(
         "machine-log-centred",
         MachineUiState(
             loaded = true,

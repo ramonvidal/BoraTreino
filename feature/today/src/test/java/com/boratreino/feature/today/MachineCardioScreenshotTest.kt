@@ -104,7 +104,7 @@ class MachineCardioScreenshotTest {
         compose.onNodeWithText("Calories").assertExists()
         compose.onNodeWithText("Distance (km)").assertExists()
         compose.onNodeWithText("Add distance").assertDoesNotExist()
-        compose.onNodeWithText("Log").assertExists()
+        compose.onNodeWithText("Log 15 min · 120 kcal · 1.6 km").assertExists()
     }
 
     @Test
@@ -113,15 +113,15 @@ class MachineCardioScreenshotTest {
         compose.onNodeWithText("Minutes").assertExists()
         compose.onNodeWithText("Add distance").assertExists()
         compose.onNodeWithText("Distance (km)").assertDoesNotExist()
-        compose.onNodeWithText("Same again").assertExists()
+        compose.onNodeWithText("Same again").assertDoesNotExist()
     }
 
     @Test
     fun `first time on a cardio machine`() {
         shoot("machine-cardio-first-time", firstTime)
-        compose.onNodeWithText("First time on this machine").assertExists()
+        compose.onNodeWithText("First time on this exercise").assertExists()
         compose.onNodeWithText("Same again").assertDoesNotExist()
-        compose.onNodeWithText("Log").assertExists()
+        compose.onNodeWithText("Log 20 min").assertExists()
     }
 
     @Test
@@ -129,13 +129,14 @@ class MachineCardioScreenshotTest {
         shoot("machine-cardio-steppers", withoutDistance)
         compose.onNodeWithText("Reps").assertDoesNotExist()
         compose.onNodeWithText("Weight (kg)").assertDoesNotExist()
-        compose.onNodeWithText("Log set").assertDoesNotExist()
+        compose.onNodeWithText("Set type: Normal").assertDoesNotExist()
+        compose.onNodeWithText("Log 30 min · 250 kcal").assertExists()
     }
 
     @Test
     fun `Log is disabled when minutes and calories are 0`() {
         shoot("machine-cardio-empty-draft", withoutDistance.copy(cardio = CardioDraft(0, 0, 0)))
-        compose.onNodeWithText("Log").assertIsNotEnabled()
+        compose.onNodeWithText("Log -").assertIsNotEnabled()
     }
 
     @Test

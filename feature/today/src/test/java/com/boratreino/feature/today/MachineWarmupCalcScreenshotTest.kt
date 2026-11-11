@@ -47,7 +47,7 @@ private val calcOffered = calcBase
 private val calcNotOffered = calcBase.copy(warmupPlan = emptyList())
 private val calcDialog = calcBase.copy(warmupDialog = true)
 
-/** The "Warm-up sets" button next to the Warm-up chip and its dialog; saved to build/outputs/roborazzi. */
+/** The "Warm-up sets" button next to the Set type row and its dialog; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class MachineWarmupCalcScreenshotTest {
@@ -78,9 +78,9 @@ class MachineWarmupCalcScreenshotTest {
     // The button
 
     @Test
-    fun `button next to the chip`() {
+    fun `button next to the set type row`() {
         setContent(calcOffered)
-        compose.onNodeWithText("Warm-up").assertExists()
+        compose.onNodeWithText("Set type: Normal").assertExists()
         compose.onNodeWithText("Warm-up sets").assertExists()
         shoot("machine-warmup-calc")
     }
@@ -95,14 +95,14 @@ class MachineWarmupCalcScreenshotTest {
     fun `button large font`() {
         setContent(calcOffered, fontScale = 1.8f)
         compose.onNodeWithText("Warm-up sets").assertExists()
-        compose.onNodeWithText("Log set").assertExists()
+        compose.onNodeWithText("Log 120 kg x 12").assertExists()
         shoot("machine-warmup-calc-large-font")
     }
 
     @Test
     fun `no button without a plan`() {
         setContent(calcNotOffered)
-        compose.onNodeWithText("Warm-up").assertExists()
+        compose.onNodeWithText("Set type: Normal").assertExists()
         compose.onAllNodesWithText("Warm-up sets").assertCountEquals(0)
         shoot("machine-warmup-calc-none")
     }

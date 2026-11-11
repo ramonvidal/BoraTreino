@@ -82,11 +82,13 @@ internal object TodaySamples {
         RoutineChipUi(it.id, it.shortName, selected = it.id == selectedId)
     }
 
-    /** Routine B, nothing done yet: the first machine is highlighted. */
+    /** Routine B, nothing done yet: the first machine is highlighted and the hero says "Start: Leg press". */
     val routineBNotStarted = TodayUiState(
         loaded = true,
         session = null,
         recent = emptyList(),
+        heroPrimary = HeroAction.START,
+        nextExerciseId = legPress.id,
         routines = RoutineUi(
             chips = chips(routineB.id),
             freeSelected = false,
@@ -106,9 +108,12 @@ internal object TodaySamples {
     /**
      * Routine B in progress: Leg press done (a tick), Leg extension at 2 of 3 and highlighted next,
      * a seated row done outside the routine (Also this session). 3 machines, 7 sets.
+     * The hero says "Continue: Leg extension".
      */
     val routineBInProgress = TodayUiState(
         loaded = true,
+        heroPrimary = HeroAction.CONTINUE,
+        nextExerciseId = legExtension.id,
         session = SessionUi(
             machineCount = 3,
             setCount = 7,
@@ -133,7 +138,7 @@ internal object TodaySamples {
         ),
     )
 
-    /** On fixed weekdays with nothing scheduled today: the chips and the plain machine lists under "Rest day". */
+    /** On fixed weekdays with nothing scheduled today: "Rest day", the mascot and no exercise list. */
     val restDay = TodayUiState(
         loaded = true,
         session = null,

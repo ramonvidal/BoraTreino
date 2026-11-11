@@ -159,11 +159,11 @@ class MachineSetTableTest {
     }
 
     @Test
-    fun `Log set is one tap and reports once`() {
+    fun `the Log button is one tap and reports once`() {
         var logged = 0
         setContent(state(), MachineActions(onLogSet = { logged++ }))
 
-        compose.onNodeWithText("Log set").performClick()
+        compose.onNodeWithText("Log 125 kg x 8").performClick()
 
         assertEquals(1, logged)
     }
@@ -186,10 +186,10 @@ class MachineSetTableTest {
     }
 
     @Test
-    fun `at font scale 2 Log set and both steppers are still shown`() {
+    fun `at font scale 2 the Log button and both steppers are still shown`() {
         setContent(state(), fontScale = 2f)
 
-        compose.onNodeWithText("Log set").assertIsDisplayed()
+        compose.onNodeWithText("Log 125 kg x 8").assertIsDisplayed()
         compose.onAllNodesWithContentDescription("Increase", substring = true).assertCountEquals(2)
         compose.onAllNodesWithContentDescription("Decrease", substring = true).assertCountEquals(2)
     }

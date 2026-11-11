@@ -28,7 +28,10 @@ private val trainingNow = TodaySamples.routineBInProgress.copy(
     repeatOffer = offer,
 )
 
-/** The "Same as last time" buttons on the Next up and Training now cards; saved to build/outputs/roborazzi. */
+/**
+ * "Repeat last time" is one quiet text row under the exercise list; it opens the two repeat options.
+ * Saved to build/outputs/roborazzi.
+ */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class TodayRepeatScreenshotTest {
@@ -47,42 +50,53 @@ class TodayRepeatScreenshotTest {
     }
 
     @Test
-    fun `next up offers both buttons with the counts`() {
+    fun `the two big repeat buttons are gone and one Repeat last time row is shown`() {
         shoot("today-repeat", nextUp)
 
-        compose.onNodeWithText("Same as last time").assertExists()
-        compose.onNodeWithText("4 machines · 12 sets").assertExists()
-        compose.onNodeWithText("Same, with suggested weights").assertExists()
+        compose.onNodeWithText("Repeat last time").assertExists()
+        compose.onNodeWithText("Same as last time").assertDoesNotExist()
+        compose.onNodeWithText("Same, with suggested weights").assertDoesNotExist()
     }
 
     @Test
     fun `next up dark`() = shoot("today-repeat-dark", nextUp, dark = true)
 
     @Test
-    fun `training now offers both buttons with the counts`() {
-        shoot("today-repeat-session", trainingNow)
+    fun `the repeat menu offers both options with the counts`() {
+        shoot("today-repeat-menu", nextUp)
+
+        compose.onNodeWithText("Repeat last time").performClick()
 
         compose.onNodeWithText("Same as last time").assertExists()
+        compose.onNodeWithText("4 exercises · 12 sets").assertExists()
         compose.onNodeWithText("Same, with suggested weights").assertExists()
-        compose.onNodeWithText("Done").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-repeat-menu-open.png")
+    }
+
+    @Test
+    fun `training now shows the repeat row and the finish text button`() {
+        shoot("today-repeat-session", trainingNow)
+
+        compose.onNodeWithText("Repeat last time").assertExists()
+        compose.onNodeWithText("Finish training").assertExists()
     }
 
     @Test
     fun `training now dark`() = shoot("today-repeat-session-dark", trainingNow, dark = true)
 
     @Test
-    fun `no offer no buttons before a session`() {
+    fun `no offer no repeat row before a session`() {
         shoot("today-repeat-none", nextUp.copy(repeatOffer = null))
 
+        compose.onNodeWithText("Repeat last time").assertDoesNotExist()
         compose.onNodeWithText("Same as last time").assertDoesNotExist()
-        compose.onNodeWithText("Same, with suggested weights").assertDoesNotExist()
     }
 
     @Test
-    fun `no offer no buttons during a session`() {
+    fun `no offer no repeat row during a session`() {
         shoot("today-repeat-none-session", trainingNow.copy(repeatOffer = null))
 
-        compose.onNodeWithText("Same as last time").assertDoesNotExist()
+        compose.onNodeWithText("Repeat last time").assertDoesNotExist()
         compose.onNodeWithText("Same, with suggested weights").assertDoesNotExist()
     }
 
@@ -90,7 +104,7 @@ class TodayRepeatScreenshotTest {
     fun `hidden while editing before a session`() {
         shoot("today-repeat-editing", nextUp.copy(editing = true))
 
-        compose.onNodeWithText("Same as last time").assertDoesNotExist()
+        compose.onNodeWithText("Repeat last time").assertDoesNotExist()
         compose.onNodeWithText("Same, with suggested weights").assertDoesNotExist()
     }
 
@@ -98,12 +112,12 @@ class TodayRepeatScreenshotTest {
     fun `hidden while editing during a session`() {
         shoot("today-repeat-editing-session", trainingNow.copy(editing = true))
 
-        compose.onNodeWithText("Same as last time").assertDoesNotExist()
+        compose.onNodeWithText("Repeat last time").assertDoesNotExist()
         compose.onNodeWithText("Same, with suggested weights").assertDoesNotExist()
     }
 
     @Test
-    fun `the buttons report their own action`() {
+    fun `the repeat options report their own action`() {
         var same = 0
         var suggested = 0
         shoot(
@@ -112,8 +126,11 @@ class TodayRepeatScreenshotTest {
             actions = TodayActions(onRepeatSame = { same++ }, onRepeatSuggested = { suggested++ }),
         )
 
-        compose.onNodeWithText("Same as last time", substring = true).performClick()
+        compose.onNodeWithText("Repeat last time").performClick()
+        compose.onNodeWithText("Same as last time").performClick()
         assertEquals(1 to 0, same to suggested)
+
+        compose.onNodeWithText("Repeat last time").performClick()
         compose.onNodeWithText("Same, with suggested weights").performClick()
         assertEquals(1 to 1, same to suggested)
     }
