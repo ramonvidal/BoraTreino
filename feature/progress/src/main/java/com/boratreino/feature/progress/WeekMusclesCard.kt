@@ -72,9 +72,9 @@ private fun MuscleSquare(name: String, sets: Double, modifier: Modifier = Modifi
         0 -> Color.Transparent
         1 -> Sunny.BrandSoft
         2 -> colors.primaryContainer
-        else -> colors.secondary
+        else -> Sunny.BrandDeep
     }
-    val numberColor = if (shade >= 3) colors.onSecondary else colors.onSurface
+    val numberColor = if (shade >= 3) Color.White else colors.onSurface
     val shape = RoundedCornerShape(10.dp)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(

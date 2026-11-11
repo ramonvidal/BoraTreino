@@ -92,11 +92,11 @@ internal fun NoteLine(text: String) {
     Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-/** Index 0 is "no sets" (drawn as an outline only); 1 to 3 are the filled steps: light yellow, yellow, green. */
+/** Index 0 is "no sets" (drawn as an outline only); 1 to 3 are the filled steps: light yellow, yellow, dark yellow. */
 @Composable
 private fun bodyShadeColors(): List<Color> {
     val c = MaterialTheme.colorScheme
-    return listOf(Color.Transparent, Sunny.BrandSoft, c.primaryContainer, c.secondary)
+    return listOf(Color.Transparent, Sunny.BrandSoft, c.primaryContainer, Sunny.BrandDeep)
 }
 
 @Composable

@@ -28,6 +28,8 @@ import com.boratreino.core.ui.R
 object Sunny {
     val Brand = Color(0xFFFEC204)
     val BrandSoft = Color(0xFFFFF1B8)
+    /** Very dark yellow: the strongest step of the body map and muscle cards. */
+    val BrandDeep = Color(0xFF8A5A00)
     val Ink = Color(0xFF1F1B16)
     val Page = Color(0xFFFAF7F0)
     val Card = Color(0xFFFFFFFF)
