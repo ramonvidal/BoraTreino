@@ -12,6 +12,7 @@ import com.boratreino.core.model.LibraryFilter
 import com.boratreino.core.model.LibraryLevel
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.StarterMachine
@@ -20,7 +21,11 @@ import com.boratreino.core.model.StarterMachines
 import com.boratreino.core.settings.AppLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.Normalizer
+import java.time.Clock
 import java.time.DayOfWeek
+import java.time.Instant
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,6 +68,10 @@ internal data class RoutineRow(
     val machineNames: List<String> = emptyList(),
     /** The distinct muscle groups of its machines, in routine order, for the small chips on the card. */
     val muscleGroups: List<MuscleGroup> = emptyList(),
+    /** True for the routine the schedule suggests today (shown as the "Next" pill). */
+    val isNext: Boolean = false,
+    /** Whole calendar days since its latest finished session (0 = today); null = never trained. */
+    val lastTrainedDaysAgo: Int? = null,
 )
 
 /** The question shown when the owner starts deleting a machine. */
@@ -171,6 +180,9 @@ private class PickerLibrary(
 /** What the picker needs from the database, as one value so the screen's combine stays under five flows. */
 private class PickerSource(val notAdded: List<StarterMachine>, val inUse: Set<String>, val library: PickerLibrary)
 
+/** What the "Next" pill and "Last trained" line need from the database. */
+private class NextSource(val lastRoutineId: Long?, val lastTrained: Map<Long, Instant>)
+
 private fun normalize(text: String): String =
     Normalizer.normalize(text.trim(), Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "").lowercase()
 
@@ -205,6 +217,7 @@ class RoutinesViewModel @Inject constructor(
     private val machines: MachineRepository,
     private val routines: RoutineRepository,
     private val library: ExerciseLibraryRepository,
+    private val clock: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
     private val local = MutableStateFlow(Local())
     private val portuguese = AppLanguage.current() == AppLanguage.BAIANES
@@ -216,12 +229,27 @@ class RoutinesViewModel @Inject constructor(
         flow { emit(buildPickerLibrary(library.all())) }.onStart { emit(EmptyLibrary) },
     ) { notAdded, inUse, lib -> PickerSource(notAdded, inUse, lib) }
 
+    /** The "next" data in one value so the screen's combine stays at five flows. */
+    private val nextSource: Flow<NextSource> = combine(
+        routines.observeLastRoutineId(),
+        routines.observeLastTrained(),
+    ) { last, trained -> NextSource(last, trained) }
+
     internal val uiState: StateFlow<RoutinesUiState> = combine(
         machines.observeMachines(includeArchived = true),
         pickerSource,
         local,
         routines.observePlan(),
-    ) { all, picker, local, plan ->
+        nextSource,
+    ) { all, picker, local, plan, next ->
+        val today = LocalDate.now(clock)
+        val nextId = NextRoutineRules.next(
+            plan.plan.scheduleMode,
+            plan.routines.map { it.routine },
+            next.lastRoutineId,
+            today.dayOfWeek,
+            plan.plan.trainingDays,
+        )?.id
         val active = all.filter { !it.archived }
         val names = all.associate { it.id to it.name }
         val groups = all.associate { it.id to it.muscleGroup }
@@ -251,6 +279,8 @@ class RoutinesViewModel @Inject constructor(
                     machineCount = r.items.size,
                     machineNames = r.items.mapNotNull { item -> names[item.machineId] },
                     muscleGroups = r.items.mapNotNull { item -> groups[item.machineId] }.distinct(),
+                    isNext = r.routine.id == nextId,
+                    lastTrainedDaysAgo = next.lastTrained[r.routine.id]?.let { daysAgo(it, today) },
                 )
             },
             scheduleMode = plan.plan.scheduleMode,
@@ -273,6 +303,9 @@ class RoutinesViewModel @Inject constructor(
             portuguese = portuguese,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RoutinesUiState(portuguese = portuguese, loaded = false))
+
+    private fun daysAgo(at: Instant, today: LocalDate): Int =
+        ChronoUnit.DAYS.between(at.atZone(clock.zone).toLocalDate(), today).toInt().coerceAtLeast(0)
 
     /**
      * Starters not yet added plus library exercises, both through the same filter, by muscle group

@@ -9,12 +9,17 @@ import com.boratreino.core.model.RoutineWithItems
 import com.boratreino.core.model.ScheduleMode
 import kotlinx.coroutines.flow.Flow
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 
 interface RoutineRepository {
     /** Creates the single plan (IN_TURN) on first use. */
     fun observePlan(): Flow<RoutinePlanWithRoutines>
     fun observeRoutine(id: Long): Flow<RoutineWithItems?>
+    /** Routine of the most recent finished session that had one; null when there is none. */
+    fun observeLastRoutineId(): Flow<Long?>
+    /** Routine id -> start time of its latest finished session; routines never trained are absent. */
+    fun observeLastTrained(): Flow<Map<Long, Instant>>
     suspend fun setScheduleMode(mode: ScheduleMode)
     /** The weekdays the owner trains on the current plan (IN_TURN); empty = every day. */
     suspend fun setTrainingDays(days: Set<DayOfWeek>)

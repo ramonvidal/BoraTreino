@@ -86,6 +86,8 @@ import com.boratreino.core.ui.R as CoreUiR
 internal data class TodayActions(
     val onOpenMachine: (machineId: Long) -> Unit = {},
     val onAllMachines: () -> Unit = {},
+    /** The empty state's "Set up in 3 steps": opens the first-run setup (wired in `:app`). */
+    val onStartSetup: () -> Unit = {},
     val onAddMachine: () -> Unit = {},
     val onDone: () -> Unit = {},
     val onStartEditing: () -> Unit = {},
@@ -114,6 +116,7 @@ internal fun TodayScreen(
     onAllMachines: () -> Unit,
     onEditRoutine: (Long) -> Unit,
     onEditMachine: (Long) -> Unit = {},
+    onStartSetup: () -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -167,6 +170,7 @@ internal fun TodayScreen(
         actions = TodayActions(
             onOpenMachine = onOpenMachine,
             onAllMachines = onAllMachines,
+            onStartSetup = onStartSetup,
             onAddMachine = onAllMachines,
             onDone = viewModel::finish,
             onStartEditing = viewModel::startEditing,
@@ -379,6 +383,13 @@ private fun LazyListScope.emptyToday(state: TodayUiState, actions: TodayActions)
     energyLine(state.energy)
     item(key = "mascot") {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Mascot(state.mascotSex, size = 120.dp) }
+    }
+    item(key = "setup") {
+        BoraButton(
+            text = stringResource(R.string.today_setup),
+            onClick = actions.onStartSetup,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
     recentList(state.recent, actions, R.string.today_pick_to_start)
     item(key = "all") { AddButton(stringResource(R.string.today_all_machines), actions.onAllMachines) }

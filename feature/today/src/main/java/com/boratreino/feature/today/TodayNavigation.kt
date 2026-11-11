@@ -28,6 +28,7 @@ fun NavGraphBuilder.todayGraph(
     onEditMachine: (machineId: Long) -> Unit,
     onNewMachine: () -> Unit,
     onEditRoutine: (routineId: Long) -> Unit,
+    onStartSetup: () -> Unit = {},
 ) {
     composable(TODAY_ROUTE) {
         TodayScreen(
@@ -35,6 +36,7 @@ fun NavGraphBuilder.todayGraph(
             onAllMachines = { navController.navigate(PICKER_ROUTE) },
             onEditRoutine = onEditRoutine,
             onEditMachine = onEditMachine,
+            onStartSetup = onStartSetup,
         )
     }
     composable(PICKER_ROUTE) {

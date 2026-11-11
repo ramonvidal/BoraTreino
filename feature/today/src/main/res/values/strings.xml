@@ -8,6 +8,7 @@
 
     <!-- Today tab -->
     <string name="today_pick_to_start">Pick an exercise to start</string>
+    <string name="today_setup">Set up in 3 steps</string>
     <string name="today_all_machines">All exercises</string>
     <string name="today_add_machine">Add exercise</string>
     <string name="today_done">Done</string>

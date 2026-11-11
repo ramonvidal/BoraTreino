@@ -44,6 +44,8 @@ import com.boratreino.feature.routines.routineEditorScreen
 import com.boratreino.feature.routines.routinesScreen
 import com.boratreino.feature.settings.SETTINGS_ROUTE
 import com.boratreino.feature.settings.settingsScreen
+import com.boratreino.feature.setup.SETUP_ROUTE
+import com.boratreino.feature.setup.setupScreen
 import com.boratreino.feature.today.TODAY_ROUTE
 import com.boratreino.feature.today.isMachineRoute
 import com.boratreino.feature.today.todayGraph
@@ -131,6 +133,7 @@ fun BoraTreinoNavHost() {
                 onEditMachine = { machineId -> navController.navigate(machineEditorRoute(machineId)) },
                 onNewMachine = { navController.navigate(machineEditorRoute(null)) },
                 onEditRoutine = { routineId -> navController.navigate(routineEditorRoute(routineId)) },
+                onStartSetup = { navController.navigate(SETUP_ROUTE) },
             )
             calendarGraph(navController)
             progressGraph(navController)
@@ -142,6 +145,7 @@ fun BoraTreinoNavHost() {
             exerciseLibraryScreen(onDone = { navController.popBackStack() })
             routineEditorScreen(onDone = { navController.popBackStack() })
             machineEditorScreen(onDone = { navController.popBackStack() })
+            setupScreen(onDone = { navController.popBackStack() })
             settingsScreen(updatesCard = updatesCardSlot)
         }
     }

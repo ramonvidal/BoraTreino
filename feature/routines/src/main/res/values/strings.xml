@@ -10,6 +10,13 @@
         <item quantity="one">%1$d exercise</item>
         <item quantity="other">%1$d exercises</item>
     </plurals>
+    <string name="routines_next_pill">Next</string>
+    <string name="routines_last_trained_today">Last trained today</string>
+    <string name="routines_last_trained_yesterday">Last trained yesterday</string>
+    <plurals name="routines_last_trained_days">
+        <item quantity="one">Last trained %1$d day ago</item>
+        <item quantity="other">Last trained %1$d days ago</item>
+    </plurals>
     <string name="routines_new_machine">New exercise</string>
     <string name="routines_add_exercises">Add exercises</string>
     <string name="routines_archived">Archived</string>

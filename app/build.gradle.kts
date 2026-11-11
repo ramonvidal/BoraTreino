@@ -108,6 +108,7 @@ dependencies {
     implementation(projects.feature.progress)
     implementation(projects.feature.routines)
     implementation(projects.feature.settings)
+    implementation(projects.feature.setup)
     // The updater ships in the GitHub APK only; Google Play forbids apps that update themselves.
     // :core:update (INTERNET, REQUEST_INSTALL_PACKAGES) arrives only through it.
     "sideloadImplementation"(projects.feature.update)

@@ -1,0 +1,21 @@
+<resources>
+    <string name="setup_step_of">Step %1$d of %2$d</string>
+    <string name="setup_next">Next</string>
+    <string name="setup_back">Back</string>
+    <string name="setup_skip">Skip</string>
+    <string name="setup_finish">Finish</string>
+    <string name="setup_gym_title">What does your gym have?</string>
+    <string name="setup_gym_hint">Tick the exercises you can do. You can add more later.</string>
+    <string name="setup_search">Search exercises</string>
+    <plurals name="setup_selected_count">
+        <item quantity="one">%1$d exercise selected</item>
+        <item quantity="other">%1$d exercises selected</item>
+    </plurals>
+    <string name="setup_routine_title">Your first routine</string>
+    <string name="setup_routine_hint">Untick what you do not want in it.</string>
+    <string name="setup_routine_name">Routine name</string>
+    <string name="setup_routine_default_name">Routine A</string>
+    <string name="setup_routine_none">You did not pick any exercises, so there is no routine to create now. You can make one later in the Routines tab.</string>
+    <string name="setup_days_title">When do you train?</string>
+    <string name="setup_days_hint">Pick your training days. Leave it empty to train any day.</string>
+</resources>

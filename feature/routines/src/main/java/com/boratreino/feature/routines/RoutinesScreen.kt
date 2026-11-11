@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -291,6 +292,13 @@ private fun InfoCard(title: String?, body: String) {
 private fun RoutineCard(row: RoutineRow, canMoveUp: Boolean, canMoveDown: Boolean, callbacks: RoutinesCallbacks) {
     val count = LocalContext.current.resources
         .getQuantityString(R.plurals.routines_machine_count, row.machineCount, row.machineCount)
+    val lastTrained = row.lastTrainedDaysAgo?.let { days ->
+        when (days) {
+            0 -> stringResource(R.string.routines_last_trained_today)
+            1 -> stringResource(R.string.routines_last_trained_yesterday)
+            else -> pluralStringResource(R.plurals.routines_last_trained_days, days, days)
+        }
+    }
     var menuOpen by remember { mutableStateOf(false) }
     BoraCard(
         onClick = { callbacks.onOpenRoutine(row.routine.id) },
@@ -303,7 +311,24 @@ private fun RoutineCard(row: RoutineRow, canMoveUp: Boolean, canMoveDown: Boolea
         ) {
             RoutineBadge(shortName = row.routine.shortName)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(row.routine.name, style = MaterialTheme.typography.titleMedium)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        row.routine.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (row.isNext) NextPill()
+                }
+                if (lastTrained != null) {
+                    Text(
+                        lastTrained,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -353,6 +378,19 @@ private fun RoutineCard(row: RoutineRow, canMoveUp: Boolean, canMoveDown: Boolea
 }
 
 private const val MAX_GROUP_PILLS = 4
+
+/** The small yellow "Next" pill beside the name of the routine due today. */
+@Composable
+private fun NextPill() {
+    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+        Text(
+            stringResource(R.string.routines_next_pill),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+        )
+    }
+}
 
 /** A small, plain, not clickable pill with a muscle group's name. */
 @Composable

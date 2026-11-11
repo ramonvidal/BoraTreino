@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -42,6 +43,19 @@ internal class DefaultRoutineRepository @Inject constructor(
                 }
             },
         )
+    }
+
+    override fun observeLastRoutineId(): Flow<Long?> = store.observeLastRoutineId()
+
+    override fun observeLastTrained(): Flow<Map<Long, Instant>> = store.observeSessions().map { sessions ->
+        val latest = HashMap<Long, Instant>()
+        sessions.forEach { s ->
+            val id = s.routineId ?: return@forEach
+            if (s.endedAt == null) return@forEach
+            val seen = latest[id]
+            if (seen == null || s.startedAt > seen) latest[id] = s.startedAt
+        }
+        latest
     }
 
     override fun observeRoutine(id: Long): Flow<RoutineWithItems?> =
