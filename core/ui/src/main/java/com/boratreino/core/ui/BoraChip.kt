@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * The ONE selectable chip of the app: selected = filled yellow (primaryContainer) with onPrimaryContainer text
- * and no check (the fill already says "selected"), unselected = white surface with no border and onSurface text.
+ * and no check (the fill already says "selected"), unselected = the sand tile colour (surfaceVariant: white would vanish on white cards) with no border and onSurface text.
  * Pill-shaped, at least 40 dp tall (48 dp when [large]), labelLarge, content description taken from the label.
  */
 @Composable
@@ -41,10 +41,10 @@ fun BoraChip(
         },
         shape = CircleShape,
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = scheme.surfaceContainerLowest,
+            containerColor = scheme.surfaceVariant,
             labelColor = scheme.onSurface,
             iconColor = scheme.onSurface,
-            disabledContainerColor = scheme.surfaceContainerLowest,
+            disabledContainerColor = scheme.surfaceVariant,
             disabledLabelColor = disabledContent,
             disabledLeadingIconColor = disabledContent,
             selectedContainerColor = scheme.primaryContainer,
