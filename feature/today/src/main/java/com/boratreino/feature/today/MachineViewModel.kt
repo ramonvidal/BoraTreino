@@ -74,6 +74,8 @@ internal data class MachineUiState(
     val sameAgain: SetDraft? = null,
     /** The Warm-up chip is on: the next logged set is a warm-up. Turns itself off after each log. */
     val warmupOn: Boolean = false,
+    /** The type the next logged set gets (chosen under "Set type"); [SetType.NORMAL] unless changed. Resets after each log. */
+    val logType: SetType = SetType.NORMAL,
     /** The optional warm-up sets offered for the current stepper weight; empty = no offer. */
     val warmupPlan: List<SetDraft> = emptyList(),
     /** The "Warm-up sets" dialog is open (only while [warmupPlan] is non-empty). */
@@ -157,6 +159,7 @@ class MachineViewModel @Inject constructor(
     private val pad = MutableStateFlow<NumberPad?>(null)
     private val record = MutableStateFlow<Record?>(null)
     private val warmupOn = MutableStateFlow(false)
+    private val logType = MutableStateFlow(SetType.NORMAL)
     private val warmupDialog = MutableStateFlow(false)
     private val extraSet = MutableStateFlow(false)
 
@@ -203,9 +206,9 @@ class MachineViewModel @Inject constructor(
 
     private val inputs: Flow<Inputs> = combine(draftOverride, editor, pad, record, cardioInput, ::Inputs)
 
-    private data class Toggles(val warmupOn: Boolean, val warmupDialog: Boolean, val extraSet: Boolean)
+    private data class Toggles(val warmupOn: Boolean, val warmupDialog: Boolean, val extraSet: Boolean, val logType: SetType)
 
-    private val toggles: Flow<Toggles> = combine(warmupOn, warmupDialog, extraSet, ::Toggles)
+    private val toggles: Flow<Toggles> = combine(warmupOn, warmupDialog, extraSet, logType, ::Toggles)
 
     /** The routine's other exercises still to do, in order; empty when the machine is not in the routine. */
     private val nextExercises: Flow<List<NextExerciseUi>> = combine(
@@ -271,6 +274,7 @@ class MachineViewModel @Inject constructor(
                 reps = draft.reps,
                 sameAgain = LoggingRules.sameAgain(log.lastTime, log.thisSession),
                 warmupOn = warmup,
+                logType = toggle.logType,
                 warmupPlan = warmupPlan,
                 warmupDialog = dialog && warmupPlan.isNotEmpty(),
                 editor = editing,
@@ -308,6 +312,18 @@ class MachineViewModel @Inject constructor(
         warmupOn.value = !warmupOn.value
     }
 
+    /** "Set type" sheet: the next logged set gets [type]. */
+    internal fun setLogType(type: SetType) {
+        logType.value = type
+        warmupOn.value = false
+    }
+
+    /** The "Try 125 kg" chip: the steppers jump to the suggestion (still optional; nothing is logged). */
+    internal fun applySuggestion() {
+        val suggestion = state.value.suggestion ?: return
+        draftOverride.value = SetDraft(suggestion.weightKg, suggestion.reps)
+    }
+
     // Optional warm-up sets: one tap in the dialog logs them all; Undo goes through undoRepeat.
 
     internal fun openWarmups() {
@@ -332,7 +348,8 @@ class MachineViewModel @Inject constructor(
         write { training.undoRepeat(outcome) }
     }
 
-    private fun typeFor(s: MachineUiState): SetType = if (s.warmupOn) SetType.WARMUP else SetType.NORMAL
+    private fun typeFor(s: MachineUiState): SetType =
+        if (s.logType != SetType.NORMAL) s.logType else if (s.warmupOn) SetType.WARMUP else SetType.NORMAL
 
     /** The working set about to be logged is the one that completes (or follows) the programmed sets of this exercise. */
     private fun completesExercise(working: Boolean): Boolean {
@@ -363,6 +380,7 @@ class MachineViewModel @Inject constructor(
         val logged = training.logSet(machineId, draft)
         draftOverride.value = null
         warmupOn.value = false
+        logType.value = SetType.NORMAL
         eventChannel.send(MachineEvent.Logged(logged.record))
         if (completes) stopRest() else startRest(machine)
         if (draft.type != SetType.WARMUP) finishIfComplete()

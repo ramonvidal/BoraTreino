@@ -17,6 +17,7 @@ import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.EnergyRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.SessionSets
+import com.boratreino.core.model.Sex
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.settings.BodySettings
 import java.time.Clock
@@ -101,6 +102,26 @@ internal data class UpcomingUi(val date: LocalDate, val routineName: String, val
 /** "Same as last time" is on offer: [machineCount] machines and [setCount] sets would be logged. */
 internal data class RepeatOfferUi(val machineCount: Int, val setCount: Int)
 
+/** What the hero card's one filled button does. */
+internal enum class HeroAction {
+    /** Nothing logged yet: opens the first exercise ("Start: X"). */
+    START,
+    /** Something is in progress or done: opens the next exercise ("Continue: X"). */
+    CONTINUE,
+    /** Every exercise is done: the existing Done flow ("Finish training"). */
+    FINISH,
+    /** No routine (or an empty one): the exercise picker ("Add exercise"). */
+    ADD,
+}
+
+/** The hero's main action for the routines [routines] (null: no routines at all). */
+internal fun heroActionFor(routines: RoutineUi?): HeroAction {
+    if (routines == null || routines.activeName == null || routines.machines.isEmpty()) return HeroAction.ADD
+    if (routines.machines.all { it.done }) return HeroAction.FINISH
+    if (routines.machines.none { it.highlighted }) return HeroAction.ADD
+    return if (routines.machines.any { it.setCount > 0 }) HeroAction.CONTINUE else HeroAction.START
+}
+
 /** A second past midnight, so the new day's date is surely the one read. */
 private const val MIDNIGHT_MARGIN_MS = 1_000L
 private const val RECHECK_MS = 60_000L
@@ -116,7 +137,11 @@ private data class SideState(
     val offer: RepeatOfferUi?,
     val energy: DayEnergyUi?,
     val summary: SummaryUi?,
+    val mascotSex: Sex?,
 )
+
+/** The energy line and the profile's sex, merged into one flow for the same reason. */
+private data class ExtraState(val energy: DayEnergyUi?, val sex: Sex?)
 
 /** [loaded] is false until the first database read, so the screen doesn't flash the empty state. */
 internal data class TodayUiState(
@@ -135,6 +160,12 @@ internal data class TodayUiState(
     val today: LocalDate? = null,
     /** The "Training complete" sheet; null while it is closed. */
     val summary: SummaryUi? = null,
+    /** Which character the mascot shows: from the profile's sex; null until a profile exists (the man is shown). */
+    val mascotSex: Sex? = null,
+    /** What the hero's filled button does. */
+    val heroPrimary: HeroAction = HeroAction.ADD,
+    /** The exercise Start / Continue opens: the first not-done one of the active routine; null when there is none. */
+    val nextExerciseId: Long? = null,
 )
 
 internal sealed interface TodayEvent {
@@ -227,14 +258,18 @@ class TodayViewModel @Inject constructor(
         }
     }
 
+    private val extra: Flow<ExtraState> = combine(energy, body.profile) { energyUi, profile ->
+        ExtraState(energyUi, profile?.sex)
+    }
+
     internal val state: StateFlow<TodayUiState> = combine(
         training.observeOpenSession(),
         machines.observeRecentMachines(),
         training.observeTodayPlan(),
         machines.observeMachines(includeArchived = true),
         // combine() takes at most five flows with a typed lambda: the UI-only flows, the repeat offer and the energy line go in as one.
-        combine(skipDialog, editing, training.observeRepeatOffer(), energy, summaryState) { dialog, editRequested, offer, energyUi, summaryUi ->
-            SideState(dialog, editRequested, offer?.let { RepeatOfferUi(it.machineCount, it.setCount) }, energyUi, summaryUi)
+        combine(skipDialog, editing, training.observeRepeatOffer(), extra, summaryState) { dialog, editRequested, offer, extraUi, summaryUi ->
+            SideState(dialog, editRequested, offer?.let { RepeatOfferUi(it.machineCount, it.setCount) }, extraUi.energy, summaryUi, extraUi.sex)
         },
     ) { open, recent, plan, allMachines, uiOnly ->
         val dialog = uiOnly.dialog
@@ -283,6 +318,9 @@ class TodayViewModel @Inject constructor(
             repeatOffer = uiOnly.offer,
             energy = uiOnly.energy,
             summary = uiOnly.summary,
+            mascotSex = uiOnly.mascotSex,
+            heroPrimary = heroActionFor(routines),
+            nextExerciseId = routines?.machines?.firstOrNull { it.highlighted }?.machine?.id,
             today = LocalDate.now(clock),
             session = open?.let { s ->
                 SessionUi(

@@ -80,9 +80,9 @@
     <string name="today_new_machine">New machine</string>
 
     <!-- Machine screen -->
-    <string name="today_edit_machine">Edit machine</string>
-    <string name="today_machine_not_found">This machine was not found</string>
-    <string name="today_first_time">First time on this machine</string>
+    <string name="today_edit_machine">Edit exercise</string>
+    <string name="today_machine_not_found">This exercise was not found</string>
+    <string name="today_first_time">First time on this exercise</string>
     <string name="today_last_time">Last time: %1$s</string>
     <string name="today_last_time_on">Last time: %1$s · %2$s</string>
     <string name="today_this_session">This session</string>
@@ -159,4 +159,15 @@
     <string name="machine_next_title">Next exercises</string>
     <string name="machine_complete_back">Back to the list</string>
     <string name="machine_complete_extra">Add an extra set</string>
+    <string name="machine_set_of">Set %1$d of %2$d</string>
+    <string name="machine_set_number">Set %1$d</string>
+    <string name="machine_last">Last: %1$s</string>
+    <string name="machine_last_on">Last: %1$s, %2$s</string>
+    <string name="machine_log_value">Log %1$s x %2$d</string>
+    <plurals name="machine_log_reps">
+        <item quantity="one">Log %d rep</item>
+        <item quantity="other">Log %d reps</item>
+    </plurals>
+    <string name="machine_log_cardio">Log %1$s</string>
+    <string name="machine_set_type">Set type: %1$s</string>
 </resources>

@@ -80,7 +80,16 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.ui.BoraButton
+import com.boratreino.core.ui.BoraButtonStyle
+import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.BoraChip
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
 import com.boratreino.core.ui.SetTypeChips
 import com.boratreino.core.ui.setTypeLabel
 import com.boratreino.core.ui.EmptyState
@@ -114,6 +123,8 @@ internal data class MachineActions(
     val onLogSet: () -> Unit = {},
     val onSameAgain: () -> Unit = {},
     val onToggleWarmup: () -> Unit = {},
+    val onSetType: (SetType) -> Unit = {},
+    val onApplySuggestion: () -> Unit = {},
     val onOpenWarmups: () -> Unit = {},
     val onCloseWarmups: () -> Unit = {},
     val onLogWarmups: () -> Unit = {},
@@ -211,6 +222,8 @@ internal fun MachineScreen(
             onLogSet = viewModel::logSet,
             onSameAgain = viewModel::logSameAgain,
             onToggleWarmup = viewModel::toggleWarmup,
+            onSetType = viewModel::setLogType,
+            onApplySuggestion = viewModel::applySuggestion,
             onOpenWarmups = viewModel::openWarmups,
             onCloseWarmups = viewModel::closeWarmups,
             onLogWarmups = viewModel::logWarmups,
@@ -258,23 +271,7 @@ internal fun MachineContent(
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text(machine?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = {
-                    IconButton(onClick = actions.onBack) {
-                        Icon(painterResource(CoreUiR.drawable.ic_back), stringResource(CoreUiR.string.back))
-                    }
-                },
-                actions = {
-                    if (machine != null) {
-                        IconButton(onClick = actions.onEdit) {
-                            Icon(painterResource(CoreUiR.drawable.ic_edit), stringResource(R.string.today_edit_machine))
-                        }
-                    }
-                },
-            )
-        },
+        topBar = { ExerciseHeader(state, actions) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (state.loaded && machine != null) {
@@ -304,8 +301,7 @@ internal fun MachineContent(
                     Modifier.fillMaxSize().padding(innerPadding).verticalScroll(scroll).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    InfoCard(machine, state)
-                    state.restSeconds?.let { RestBar(it, state.restTotalSeconds, actions.onExtendRest, actions.onSkipRest) }
+                    InfoChips(machine, state, actions.onApplySuggestion)
                     state.record?.let { RecordCard(recordText(it)) }
                     SetTable(machine, state, if (isCardio) actions.onOpenCardioSet else actions.onOpenSet, actions.onDeleteSet)
                 }
@@ -340,62 +336,127 @@ internal fun MachineContent(
     }
 }
 
-/** Setup note and "Last time" in one white card. */
+/** Back, picture, name with "Set 3 of 3" and the set dots, and the edit pencil. */
 @Composable
-private fun InfoCard(machine: Machine, state: MachineUiState) {
-    val dateFormat = remember { DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()).withZone(ZoneId.systemDefault()) }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+private fun ExerciseHeader(state: MachineUiState, actions: MachineActions) {
+    val machine = state.machine
+    Row(
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()
+            .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        val hasPicture = StarterMachines.imageFor(machine.name) != null
-        var preview by remember { mutableStateOf(false) }
-        MachineThumb(machine, size = 56.dp, onClick = if (hasPicture) ({ preview = true }) else null)
-        if (preview) ExercisePreviewDialog(machine, onDismiss = { preview = false })
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            if (!machine.setupNote.isNullOrBlank()) {
+        IconButton(onClick = actions.onBack) {
+            Icon(painterResource(CoreUiR.drawable.ic_back), stringResource(CoreUiR.string.back))
+        }
+        if (machine != null) {
+            var preview by remember { mutableStateOf(false) }
+            val hasPicture = StarterMachines.imageFor(machine.name) != null
+            MachineThumb(machine, size = 48.dp, onClick = if (hasPicture) ({ preview = true }) else null)
+            if (preview) ExercisePreviewDialog(machine, onDismiss = { preview = false })
+            Column(Modifier.weight(1f)) {
                 Text(
-                    machine.setupNote!!,
-                    maxLines = 3,
+                    machine.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-            val last = state.lastTime
-            val lastAt = state.lastTimeAt
-            Text(
-                text = when {
-                    last == null -> stringResource(R.string.today_first_time)
-                    lastAt == null -> stringResource(R.string.today_last_time, summaryLabel(machine, last))
-                    else -> stringResource(
-                        R.string.today_last_time_on,
-                        summaryLabel(machine, last),
-                        dateFormat.format(lastAt),
-                    )
-                },
-                style = MaterialTheme.typography.titleMedium,
-            )
-            state.target?.let {
-                Text(
-                    stringResource(R.string.today_target, targetText(it)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            state.suggestion?.let { suggestion ->
-                Text(suggestionText(suggestion), style = MaterialTheme.typography.titleMedium)
-                if (suggestion is Suggestion.Down) {
-                    Text(
-                        stringResource(R.string.today_missed_twice),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                if (state.loaded) {
+                    val programmed = state.programmedSets
+                    val number = state.doneSets + 1
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = if (programmed != null && !state.exerciseComplete) {
+                                stringResource(R.string.machine_set_of, number, programmed)
+                            } else {
+                                stringResource(R.string.machine_set_number, number)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (programmed != null && programmed in 1..MAX_DOTS) SetDots(done = minOf(state.doneSets, programmed), total = programmed)
+                    }
                 }
             }
+            IconButton(onClick = actions.onEdit) {
+                Icon(painterResource(CoreUiR.drawable.ic_edit), stringResource(R.string.today_edit_machine))
+            }
+        } else {
+            Spacer(Modifier.weight(1f))
         }
+    }
+}
+
+private const val MAX_DOTS = 8
+
+/** One dot per programmed set: green when done, sand when not. */
+@Composable
+private fun SetDots(done: Int, total: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+        repeat(total) { i ->
+            Box(
+                Modifier.size(10.dp).background(
+                    if (i < done) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
+                    CircleShape,
+                ),
+            )
         }
+    }
+}
+
+/** Setup note, "Last: ..." and the tappable "Try 125 kg" as one wrapping row of chips. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun InfoChips(machine: Machine, state: MachineUiState, onApplySuggestion: () -> Unit) {
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (!machine.setupNote.isNullOrBlank()) InfoChip(machine.setupNote!!)
+        val last = state.lastTime
+        val lastAt = state.lastTimeAt
+        val dateFormat = remember { DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()).withZone(ZoneId.systemDefault()) }
+        InfoChip(
+            if (last == null) {
+                stringResource(R.string.today_first_time)
+            } else if (lastAt == null) {
+                stringResource(R.string.machine_last, summaryLabel(machine, last))
+            } else {
+                stringResource(R.string.machine_last_on, summaryLabel(machine, last), dateFormat.format(lastAt))
+            },
+            muted = true,
+        )
+        state.target?.let { InfoChip(stringResource(R.string.today_target, targetText(it)), muted = true) }
+        state.suggestion?.let { suggestion ->
+            BoraChip(label = suggestionText(suggestion), selected = true, onClick = onApplySuggestion)
+        }
+    }
+    if (state.suggestion is Suggestion.Down) {
+        Text(
+            stringResource(R.string.today_missed_twice),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** A read-only pill: sand tile, Ink text (or muted text). */
+@Composable
+private fun InfoChip(text: String, muted: Boolean = false) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = if (muted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+    ) {
+        Text(
+            text,
+            modifier = Modifier.heightIn(min = 24.dp).padding(horizontal = 14.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -435,12 +496,9 @@ private fun SetTable(
     }
     val initialIds = remember { sets.map { it.id }.toSet() }
     val recordId = if (state.record != null) sets.lastOrNull()?.id else null
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    BoraCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TableCell(stringResource(R.string.machine_col_set), Modifier.weight(0.4f), header = true)
                 TableCell(stringResource(R.string.machine_col_previous), Modifier.weight(1.2f), header = true)
                 TableCell(stringResource(R.string.machine_col_today), Modifier.weight(1.3f), header = true)
@@ -468,7 +526,7 @@ private fun SetTable(
                                     onClick = { onOpenSet(set) },
                                     onLongClick = { menuOpen = true },
                                 )
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                                .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
@@ -527,7 +585,7 @@ private fun SetTable(
             }
             // The set about to be logged (none while the complete panel is up).
             if (!state.exerciseComplete || state.extraSet) Row(
-                Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 4.dp),
+                Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -587,12 +645,13 @@ private fun RestBar(remainingSeconds: Int, totalSeconds: Int, onExtend: () -> Un
     }
 }
 
-/** The fixed bottom panel: weight and reps side by side, the warm-up chip, then Same again and Log set. */
+/** The fixed bottom panel: rest bar (while resting), weight and reps, ONE Log button, then the quiet set-type / warm-up row. */
 @Composable
 private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineActions) {
+    var typeSheet by remember { mutableStateOf(false) }
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
         tonalElevation = 0.dp,
         shadowElevation = 4.dp,
     ) {
@@ -600,6 +659,7 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            state.restSeconds?.let { RestBar(it, state.restTotalSeconds, actions.onExtendRest, actions.onSkipRest) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 BigStepper(
                     label = weightLabel(machine),
@@ -618,59 +678,60 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                     modifier = Modifier.weight(1f),
                 )
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                BoraChip(
-                    label = setTypeLabel(SetType.WARMUP),
-                    selected = state.warmupOn,
-                    onClick = actions.onToggleWarmup,
+            val logText = if (machine.kind == MachineKind.BODYWEIGHT_REPS && state.weightKg <= 0.0) {
+                LocalContext.current.resources.getQuantityString(R.plurals.machine_log_reps, state.reps, state.reps)
+            } else {
+                stringResource(
+                    R.string.machine_log_value,
+                    stringResource(CoreUiR.string.weight_kg, formatKg(state.weightKg)),
+                    state.reps,
                 )
+            }
+            // The one filled button on the screen, and the biggest target: one tap logs the set.
+            BoraButton(text = logText, onClick = actions.onLogSet, modifier = Modifier.fillMaxWidth())
+            val activeType = if (state.logType != SetType.NORMAL) state.logType else if (state.warmupOn) SetType.WARMUP else SetType.NORMAL
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { typeSheet = true }, modifier = Modifier.heightIn(min = 36.dp)) {
+                    Text(stringResource(R.string.machine_set_type, setTypeLabel(activeType)))
+                    Icon(
+                        painterResource(CoreUiR.drawable.ic_expand_more),
+                        contentDescription = null,
+                        modifier = Modifier.padding(start = 4.dp).size(18.dp),
+                    )
+                }
                 if (state.warmupPlan.isNotEmpty()) {
                     Spacer(Modifier.weight(1f))
-                    TextButton(onClick = actions.onOpenWarmups) {
+                    TextButton(onClick = actions.onOpenWarmups, modifier = Modifier.heightIn(min = 36.dp)) {
                         Text(stringResource(R.string.today_warmup_sets))
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                val same = state.sameAgain
-                if (same != null) {
-                    OutlinedButton(
-                        onClick = actions.onSameAgain,
-                        modifier = Modifier.weight(1f).heightIn(min = 64.dp),
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                stringResource(R.string.today_same_again),
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                draftText(machine, same.weightKg, same.reps),
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.titleMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-                // The one green button on the screen, and the biggest target.
-                Button(
-                    onClick = actions.onLogSet,
-                    modifier = Modifier.weight(if (same != null) 1.2f else 1f).heightIn(min = 64.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.today_log_set),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                }
-            }
+        }
+    }
+    if (typeSheet) {
+        val activeType = if (state.logType != SetType.NORMAL) state.logType else if (state.warmupOn) SetType.WARMUP else SetType.NORMAL
+        SetTypeSheet(
+            selected = activeType,
+            onSelect = {
+                actions.onSetType(it)
+                typeSheet = false
+            },
+            onDismiss = { typeSheet = false },
+        )
+    }
+}
+
+/** The set-type chips (Normal / Warm-up / Drop / Failure) in a small sheet; picking one closes it. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SetTypeSheet(selected: SetType, onSelect: (SetType) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(stringResource(CoreUiR.string.set_type_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            SetTypeChips(selected = selected, onSelect = onSelect)
         }
     }
 }
@@ -681,7 +742,7 @@ private fun CompletePanel(state: MachineUiState, actions: MachineActions) {
     val programmed = state.programmedSets ?: return
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
         tonalElevation = 0.dp,
         shadowElevation = 4.dp,
     ) {
@@ -740,17 +801,18 @@ private fun CompletePanel(state: MachineUiState, actions: MachineActions) {
                     }
                 }
             }
-            Button(onClick = actions.onBack, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
-                Text(
-                    stringResource(R.string.machine_complete_back),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            TextButton(onClick = actions.onExtraSet, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text(stringResource(R.string.machine_complete_extra))
-            }
+            BoraButton(
+                text = stringResource(R.string.machine_complete_back),
+                onClick = actions.onBack,
+                modifier = Modifier.fillMaxWidth(),
+                style = BoraButtonStyle.Tonal,
+            )
+            BoraButton(
+                text = stringResource(R.string.machine_complete_extra),
+                onClick = actions.onExtraSet,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                style = BoraButtonStyle.Text,
+            )
         }
     }
 }
@@ -823,12 +885,12 @@ private fun CardioSteppers(
     }
 }
 
-/** The cardio bottom half: minutes / calories / distance steppers, then Same again and Log. No rest timer. */
+/** The cardio bottom half: minutes / calories / distance steppers, then ONE Log button. No rest timer. */
 @Composable
 private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
         tonalElevation = 0.dp,
         shadowElevation = 4.dp,
     ) {
@@ -844,46 +906,12 @@ private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
                 onCalories = actions.onStepCalories,
                 onDistance = actions.onStepDistance,
             )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                val same = state.cardioSameAgain
-                if (same != null) {
-                    OutlinedButton(
-                        onClick = actions.onCardioSameAgain,
-                        modifier = Modifier.weight(1f).heightIn(min = 64.dp),
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                stringResource(R.string.today_same_again),
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                cardioText(same.minutes, same.calories, same.distanceM),
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.titleMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-                Button(
-                    onClick = actions.onLogCardio,
-                    enabled = CardioRules.canLog(state.cardio),
-                    modifier = Modifier.weight(1f).heightIn(min = 64.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.today_log),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
-            }
+            BoraButton(
+                text = stringResource(R.string.machine_log_cardio, cardioText(state.cardio.minutes, state.cardio.calories, state.cardio.distanceM)),
+                onClick = actions.onLogCardio,
+                enabled = CardioRules.canLog(state.cardio),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
