@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -108,7 +109,10 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
                 }
             }
         }
-        BoraButton(text = stringResource(R.string.setup_skip), onClick = onSkip, style = BoraButtonStyle.Text)
+        // A plain text button: BoraButton's Text style fills the width and would squeeze the step title.
+        TextButton(onClick = onSkip) {
+            Text(stringResource(R.string.setup_skip), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
@@ -283,15 +287,17 @@ private fun RoutineStep(state: SetupUiState, callbacks: SetupCallbacks) {
 }
 
 /** Step 3: Monday to Sunday chips. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DaysStep(state: SetupUiState, callbacks: SetupCallbacks) {
     // Computed outside the chip row so no composable is called from a non-inline lambda.
     val labels = DayOfWeek.values().map { it to it.shortLabel() }
     Column(Modifier.fillMaxWidth()) {
         StepTitle(stringResource(R.string.setup_days_title), stringResource(R.string.setup_days_hint))
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+        FlowRow(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             labels.forEach { (day, label) ->
                 BoraChip(
