@@ -193,6 +193,23 @@ class TodayHeroTest {
         assertEquals(1, all)
     }
 
+    @Test
+    fun `the empty state offers Set up in 3 steps`() {
+        setToday(TodaySamples.noSession)
+
+        compose.onNodeWithText("Set up in 3 steps").assertExists()
+    }
+
+    @Test
+    fun `tapping Set up in 3 steps calls the setup action`() {
+        var setup = 0
+        setToday(TodaySamples.noSession, TodayActions(onStartSetup = { setup++ }))
+
+        compose.onNodeWithText("Set up in 3 steps").performClick()
+
+        assertEquals(1, setup)
+    }
+
     // Shots
 
     @Test

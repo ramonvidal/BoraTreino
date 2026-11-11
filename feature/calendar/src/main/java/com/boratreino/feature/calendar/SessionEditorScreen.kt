@@ -8,7 +8,6 @@ import com.boratreino.core.ui.showUndo
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,17 +19,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -47,7 +40,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,11 +51,14 @@ import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.ui.BoraButton
+import com.boratreino.core.ui.BoraButtonStyle
+import com.boratreino.core.ui.BoraCard
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.SetTypeChips
 import com.boratreino.core.ui.setTypeLabel
 import com.boratreino.core.ui.NumberPadDialog
-import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.label
 import kotlinx.coroutines.launch
@@ -197,13 +192,12 @@ internal fun SessionEditorContent(
                     )
                 }
                 detail.machines.forEach { entry -> MachineCard(entry, actions) }
-                Button(
+                BoraButton(
+                    text = stringResource(R.string.calendar_add_machine),
                     onClick = actions.onAddMachine,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                ) {
-                    Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null)
-                    Text(stringResource(R.string.calendar_add_machine), Modifier.padding(start = 8.dp))
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = CoreUiR.drawable.ic_add,
+                )
             }
         }
     }
@@ -228,7 +222,7 @@ internal fun SessionEditorContent(
     }
 }
 
-/** One chip per routine, and Free; the session's own is green. */
+/** One chip per routine, and "No routine"; the session's own is yellow. */
 @Composable
 private fun RoutineChips(state: SessionEditorUiState, onChoose: (routineId: Long?) -> Unit) {
     val current = state.detail?.session?.routineId
@@ -238,23 +232,17 @@ private fun RoutineChips(state: SessionEditorUiState, onChoose: (routineId: Long
         verticalAlignment = Alignment.CenterVertically,
     ) {
         state.routines.forEach { routine ->
-            Box(
-                Modifier
-                    .heightIn(min = 48.dp)
-                    .clickable(onClickLabel = routine.name, role = Role.RadioButton) { onChoose(routine.id) },
-                contentAlignment = Alignment.Center,
-            ) {
-                RoutineBadge(routine.shortName, selected = routine.id == current)
-            }
+            BoraChip(
+                label = routine.shortName.ifBlank { routine.name },
+                selected = routine.id == current,
+                onClick = { onChoose(routine.id) },
+            )
         }
-        Box(
-            Modifier
-                .heightIn(min = 48.dp)
-                .clickable(role = Role.RadioButton) { onChoose(null) },
-            contentAlignment = Alignment.Center,
-        ) {
-            RoutineBadge(stringResource(R.string.calendar_free), selected = current == null)
-        }
+        BoraChip(
+            label = stringResource(R.string.calendar_free),
+            selected = current == null,
+            onClick = { onChoose(null) },
+        )
     }
 }
 
@@ -262,75 +250,68 @@ private fun RoutineChips(state: SessionEditorUiState, onChoose: (routineId: Long
 @Composable
 private fun RepeatButtons(actions: SessionEditorActions) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Button(
+        BoraButton(
+            text = stringResource(R.string.calendar_repeat_same),
             onClick = actions.onRepeatSame,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        ) {
-            Text(stringResource(R.string.calendar_repeat_same))
-        }
-        FilledTonalButton(
+            modifier = Modifier.fillMaxWidth(),
+        )
+        BoraButton(
+            text = stringResource(R.string.calendar_repeat_suggested),
             onClick = actions.onRepeatSuggested,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) {
-            Text(stringResource(R.string.calendar_repeat_suggested))
-        }
+            modifier = Modifier.fillMaxWidth(),
+            style = BoraButtonStyle.Tonal,
+        )
     }
 }
 
-/** A machine of the session: its numbered sets (tap to fix one) and Add set. */
+/** An exercise of the session: its numbered sets (tap to fix one) and Add set. */
 @Composable
 private fun MachineCard(entry: SessionMachine, actions: SessionEditorActions) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Text(
-                entry.machine.name,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            entry.sets.forEachIndexed { index, set ->
-                Row(
-                    Modifier.fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .clickable(onClickLabel = stringResource(R.string.calendar_edit_set)) { actions.onOpenSet(set) }
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+    BoraCard(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            entry.machine.name,
+            modifier = Modifier.padding(bottom = 4.dp),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        entry.sets.forEachIndexed { index, set ->
+            Row(
+                Modifier.fillMaxWidth()
+                    .heightIn(min = 56.dp)
+                    .clickable(onClickLabel = stringResource(R.string.calendar_edit_set)) { actions.onOpenSet(set) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "${index + 1}",
+                    modifier = Modifier.width(36.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    if (entry.machine.kind == MachineKind.CARDIO) {
+                        val draft = CardioRules.toDraft(set)
+                        cardioText(draft.minutes, draft.calories, draft.distanceM)
+                    } else {
+                        draftText(entry.machine, set.weightKg ?: 0.0, set.reps ?: 0)
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                if (set.type != SetType.NORMAL) {
                     Text(
-                        "${index + 1}",
-                        modifier = Modifier.width(36.dp),
-                        style = MaterialTheme.typography.titleMedium,
+                        setTypeLabel(set.type),
+                        modifier = Modifier.padding(start = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
-                        if (entry.machine.kind == MachineKind.CARDIO) {
-                            val draft = CardioRules.toDraft(set)
-                            cardioText(draft.minutes, draft.calories, draft.distanceM)
-                        } else {
-                            draftText(entry.machine, set.weightKg ?: 0.0, set.reps ?: 0)
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    if (set.type != SetType.NORMAL) {
-                        Text(
-                            setTypeLabel(set.type),
-                            modifier = Modifier.padding(start = 12.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
             }
-            FilledTonalButton(
-                onClick = { actions.onAddSet(entry.machine.id) },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).heightIn(min = 48.dp),
-            ) {
-                Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null)
-                Text(stringResource(R.string.calendar_add_set), Modifier.padding(start = 8.dp))
-            }
         }
+        BoraButton(
+            text = stringResource(R.string.calendar_add_set),
+            onClick = { actions.onAddSet(entry.machine.id) },
+            modifier = Modifier.padding(top = 8.dp),
+            style = BoraButtonStyle.Tonal,
+            leadingIcon = CoreUiR.drawable.ic_add,
+        )
     }
 }
 
@@ -453,21 +434,18 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                 )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(
+                DangerTextButton(
+                    text = stringResource(CoreUiR.string.delete),
                     onClick = actions.onDeleteEditor,
-                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                ) {
-                    Icon(painterResource(CoreUiR.drawable.ic_delete), contentDescription = null)
-                    Text(stringResource(CoreUiR.string.delete), Modifier.padding(start = 8.dp))
-                }
-                Button(
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = CoreUiR.drawable.ic_delete,
+                )
+                BoraButton(
+                    text = stringResource(CoreUiR.string.save),
                     onClick = actions.onSaveEditor,
+                    modifier = Modifier.weight(1f),
                     enabled = editor.canSave,
-                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-                ) {
-                    Text(stringResource(CoreUiR.string.save))
-                }
+                )
             }
         }
     }

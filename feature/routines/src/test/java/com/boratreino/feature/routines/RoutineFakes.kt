@@ -19,12 +19,21 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
+import java.time.Instant
 
 /** An in-memory routine store that records every call, in order, in [events]. */
 internal class FakeRoutineRepository(
     initial: List<RoutineWithItems> = emptyList(),
     initialPlan: RoutinePlan = RoutinePlan(id = 1L, scheduleMode = ScheduleMode.IN_TURN),
+    initialLastRoutineId: Long? = null,
+    initialLastTrained: Map<Long, Instant> = emptyMap(),
 ) : RoutineRepository {
+    /** What the "next" data reports; set it in a test to change the Next pill and the "Last trained" lines. */
+    val lastRoutineId = MutableStateFlow(initialLastRoutineId)
+    val lastTrained = MutableStateFlow(initialLastTrained)
+
+    override fun observeLastRoutineId(): Flow<Long?> = lastRoutineId
+    override fun observeLastTrained(): Flow<Map<Long, Instant>> = lastTrained
     override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
         com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
     override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}

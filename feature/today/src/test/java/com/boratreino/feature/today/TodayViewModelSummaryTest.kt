@@ -125,6 +125,8 @@ class TodayViewModelSummaryTest {
     private class NoRoutines : RoutineRepository {
         override fun observePlan(): Flow<RoutinePlanWithRoutines> = emptyFlow()
         override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = flowOf(null)
+        override fun observeLastRoutineId(): Flow<Long?> = kotlinx.coroutines.flow.flowOf(null)
+        override fun observeLastTrained(): Flow<Map<Long, java.time.Instant>> = kotlinx.coroutines.flow.flowOf(emptyMap())
         override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
         override suspend fun setTrainingDays(days: Set<DayOfWeek>) = Unit
         override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long = routine.id

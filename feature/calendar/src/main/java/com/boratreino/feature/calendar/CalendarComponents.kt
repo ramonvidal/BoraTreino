@@ -6,14 +6,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -128,5 +132,21 @@ internal fun CellText(number: String, letter: String?, color: Color, bold: Boole
                 maxLines = 1,
             )
         }
+    }
+}
+
+/** A text button in the error colour with the look of a [BoraButtonStyle.Text] button (BoraButton has no colour). */
+@Composable
+internal fun DangerTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, leadingIcon: Int? = null) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 44.dp),
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+    ) {
+        if (leadingIcon != null) {
+            Icon(painterResource(leadingIcon), contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }
 }
