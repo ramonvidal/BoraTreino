@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -74,14 +75,14 @@ class CalendarWeekStripTest {
         // 2 November has a session of routine B.
         show(CalendarSamples.monthWithTraining)
 
-        weekCell("M", 2).assert(hasText("B"))
+        weekCell("M", 2).assertTextContains("B")
     }
 
     @Test
     fun `a planned day shows the planned routine letter in its week strip cell`() {
         show(CalendarSamples.monthWithTraining.copy(planned = mapOf(wednesday to listOf(planned))))
 
-        weekCell("W", 4).assert(hasText("B"))
+        weekCell("W", 4).assertTextContains("B")
     }
 
     @Test
