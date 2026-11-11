@@ -109,7 +109,7 @@ private fun BodyFigure(label: String, shades: Map<MuscleGroup, Int>, front: Bool
         Canvas(Modifier.fillMaxWidth().aspectRatio(BodyMapShapes.WIDTH / BodyMapShapes.HEIGHT)) {
             val scale = size.width / BodyMapShapes.WIDTH
             val thin = Stroke(0.75.dp.toPx(), join = StrokeJoin.Round)
-            val thick = Stroke(1.25.dp.toPx(), join = StrokeJoin.Round)
+            val thick = Stroke(1.75.dp.toPx(), join = StrokeJoin.Round)
             for (shape in shapes) {
                 val path = Path()
                 val p = shape.points
@@ -132,7 +132,7 @@ private fun BodyFigure(label: String, shades: Map<MuscleGroup, Int>, front: Bool
                         // A thin outline keeps light shades visible against the white card.
                         drawPath(path, outline.copy(alpha = 0.6f), style = thin)
                     }
-                    else -> drawPath(path, outline, style = thick)
+                    else -> drawPath(path, Sunny.Muted.copy(alpha = 0.55f), style = thick)
                 }
             }
         }

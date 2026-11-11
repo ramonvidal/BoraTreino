@@ -47,6 +47,10 @@ internal object BodyMapShapes {
         BodyShape(MuscleGroup.ARMS, floatArrayOf(84.5f, 69.8f, 83.3f, 73.5f, 80f, 73.1f, 95.1f, 98.4f, 100f, 100.4f, 93.5f, 89.4f, 89.8f, 76.3f)),
         BodyShape(MuscleGroup.ARMS, floatArrayOf(77.6f, 72.2f, 77.6f, 77.6f, 80.4f, 84.1f, 85.3f, 89.8f, 92.2f, 101.2f, 94.7f, 99.6f)),
         BodyShape(MuscleGroup.ARMS, floatArrayOf(6.9f, 101.2f, 13.5f, 90.6f, 18.8f, 84.1f, 21.6f, 77.1f, 21.2f, 71.8f, 4.9f, 98.8f)),
+        BodyShape(null, floatArrayOf(0.5f, 100.5f, 7f, 101.5f, 9.5f, 109f, 6f, 116f, 2.5f, 113f, 0.5f, 106f)),
+        BodyShape(null, floatArrayOf(99.5f, 100.5f, 93f, 101.5f, 90.5f, 109f, 94f, 116f, 97.5f, 113f, 99.5f, 106f)),
+        BodyShape(null, floatArrayOf(21f, 193f, 35f, 193f, 35f, 202f, 30f, 208f, 21f, 208f, 19f, 201f)),
+        BodyShape(null, floatArrayOf(79f, 193f, 65f, 193f, 65f, 202f, 70f, 208f, 79f, 208f, 81f, 201f)),
     )
 
     val back: List<BodyShape> = listOf(
@@ -81,8 +85,12 @@ internal object BodyMapShapes {
         BodyShape(MuscleGroup.LEGS, floatArrayOf(37.4f, 165.1f, 35.3f, 167.7f, 33.2f, 171.9f, 31.1f, 180.4f, 30.2f, 191.9f, 34f, 200f, 38.7f, 190.6f, 39.1f, 168.9f)),
         BodyShape(MuscleGroup.LEGS, floatArrayOf(63f, 165.1f, 61.3f, 168.5f, 61.7f, 190.6f, 66.4f, 199.6f, 70.6f, 191.9f, 68.9f, 179.6f, 66.8f, 170.2f)),
         BodyShape(MuscleGroup.LEGS, floatArrayOf(70.6f, 160.4f, 72.3f, 168.5f, 75.7f, 179.1f, 76.6f, 192.8f, 74.5f, 196.6f, 72.3f, 193.6f, 70.6f, 179.6f, 68.1f, 168.1f)),
-        BodyShape(MuscleGroup.LEGS, floatArrayOf(28.5f, 195.7f, 30.2f, 195.7f, 33.6f, 201.7f, 30.6f, 220f, 28.5f, 213.6f, 26.8f, 198.3f)),
-        BodyShape(MuscleGroup.LEGS, floatArrayOf(69.8f, 195.7f, 71.9f, 195.7f, 73.6f, 198.3f, 71.9f, 213.2f, 70.2f, 219.6f, 67.2f, 202.1f)),
+        BodyShape(MuscleGroup.LEGS, floatArrayOf(28.5f, 195.7f, 30.2f, 195.7f, 33.6f, 200.5f, 30.6f, 206f, 28.5f, 204.1f, 26.8f, 198.3f)),
+        BodyShape(MuscleGroup.LEGS, floatArrayOf(69.8f, 195.7f, 71.9f, 195.7f, 73.6f, 198.3f, 71.9f, 204f, 70.2f, 205.9f, 67.2f, 200.6f)),
+        BodyShape(null, floatArrayOf(0.5f, 105.5f, 7f, 106.5f, 9.5f, 114f, 6f, 121f, 2.5f, 118f, 0.5f, 111f)),
+        BodyShape(null, floatArrayOf(99.5f, 105.5f, 93f, 106.5f, 90.5f, 114f, 94f, 121f, 97.5f, 118f, 99.5f, 111f)),
+        BodyShape(null, floatArrayOf(21f, 202f, 35f, 202f, 35f, 211f, 30f, 217f, 21f, 217f, 19f, 210f)),
+        BodyShape(null, floatArrayOf(79f, 202f, 65f, 202f, 65f, 211f, 70f, 217f, 79f, 217f, 81f, 210f)),
     )
 
 }

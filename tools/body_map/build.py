@@ -31,6 +31,30 @@ def parse(block):
             out.append((m.group(1), group, nums))
     return out
 
+# Hands and feet are not in the library: simple neutral shapes (never shaded) added here.
+HAND = [0.5, 100.5, 7, 101.5, 9.5, 109, 6, 116, 2.5, 113, 0.5, 106]
+FOOT = [21, 193, 35, 193, 35, 202, 30, 208, 21, 208, 19, 201]
+
+
+def mirror(pts):
+    return [round(100 - v, 1) if i % 2 == 0 else v for i, v in enumerate(pts)]
+
+
+def shift(pts, dy):
+    return [v + dy if i % 2 == 1 else v for i, v in enumerate(pts)]
+
+
+def squash_back(nums):
+    # The library's calf (soleus) pieces on the back reach y 220 while the front stops at 195:
+    # squeeze everything below y 200 to a third so both sides are the same height.
+    return [round(200 + (v - 200) * 0.3, 1) if i % 2 == 1 and v > 200 else v for i, v in enumerate(nums)]
+
+
+EXTRAS = {
+    "front": [HAND, mirror(HAND), FOOT, mirror(FOOT)],
+    "back": [shift(HAND, 5), shift(mirror(HAND), 5), shift(FOOT, 9), shift(mirror(FOOT), 9)],
+}
+
 print("""package com.boratreino.feature.progress
 
 import com.boratreino.core.model.MuscleGroup
@@ -50,7 +74,12 @@ for label, key in (("front", "anteriorData"), ("back", "posteriorData")):
     print("    val %s: List<BodyShape> = listOf(" % label)
     for _, g, nums in parse(sections[key]):
         gs = "MuscleGroup.%s" % g if g else "null"
+        if label == "back":
+            nums = squash_back(nums)
         vals = ", ".join(("%g" % round(n, 1)) + "f" for n in nums)
         print("        BodyShape(%s, floatArrayOf(%s))," % (gs, vals))
+    for nums in EXTRAS[label]:
+        vals = ", ".join(("%g" % round(n, 1)) + "f" for n in nums)
+        print("        BodyShape(null, floatArrayOf(%s))," % vals)
     print("    )\n")
 print("}")
