@@ -94,7 +94,7 @@ class RoutinesGymPagePtScreenshotTest {
                 }
             }
         }
-        compose.onNodeWithText("Aparelhos e exercícios · 8").assertExists()
+        compose.onNodeWithText("Exercícios · 8").assertExists()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-gym-page-pt.png")
     }
 
@@ -111,7 +111,7 @@ class RoutinesGymPagePtScreenshotTest {
                 }
             }
         }
-        compose.onNodeWithText("Aparelhos e exercícios · 0").assertExists()
+        compose.onNodeWithText("Exercícios · 0").assertExists()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-gym-page-empty-pt.png")
     }
 }

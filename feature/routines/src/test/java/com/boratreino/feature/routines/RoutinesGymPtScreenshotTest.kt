@@ -13,7 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** "Your gym" in Baianês, to check the translated text fits; saved to build/outputs/roborazzi. */
+/** The Academia page in Baianês, to check the translated text fits; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "pt-rBR-w411dp-h1600dp")
 class RoutinesGymPtScreenshotTest {

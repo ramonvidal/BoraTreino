@@ -96,7 +96,7 @@ class RoutineEditorV2ScreenshotTest {
         compose.onNodeWithText("3 × 8–12").assertExists()
         compose.onNodeWithText("3 × 10–15").assertExists()
         compose.onNodeWithText("4 × 6–10").assertExists()
-        compose.onNodeWithText("Add machine").assertExists()
+        compose.onNodeWithText("Add exercise").assertExists()
     }
 
     @Test
@@ -147,8 +147,8 @@ class RoutineEditorV2ScreenshotTest {
         setEditor(editorState.copy(items = emptyList()))
         shoot("routine-editor-v2-empty")
 
-        compose.onNodeWithText("No machines yet.").assertExists()
-        compose.onNodeWithText("Add machine").assertExists()
+        compose.onNodeWithText("No exercises yet.").assertExists()
+        compose.onNodeWithText("Add exercise").assertExists()
     }
 
     @Test
@@ -206,7 +206,7 @@ class RoutineEditorV2ScreenshotTest {
         compose.onAllNodesWithContentDescription("Move down")[0].performClick()
         compose.onAllNodesWithContentDescription("Move up")[2].performClick()
         compose.onNodeWithContentDescription("Remove Leg extension").performClick()
-        compose.onNodeWithText("Add machine").performClick()
+        compose.onNodeWithText("Add exercise").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
 
         assertEquals(
@@ -255,14 +255,14 @@ class RoutineEditorV2PtScreenshotTest {
     @Test
     fun `compact rows pt`() {
         setEditor(editorState)
-        compose.onNodeWithText("Adicionar aparelho").assertExists()
+        compose.onNodeWithText("Adicionar exercício").assertExists()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/routine-editor-v2-pt.png")
     }
 
     @Test
     fun `empty routine pt`() {
         setEditor(editorState.copy(items = emptyList()))
-        compose.onNodeWithText("Nenhum aparelho ainda.").assertExists()
+        compose.onNodeWithText("Nenhum exercício ainda.").assertExists()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/routine-editor-v2-empty-pt.png")
     }
 }

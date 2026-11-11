@@ -3,26 +3,26 @@ package com.boratreino.feature.routines
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import com.github.takahirom.roborazzi.captureRoboImage
-import org.junit.Assert.assertEquals
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
-import java.time.DayOfWeek
-import java.time.format.TextStyle
-import java.util.Locale
 
-/** The training day chips in the schedule card: shown in In turn only, and each tap reports the new set. */
+/**
+ * The Fichas page no longer draws the "which routine is next" card: the training days and the mode
+ * chips live in the Agenda now. Whatever the stored schedule is, none of them is drawn here.
+ */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class RoutinesTrainingDaysScreenTest {
@@ -37,13 +37,13 @@ class RoutinesTrainingDaysScreenTest {
 
     private fun dayLabel(day: DayOfWeek): String = day.getDisplayName(TextStyle.SHORT, Locale.getDefault())
 
-    private fun setContent(state: RoutinesUiState, onTrainingDaysChange: (Set<DayOfWeek>) -> Unit = {}) {
+    private fun setContent(state: RoutinesUiState) {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
                     RoutinesContent(
                         state = state,
-                        callbacks = RoutinesCallbacks(onTrainingDaysChange = onTrainingDaysChange),
+                        callbacks = RoutinesCallbacks(),
                         modifier = Modifier.fillMaxSize(),
                         initialPage = RoutinesPage.ROUTINES,
                     )
@@ -53,19 +53,20 @@ class RoutinesTrainingDaysScreenTest {
     }
 
     @Test
-    fun `in turn, the training days label, the hint and all seven day chips are shown`() {
-        setContent(GymSamples.populated.copy(scheduleMode = ScheduleMode.IN_TURN, trainingDays = emptySet()))
+    fun `in turn, the Fichas page shows no training day label, hint or day chips`() {
+        setContent(GymSamples.populated.copy(scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY)))
 
-        compose.onNodeWithText(trainingDaysLabel).assertIsDisplayed()
-        compose.onNodeWithText(hint).assertIsDisplayed()
+        compose.onNodeWithText("Treino A").assertExists()
+        compose.onNodeWithText(trainingDaysLabel).assertDoesNotExist()
+        compose.onNodeWithText(hint).assertDoesNotExist()
         for (day in DayOfWeek.entries) {
-            compose.onNodeWithText(dayLabel(day)).assertIsDisplayed()
+            compose.onNodeWithText(dayLabel(day)).assertDoesNotExist()
         }
-        compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-training-days.png")
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-page-no-schedule.png")
     }
 
     @Test
-    fun `on fixed weekdays, no training day label, hint or chips are shown`() {
+    fun `on fixed weekdays, the Fichas page shows no training day label, hint or day chips either`() {
         setContent(GymSamples.populated.copy(scheduleMode = ScheduleMode.WEEKDAYS))
 
         compose.onNodeWithText(trainingDaysLabel).assertDoesNotExist()
@@ -73,31 +74,5 @@ class RoutinesTrainingDaysScreenTest {
         for (day in DayOfWeek.entries) {
             compose.onNodeWithText(dayLabel(day)).assertDoesNotExist()
         }
-    }
-
-    @Test
-    fun `tapping a day that is not picked adds it to the picked days`() {
-        var reported: Set<DayOfWeek>? = null
-        setContent(
-            GymSamples.populated.copy(scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY)),
-            onTrainingDaysChange = { reported = it },
-        )
-
-        compose.onNodeWithText(dayLabel(DayOfWeek.FRIDAY)).performClick()
-
-        assertEquals(setOf(DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY), reported)
-    }
-
-    @Test
-    fun `tapping a picked day removes it from the picked days`() {
-        var reported: Set<DayOfWeek>? = null
-        setContent(
-            GymSamples.populated.copy(scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY)),
-            onTrainingDaysChange = { reported = it },
-        )
-
-        compose.onNodeWithText(dayLabel(DayOfWeek.WEDNESDAY)).performClick()
-
-        assertEquals(emptySet<DayOfWeek>(), reported)
     }
 }

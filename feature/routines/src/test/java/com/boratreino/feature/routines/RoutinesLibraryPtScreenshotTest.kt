@@ -13,7 +13,6 @@ import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.LibraryFilter
 import com.boratreino.core.model.LibraryLevel
 import com.boratreino.core.model.MuscleGroup
-import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.StarterMachines
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import com.github.takahirom.roborazzi.captureRoboImage
