@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -204,10 +203,4 @@ internal fun ProgressRing(fraction: Float, modifier: Modifier = Modifier) {
             color = ink,
         )
     }
-}
-
-/** A vertical gap helper for the stacked sections. */
-@Composable
-internal fun Gap(height: androidx.compose.ui.unit.Dp = 8.dp) {
-    Spacer(Modifier.height(height))
 }

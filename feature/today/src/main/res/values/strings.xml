@@ -7,10 +7,19 @@
     <string name="today_energy_rest">Rest day: about %1$s kcal</string>
 
     <!-- Today tab -->
-    <string name="today_pick_to_start">Pick a machine to start</string>
-    <string name="today_all_machines">All machines</string>
-    <string name="today_add_machine">Add machine</string>
+    <string name="today_pick_to_start">Pick an exercise to start</string>
+    <string name="today_all_machines">All exercises</string>
+    <string name="today_add_machine">Add exercise</string>
     <string name="today_done">Done</string>
+    <string name="today_hero_start">Start: %1$s</string>
+    <string name="today_hero_continue">Continue: %1$s</string>
+    <string name="today_hero_finish">Finish training</string>
+    <string name="today_hero_free">Free training</string>
+    <string name="today_switcher_next">%1$s · next in rotation</string>
+    <string name="today_switcher_title">Choose a routine</string>
+    <string name="today_exercises_title">Exercises</string>
+    <string name="today_repeat_menu">Repeat last time</string>
+    <string name="today_train_anyway">Train anyway</string>
     <string name="today_machines_and_sets">%1$s · %2$s</string>
     <string name="today_training_now">Training now · %1$s</string>
     <string name="today_update_routine_offer">Update your routine with this training</string>
@@ -18,8 +27,8 @@
     <string name="today_routine_updated">Routine updated</string>
     <string name="today_done_snackbar">Done: %1$s</string>
     <plurals name="today_machines">
-        <item quantity="one">%d machine</item>
-        <item quantity="other">%d machines</item>
+        <item quantity="one">%d exercise</item>
+        <item quantity="other">%d exercises</item>
     </plurals>
     <plurals name="today_sets">
         <item quantity="one">%d set</item>
@@ -27,7 +36,7 @@
     </plurals>
 
     <!-- Routines on Today -->
-    <string name="today_free">Free</string>
+    <string name="today_free">No routine</string>
     <string name="today_next_up">Next up: %1$s</string>
     <string name="today_training_now_routine">Training now · %1$s · %2$s</string>
     <string name="today_rest_day">Rest day</string>
@@ -50,15 +59,15 @@
     <string name="today_rest_skip">Skip</string>
 
     <!-- Editing the ficha from Today -->
-    <string name="today_edit_ficha">Edit this ficha</string>
-    <string name="today_edit_hint">Move machines or remove them. Changes are saved at once.</string>
+    <string name="today_edit_ficha">Edit routine</string>
+    <string name="today_edit_hint">Move exercises or remove them. Changes are saved at once.</string>
     <string name="today_edit_sets_reps">Edit sets and reps</string>
-    <string name="today_remove_machine">Remove %1$s from the ficha</string>
+    <string name="today_remove_machine">Remove %1$s from the routine</string>
 
     <!-- Updating the ficha -->
     <string name="today_ficha_add_title">Add %1$s to %2$s?</string>
-    <string name="today_ficha_add_text">Next time it will be part of this ficha.</string>
-    <string name="today_ficha_add">Add to ficha</string>
+    <string name="today_ficha_add_text">Next time it will be part of this routine.</string>
+    <string name="today_ficha_add">Add to routine</string>
     <string name="today_ficha_just_today">Just today</string>
     <string name="today_skip_title">Skip %1$s today?</string>
     <string name="today_skip_today">Skip today</string>
@@ -69,15 +78,15 @@
     <string name="today_repeat_same">Same as last time</string>
     <string name="today_repeat_suggested">Same, with suggested weights</string>
     <plurals name="today_repeated">
-        <item quantity="one">Logged %1$d machine</item>
-        <item quantity="other">Logged %1$d machines</item>
+        <item quantity="one">Logged %1$d exercise</item>
+        <item quantity="other">Logged %1$d exercises</item>
     </plurals>
 
     <!-- Picker -->
-    <string name="today_picker_title">Pick a machine</string>
+    <string name="today_picker_title">Pick an exercise</string>
     <string name="today_recent">Recent</string>
-    <string name="today_more_machines">More machines</string>
-    <string name="today_new_machine">New machine</string>
+    <string name="today_more_machines">More exercises</string>
+    <string name="today_new_machine">New exercise</string>
 
     <!-- Machine screen -->
     <string name="today_edit_machine">Edit exercise</string>
@@ -111,8 +120,8 @@
     <string name="today_chip_next">Next</string>
     <string name="today_training_now_title">Training now</string>
     <plurals name="today_machines_progress">
-        <item quantity="one">%1$d of %2$d machine</item>
-        <item quantity="other">%1$d of %2$d machines</item>
+        <item quantity="one">%1$d of %2$d exercise</item>
+        <item quantity="other">%1$d of %2$d exercises</item>
     </plurals>
 
     <!-- Machine screen redesign -->
@@ -129,7 +138,7 @@
     <string name="summary_duration">Duration</string>
     <string name="summary_sets">Sets</string>
     <string name="summary_volume">Volume</string>
-    <string name="summary_machines">Machines</string>
+    <string name="summary_machines">Exercises</string>
     <string name="summary_minutes_value">%1$d min</string>
     <string name="summary_kg_value">%1$s kg</string>
     <string name="summary_tonnes_value">%1$s t</string>

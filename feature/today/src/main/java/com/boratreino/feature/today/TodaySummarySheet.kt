@@ -4,17 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,6 +23,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.TrainingSummary
+import com.boratreino.core.ui.BoraButton
+import com.boratreino.core.ui.BoraButtonStyle
+import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.R as CoreUiR
 
 /** The summary on screen: the training, and whether its routine can be updated or just was. */
@@ -87,10 +85,7 @@ internal fun TrainingSummaryContent(
             )
         }
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        ) {
+        BoraCard(modifier = Modifier.fillMaxWidth()) {
             val large = LocalDensity.current.fontScale > 1.3f
             val cells: @Composable (List<SummaryStat>) -> Unit = { row ->
                 Row(Modifier.fillMaxWidth()) {
@@ -118,9 +113,11 @@ internal fun TrainingSummaryContent(
             }
         }
 
-        Button(onClick = actions.onShare, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.summary_share))
-        }
+        BoraButton(
+            text = stringResource(R.string.summary_share),
+            onClick = actions.onShare,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         if (summary.routineUpdate != null) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -132,9 +129,12 @@ internal fun TrainingSummaryContent(
                 TextButton(onClick = actions.onUndoRoutineUpdate) { Text(stringResource(CoreUiR.string.undo)) }
             }
         } else if (summary.canUpdateRoutine) {
-            OutlinedButton(onClick = actions.onUpdateRoutine, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                Text(stringResource(R.string.summary_update_routine))
-            }
+            BoraButton(
+                text = stringResource(R.string.summary_update_routine),
+                onClick = actions.onUpdateRoutine,
+                modifier = Modifier.fillMaxWidth(),
+                style = BoraButtonStyle.Tonal,
+            )
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
