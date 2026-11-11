@@ -35,6 +35,8 @@ import com.boratreino.feature.calendar.calendarGraph
 import com.boratreino.feature.progress.PROGRESS_ROUTE
 import com.boratreino.feature.progress.progressGraph
 import com.boratreino.feature.routines.ROUTINES_ROUTE
+import com.boratreino.feature.routines.exerciseLibraryRoute
+import com.boratreino.feature.routines.exerciseLibraryScreen
 import com.boratreino.feature.routines.machineEditorRoute
 import com.boratreino.feature.routines.machineEditorScreen
 import com.boratreino.feature.routines.routineEditorRoute
@@ -135,7 +137,9 @@ fun BoraTreinoNavHost() {
             routinesScreen(
                 onOpenEditor = { machineId -> navController.navigate(machineEditorRoute(machineId)) },
                 onOpenRoutine = { routineId -> navController.navigate(routineEditorRoute(routineId)) },
+                onOpenLibrary = { navController.navigate(exerciseLibraryRoute()) },
             )
+            exerciseLibraryScreen(onDone = { navController.popBackStack() })
             routineEditorScreen(onDone = { navController.popBackStack() })
             machineEditorScreen(onDone = { navController.popBackStack() })
             settingsScreen(updatesCard = updatesCardSlot)

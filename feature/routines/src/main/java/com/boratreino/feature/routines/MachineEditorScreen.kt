@@ -5,17 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,6 +30,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.RestTimerRules
+import com.boratreino.core.ui.BoraButton
+import com.boratreino.core.ui.BoraButtonStyle
 import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
@@ -201,38 +200,29 @@ internal fun MachineEditorContent(
                 HowToCard(steps = state.steps, portuguese = state.portuguese)
             }
 
-            Button(
+            BoraButton(
+                text = stringResource(CoreUiR.string.save),
                 onClick = callbacks.onSave,
                 enabled = state.canSave,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            ) {
-                Text(stringResource(CoreUiR.string.save))
-            }
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             if (!state.isNew) {
-                OutlinedButton(
+                BoraButton(
+                    text = stringResource(if (state.archived) R.string.editor_unarchive else R.string.editor_archive),
                     onClick = callbacks.onToggleArchived,
                     enabled = !state.loading,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            if (state.archived) CoreUiR.drawable.ic_unarchive else CoreUiR.drawable.ic_archive,
-                        ),
-                        contentDescription = null,
-                    )
-                    Text(
-                        stringResource(if (state.archived) R.string.editor_unarchive else R.string.editor_archive),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    style = BoraButtonStyle.Tonal,
+                    leadingIcon = if (state.archived) CoreUiR.drawable.ic_unarchive else CoreUiR.drawable.ic_archive,
+                )
+                BoraButton(
+                    text = stringResource(R.string.editor_delete),
                     onClick = callbacks.onDelete,
                     enabled = !state.loading,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                ) {
-                    Text(stringResource(R.string.editor_delete), color = MaterialTheme.colorScheme.error)
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                    style = BoraButtonStyle.Text,
+                )
             }
         }
     }

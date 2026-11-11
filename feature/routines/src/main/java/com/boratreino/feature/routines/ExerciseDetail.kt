@@ -11,9 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,6 +28,8 @@ import androidx.compose.material3.Icon
 import com.boratreino.core.model.LibraryEquipment
 import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.LibraryLevel
+import com.boratreino.core.ui.BoraButton
+import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
 
@@ -173,9 +172,7 @@ internal fun ExerciseDetailDialog(
                     modifier = Modifier.padding(horizontal = 12.dp),
                 )
             } else {
-                Button(onClick = onAdd, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.library_add))
-                }
+                BoraButton(text = stringResource(R.string.library_add), onClick = onAdd)
             }
         },
         dismissButton = {
@@ -199,11 +196,8 @@ private fun DetailLine(label: String, value: String) {
 internal fun HowToCard(steps: List<String>, portuguese: Boolean, modifier: Modifier = Modifier) {
     if (steps.isEmpty()) return
     var expanded by rememberSaveable { mutableStateOf(false) }
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-    ) {
-        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    BoraCard(modifier = modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically,

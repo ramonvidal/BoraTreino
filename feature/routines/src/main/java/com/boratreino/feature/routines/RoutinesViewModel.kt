@@ -49,6 +49,7 @@ internal data class PickerRow(
     val libraryId: String? = null,
     val equipment: LibraryEquipment? = null,
     val added: Boolean = false,
+    val level: LibraryLevel? = null,
 )
 
 /** The picker rows of one muscle group. */
@@ -60,6 +61,8 @@ internal data class RoutineRow(
     val machineCount: Int,
     /** The machines' names in routine order, for the grey line on the card. */
     val machineNames: List<String> = emptyList(),
+    /** The distinct muscle groups of its machines, in routine order, for the small chips on the card. */
+    val muscleGroups: List<MuscleGroup> = emptyList(),
 )
 
 /** The question shown when the owner starts deleting a machine. */
@@ -135,6 +138,10 @@ internal data class RoutinesCallbacks(
     val onConfirmDelete: () -> Unit = {},
     val onArchiveInstead: () -> Unit = {},
     val onDismissDelete: () -> Unit = {},
+    /** The back arrow of the full-screen exercise library. */
+    val onBack: () -> Unit = {},
+    /** "Add exercises": opens the full-screen library. */
+    val onOpenLibrary: () -> Unit = {},
 )
 
 /** What the owner changed on this screen, kept apart from what the database says. */
@@ -217,6 +224,7 @@ class RoutinesViewModel @Inject constructor(
     ) { all, picker, local, plan ->
         val active = all.filter { !it.archived }
         val names = all.associate { it.id to it.name }
+        val groups = all.associate { it.id to it.muscleGroup }
         val expanded = local.startersOpen ?: active.isEmpty()
         val activeNames = if (expanded || local.detail != null) active.mapTo(HashSet()) { normalize(it.name) } else emptySet()
         val notAddedNames = picker.notAdded.mapTo(HashSet()) { it.name }
@@ -242,6 +250,7 @@ class RoutinesViewModel @Inject constructor(
                     routine = r.routine,
                     machineCount = r.items.size,
                     machineNames = r.items.mapNotNull { item -> names[item.machineId] },
+                    muscleGroups = r.items.mapNotNull { item -> groups[item.machineId] }.distinct(),
                 )
             },
             scheduleMode = plan.plan.scheduleMode,
@@ -289,6 +298,7 @@ class RoutinesViewModel @Inject constructor(
                         starter = starter,
                         libraryId = linked?.id,
                         equipment = linked?.equipment,
+                        level = linked?.level,
                     )
                 }
             }
@@ -303,6 +313,7 @@ class RoutinesViewModel @Inject constructor(
                 libraryId = e.id,
                 equipment = e.equipment,
                 added = libraryAdded(e),
+                level = e.level,
             )
         }
         return (starterRows + libraryRows)
@@ -317,6 +328,9 @@ class RoutinesViewModel @Inject constructor(
         val open = uiState.value.startersExpanded
         local.update { it.copy(startersOpen = !open) }
     }
+
+    /** The full-screen library opens (and closes) the exercise list, which is only worked out while open. */
+    internal fun setLibraryOpen(open: Boolean) = local.update { it.copy(startersOpen = open) }
 
     internal fun searchStarters(query: String) = local.update { it.copy(filter = it.filter.copy(query = query)) }
 

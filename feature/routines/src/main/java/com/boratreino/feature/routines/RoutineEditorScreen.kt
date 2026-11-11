@@ -17,9 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,7 +24,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -52,6 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.ui.BoraButton
+import com.boratreino.core.ui.BoraButtonStyle
+import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.MoveButtons
@@ -201,23 +200,20 @@ internal fun RoutineEditorContent(
                 )
             }
             if (state.items.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                ) {
+                BoraCard(modifier = Modifier.fillMaxWidth()) {
                     state.items.forEachIndexed { index, entry ->
                         if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         ItemRow(entry, index, lastIndex = state.items.lastIndex, callbacks = callbacks)
                     }
                 }
             }
-            OutlinedButton(
+            BoraButton(
+                text = stringResource(R.string.routine_add_machine),
                 onClick = callbacks.onOpenPicker,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            ) {
-                Icon(painterResource(CoreUiR.drawable.ic_add), contentDescription = null, modifier = Modifier.size(20.dp))
-                Text(stringResource(R.string.routine_add_machine), modifier = Modifier.padding(start = 8.dp))
-            }
+                modifier = Modifier.fillMaxWidth(),
+                style = BoraButtonStyle.Tonal,
+                leadingIcon = CoreUiR.drawable.ic_add,
+            )
         }
     }
 
@@ -260,7 +256,7 @@ private fun ItemRow(entry: RoutineEditorItem, index: Int, lastIndex: Int, callba
         Row(
             Modifier.weight(1f).defaultMinSize(minHeight = 56.dp)
                 .then(if (cardio) Modifier else Modifier.clickable { callbacks.onOpenTarget(entry.item.machineId) })
-                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -339,10 +335,11 @@ internal fun SetsRepsSheetContent(entry: RoutineEditorItem, index: Int, callback
                 onPlus = { callbacks.onRepsMaxStep(index, true) },
             )
         }
-        Button(
+        BoraButton(
+            text = stringResource(R.string.routine_close),
             onClick = callbacks.onCloseTarget,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        ) { Text(stringResource(R.string.routine_close)) }
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
