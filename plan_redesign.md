@@ -82,7 +82,9 @@ Alternative B: charcoal and pink as the brand (strongest, least calm).
   unselected = tinted surface, no outline.
 - Exercise thumbnail: always a rounded tile. If there is a line drawing it sits on a tinted tile; if not, the
   tile shows the muscle-group colour and a simple group glyph. No more mixed looks.
-- A small mascot (the icon's character, or elements of it) for empty states, rest day, training complete.
+- A small mascot for empty states, rest day, first-run and training complete: the man or the woman, **chosen by
+  the sex set in Settings** (man until a sex is chosen). Both come from the icon art; a `Mascot(sex)` composable in
+  `:core:ui` picks the right image, so no screen decides on its own.
 
 ## 4. Structure and wording
 
@@ -178,8 +180,13 @@ Keeps the current structure (table above, fixed panel below), with these changes
 ## 6. Decisions (settled with the owner, 11 November 2026)
 
 1. **Palette**: Sunny.
-2. **Mascot**: yes, both characters may be used inside the app: the woman of the current icon and the man of
-   the previous icon (`docs/mascots/`). Only cropped or recoloured, no new poses.
+2. **Mascot**: yes, both characters are used inside the app (`docs/mascots/man.png`, `woman.png`; only cropped
+   or recoloured, no new poses). **Which one shows follows the sex chosen in Settings, "Your body"**: Male shows
+   the man, Female shows the woman. Until a sex is chosen the man is shown. The mascot appears on the rest day,
+   in empty states, in the first-run steps and in the training-complete summary.
+7. **App icon**: the **male** icon (the owner finds it better). The launcher icon is static, so it cannot follow
+   the sex setting; the in-app mascot does. The female icon stays available in `docs/mascots/` for the Play
+   Store listing or a later "alternative icon" option.
 3. **Schedule rules** ("which routine is next", training days): move to the Agenda tab.
 4. **"Same again" button**: removed. One log button that says what it logs.
 5. **Wording**: "exercício / exercise" everywhere instead of "aparelho / machine"; "Sem ficha / No routine"
@@ -194,7 +201,7 @@ as images) for you to approve or correct. That is a day's work and avoids redoin
 | Phase | What | Notes |
 |---|---|---|
 | R0 | Mock-ups + your answers to section 6 | no app code |
-| R1 | Design system in `:core:ui`: colours, type scale, card, buttons, chip, thumbnail tile, mascot assets | every screen picks it up; screenshots change everywhere |
+| R1 | Design system in `:core:ui`: colours, type scale, card, buttons, chip, thumbnail tile, `Mascot(sex)` with the two characters (the sex comes from `BodySettings.profile`, passed down by each screen's view model) | every screen picks it up; screenshots change everywhere |
 | R2 | Today + exercise screen | the two screens you use most; logging path stays one tap |
 | R3 | Fichas / schedule / Academia / library full screen + first-run steps | |
 | R4 | Agenda | |
