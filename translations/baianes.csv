@@ -486,30 +486,30 @@ feature/today,today_app_name,,Bora pro Treino!,Bora pro Treino!
 feature/today,today_open_settings,,Settings,Ajustes
 feature/today,today_energy_day,,About %1$s kcal today,Cerca de %1$s kcal hoje
 feature/today,today_energy_rest,,Rest day: about %1$s kcal,Dia de descanso: cerca de %1$s kcal
-feature/today,today_pick_to_start,,Pick an exercise to start,Escolha um aparelho pra começar
-feature/today,today_all_machines,,All exercises,Todos os aparelhos
-feature/today,today_add_machine,,Add exercise,Adicionar aparelho
+feature/today,today_pick_to_start,,Pick an exercise to start,Escolha um exercício para começar
+feature/today,today_all_machines,,All exercises,Todos os exercícios
+feature/today,today_add_machine,,Add exercise,Adicionar exercício
 feature/today,today_done,,Done,Concluir
-feature/today,today_hero_start,,Start: %1$s,
-feature/today,today_hero_continue,,Continue: %1$s,
-feature/today,today_hero_finish,,Finish training,
-feature/today,today_hero_free,,Free training,
-feature/today,today_switcher_next,,%1$s · next in rotation,
-feature/today,today_switcher_title,,Choose a routine,
-feature/today,today_exercises_title,,Exercises,
-feature/today,today_repeat_menu,,Repeat last time,
-feature/today,today_train_anyway,,Train anyway,
+feature/today,today_hero_start,,Start: %1$s,Começar: %1$s
+feature/today,today_hero_continue,,Continue: %1$s,Continuar: %1$s
+feature/today,today_hero_finish,,Finish training,Concluir treino
+feature/today,today_hero_free,,Free training,Treino livre
+feature/today,today_switcher_next,,%1$s · next in rotation,%1$s · próxima no rodízio
+feature/today,today_switcher_title,,Choose a routine,Escolher a ficha
+feature/today,today_exercises_title,,Exercises,Exercícios
+feature/today,today_repeat_menu,,Repeat last time,Repetir a última vez
+feature/today,today_train_anyway,,Train anyway,Treinar mesmo assim
 feature/today,today_machines_and_sets,,%1$s · %2$s,%1$s · %2$s
 feature/today,today_training_now,,Training now · %1$s,Treinando agora · %1$s
 feature/today,today_update_routine_offer,,Update your routine with this training,Atualizar sua ficha com este treino
 feature/today,today_update_routine_action,,Update,Atualizar
 feature/today,today_routine_updated,,Routine updated,Ficha atualizada
 feature/today,today_done_snackbar,,Done: %1$s,Feito: %1$s
-feature/today,today_machines,one,%d exercise,%d aparelho
-feature/today,today_machines,other,%d exercises,%d aparelhos
+feature/today,today_machines,one,%d exercise,%d exercício
+feature/today,today_machines,other,%d exercises,%d exercícios
 feature/today,today_sets,one,%d set,%d série
 feature/today,today_sets,other,%d sets,%d séries
-feature/today,today_free,,No routine,Livre
+feature/today,today_free,,No routine,Sem ficha
 feature/today,today_next_up,,Next up: %1$s,Próxima: %1$s
 feature/today,today_training_now_routine,,Training now · %1$s · %2$s,Treinando agora · %1$s · %2$s
 feature/today,today_rest_day,,Rest day,Dia de descanso
@@ -526,8 +526,8 @@ feature/today,today_missed_twice,,Missed the lowest reps twice,Abaixo do mínimo
 feature/today,today_rest,,Rest %1$s,Descanso %1$s
 feature/today,today_rest_extend,,+%1$d s,+%1$d s
 feature/today,today_rest_skip,,Skip,Pular
-feature/today,today_edit_ficha,,Edit routine,Editar essa ficha
-feature/today,today_edit_hint,,Move exercises or remove them. Changes are saved at once.,Mude a ordem dos aparelhos ou tire algum. Salva na hora.
+feature/today,today_edit_ficha,,Edit routine,Editar ficha
+feature/today,today_edit_hint,,Move exercises or remove them. Changes are saved at once.,Mude a ordem dos exercícios ou tire-os. As mudanças são salvas na hora.
 feature/today,today_edit_sets_reps,,Edit sets and reps,Editar séries e repetições
 feature/today,today_remove_machine,,Remove %1$s from the routine,Tirar %1$s da ficha
 feature/today,today_ficha_add_title,,Add %1$s to %2$s?,Adicionar %1$s a %2$s?
@@ -542,15 +542,15 @@ feature/today,today_skipped,,%1$s skipped,%1$s pulado
 feature/today,today_removed_from,,Removed from %1$s,Removido de %1$s
 feature/today,today_repeat_same,,Same as last time,Igual à última vez
 feature/today,today_repeat_suggested,,"Same, with suggested weights","Igual, com as cargas sugeridas"
-feature/today,today_repeated,one,Logged %1$d exercise,Registrei %1$d aparelho
-feature/today,today_repeated,other,Logged %1$d exercises,Registrei %1$d aparelhos
-feature/today,today_picker_title,,Pick an exercise,Escolha um aparelho
+feature/today,today_repeated,one,Logged %1$d exercise,Registrei %1$d exercício
+feature/today,today_repeated,other,Logged %1$d exercises,Registrei %1$d exercícios
+feature/today,today_picker_title,,Pick an exercise,Escolha um exercício
 feature/today,today_recent,,Recent,Recentes
-feature/today,today_more_machines,,More exercises,Mais aparelhos
-feature/today,today_new_machine,,New exercise,Novo aparelho
-feature/today,today_edit_machine,,Edit exercise,Editar aparelho
-feature/today,today_machine_not_found,,This exercise was not found,Esse aparelho não foi encontrado
-feature/today,today_first_time,,First time on this exercise,Primeira vez neste aparelho
+feature/today,today_more_machines,,More exercises,Mais exercícios
+feature/today,today_new_machine,,New exercise,Novo exercício
+feature/today,today_edit_machine,,Edit exercise,Editar exercício
+feature/today,today_machine_not_found,,This exercise was not found,Este exercício não foi encontrado
+feature/today,today_first_time,,First time on this exercise,Primeira vez neste exercício
 feature/today,today_last_time,,Last time: %1$s,Da última vez: %1$s
 feature/today,today_last_time_on,,Last time: %1$s · %2$s,Da última vez: %1$s · %2$s
 feature/today,today_this_session,,This session,Este treino
@@ -574,8 +574,8 @@ feature/today,today_set_removed,,Set removed,Série removida
 feature/today,today_header_routine,,%1$s · %2$s,%1$s · %2$s
 feature/today,today_chip_next,,Next,Próximo
 feature/today,today_training_now_title,,Training now,Treino de agora
-feature/today,today_machines_progress,one,%1$d of %2$d exercise,%1$d de %2$d aparelho
-feature/today,today_machines_progress,other,%1$d of %2$d exercises,%1$d de %2$d aparelhos
+feature/today,today_machines_progress,one,%1$d of %2$d exercise,%1$d de %2$d exercício
+feature/today,today_machines_progress,other,%1$d of %2$d exercises,%1$d de %2$d exercícios
 feature/today,machine_col_set,,Set,Série
 feature/today,machine_col_previous,,Previous,Anterior
 feature/today,machine_col_today,,Today,Hoje
@@ -587,7 +587,7 @@ feature/today,summary_free_training,,Free training,Treino livre
 feature/today,summary_duration,,Duration,Duração
 feature/today,summary_sets,,Sets,Séries
 feature/today,summary_volume,,Volume,Volume
-feature/today,summary_machines,,Exercises,Aparelhos
+feature/today,summary_machines,,Exercises,Exercícios
 feature/today,summary_minutes_value,,%1$d min,%1$d min
 feature/today,summary_kg_value,,%1$s kg,%1$s kg
 feature/today,summary_tonnes_value,,%1$s t,%1$s t
@@ -617,15 +617,15 @@ feature/today,machine_complete_sets,,%1$d of %2$d sets,%1$d de %2$d séries
 feature/today,machine_next_title,,Next exercises,Próximos exercícios
 feature/today,machine_complete_back,,Back to the list,Voltar à lista
 feature/today,machine_complete_extra,,Add an extra set,Fazer uma série extra
-feature/today,machine_set_of,,Set %1$d of %2$d,
-feature/today,machine_set_number,,Set %1$d,
-feature/today,machine_last,,Last: %1$s,
-feature/today,machine_last_on,,"Last: %1$s, %2$s",
-feature/today,machine_log_value,,Log %1$s x %2$d,
-feature/today,machine_log_reps,one,Log %d rep,
-feature/today,machine_log_reps,other,Log %d reps,
-feature/today,machine_log_cardio,,Log %1$s,
-feature/today,machine_set_type,,Set type: %1$s,
+feature/today,machine_set_of,,Set %1$d of %2$d,Série %1$d de %2$d
+feature/today,machine_set_number,,Set %1$d,Série %1$d
+feature/today,machine_last,,Last: %1$s,Última: %1$s
+feature/today,machine_last_on,,"Last: %1$s, %2$s","Última: %1$s, %2$s"
+feature/today,machine_log_value,,Log %1$s x %2$d,Registrar %1$s × %2$d
+feature/today,machine_log_reps,one,Log %d rep,Registrar %d repetição
+feature/today,machine_log_reps,other,Log %d reps,Registrar %d repetições
+feature/today,machine_log_cardio,,Log %1$s,Registrar %1$s
+feature/today,machine_set_type,,Set type: %1$s,Tipo de série: %1$s
 feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível
 feature/update,update_install,,Install,Instalar
 feature/update,update_later,,Later,Depois
