@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Bora pro Treino!: mock-ups do redesign (Sunny)</title>
+<style>
+  :root{
+    --brand:#FEC204; --brand-soft:#FFF1B8; --ink:#1F1B16; --muted:#6B645A; --page:#FAF7F0; --card:#FFFFFF;
+    --ok:#2E6B52; --ok-soft:#DDEBE4; --pink:#E6397F; --line:#EEE8DC; --tile:#F3EEE3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#D9D4C8;font-family:"Figtree","Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink)}
+  .board{display:flex;gap:28px;padding:28px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .cap{font-size:15px;font-weight:700;color:#3b352c}
+  .phone{width:360px;height:780px;background:var(--page);border-radius:34px;overflow:hidden;position:relative;
+         box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;flex-direction:column}
+  .status{height:28px;flex:none}
+  .scroll{flex:1;overflow:hidden;padding:0 16px 12px}
+  .nav{flex:none;height:64px;background:#fff;border-top:1px solid var(--line);display:flex}
+  .nav div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--muted);gap:5px;font-weight:600}
+  .nav i{width:22px;height:22px;border-radius:7px;background:#E4DDCF;display:block}
+  .nav .on{color:var(--ink)} .nav .on i{background:var(--brand)}
+  h1{font-size:28px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.3px}
+  .label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border-radius:20px;padding:14px 16px}
+  .hero{background:var(--brand);border-radius:24px;padding:18px;position:relative}
+  .hero .date{font-size:13px;font-weight:700;opacity:.75}
+  .hero .pick{display:inline-flex;align-items:center;gap:6px;background:rgba(31,27,22,.1);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;margin-top:10px}
+  .ring{position:absolute;right:16px;top:16px;width:74px;height:74px}
+  .btn{display:flex;align-items:center;justify-content:center;height:56px;border-radius:18px;font-weight:800;font-size:17px}
+  .btn.ink{background:var(--ink);color:#fff}
+  .btn.tonal{background:var(--brand-soft);color:var(--ink)}
+  .btn.text{height:44px;font-size:14px;font-weight:700;color:var(--ink)}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .thumb{width:48px;height:48px;border-radius:14px;background:var(--tile);flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .thumb img{width:44px;height:44px;object-fit:contain;mix-blend-mode:multiply}
+  .thumb.g{background:#E8DDF0;font-weight:800;color:#6B3E86}
+  .name{font-weight:700;font-size:16px} .sub{font-size:13px;color:var(--muted)}
+  .dots{display:flex;gap:5px;margin-left:auto}
+  .dots b{width:10px;height:10px;border-radius:50%;background:#E4DDCF;display:block} .dots b.f{background:var(--ok)}
+  .done .name,.done .sub{color:#A39B8D}
+  .check{margin-left:auto;width:26px;height:26px;border-radius:50%;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+  .cur{background:var(--brand-soft);margin:0 -16px;padding:10px 16px;border-bottom:0}
+  .chip{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;background:#fff;font-size:13px;font-weight:700}
+  .chip.y{background:var(--brand)} .chip.t{background:var(--brand-soft)}
+  .top{display:flex;align-items:center;gap:10px;padding:6px 0 10px}
+  .back{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th{font-size:11px;text-align:left;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;padding:2px 0 8px}
+  td{padding:9px 0;border-top:1px solid var(--line)}
+  td.p{color:#A39B8D} td.t{font-weight:800} td.n{color:#A39B8D;font-weight:600}
+  .panel{flex:none;background:#fff;border-radius:26px 26px 0 0;padding:14px 16px 16px;box-shadow:0 -6px 18px rgba(0,0,0,.06)}
+  .rest{display:flex;align-items:center;gap:10px;background:var(--ok-soft);border-radius:14px;padding:8px 12px;font-weight:800;color:var(--ok)}
+  .rest .bar{flex:1;height:5px;border-radius:3px;background:#C3DACF;position:relative}
+  .rest .bar::after{content:"";position:absolute;left:0;top:0;bottom:0;width:62%;background:var(--ok);border-radius:3px}
+  .steps{display:flex;gap:14px;margin:12px 0}
+  .step{flex:1;text-align:center}
+  .num{font-size:40px;font-weight:800;line-height:1.05}
+  .pm{display:flex;gap:8px;margin-top:6px}
+  .pm span{flex:1;height:48px;border-radius:14px;background:var(--tile);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700}
+  .seg{display:flex;background:#EFE9DC;border-radius:14px;padding:4px;gap:4px}
+  .seg div{flex:1;text-align:center;font-size:14px;font-weight:700;padding:8px 0;border-radius:11px;color:var(--muted)}
+  .seg .on{background:#fff;color:var(--ink)}
+  .hl{display:flex;gap:10px}
+  .hl .card{flex:1;padding:12px}
+  .hl .big{font-size:22px;font-weight:800}
+  .legend{display:flex;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:12px;height:12px;border-radius:4px;display:block}
+  .bal{height:12px;border-radius:6px;background:#C9D6E0;position:relative;margin:6px 0 2px}
+  .bal::after{content:"";position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--ink)}
+  .bal.a::after{width:60%} .bal.b::after{width:55%}
+  .mascot{width:150px;height:150px;border-radius:44px;display:block;margin:26px auto 14px;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+  .center{text-align:center}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <!-- 1. Treino (em andamento) -->
+  <div class="col"><div class="cap">1. Treino</div>
+  <div class="phone">
+    <div class="status"></div>
+    <div class="scroll" style="display:flex;flex-direction:column;gap:12px">
+      <div class="hero">
+        <div class="date">Quarta, 11 de novembro</div>
+        <h1 style="margin-top:4px">Ficha B</h1>
+        <div class="muted" style="color:#4a4233;font-weight:600;margin-top:2px">1 de 4 exercícios</div>
+        <div class="pick">Ficha B · próxima no rodízio ▾</div>
+        <svg class="ring" viewBox="0 0 74 74"><circle cx="37" cy="37" r="30" fill="none" stroke="rgba(31,27,22,.15)" stroke-width="8"/><circle cx="37" cy="37" r="30" fill="none" stroke="#1F1B16" stroke-width="8" stroke-linecap="round" stroke-dasharray="47 189" transform="rotate(-90 37 37)"/><text x="37" y="42" text-anchor="middle" font-size="16" font-weight="800" fill="#1F1B16">25%</text></svg>
+        <div class="btn ink" style="margin-top:16px">Continuar: Cadeira extensora</div>
+      </div>
+
+      <div class="card" style="padding:4px 16px">
+        <div class="row done"><div class="thumb"><img src="../../core/ui/src/main/assets/exercises/leg-press-1.webp"></div><div><div class="name">Leg press</div><div class="sub">3 × 8–12</div></div><div class="check">✓</div></div>
+        <div class="row cur"><div class="thumb" style="background:#fff"><img src="../../core/ui/src/main/assets/exercises/leg-extensions-1.webp"></div><div><div class="name">Cadeira extensora</div><div class="sub">3 × 10–15 · última: 45 kg</div></div><div class="dots"><b class="f"></b><b class="f"></b><b></b></div></div>
+        <div class="row"><div class="thumb g">Co</div><div><div class="name">Puxada na frente</div><div class="sub">3 × 8–12</div></div><div class="dots"><b></b><b></b><b></b></div></div>
+        <div class="row"><div class="thumb"><img src="../../core/ui/src/main/assets/exercises/seated-cable-rows-1.webp"></div><div><div class="name">Remada sentada</div><div class="sub">3 × 8–12</div></div><div class="dots"><b></b><b></b><b></b></div></div>
+      </div>
+      <div class="btn text" style="justify-content:space-between;padding:0 6px;font-size:13px;white-space:nowrap"><span>Repetir a última vez ▾</span><span>+ Exercício</span></div>
+      <div class="center muted" style="font-size:13px">Cerca de 2.450 kcal hoje</div>
+    </div>
+    <div class="nav"><div class="on"><i></i>Treino</div><div><i></i>Agenda</div><div><i></i>Evolução</div><div><i></i>Fichas</div><div><i></i>Ajustes</div></div>
+  </div></div>
+
+  <!-- 2. Exercício -->
+  <div class="col"><div class="cap">2. Exercício (registrar série)</div>
+  <div class="phone">
+    <div class="status"></div>
+    <div class="scroll" style="display:flex;flex-direction:column;gap:12px">
+      <div class="top"><div class="back">←</div><div><div class="name" style="font-size:20px">Cadeira extensora</div><div class="sub">Série 3 de 3</div></div><div class="dots"><b class="f"></b><b class="f"></b><b></b></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="chip">Banco 4</span><span class="chip">Última: 3 × 12 com 45 kg</span><span class="chip y">Tente 47,5 kg</span>
+      </div>
+      <div class="card">
+        <table>
+          <tr><th style="width:44px">Série</th><th style="width:104px">Anterior</th><th>Hoje</th></tr>
+          <tr><td>1</td><td class="p">45 kg × 12</td><td class="t">45 kg × 12 <span style="color:var(--ok)">✓</span></td></tr>
+          <tr><td>2</td><td class="p">45 kg × 12</td><td class="t">47,5 kg × 10 <span style="color:var(--ok)">✓</span> <span class="chip t" style="height:22px;font-size:11px;padding:0 8px">Recorde</span></td></tr>
+          <tr><td>3</td><td class="p">45 kg × 11</td><td class="n">47,5 kg × 10</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="rest"><span>Descanso 0:34</span><div class="bar"></div><span style="font-size:13px">+30 s</span><span style="font-size:13px">Pular</span></div>
+      <div class="steps">
+        <div class="step"><div class="label">Carga (kg)</div><div class="num">47,5</div><div class="pm"><span>−</span><span>+</span></div></div>
+        <div class="step"><div class="label">Repetições</div><div class="num">10</div><div class="pm"><span>−</span><span>+</span></div></div>
+      </div>
+      <div class="btn ink">Registrar 47,5 kg × 10</div>
+      <div class="btn text" style="height:34px;font-size:13px;color:var(--muted)">Tipo de série: normal ▾</div>
+    </div>
+  </div></div>
+
+  <!-- 3. Evolução > Corpo -->
+  <div class="col"><div class="cap">3. Evolução · Corpo</div>
+  <div class="phone">
+    <div class="status"></div>
+    <div class="scroll" style="display:flex;flex-direction:column;gap:12px">
+      <h1 style="padding-top:6px">Evolução</h1>
+      <div style="display:flex;gap:8px"><span class="chip">4 semanas</span><span class="chip y">3 meses</span><span class="chip">1 ano</span><span class="chip">Tudo</span></div>
+      <div class="hl">
+        <div class="card"><div class="label">Pernas</div><div class="big">12,0</div><div class="sub">séries por semana</div></div>
+        <div class="card"><div class="label">Leg press</div><div class="big" style="color:var(--ok)">+8 %</div><div class="sub">em 3 meses</div></div>
+        <div class="card"><div class="label">Costas</div><div class="big" style="color:var(--pink)">9 dias</div><div class="sub">sem treinar</div></div>
+      </div>
+      <div class="seg"><div class="on">Corpo</div><div>Força</div><div>Hábito</div></div>
+      <div class="card">
+        <div class="name">Mapa do corpo</div><div class="sub">Média de séries por semana (indiretas valem meia)</div>
+        <svg viewBox="0 0 320 190" style="width:100%;margin-top:6px">
+          <g transform="translate(40,0)">
+            <circle cx="50" cy="18" r="13" fill="#F3EEE3" stroke="#D9D1C1"/><rect x="45" y="31" width="10" height="7" fill="#F3EEE3"/>
+            <circle cx="22" cy="50" r="11" fill="#FFE27A"/><circle cx="78" cy="50" r="11" fill="#FFE27A"/>
+            <rect x="32" y="40" width="36" height="34" rx="9" fill="#FEC204"/><rect x="34" y="77" width="32" height="30" rx="8" fill="#FFF1B8"/>
+            <rect x="8" y="62" width="14" height="52" rx="7" fill="#FFF1B8"/><rect x="78" y="62" width="14" height="52" rx="7" fill="#FFF1B8"/>
+            <rect x="33" y="109" width="34" height="12" rx="6" fill="#F3EEE3" stroke="#D9D1C1"/>
+            <rect x="33" y="123" width="15" height="62" rx="7.5" fill="#1F1B16"/><rect x="52" y="123" width="15" height="62" rx="7.5" fill="#1F1B16"/>
+            <text x="50" y="12" text-anchor="middle" font-size="0"></text>
+          </g>
+          <g transform="translate(180,0)">
+            <circle cx="50" cy="18" r="13" fill="#F3EEE3" stroke="#D9D1C1"/><rect x="45" y="31" width="10" height="7" fill="#F3EEE3"/>
+            <circle cx="22" cy="50" r="11" fill="#FFE27A"/><circle cx="78" cy="50" r="11" fill="#FFE27A"/>
+            <rect x="32" y="40" width="36" height="67" rx="9" fill="#FFF1B8"/>
+            <rect x="8" y="62" width="14" height="52" rx="7" fill="#FFF1B8"/><rect x="78" y="62" width="14" height="52" rx="7" fill="#FFF1B8"/>
+            <rect x="33" y="109" width="34" height="12" rx="6" fill="#F3EEE3" stroke="#D9D1C1"/>
+            <rect x="33" y="123" width="15" height="62" rx="7.5" fill="#1F1B16"/><rect x="52" y="123" width="15" height="62" rx="7.5" fill="#1F1B16"/>
+          </g>
+        </svg>
+        <div class="legend"><span><i style="background:#F3EEE3;border:1px solid #D9D1C1"></i>Sem séries</span><span><i style="background:#FFF1B8"></i>Menos de 5</span><span><i style="background:#FEC204"></i>5 a 9</span><span><i style="background:#1F1B16"></i>10 ou mais</span></div>
+      </div>
+      <div class="card">
+        <div class="name">Equilíbrio</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:8px"><span>Empurrar 15</span><span>10 Puxar</span></div><div class="bal a"></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:8px"><span>Superior 24</span><span>20 Inferior</span></div><div class="bal b"></div>
+      </div>
+    </div>
+    <div class="nav"><div><i></i>Treino</div><div><i></i>Agenda</div><div class="on"><i></i>Evolução</div><div><i></i>Fichas</div><div><i></i>Ajustes</div></div>
+  </div></div>
+
+  <!-- 4. Dia de descanso -->
+  <div class="col"><div class="cap">4. Dia de descanso</div>
+  <div class="phone">
+    <div class="status"></div>
+    <div class="scroll center">
+      <div class="label" style="text-align:left;padding-top:8px">Quinta, 12 de novembro</div>
+      <img class="mascot" src="../mascots/man-512.png">
+      <h1>Dia de descanso</h1>
+      <div class="muted" style="margin-top:8px;font-size:16px">Próximo treino: <b style="color:var(--ink)">sexta, Ficha C</b></div>
+      <div class="card" style="margin-top:22px;text-align:left">
+        <div class="label">Esta semana</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px"><div class="dots" style="margin:0"><b class="f" style="width:16px;height:16px"></b><b class="f" style="width:16px;height:16px"></b><b style="width:16px;height:16px"></b><b style="width:16px;height:16px"></b></div><div class="name">2 de 4 treinos</div></div>
+        <div class="sub" style="margin-top:6px">Sequência: 5 semanas · descanso: cerca de 2.150 kcal</div>
+      </div>
+      <div class="btn tonal" style="margin-top:18px">Treinar mesmo assim</div>
+    </div>
+    <div class="nav"><div class="on"><i></i>Treino</div><div><i></i>Agenda</div><div><i></i>Evolução</div><div><i></i>Fichas</div><div><i></i>Ajustes</div></div>
+  </div></div>
+
+</div>
+</body>
+</html>
