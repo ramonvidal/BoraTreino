@@ -172,11 +172,16 @@ class MachineLogPanelTest {
     }
 
     @Test
-    fun `the Warm-up sets button is shown only when there is an offer`() {
+    fun `the Warm-up sets button is shown when there is an offer`() {
         setContent(legPressInProgress(warmupPlan = listOf(SetDraft(60.0, 8, SetType.WARMUP))))
-        compose.onNodeWithText("Warm-up sets").assertExists()
 
+        compose.onNodeWithText("Warm-up sets").assertExists()
+    }
+
+    @Test
+    fun `the Warm-up sets button is not shown without an offer`() {
         setContent(legPressInProgress())
+
         compose.onNodeWithText("Warm-up sets").assertDoesNotExist()
     }
 
