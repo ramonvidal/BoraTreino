@@ -17,8 +17,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
@@ -42,8 +42,6 @@ private val MapGroups = listOf(
     MuscleGroup.CORE,
 )
 
-private const val FIGURE_WIDTH = 100f
-private const val FIGURE_HEIGHT = 220f
 private const val MIN_SHADE = 1
 private const val MAX_SHADE = 3
 
@@ -105,75 +103,40 @@ private fun bodyShadeColors(): List<Color> {
 private fun BodyFigure(label: String, shades: Map<MuscleGroup, Int>, front: Boolean, modifier: Modifier = Modifier) {
     val fills = bodyShadeColors()
     val outline = MaterialTheme.colorScheme.outline
-    val headFill = MaterialTheme.colorScheme.surfaceContainerHigh
+    val neutralFill = MaterialTheme.colorScheme.surfaceContainerHigh
+    val shapes = if (front) BodyMapShapes.front else BodyMapShapes.back
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Canvas(Modifier.fillMaxWidth().aspectRatio(FIGURE_WIDTH / FIGURE_HEIGHT)) {
-            val scale = size.width / FIGURE_WIDTH
-            val stroke = Stroke(1.5.dp.toPx())
-            fun shadeOf(group: MuscleGroup): Int = shades.getValue(group).coerceIn(0, MAX_SHADE)
-
-            val figure = Figure(this, scale, fills, outline, stroke)
-            // Head, neck and pelvis: neutral light grey with an outline, never shaded.
-            drawCircle(headFill, radius = 14f * scale, center = Offset(50f * scale, 17f * scale))
-            drawCircle(outline, radius = 14f * scale, center = Offset(50f * scale, 17f * scale), style = stroke)
-            figure.neutral(45f, 30f, 10f, 12f, 3f, headFill)
-            figure.neutral(33f, 123f, 34f, 18f, 8f, headFill)
-            if (front) {
-                figure.roundRect(shadeOf(MuscleGroup.CHEST), 34f, 41f, 32f, 38f, 8f)
-                figure.roundRect(shadeOf(MuscleGroup.CORE), 35f, 82f, 30f, 38f, 8f)
-            } else {
-                figure.roundRect(shadeOf(MuscleGroup.BACK), 34f, 41f, 32f, 79f, 10f)
+        Canvas(Modifier.fillMaxWidth().aspectRatio(BodyMapShapes.WIDTH / BodyMapShapes.HEIGHT)) {
+            val scale = size.width / BodyMapShapes.WIDTH
+            val thin = Stroke(0.75.dp.toPx(), join = StrokeJoin.Round)
+            val thick = Stroke(1.25.dp.toPx(), join = StrokeJoin.Round)
+            for (shape in shapes) {
+                val path = Path()
+                val p = shape.points
+                path.moveTo(p[0] * scale, p[1] * scale)
+                var i = 2
+                while (i < p.size) {
+                    path.lineTo(p[i] * scale, p[i + 1] * scale)
+                    i += 2
+                }
+                path.close()
+                val group = shape.group
+                val shade = if (group == null) 0 else shades.getValue(group).coerceIn(0, MAX_SHADE)
+                when {
+                    group == null -> {
+                        drawPath(path, neutralFill, style = Fill)
+                        drawPath(path, outline, style = thin)
+                    }
+                    shade >= MIN_SHADE -> {
+                        drawPath(path, fills[shade], style = Fill)
+                        // A thin outline keeps light shades visible against the white card.
+                        drawPath(path, outline.copy(alpha = 0.6f), style = thin)
+                    }
+                    else -> drawPath(path, outline, style = thick)
+                }
             }
-            figure.circle(shadeOf(MuscleGroup.SHOULDERS), 22f, 49f, 11f)
-            figure.circle(shadeOf(MuscleGroup.SHOULDERS), 78f, 49f, 11f)
-            figure.roundRect(shadeOf(MuscleGroup.ARMS), 6f, 62f, 14f, 70f, 7f)
-            figure.roundRect(shadeOf(MuscleGroup.ARMS), 80f, 62f, 14f, 70f, 7f)
-            figure.roundRect(shadeOf(MuscleGroup.LEGS), 33f, 138f, 16f, 78f, 8f)
-            figure.roundRect(shadeOf(MuscleGroup.LEGS), 51f, 138f, 16f, 78f, 8f)
         }
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-/** Draws shapes given in the 100 x 220 figure grid: filled by shade, or outlined when the shade is 0. */
-private class Figure(
-    private val scope: DrawScope,
-    private val scale: Float,
-    private val fills: List<Color>,
-    private val outline: Color,
-    private val stroke: Stroke,
-) {
-    fun roundRect(shade: Int, x: Float, y: Float, w: Float, h: Float, radius: Float) {
-        paint(shade) { color, style ->
-            drawRoundRect(
-                color,
-                Offset(x * scale, y * scale),
-                Size(w * scale, h * scale),
-                CornerRadius(radius * scale),
-                style,
-            )
-        }
-    }
-
-    fun neutral(x: Float, y: Float, w: Float, h: Float, radius: Float, fill: Color) {
-        val topLeft = Offset(x * scale, y * scale)
-        val size = Size(w * scale, h * scale)
-        scope.drawRoundRect(fill, topLeft, size, CornerRadius(radius * scale), Fill)
-        scope.drawRoundRect(outline, topLeft, size, CornerRadius(radius * scale), stroke)
-    }
-
-    fun circle(shade: Int, cx: Float, cy: Float, r: Float) {
-        paint(shade) { color, style -> drawCircle(color, r * scale, Offset(cx * scale, cy * scale), style = style) }
-    }
-
-    private fun paint(shade: Int, draw: DrawScope.(Color, DrawStyle) -> Unit) {
-        if (shade >= MIN_SHADE) {
-            scope.draw(fills[shade], Fill)
-            // A thin outline keeps light shades visible against the white card.
-            scope.draw(outline.copy(alpha = 0.5f), Stroke(stroke.width / 2f))
-        } else {
-            scope.draw(outline, stroke)
-        }
     }
 }
 

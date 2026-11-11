@@ -335,7 +335,7 @@ private fun RoutineSwitcher(routines: RoutineUi, onChoose: (RoutineChoice) -> Un
                                 onClick = { open = false; onChoose(RoutineChoice.Chosen(chip.id)) },
                                 large = true,
                             )
-                            if (chip.suggested) {
+                            if (chip.suggested && !chip.selected) {
                                 Text(
                                     stringResource(R.string.today_chip_next),
                                     style = MaterialTheme.typography.labelSmall,
