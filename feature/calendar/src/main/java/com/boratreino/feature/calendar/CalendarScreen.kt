@@ -58,11 +58,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.CalendarRules
 import com.boratreino.core.model.DayKind
+import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.SessionDetail
 import java.text.NumberFormat
 import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.working
+import com.boratreino.core.ui.BoraCard
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.Stepper
+import com.boratreino.core.ui.shortLabel
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -90,6 +97,8 @@ internal data class CalendarActions(
     val onPlan: (routineId: Long) -> Unit = {},
     val onUnplan: (routineId: Long) -> Unit = {},
     val onMovePlanned: (routineId: Long, up: Boolean) -> Unit = { _, _ -> },
+    val onScheduleModeChange: (ScheduleMode) -> Unit = {},
+    val onTrainingDaysChange: (Set<DayOfWeek>) -> Unit = {},
 )
 
 @Composable
@@ -136,6 +145,8 @@ internal fun CalendarScreen(
             onPlan = viewModel::plan,
             onUnplan = viewModel::unplan,
             onMovePlanned = viewModel::reorderPlanned,
+            onScheduleModeChange = viewModel::setScheduleMode,
+            onTrainingDaysChange = viewModel::setTrainingDays,
         ),
         snackbarHostState = snackbar,
     )
@@ -161,6 +172,7 @@ internal fun CalendarContent(
             WeekCard(state, actions.onOpenGoal)
             MonthCard(state, actions)
             DayDetail(state, actions)
+            ScheduleCard(state, actions)
         }
     }
 
@@ -173,6 +185,60 @@ internal fun CalendarContent(
     if (state.planChooser) {
         val open = state.routines.filter { r -> state.planned[state.selected].orEmpty().none { it.routineId == r.id } }
         PlanChooserDialog(open, actions)
+    }
+}
+
+/** "Which routine is next": In turn / On weekdays; in turn also asks for the training days. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ScheduleCard(state: CalendarUiState, actions: CalendarActions) {
+    BoraCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.calendar_schedule_title), style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                BoraChip(
+                    label = stringResource(R.string.calendar_schedule_in_turn),
+                    selected = state.scheduleMode == ScheduleMode.IN_TURN,
+                    onClick = { actions.onScheduleModeChange(ScheduleMode.IN_TURN) },
+                )
+                BoraChip(
+                    label = stringResource(R.string.calendar_schedule_weekdays),
+                    selected = state.scheduleMode == ScheduleMode.WEEKDAYS,
+                    onClick = { actions.onScheduleModeChange(ScheduleMode.WEEKDAYS) },
+                )
+            }
+            if (state.scheduleMode == ScheduleMode.IN_TURN) {
+                Text(
+                    stringResource(R.string.calendar_training_days),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DayOfWeek.values().forEach { day ->
+                        BoraChip(
+                            label = day.shortLabel(),
+                            selected = day in state.trainingDays,
+                            onClick = {
+                                val next = if (day in state.trainingDays) state.trainingDays - day else state.trainingDays + day
+                                actions.onTrainingDaysChange(next)
+                            },
+                        )
+                    }
+                }
+                Text(
+                    stringResource(R.string.calendar_training_days_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Text(
+                    stringResource(R.string.calendar_schedule_weekdays_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

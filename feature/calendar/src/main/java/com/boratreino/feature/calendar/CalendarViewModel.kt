@@ -10,6 +10,7 @@ import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.EnergyRules
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
+import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.SessionSets
 import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.model.SessionDetail
@@ -54,7 +55,12 @@ internal data class PlannedUi(val routineId: Long, val name: String, val shortNa
 internal data class RoutineChoiceUi(val id: Long, val name: String, val shortName: String = "")
 
 /** The planned routines (today and later) with the routine choices, as one value for combine(). */
-private data class PlanningData(val planned: Map<LocalDate, List<PlannedUi>>, val routines: List<RoutineChoiceUi>)
+private data class PlanningData(
+    val planned: Map<LocalDate, List<PlannedUi>>,
+    val routines: List<RoutineChoiceUi>,
+    val scheduleMode: ScheduleMode = ScheduleMode.IN_TURN,
+    val trainingDays: Set<DayOfWeek> = emptySet(),
+)
 
 /**
  * Everything the Calendar tab shows. [dayLabels] has the badge text of every training day of
@@ -83,6 +89,10 @@ internal data class CalendarUiState(
     val routines: List<RoutineChoiceUi> = emptyList(),
     /** The "Plan a workout" chooser for the selected day is open. */
     val planChooser: Boolean = false,
+    /** The schedule rule behind "which routine is next". */
+    val scheduleMode: ScheduleMode = ScheduleMode.IN_TURN,
+    /** The days the rotation moves on (in turn mode); empty means every day. */
+    val trainingDays: Set<DayOfWeek> = emptySet(),
     val goalEditor: Int? = null,
     val confirmDelete: Long? = null,
 )
@@ -162,6 +172,8 @@ class CalendarViewModel @Inject constructor(
                 .mapNotNull { p -> byId[p.routineId]?.let { r -> p.date to PlannedUi(r.id, r.name, r.shortName) } }
                 .groupBy({ it.first }, { it.second }),
             routines = routines.map { RoutineChoiceUi(it.id, it.name, it.shortName) },
+            scheduleMode = plan.plan.scheduleMode,
+            trainingDays = plan.plan.trainingDays,
         )
     }
 
@@ -195,6 +207,8 @@ class CalendarViewModel @Inject constructor(
                 energy = dayEnergy(profile, view.selected, today, day),
                 planned = plan.planned,
                 routines = plan.routines,
+                scheduleMode = plan.scheduleMode,
+                trainingDays = plan.trainingDays,
             )
         }
     }
@@ -279,6 +293,16 @@ class CalendarViewModel @Inject constructor(
         if (from < 0 || to !in ids.indices) return
         ids[from] = ids[to].also { ids[to] = ids[from] }
         write { routineRepository.reorderPlanned(day, ids) }
+    }
+
+    // Schedule rules ("which routine is next").
+
+    internal fun setScheduleMode(mode: ScheduleMode) {
+        write { routineRepository.setScheduleMode(mode) }
+    }
+
+    internal fun setTrainingDays(days: Set<DayOfWeek>) {
+        write { routineRepository.setTrainingDays(days) }
     }
 
     // Sessions of the selected day.

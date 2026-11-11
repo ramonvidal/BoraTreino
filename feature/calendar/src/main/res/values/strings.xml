@@ -14,6 +14,14 @@
     <string name="calendar_previous_month">Previous month</string>
     <string name="calendar_next_month">Next month</string>
 
+    <!-- Schedule card -->
+    <string name="calendar_schedule_title">Which routine is next</string>
+    <string name="calendar_schedule_in_turn">In turn</string>
+    <string name="calendar_schedule_weekdays">On weekdays</string>
+    <string name="calendar_training_days">Training days</string>
+    <string name="calendar_training_days_hint">Rotation moves to the next routine on these days. If you skip a day the routine stays the next one.</string>
+    <string name="calendar_schedule_weekdays_hint">Choose each routine\'s days when you edit it.</string>
+
     <!-- Day detail -->
     <string name="calendar_free_training">Free training</string>
     <string name="calendar_session_summary">%1$s · %2$s · %3$s</string>
