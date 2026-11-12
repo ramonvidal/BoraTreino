@@ -146,8 +146,8 @@ private fun WeekAxisLabels(weekStarts: List<LocalDate>) {
     if (weekStarts.size < 2) return
     val color = MaterialTheme.colorScheme.onSurfaceVariant
     Row(Modifier.fillMaxWidth().padding(end = EndLabelWidth), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(formatShortDate(weekStarts.first(), today), style = MaterialTheme.typography.labelSmall, color = color)
-        Text(stringResource(R.string.progress_week_this), style = MaterialTheme.typography.labelSmall, color = color)
+        Text(formatShortDate(weekStarts.first(), today), style = MaterialTheme.typography.labelMedium, color = color)
+        Text(stringResource(R.string.progress_week_this), style = MaterialTheme.typography.labelMedium, color = color)
     }
 }
 
@@ -163,7 +163,7 @@ internal fun IndexLinesChart(weekStarts: List<LocalDate>, lines: List<IndexLine>
     val grid = MaterialTheme.colorScheme.outlineVariant
     val baseline = MaterialTheme.colorScheme.outline
     val measurer = rememberTextMeasurer()
-    val labelStyle = MaterialTheme.typography.labelSmall
+    val labelStyle = MaterialTheme.typography.labelMedium
     val labels = lines.map { percentOf(it.points.last().percent) }
     val allValues = lines.flatMap { line -> line.points.map { it.percent } } + BASE_PERCENT
     val rawMin = allValues.min()

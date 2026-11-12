@@ -35,7 +35,7 @@ internal fun WeeklyBars(weeks: List<CardioWeek>, description: String, modifier: 
     val barColor = colors.primary
     val gridColor = colors.outlineVariant
     val labelColor = colors.onSurfaceVariant
-    val labelStyle = MaterialTheme.typography.labelSmall
+    val labelStyle = MaterialTheme.typography.labelMedium
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val scale = remember(weeks) { ChartRules.niceScale(0.0, weeks.maxOfOrNull { it.minutes }?.toDouble() ?: 0.0) }

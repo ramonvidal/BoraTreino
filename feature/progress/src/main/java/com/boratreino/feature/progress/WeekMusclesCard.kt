@@ -90,7 +90,7 @@ private fun MuscleSquare(name: String, sets: Double, modifier: Modifier = Modifi
         }
         Text(
             name,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             color = colors.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 1,
