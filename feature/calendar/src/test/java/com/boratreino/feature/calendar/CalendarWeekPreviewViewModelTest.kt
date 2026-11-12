@@ -3,6 +3,7 @@ package com.boratreino.feature.calendar
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.util.Locale
@@ -127,6 +128,24 @@ class CalendarWeekPreviewViewModelTest {
                 UpcomingUi(day(6), "C"),
                 UpcomingUi(day(7), "A"),
                 UpcomingUi(day(8), "B"),
+            ),
+            preview,
+        )
+    }
+
+    @Test
+    fun `a routine on specific days takes its day without moving the rotation`() = runTest {
+        val fixedC = Routine(3L, 1L, "Treino C", "C", 2, setOf(DayOfWeek.FRIDAY))
+        routines = PlanRoutines(listOf(routineA, routineB, fixedC))
+        routines.setTrainingDays(setOf(DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY))
+        start()
+
+        assertEquals(
+            listOf(
+                UpcomingUi(day(5), "A"),
+                UpcomingUi(day(6), "C"),
+                UpcomingUi(day(7), "B"),
+                UpcomingUi(day(8), "A"),
             ),
             preview,
         )

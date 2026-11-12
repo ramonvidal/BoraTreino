@@ -122,10 +122,11 @@ class RoutineEditorV2ScreenshotTest {
     }
 
     @Test
-    fun `weekday chips on fixed weekdays`() {
-        setEditor(editorState.copy(showWeekdays = true, weekdays = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)))
+    fun `day chips for a routine on specific days`() {
+        setEditor(editorState.copy(weekdays = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)))
         shoot("routine-editor-v2-weekdays")
-        compose.onNodeWithText("Weekdays").assertExists()
+        compose.onNodeWithText("On specific days").assertExists()
+        compose.onNodeWithText("When do you train this?").assertExists()
     }
 
     @Test

@@ -16,9 +16,9 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import com.github.takahirom.roborazzi.captureRoboImage
+import java.time.DayOfWeek
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -108,10 +108,12 @@ class RoutinesPageScreenshotTest {
     }
 
     @Test
-    fun `routines page on weekdays mode`() {
-        setTab(GymSamples.populated.copy(scheduleMode = ScheduleMode.WEEKDAYS))
-        shoot("routines-page-weekdays")
-        compose.onNodeWithText("On weekdays").assertDoesNotExist()
+    fun `routines page with routines on specific days`() {
+        val onDays = GymSamples.routines.map { row ->
+            row.copy(routine = row.routine.copy(weekdays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)))
+        }
+        setTab(GymSamples.populated.copy(routines = onDays))
+        shoot("routines-page-specific-days")
         compose.onNodeWithText("Treino A").assertExists()
     }
 

@@ -66,8 +66,11 @@ class RoutinesTrainingDaysScreenTest {
     }
 
     @Test
-    fun `on fixed weekdays, the Fichas page shows no training day label, hint or day chips either`() {
-        setContent(GymSamples.populated.copy(scheduleMode = ScheduleMode.WEEKDAYS))
+    fun `routines on specific days, the Fichas page shows no training day label, hint or day chips either`() {
+        val onDays = GymSamples.routines.map { row ->
+            row.copy(routine = row.routine.copy(weekdays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)))
+        }
+        setContent(GymSamples.populated.copy(routines = onDays))
 
         compose.onNodeWithText(trainingDaysLabel).assertDoesNotExist()
         compose.onNodeWithText(hint).assertDoesNotExist()

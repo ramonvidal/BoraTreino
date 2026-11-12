@@ -90,15 +90,39 @@ class RoutinesNextViewModelTest {
     }
 
     @Test
-    fun `by weekdays the routine that has today is flagged Next`() = runTest(dispatcher) {
-        val plan = RoutinePlan(id = 1L, scheduleMode = ScheduleMode.WEEKDAYS)
+    fun `a routine on specific days is flagged Next on its day`() = runTest(dispatcher) {
         val weekly = listOf(
             RoutineWithItems(fakeRoutine(1L, "Treino A", "A", 0).copy(weekdays = setOf(DayOfWeek.MONDAY)), emptyList()),
             RoutineWithItems(fakeRoutine(2L, "Treino B", "B", 1).copy(weekdays = setOf(DayOfWeek.WEDNESDAY)), emptyList()),
         )
-        val vm = viewModel(FakeRoutineRepository(weekly, initialPlan = plan))
+        val vm = viewModel(FakeRoutineRepository(weekly))
 
         assertEquals(listOf(false, true), vm.uiState.value.routines.map { it.isNext })
+    }
+
+    @Test
+    fun `a routine on specific days beats the rotation on its day`() = runTest(dispatcher) {
+        val plan = RoutinePlan(id = 1L, scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY))
+        val mixed = listOf(
+            RoutineWithItems(fakeRoutine(1L, "Treino A", "A", 0), emptyList()),
+            RoutineWithItems(fakeRoutine(2L, "Treino B", "B", 1).copy(weekdays = setOf(DayOfWeek.WEDNESDAY)), emptyList()),
+        )
+        val vm = viewModel(FakeRoutineRepository(mixed, initialPlan = plan, initialLastRoutineId = null))
+
+        assertEquals(listOf(false, true), vm.uiState.value.routines.map { it.isNext })
+    }
+
+    @Test
+    fun `the rotation moves on past a routine on specific days`() = runTest(dispatcher) {
+        val plan = RoutinePlan(id = 1L, scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY))
+        val mixed = listOf(
+            RoutineWithItems(fakeRoutine(1L, "Treino A", "A", 0), emptyList()),
+            RoutineWithItems(fakeRoutine(2L, "Treino B", "B", 1).copy(weekdays = setOf(DayOfWeek.MONDAY)), emptyList()),
+            RoutineWithItems(fakeRoutine(3L, "Treino C", "C", 2), emptyList()),
+        )
+        val vm = viewModel(FakeRoutineRepository(mixed, initialPlan = plan, initialLastRoutineId = 1L))
+
+        assertEquals(listOf(false, false, true), vm.uiState.value.routines.map { it.isNext })
     }
 
     // Last trained

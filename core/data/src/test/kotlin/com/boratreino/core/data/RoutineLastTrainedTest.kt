@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.Instant
 
 /** What the "next" data reports: the last trained time per routine and the routine of the last finished session. */
@@ -21,8 +22,8 @@ class RoutineLastTrainedTest {
         routines = DefaultRoutineRepository(store)
     }
 
-    private suspend fun routine(name: String, shortName: String): Long =
-        routines.saveRoutine(Routine(id = 0, planId = 0, name = name, shortName = shortName, position = 0, weekdays = emptySet()), emptyList())
+    private suspend fun routine(name: String, shortName: String, weekdays: Set<DayOfWeek> = emptySet()): Long =
+        routines.saveRoutine(Routine(id = 0, planId = 0, name = name, shortName = shortName, position = 0, weekdays = weekdays), emptyList())
 
     private suspend fun session(routineId: Long?, startedAt: String, endedAt: String?) {
         store.insertSession(
@@ -125,5 +126,35 @@ class RoutineLastTrainedTest {
         routine("Treino A", "A")
 
         assertNull(routines.observeLastRoutineId().first())
+    }
+
+    @Test
+    fun `the last routine skips a later session of a routine on specific days`() = runTest {
+        val a = routine("Treino A", "A")
+        val b = routine("Treino B", "B", weekdays = setOf(DayOfWeek.THURSDAY))
+        session(a, "2026-11-02T18:00:00Z", "2026-11-02T19:00:00Z")
+        session(b, "2026-11-05T18:00:00Z", "2026-11-05T19:00:00Z")
+
+        assertEquals(a, routines.observeLastRoutineId().first())
+    }
+
+    @Test
+    fun `no last routine when only routines on specific days were trained`() = runTest {
+        val b = routine("Treino B", "B", weekdays = setOf(DayOfWeek.THURSDAY))
+        session(b, "2026-11-05T18:00:00Z", "2026-11-05T19:00:00Z")
+
+        assertNull(routines.observeLastRoutineId().first())
+    }
+
+    @Test
+    fun `a routine moved to specific days is no longer the last routine`() = runTest {
+        val a = routine("Treino A", "A")
+        val b = routine("Treino B", "B")
+        session(a, "2026-11-02T18:00:00Z", "2026-11-02T19:00:00Z")
+        session(b, "2026-11-04T18:00:00Z", "2026-11-04T19:00:00Z")
+        val stored = requireNotNull(routines.observeRoutine(b).first()).routine
+        routines.saveRoutine(stored.copy(weekdays = setOf(DayOfWeek.THURSDAY)), emptyList())
+
+        assertEquals(a, routines.observeLastRoutineId().first())
     }
 }

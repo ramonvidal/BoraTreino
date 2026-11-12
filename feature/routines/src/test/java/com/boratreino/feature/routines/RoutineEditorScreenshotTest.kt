@@ -18,7 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.DayOfWeek
 
-/** The routine editor for an existing routine, with and without the weekday chips; saved to build/outputs/roborazzi. */
+/** The routine editor for an existing routine, in rotation and on specific days; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class RoutineEditorScreenshotTest {
@@ -55,27 +55,26 @@ class RoutineEditorScreenshotTest {
         MachineGroup(MuscleGroup.ARMS, listOf(cableCurl)),
     )
 
-    private fun existingRoutine(showWeekdays: Boolean, weekdays: Set<DayOfWeek> = emptySet()) = RoutineEditorUiState(
+    private fun existingRoutine(weekdays: Set<DayOfWeek> = emptySet()) = RoutineEditorUiState(
         loading = false,
         routineId = 2L,
         name = "Routine B",
         shortName = "B",
         weekdays = weekdays,
-        showWeekdays = showWeekdays,
         items = items,
         available = available,
     )
 
     @Test
-    fun `existing routine with three machines and their targets`() = shoot(
+    fun `existing routine in rotation with three machines and their targets`() = shoot(
         "routine-editor",
-        existingRoutine(showWeekdays = false),
+        existingRoutine(),
     )
 
     @Test
-    fun `existing routine on fixed weekdays shows the weekday chips`() = shoot(
+    fun `existing routine on specific days shows the day chips`() = shoot(
         "routine-editor-weekdays",
-        existingRoutine(showWeekdays = true, weekdays = setOf(DayOfWeek.WEDNESDAY)),
+        existingRoutine(weekdays = setOf(DayOfWeek.WEDNESDAY)),
     )
 }
 

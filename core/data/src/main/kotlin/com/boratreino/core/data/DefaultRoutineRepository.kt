@@ -48,10 +48,15 @@ internal class DefaultRoutineRepository @Inject constructor(
     }
 
     /** The last rotation routine: routine of the latest finished session whose routine is in rotation. */
-    override fun observeLastRoutineId(): Flow<Long?> = store.observePlan().filterNotNull().flatMapLatest { plan ->
-        combine(store.observeSessions(), store.observeRoutines(plan.id)) { sessions, routines ->
-            NextRoutineRules.lastRotationRoutineId(sessions, routines)
-        }
+    override fun observeLastRoutineId(): Flow<Long?> = flow {
+        store.ensurePlan()
+        emitAll(
+            store.observePlan().filterNotNull().flatMapLatest { plan ->
+                combine(store.observeSessions(), store.observeRoutines(plan.id)) { sessions, routines ->
+                    NextRoutineRules.lastRotationRoutineId(sessions, routines)
+                }
+            },
+        )
     }.distinctUntilChanged()
 
     override fun observeLastTrained(): Flow<Map<Long, Instant>> = store.observeSessions().map { sessions ->

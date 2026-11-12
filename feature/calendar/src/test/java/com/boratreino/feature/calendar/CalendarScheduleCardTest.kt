@@ -22,7 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The "Which routine is next" card at the bottom of the Agenda: the mode chips and the training days. */
+/** The "Rotation days" card at the bottom of the Agenda: the training day chips, each routine's schedule and the week preview. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "w411dp-h2400dp")
 class CalendarScheduleCardTest {
@@ -31,12 +31,22 @@ class CalendarScheduleCardTest {
 
     private val today = LocalDate.of(2026, 11, 5)
 
-    private val inTurnHint = "Rotation moves to the next routine on these days. If you skip a day the routine stays the next one."
-    private val weekdaysPointer = "Choose each routine's days when you edit it."
+    private val title = "Rotation days"
+    private val hint = "Routines in rotation are trained on these days, one after the other. " +
+        "If you skip a day the routine stays the next one. Routines set to specific days come up on their own days."
+    private val pointer = "Change a routine's days in its editor (Routines tab)."
+
+    private val inRotationRoutine = RoutineChoiceUi(1L, "Treino A", "A")
+    private val fixedRoutine = RoutineChoiceUi(2L, "Treino B", "B", setOf(DayOfWeek.WEDNESDAY, DayOfWeek.MONDAY))
 
     private fun dayLabel(day: DayOfWeek): String = day.getDisplayName(TextStyle.SHORT, Locale.getDefault())
 
-    private fun state(mode: ScheduleMode, days: Set<DayOfWeek> = emptySet()) = CalendarUiState(
+    private fun state(
+        days: Set<DayOfWeek> = emptySet(),
+        routines: List<RoutineChoiceUi> = emptyList(),
+        weekPreview: List<UpcomingUi> = emptyList(),
+        mode: ScheduleMode = ScheduleMode.IN_TURN,
+    ) = CalendarUiState(
         loaded = true,
         today = today,
         zone = ZoneId.of("UTC"),
@@ -44,11 +54,12 @@ class CalendarScheduleCardTest {
         selected = today,
         scheduleMode = mode,
         trainingDays = days,
+        routines = routines,
+        weekPreview = weekPreview,
     )
 
     private fun show(
         state: CalendarUiState,
-        onScheduleModeChange: (ScheduleMode) -> Unit = {},
         onTrainingDaysChange: (Set<DayOfWeek>) -> Unit = {},
     ) {
         compose.setContent {
@@ -56,10 +67,7 @@ class CalendarScheduleCardTest {
                 Surface(Modifier.fillMaxSize()) {
                     CalendarContent(
                         state = state,
-                        actions = CalendarActions(
-                            onScheduleModeChange = onScheduleModeChange,
-                            onTrainingDaysChange = onTrainingDaysChange,
-                        ),
+                        actions = CalendarActions(onTrainingDaysChange = onTrainingDaysChange),
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -68,19 +76,38 @@ class CalendarScheduleCardTest {
     }
 
     @Test
-    fun `in turn shows the title, both modes, the training days and the hint`() {
-        show(state(ScheduleMode.IN_TURN))
+    fun `the card shows the rotation title, its hint and the pointer to the routine editor`() {
+        show(state())
 
-        compose.onNodeWithText("Which routine is next").assertIsDisplayed()
-        compose.onNodeWithText("In turn").assertIsDisplayed()
-        compose.onNodeWithText("On weekdays").assertIsDisplayed()
-        compose.onNodeWithText("Training days").assertIsDisplayed()
-        compose.onNodeWithText(inTurnHint).assertIsDisplayed()
+        compose.onNodeWithText(title).assertIsDisplayed()
+        compose.onNodeWithText(hint).assertIsDisplayed()
+        compose.onNodeWithText(pointer).assertIsDisplayed()
     }
 
     @Test
-    fun `in turn shows a chip for every day of the week`() {
-        show(state(ScheduleMode.IN_TURN))
+    fun `the card has no mode chips and none of the old texts`() {
+        show(state())
+
+        compose.onNodeWithText("Which routine is next").assertDoesNotExist()
+        compose.onNodeWithText("In turn").assertDoesNotExist()
+        compose.onNodeWithText("On weekdays").assertDoesNotExist()
+        compose.onNodeWithText("Training days").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the global schedule mode does not change the card`() {
+        show(state(mode = ScheduleMode.WEEKDAYS))
+
+        compose.onNodeWithText(title).assertIsDisplayed()
+        compose.onNodeWithText("On weekdays").assertDoesNotExist()
+        for (day in DayOfWeek.entries) {
+            compose.onNodeWithText(dayLabel(day)).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `a chip for every day of the week is always shown`() {
+        show(state(routines = listOf(inRotationRoutine, fixedRoutine)))
 
         for (day in DayOfWeek.entries) {
             compose.onNodeWithText(dayLabel(day)).assertIsDisplayed()
@@ -88,51 +115,19 @@ class CalendarScheduleCardTest {
     }
 
     @Test
-    fun `on weekdays hides the training day chips and their hint, and points to the routine editor`() {
-        show(state(ScheduleMode.WEEKDAYS))
+    fun `each routine is listed with In rotation or with its days`() {
+        show(state(routines = listOf(inRotationRoutine, fixedRoutine)))
 
-        compose.onNodeWithText("In turn").assertIsDisplayed()
-        compose.onNodeWithText("On weekdays").assertIsDisplayed()
-        compose.onNodeWithText(weekdaysPointer).assertIsDisplayed()
-        compose.onNodeWithText("Training days").assertDoesNotExist()
-        compose.onNodeWithText(inTurnHint).assertDoesNotExist()
-        for (day in DayOfWeek.entries) {
-            compose.onNodeWithText(dayLabel(day)).assertDoesNotExist()
-        }
-    }
-
-    @Test
-    fun `in turn does not show the weekdays pointer`() {
-        show(state(ScheduleMode.IN_TURN))
-
-        compose.onNodeWithText(weekdaysPointer).assertDoesNotExist()
-    }
-
-    @Test
-    fun `tapping On weekdays asks for the weekdays mode`() {
-        var mode: ScheduleMode? = null
-        show(state(ScheduleMode.IN_TURN), onScheduleModeChange = { mode = it })
-
-        compose.onNodeWithText("On weekdays").performClick()
-
-        assertEquals(ScheduleMode.WEEKDAYS, mode)
-    }
-
-    @Test
-    fun `tapping In turn asks for the in turn mode`() {
-        var mode: ScheduleMode? = null
-        show(state(ScheduleMode.WEEKDAYS), onScheduleModeChange = { mode = it })
-
-        compose.onNodeWithText("In turn").performClick()
-
-        assertEquals(ScheduleMode.IN_TURN, mode)
+        compose.onNodeWithText("Treino A · In rotation").assertIsDisplayed()
+        compose.onNodeWithText("Treino B · ${dayLabel(DayOfWeek.MONDAY)}, ${dayLabel(DayOfWeek.WEDNESDAY)}")
+            .assertIsDisplayed()
     }
 
     @Test
     fun `tapping a day that is not picked reports the set with that day added`() {
         var reported: Set<DayOfWeek>? = null
         show(
-            state(ScheduleMode.IN_TURN, days = setOf(DayOfWeek.WEDNESDAY)),
+            state(days = setOf(DayOfWeek.WEDNESDAY)),
             onTrainingDaysChange = { reported = it },
         )
 
@@ -145,7 +140,7 @@ class CalendarScheduleCardTest {
     fun `tapping a picked day reports the set with that day removed`() {
         var reported: Set<DayOfWeek>? = null
         show(
-            state(ScheduleMode.IN_TURN, days = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)),
+            state(days = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)),
             onTrainingDaysChange = { reported = it },
         )
 
@@ -158,7 +153,7 @@ class CalendarScheduleCardTest {
     fun `the last picked day can be removed, leaving an empty set`() {
         var reported: Set<DayOfWeek>? = null
         show(
-            state(ScheduleMode.IN_TURN, days = setOf(DayOfWeek.WEDNESDAY)),
+            state(days = setOf(DayOfWeek.WEDNESDAY)),
             onTrainingDaysChange = { reported = it },
         )
 
@@ -173,7 +168,7 @@ class CalendarScheduleCardTest {
             UpcomingUi(LocalDate.of(2026, 11, 6), "A"),
             UpcomingUi(LocalDate.of(2026, 11, 7), "B"),
         )
-        show(state(ScheduleMode.IN_TURN).copy(weekPreview = preview))
+        show(state(weekPreview = preview))
 
         compose.onNodeWithText(
             "This week: ${dayLabel(DayOfWeek.FRIDAY)} A, ${dayLabel(DayOfWeek.SATURDAY)} B",
@@ -182,7 +177,7 @@ class CalendarScheduleCardTest {
 
     @Test
     fun `the preview line is hidden when no training is left this week`() {
-        show(state(ScheduleMode.IN_TURN).copy(weekPreview = emptyList()))
+        show(state(weekPreview = emptyList()))
 
         compose.onNodeWithText("This week:", substring = true).assertDoesNotExist()
     }

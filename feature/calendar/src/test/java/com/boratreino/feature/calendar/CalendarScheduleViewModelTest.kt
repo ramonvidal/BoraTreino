@@ -59,7 +59,7 @@ class CalendarScheduleViewModelTest {
     }
 
     @Test
-    fun `switching to on weekdays hands the mode to the repository and shows it`() = runTest {
+    fun `switching the stored mode to on weekdays hands it to the repository and the state keeps it`() = runTest {
         start()
 
         viewModel.setScheduleMode(ScheduleMode.WEEKDAYS)
@@ -105,5 +105,24 @@ class CalendarScheduleViewModelTest {
 
         assertEquals(listOf(setOf(DayOfWeek.TUESDAY), emptySet<DayOfWeek>()), routines.trainingDayCalls)
         assertEquals(emptySet<DayOfWeek>(), state.trainingDays)
+    }
+
+    @Test
+    fun `the routine choices carry their days, empty for a routine in rotation`() = runTest {
+        routines = PlanRoutines(
+            listOf(
+                Routine(1L, 1L, "Treino A", "A", 0, emptySet()),
+                Routine(2L, 1L, "Treino B", "B", 1, setOf(DayOfWeek.WEDNESDAY, DayOfWeek.MONDAY)),
+            ),
+        )
+        start()
+
+        assertEquals(
+            listOf(
+                RoutineChoiceUi(1L, "Treino A", "A", emptySet()),
+                RoutineChoiceUi(2L, "Treino B", "B", setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)),
+            ),
+            state.routines,
+        )
     }
 }
