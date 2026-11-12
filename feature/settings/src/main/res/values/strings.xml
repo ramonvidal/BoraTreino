@@ -6,6 +6,17 @@
     <string name="settings_section_data">Data</string>
     <string name="settings_section_app">App</string>
 
+    <string name="settings_training_summary">%1$s · %2$s</string>
+    <string name="settings_summary_rest">Rest: %1$d s</string>
+    <string name="settings_summary_rest_off">Rest: off</string>
+    <string name="settings_body_summary">%1$s kg · %2$d cm</string>
+    <string name="settings_data_summary">Backup, Health Connect</string>
+    <string name="settings_app_summary">%1$s · version %2$s</string>
+    <plurals name="settings_summary_goal">
+        <item quantity="one">Goal: %1$d day</item>
+        <item quantity="other">Goal: %1$d days</item>
+    </plurals>
+
     <string name="settings_goal_title">Weekly goal</string>
     <string name="settings_goal_label">Days per week</string>
 
@@ -20,11 +31,11 @@
     <string name="settings_rest_beep">Beep when rest ends</string>
     <string name="settings_rest_default">Default rest</string>
     <string name="settings_rest_seconds">%1$d s</string>
-    <string name="settings_rest_hint">Each machine can have its own rest time in its editor.</string>
+    <string name="settings_rest_hint">Each exercise can have its own rest time in its editor.</string>
 
     <string name="settings_warmup_title">Warm-up</string>
     <string name="settings_warmup_switch">Warm-up suggestions</string>
-    <string name="settings_warmup_hint">Offers warm-up sets on the machine screen, from your working weight.</string>
+    <string name="settings_warmup_hint">Offers warm-up sets on the exercise screen, from your working weight.</string>
 
     <string name="settings_health_title">Health Connect</string>
     <string name="settings_health_hint">Send each finished training to Health Connect (exercise sessions, and calories and distance for cardio). Nothing is read.</string>
@@ -52,8 +63,8 @@
     <string name="settings_import_counts">%1$s, %2$s, %3$s, %4$s</string>
 
     <plurals name="settings_import_machines">
-        <item quantity="one">%1$s machine</item>
-        <item quantity="other">%1$s machines</item>
+        <item quantity="one">%1$s exercise</item>
+        <item quantity="other">%1$s exercises</item>
     </plurals>
     <plurals name="settings_import_routines">
         <item quantity="one">%1$s routine</item>
