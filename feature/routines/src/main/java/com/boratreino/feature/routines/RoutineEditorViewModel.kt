@@ -11,7 +11,6 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineItem
-import com.boratreino.core.model.ScheduleMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
 import javax.inject.Inject
@@ -57,7 +56,7 @@ internal data class RoutineEditorUiState(
     val name: String = "",
     val shortName: String = "",
     val weekdays: Set<DayOfWeek> = emptySet(),
-    /** Weekday chips show only in "On weekdays" mode. */
+    /** Unused: the schedule choice is per routine now; kept so old callers compile. */
     val showWeekdays: Boolean = false,
     val items: List<RoutineEditorItem> = emptyList(),
     val available: List<MachineGroup> = emptyList(),
@@ -146,7 +145,6 @@ class RoutineEditorViewModel @Inject constructor(
             val plan = routines.observePlan().first()
             val known = allMachines.first().associateBy { it.id }
             planId = plan.plan.id
-            val showWeekdays = plan.plan.scheduleMode == ScheduleMode.WEEKDAYS
             val found = routines.observeRoutine(routineId).first()
             if (found == null) {
                 deleted = true
@@ -162,7 +160,6 @@ class RoutineEditorViewModel @Inject constructor(
                         name = found.routine.name,
                         shortName = found.routine.shortName,
                         weekdays = found.routine.weekdays,
-                        showWeekdays = showWeekdays,
                         items = found.items.map { item ->
                             RoutineEditorItem(
                                 machineName = known[item.machineId]?.name.orEmpty(),

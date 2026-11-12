@@ -1,6 +1,7 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
+import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineEditRules
@@ -13,6 +14,7 @@ import com.boratreino.core.model.ScheduleMode
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -45,7 +47,12 @@ internal class DefaultRoutineRepository @Inject constructor(
         )
     }
 
-    override fun observeLastRoutineId(): Flow<Long?> = store.observeLastRoutineId()
+    /** The last rotation routine: routine of the latest finished session whose routine is in rotation. */
+    override fun observeLastRoutineId(): Flow<Long?> = store.observePlan().filterNotNull().flatMapLatest { plan ->
+        combine(store.observeSessions(), store.observeRoutines(plan.id)) { sessions, routines ->
+            NextRoutineRules.lastRotationRoutineId(sessions, routines)
+        }
+    }.distinctUntilChanged()
 
     override fun observeLastTrained(): Flow<Map<Long, Instant>> = store.observeSessions().map { sessions ->
         val latest = HashMap<Long, Instant>()

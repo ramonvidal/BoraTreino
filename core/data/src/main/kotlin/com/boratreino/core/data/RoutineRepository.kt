@@ -16,7 +16,7 @@ interface RoutineRepository {
     /** Creates the single plan (IN_TURN) on first use. */
     fun observePlan(): Flow<RoutinePlanWithRoutines>
     fun observeRoutine(id: Long): Flow<RoutineWithItems?>
-    /** Routine of the most recent finished session that had one; null when there is none. */
+    /** The last rotation routine: routine of the latest finished session whose routine is in rotation; null when none. */
     fun observeLastRoutineId(): Flow<Long?>
     /** Routine id -> start time of its latest finished session; routines never trained are absent. */
     fun observeLastTrained(): Flow<Map<Long, Instant>>

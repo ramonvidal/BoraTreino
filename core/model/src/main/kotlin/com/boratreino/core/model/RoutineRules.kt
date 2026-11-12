@@ -45,13 +45,17 @@ data class UpcomingTraining(val date: LocalDate, val routine: Routine)
 
 object NextRoutineRules {
     /**
-     * IN_TURN: the routine after the one of the most recent session that had a routine (by position, wrapping);
-     * the first routine when there is none or it no longer exists. WEEKDAYS: the first routine (by position)
-     * whose weekdays contain today's day; null on a rest day. Null when there are no routines.
-     * IN_TURN with non-empty [trainingDays] that do not contain [today] is a rest day (null).
-     * The first routine of [planned] (planned for today's date, in the order the owner set, given by the caller) that is not in
-     * [doneToday] (ids of routines already trained today) beats all of this, even on a rest day. When every planned
-     * routine is done, or none is planned, the schedule rule applies.
+     * Each routine is either in rotation (empty weekdays) or on specific days (non-empty weekdays); [mode] is
+     * ignored (kept for source compatibility). Order:
+     * 1. The first routine of [planned] (planned for today's date, in the order the owner set, given by the caller)
+     *    that is not in [doneToday] (ids of routines already trained today) wins, even on a rest day.
+     * 2. No routines: null.
+     * 3. The first on-specific-days routine (by position) whose weekdays contain [today] wins over rotation.
+     * 4. No rotation routines: null.
+     * 5. Rotation is offered only when [today] is in [trainingDays], or when [trainingDays] is empty and no routine
+     *    is on specific days (train any day). Otherwise null (rest day).
+     * 6. The pick is the rotation routine after [lastRoutineId] (the last rotation routine trained) by position,
+     *    wrapping; the first rotation routine when it is null or no longer in rotation.
      */
     fun next(
         mode: ScheduleMode,
@@ -65,14 +69,26 @@ object NextRoutineRules {
         planned.firstOrNull { it.id !in doneToday }?.let { return it }
         if (routines.isEmpty()) return null
         val sorted = routines.sortedBy { it.position }
-        return when (mode) {
-            ScheduleMode.IN_TURN -> {
-                if (trainingDays.isNotEmpty() && today !in trainingDays) return null
-                val i = sorted.indexOfFirst { it.id == lastRoutineId }
-                if (lastRoutineId == null || i < 0) sorted.first() else sorted[(i + 1) % sorted.size]
-            }
-            ScheduleMode.WEEKDAYS -> sorted.firstOrNull { today in it.weekdays }
-        }
+        val fixed = sorted.filter { it.weekdays.isNotEmpty() }
+        fixed.firstOrNull { today in it.weekdays }?.let { return it }
+        val rotation = sorted.filter { it.weekdays.isEmpty() }
+        if (rotation.isEmpty()) return null
+        val offered = if (trainingDays.isEmpty()) fixed.isEmpty() else today in trainingDays
+        if (!offered) return null
+        val i = rotation.indexOfFirst { it.id == lastRoutineId }
+        return if (lastRoutineId == null || i < 0) rotation.first() else rotation[(i + 1) % rotation.size]
+    }
+
+    /**
+     * The routine of the latest finished session (by start, then id) whose routine is in [routines] and in
+     * rotation (empty weekdays); null when there is none. This is the `lastRoutineId` for [next].
+     */
+    fun lastRotationRoutineId(sessions: List<Session>, routines: List<Routine>): Long? {
+        val rotation = routines.filter { it.weekdays.isEmpty() }.map { it.id }.toSet()
+        return sessions
+            .filter { it.endedAt != null && it.routineId != null && it.routineId in rotation }
+            .maxWithOrNull(compareBy({ it.startedAt }, { it.id }))
+            ?.routineId
     }
 
     /**

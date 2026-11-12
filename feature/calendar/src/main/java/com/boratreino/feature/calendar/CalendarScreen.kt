@@ -95,6 +95,7 @@ internal data class CalendarActions(
     val onPlan: (routineId: Long) -> Unit = {},
     val onUnplan: (routineId: Long) -> Unit = {},
     val onMovePlanned: (routineId: Long, up: Boolean) -> Unit = { _, _ -> },
+    /** Unused: the global schedule mode no longer changes behaviour. */
     val onScheduleModeChange: (ScheduleMode) -> Unit = {},
     val onTrainingDaysChange: (Set<DayOfWeek>) -> Unit = {},
 )
@@ -143,7 +144,6 @@ internal fun CalendarScreen(
             onPlan = viewModel::plan,
             onUnplan = viewModel::unplan,
             onMovePlanned = viewModel::reorderPlanned,
-            onScheduleModeChange = viewModel::setScheduleMode,
             onTrainingDaysChange = viewModel::setTrainingDays,
         ),
         snackbarHostState = snackbar,
@@ -197,14 +197,43 @@ private fun Hairline() {
     Box(Modifier.fillMaxWidth().height(1.dp).background(Sunny.Line))
 }
 
-/** "Which routine is next": In turn / On weekdays; in turn also asks for the training days. */
+/** "Rotation days": the days the rotation routines are trained, each routine's schedule and the week preview. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ScheduleCard(state: CalendarUiState, actions: CalendarActions) {
     val preview = state.weekPreview.map { "${it.date.dayOfWeek.shortLabel()} ${it.shortName}".trim() }
+    val rotationText = stringResource(R.string.calendar_in_rotation)
     BoraCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.calendar_schedule_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.calendar_rotation_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.calendar_rotation_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DayOfWeek.values().forEach { day ->
+                    BoraChip(
+                        label = day.shortLabel(),
+                        selected = day in state.trainingDays,
+                        onClick = {
+                            val next = if (day in state.trainingDays) state.trainingDays - day else state.trainingDays + day
+                            actions.onTrainingDaysChange(next)
+                        },
+                    )
+                }
+            }
+            state.routines.forEach { routine ->
+                val schedule = if (routine.weekdays.isEmpty()) {
+                    rotationText
+                } else {
+                    routine.weekdays.sorted().map { it.shortLabel() }.joinToString(", ")
+                }
+                Text(
+                    "${routine.name} · $schedule",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
             if (preview.isNotEmpty()) {
                 Text(
                     stringResource(R.string.calendar_week_preview, preview.joinToString(", ")),
@@ -212,49 +241,11 @@ private fun ScheduleCard(state: CalendarUiState, actions: CalendarActions) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BoraChip(
-                    label = stringResource(R.string.calendar_schedule_in_turn),
-                    selected = state.scheduleMode == ScheduleMode.IN_TURN,
-                    onClick = { actions.onScheduleModeChange(ScheduleMode.IN_TURN) },
-                )
-                BoraChip(
-                    label = stringResource(R.string.calendar_schedule_weekdays),
-                    selected = state.scheduleMode == ScheduleMode.WEEKDAYS,
-                    onClick = { actions.onScheduleModeChange(ScheduleMode.WEEKDAYS) },
-                )
-            }
-            if (state.scheduleMode == ScheduleMode.IN_TURN) {
-                Text(
-                    stringResource(R.string.calendar_training_days),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DayOfWeek.values().forEach { day ->
-                        BoraChip(
-                            label = day.shortLabel(),
-                            selected = day in state.trainingDays,
-                            onClick = {
-                                val next = if (day in state.trainingDays) state.trainingDays - day else state.trainingDays + day
-                                actions.onTrainingDaysChange(next)
-                            },
-                        )
-                    }
-                }
-                Text(
-                    stringResource(R.string.calendar_training_days_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Text(
-                    stringResource(R.string.calendar_schedule_weekdays_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text(
+                stringResource(R.string.calendar_rotation_pointer),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

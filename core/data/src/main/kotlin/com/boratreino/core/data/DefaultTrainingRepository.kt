@@ -153,16 +153,17 @@ internal class DefaultTrainingRepository @Inject constructor(
         combine(
             routines.observePlan(),
             combine(
-                store.observeLastRoutineId(),
+                store.observeSessions(),
                 routines.observePlanned(),
                 sessionsOn(date),
-            ) { last, planned, sessions -> Triple(last, planned, sessions) },
+            ) { allSessions, planned, sessions -> Triple(allSessions, planned, sessions) },
             store.observeOpenSession(),
             choice,
             skipped,
         ) { plan, inner, open, choice, skippedIds ->
-            val (lastRoutineId, plannedList, todaySessions) = inner
+            val (allSessions, plannedList, todaySessions) = inner
             val all = plan.routines.map { it.routine }
+            val lastRoutineId = NextRoutineRules.lastRotationRoutineId(allSessions, all)
             val mode = plan.plan.scheduleMode
             val trainingDays = plan.plan.trainingDays
             val plannedToday = plannedOn(date, plannedList, all)
@@ -219,7 +220,7 @@ internal class DefaultTrainingRepository @Inject constructor(
                 NextRoutineRules.next(
                     plan.scheduleMode,
                     all,
-                    store.lastRoutineId(),
+                    NextRoutineRules.lastRotationRoutineId(store.observeSessions().first(), all),
                     today(),
                     plan.trainingDays,
                     plannedOn(todayDate(), store.observePlannedWorkouts().first(), all),

@@ -54,8 +54,14 @@ internal data class PlannedUi(val routineId: Long, val name: String, val shortNa
 /** A training day of this week still to come and the letter of the routine suggested for it ("Mon A"). */
 internal data class UpcomingUi(val date: LocalDate, val shortName: String)
 
-/** A routine the owner can plan: its letter ([shortName], as in the rotation) and its name. */
-internal data class RoutineChoiceUi(val id: Long, val name: String, val shortName: String = "")
+/** A routine the owner can plan: its letter ([shortName], as in the rotation), its name and its [weekdays] (empty = in rotation). */
+internal data class RoutineChoiceUi(
+    val id: Long,
+    val name: String,
+    val shortName: String = "",
+    /** The days this routine is always next on; empty means it is in rotation. */
+    val weekdays: Set<DayOfWeek> = emptySet(),
+)
 
 /** The planned routines (today and later) with the routine choices, as one value for combine(). */
 private data class PlanningData(
@@ -100,9 +106,9 @@ internal data class CalendarUiState(
     val routines: List<RoutineChoiceUi> = emptyList(),
     /** The "Plan a workout" chooser for the selected day is open. */
     val planChooser: Boolean = false,
-    /** The schedule rule behind "which routine is next". */
+    /** Kept for backups and tests; no longer changes which routine is next and is not shown. */
     val scheduleMode: ScheduleMode = ScheduleMode.IN_TURN,
-    /** The days the rotation moves on (in turn mode); empty means every day. */
+    /** The days the rotation routines are trained; empty means every day (when no routine has fixed days). */
     val trainingDays: Set<DayOfWeek> = emptySet(),
     val goalEditor: Int? = null,
     val confirmDelete: Long? = null,
@@ -184,7 +190,7 @@ class CalendarViewModel @Inject constructor(
                 // observePlanned() already comes ordered by date, position and routine: keep that order.
                 .mapNotNull { p -> byId[p.routineId]?.let { r -> p.date to PlannedUi(r.id, r.name, r.shortName) } }
                 .groupBy({ it.first }, { it.second }),
-            routines = routines.map { RoutineChoiceUi(it.id, it.name, it.shortName) },
+            routines = routines.map { RoutineChoiceUi(it.id, it.name, it.shortName, it.weekdays) },
             scheduleMode = plan.plan.scheduleMode,
             trainingDays = plan.plan.trainingDays,
             allRoutines = routines,
@@ -194,8 +200,8 @@ class CalendarViewModel @Inject constructor(
     }
 
     /**
-     * The trainings suggested for the rest of this week, day by day. In turn, each one moves the rotation on by
-     * one, as training it would. Today counts while it is not trained yet (the last routine then still is the one before).
+     * The trainings suggested for the rest of this week, day by day. Each rotation routine moves the rotation on by
+     * one, as training it would; a routine on specific days does not. Today counts while it is not trained yet (the last routine then still is the one before).
      */
     private fun weekPreview(plan: PlanningData, today: LocalDate, trainedDates: Set<LocalDate>): List<UpcomingUi> {
         val weekEnd = WeekGoalRules.weekStart(today, firstDayOfWeek).plusDays(DAYS_IN_WEEK - 1)
@@ -208,7 +214,7 @@ class CalendarViewModel @Inject constructor(
             ) ?: break
             if (next.date.isAfter(weekEnd)) break
             result += UpcomingUi(next.date, next.routine.shortName)
-            if (plan.scheduleMode == ScheduleMode.IN_TURN) lastId = next.routine.id
+            if (next.routine.weekdays.isEmpty()) lastId = next.routine.id
             after = next.date
         }
         return result

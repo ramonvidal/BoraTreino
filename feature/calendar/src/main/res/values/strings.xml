@@ -20,12 +20,10 @@
     <string name="calendar_next_month">Next month</string>
 
     <!-- Schedule card -->
-    <string name="calendar_schedule_title">Which routine is next</string>
-    <string name="calendar_schedule_in_turn">In turn</string>
-    <string name="calendar_schedule_weekdays">On weekdays</string>
-    <string name="calendar_training_days">Training days</string>
-    <string name="calendar_training_days_hint">Rotation moves to the next routine on these days. If you skip a day the routine stays the next one.</string>
-    <string name="calendar_schedule_weekdays_hint">Choose each routine\'s days when you edit it.</string>
+    <string name="calendar_rotation_title">Rotation days</string>
+    <string name="calendar_rotation_hint">Routines in rotation are trained on these days, one after the other. If you skip a day the routine stays the next one. Routines set to specific days come up on their own days.</string>
+    <string name="calendar_in_rotation">In rotation</string>
+    <string name="calendar_rotation_pointer">Change a routine\'s days in its editor (Routines tab).</string>
 
     <!-- Day detail -->
     <string name="calendar_free_training">No routine</string>

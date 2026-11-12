@@ -47,6 +47,12 @@
     <string name="routine_name_error">Give the routine a name.</string>
     <string name="routine_short_name">Short name</string>
     <string name="routine_weekdays">Weekdays</string>
+    <string name="routine_when_title">When do you train this?</string>
+    <string name="routine_when_rotation">In rotation</string>
+    <string name="routine_when_days">On specific days</string>
+    <string name="routine_when_rotation_hint">It comes up in turn with your other rotation routines, on your training days (set in the Agenda tab).</string>
+    <string name="routine_when_days_hint">It is always the next routine on the days you pick. Pick at least one day.</string>
+    <string name="routines_schedule_rotation">In rotation</string>
     <string name="routine_machines">Exercises</string>
     <string name="routine_no_machines">No exercises yet.</string>
     <string name="routine_add_machine">Add exercise</string>

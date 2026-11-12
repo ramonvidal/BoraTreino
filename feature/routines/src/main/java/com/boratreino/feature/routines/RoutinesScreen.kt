@@ -50,7 +50,9 @@ import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.RoutineBadge
 import com.boratreino.core.ui.label
+import com.boratreino.core.ui.shortLabel
 import com.boratreino.core.ui.R as CoreUiR
+import java.time.DayOfWeek
 
 @Composable
 internal fun RoutinesScreen(
@@ -299,6 +301,12 @@ private fun RoutineCard(row: RoutineRow, canMoveUp: Boolean, canMoveDown: Boolea
             else -> pluralStringResource(R.plurals.routines_last_trained_days, days, days)
         }
     }
+    val rotationLabel = stringResource(R.string.routines_schedule_rotation)
+    val scheduleText = if (row.routine.weekdays.isEmpty()) {
+        rotationLabel
+    } else {
+        DayOfWeek.values().filter { it in row.routine.weekdays }.map { it.shortLabel() }.joinToString(" · ")
+    }
     var menuOpen by remember { mutableStateOf(false) }
     BoraCard(
         onClick = { callbacks.onOpenRoutine(row.routine.id) },
@@ -322,6 +330,11 @@ private fun RoutineCard(row: RoutineRow, canMoveUp: Boolean, canMoveDown: Boolea
                     )
                     if (row.isNext) NextPill()
                 }
+                Text(
+                    scheduleText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if (lastTrained != null) {
                     Text(
                         lastTrained,

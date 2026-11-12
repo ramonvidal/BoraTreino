@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -172,13 +173,32 @@ internal fun RoutineEditorContent(
             Modifier.padding(innerPadding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (state.showWeekdays) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.routine_weekdays),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            var specificDays by rememberSaveable { mutableStateOf(state.weekdays.isNotEmpty()) }
+            val daysSelected = specificDays || state.weekdays.isNotEmpty()
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    stringResource(R.string.routine_when_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BoraChip(
+                        label = stringResource(R.string.routine_when_rotation),
+                        selected = !daysSelected,
+                        onClick = {
+                            specificDays = false
+                            state.weekdays.forEach { callbacks.onToggleWeekday(it) }
+                        },
+                        large = true,
                     )
+                    BoraChip(
+                        label = stringResource(R.string.routine_when_days),
+                        selected = daysSelected,
+                        onClick = { specificDays = true },
+                        large = true,
+                    )
+                }
+                if (daysSelected) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         DayOfWeek.values().forEach { day ->
                             BoraChip(
@@ -189,6 +209,11 @@ internal fun RoutineEditorContent(
                         }
                     }
                 }
+                Text(
+                    stringResource(if (daysSelected) R.string.routine_when_days_hint else R.string.routine_when_rotation_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             Text(stringResource(R.string.routine_machines), style = MaterialTheme.typography.titleMedium)
