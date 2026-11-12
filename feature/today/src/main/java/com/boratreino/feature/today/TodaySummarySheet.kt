@@ -76,7 +76,7 @@ internal fun TrainingSummaryContent(
             .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Mascot(summary.mascotSex, size = 96.dp) }
+        Box(Modifier.fillMaxWidth().padding(top = 12.dp), contentAlignment = Alignment.Center) { Mascot(summary.mascotSex, size = 96.dp) }
 
         Column {
             Text(texts.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
