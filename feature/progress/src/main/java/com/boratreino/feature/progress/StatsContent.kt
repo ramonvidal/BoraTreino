@@ -11,88 +11,216 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.BodyInsightRules
+import com.boratreino.core.model.Highlight
+import com.boratreino.core.model.HighlightKind
 import com.boratreino.core.model.MuscleRecency
 import com.boratreino.core.model.Record
 import com.boratreino.core.model.RepRange
+import com.boratreino.core.model.StatsHighlights
+import com.boratreino.core.model.StatsPage
 import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
+import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
+import kotlin.math.roundToInt
+import com.boratreino.core.ui.R as CoreUiR
 
 private const val RECENT_DAYS = 3
 private const val WEEK_DAYS = 7
 private const val MAX_RECORDS = 10
 
-/** The Stats page: period chips, then the cards. Drawn from its state alone. */
+/**
+ * The Stats page: pinned period chips and sub-page switch, then the highlights and the cards of
+ * the chosen sub-page. Drawn from its state alone; [initialPage] only seeds the first sub-page
+ * (screenshot tests), the choice then survives rotation.
+ */
 @Composable
 internal fun StatsContent(
     state: StatsUiState,
     actions: StatsActions,
     modifier: Modifier = Modifier,
+    initialPage: StatsPage? = null,
 ) {
     val report = state.report
-    LazyColumn(
-        modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    var page by rememberSaveable { mutableStateOf(initialPage ?: StatsPage.BODY) }
+    Column(modifier.fillMaxSize()) {
+        Column(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            PeriodChips(state.period, actions.onPeriod)
+            StatsPageChips(page) { page = it }
+        }
+        LazyColumn(
+            Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (report == null) return@LazyColumn
+            if (report.isEmptyPeriod()) {
+                item(key = "empty") { StatsEmptyCard() }
+                return@LazyColumn
+            }
+            val highlights = StatsHighlights.of(report)
+            if (highlights.isNotEmpty()) {
+                item(key = "highlights") { HighlightsStrip(highlights) { page = it } }
+            }
+            when (page) {
+                StatsPage.BODY -> bodyItems(state, report)
+                StatsPage.STRENGTH -> strengthItems(report, actions)
+                StatsPage.HABIT -> habitItems(report)
+            }
+        }
+    }
+}
+
+private fun LazyListScope.bodyItems(state: StatsUiState, report: StatsReport) {
+    item(key = "week-muscles") { WeekMusclesCard(report) }
+    if (BodyInsightRules.muscleLoad(report).values.any { it > 0 }) {
+        item(key = "body-map") { BodyMapCard(report) }
+    }
+    if (hasBalance(report.balance)) {
+        item(key = "balance") { BalanceCard(report.balance) }
+    }
+    if (hasRelativeStrength(state)) {
+        item(key = "relative-strength") { RelativeStrengthCard(state) }
+    }
+    if (hasStrengthChart(report)) {
+        item(key = "strength-vs-weight") { StrengthVsWeightCard(state) }
+    }
+    if (report.muscleWeeks.isNotEmpty()) {
+        item(key = "hard-sets") { HardSetsCard(report) }
+    }
+}
+
+private fun LazyListScope.strengthItems(report: StatsReport, actions: StatsActions) {
+    if (report.strength.isNotEmpty()) {
+        item(key = "strength") { StrengthCard(report, actions.onOpenMachine) }
+    }
+    if (report.records.isNotEmpty()) {
+        item(key = "records") { RecordsCard(report, actions.onOpenMachine) }
+    }
+    if (report.repRanges.any { it.sets > 0 }) {
+        item(key = "rep-ranges") { RepRangesCard(report) }
+    }
+}
+
+private fun LazyListScope.habitItems(report: StatsReport) {
+    item(key = "summary") { SummaryCard(report) }
+    if (report.muscleWeeks.any { it.volumeKg > 0 }) {
+        item(key = "volume") { WeeklyVolumeCard(report) }
+    }
+    item(key = "recency") { RecencyCard(report) }
+    if (report.times.averageMinutes != null || report.times.averageMinutesBetweenSets != null) {
+        item(key = "times") { SessionLengthCard(report) }
+    }
+}
+
+/** The Body / Strength / Habit switch. */
+@Composable
+internal fun StatsPageChips(selected: StatsPage, onPage: (StatsPage) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        item(key = "period") { PeriodChips(state.period, actions.onPeriod) }
-        if (report == null) return@LazyColumn
-        if (report.isEmptyPeriod()) {
-            item(key = "empty") { StatsEmptyCard() }
-            return@LazyColumn
+        StatsPage.entries.forEach { page ->
+            BoraChip(
+                label = stringResource(
+                    when (page) {
+                        StatsPage.BODY -> R.string.stats_page_body
+                        StatsPage.STRENGTH -> R.string.stats_page_strength
+                        StatsPage.HABIT -> R.string.stats_page_habit
+                    },
+                ),
+                selected = page == selected,
+                onClick = { onPage(page) },
+            )
         }
-        item(key = "week-muscles") { WeekMusclesCard(report) }
-        if (BodyInsightRules.muscleLoad(report).values.any { it > 0 }) {
-            item(key = "body-map") { BodyMapCard(report) }
+    }
+}
+
+/** Up to three cards in a row that scrolls sideways; tapping one opens the page that holds its card. */
+@Composable
+internal fun HighlightsStrip(highlights: List<Highlight>, onPage: (StatsPage) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        highlights.forEach { highlight -> HighlightCard(highlight, onPage) }
+    }
+}
+
+@Composable
+private fun HighlightCard(highlight: Highlight, onPage: (StatsPage) -> Unit) {
+    val group = highlight.muscleGroup?.label().orEmpty()
+    val sentence = when (highlight.kind) {
+        HighlightKind.MUSCLE_LOAD -> stringResource(R.string.stats_highlight_load, group, formatOneDecimal(highlight.value))
+        HighlightKind.MUSCLE_BEHIND -> pluralStringResource(R.plurals.stats_highlight_behind, highlight.days, group, highlight.days)
+        HighlightKind.STRENGTH_GAIN -> stringResource(
+            R.string.stats_highlight_gain,
+            highlight.machine?.name.orEmpty(),
+            stringResource(R.string.stats_percent, signedPercentNumber(highlight.value)),
+        )
+        HighlightKind.GOAL_STREAK -> {
+            val weeks = highlight.value.roundToInt()
+            pluralStringResource(R.plurals.stats_highlight_streak, weeks, weeks)
         }
-        if (hasRelativeStrength(state)) {
-            item(key = "relative-strength") { RelativeStrengthCard(state) }
+    }
+    val kindLabel = stringResource(
+        when (highlight.kind) {
+            HighlightKind.MUSCLE_LOAD -> R.string.stats_highlight_kind_load
+            HighlightKind.MUSCLE_BEHIND -> R.string.stats_highlight_kind_behind
+            HighlightKind.STRENGTH_GAIN -> R.string.stats_highlight_kind_gain
+            HighlightKind.GOAL_STREAK -> R.string.stats_highlight_kind_streak
+        },
+    )
+    BoraCard(modifier = Modifier.width(220.dp).heightIn(min = 104.dp), onClick = { onPage(highlight.target) }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                kindLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                painterResource(CoreUiR.drawable.ic_arrow_upward),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp).graphicsLayer { rotationZ = 90f },
+            )
         }
-        if (hasStrengthChart(report)) {
-            item(key = "strength-vs-weight") { StrengthVsWeightCard(state) }
-        }
-        if (hasBalance(report.balance)) {
-            item(key = "balance") { BalanceCard(report.balance) }
-        }
-        item(key = "summary") { SummaryCard(report) }
-        if (report.muscleWeeks.any { it.volumeKg > 0 }) {
-            item(key = "volume") { WeeklyVolumeCard(report) }
-        }
-        if (report.muscleWeeks.isNotEmpty()) {
-            item(key = "hard-sets") { HardSetsCard(report) }
-        }
-        item(key = "recency") { RecencyCard(report) }
-        if (report.strength.isNotEmpty()) {
-            item(key = "strength") { StrengthCard(report, actions.onOpenMachine) }
-        }
-        if (report.records.isNotEmpty()) {
-            item(key = "records") { RecordsCard(report, actions.onOpenMachine) }
-        }
-        if (report.repRanges.any { it.sets > 0 }) {
-            item(key = "rep-ranges") { RepRangesCard(report) }
-        }
-        if (report.times.averageMinutes != null || report.times.averageMinutesBetweenSets != null) {
-            item(key = "times") { SessionLengthCard(report) }
-        }
+        Spacer(Modifier.height(6.dp))
+        Text(sentence, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -125,12 +253,9 @@ private fun periodLabel(period: StatsPeriod): String = stringResource(
 
 @Composable
 internal fun StatsCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+    BoraCard(modifier = modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             content()
         }
     }
@@ -138,15 +263,12 @@ internal fun StatsCard(title: String, modifier: Modifier = Modifier, content: @C
 
 @Composable
 internal fun StatsEmptyCard(modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
+    BoraCard(modifier = modifier.fillMaxWidth()) {
         Text(
             stringResource(R.string.stats_empty),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
         )
     }
 }
@@ -158,7 +280,7 @@ private fun BodyLine(text: String) {
 
 @Composable
 private fun NoteText(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 /** Sessions a week, consistency, best week and the overall strength change. */
@@ -296,7 +418,7 @@ internal fun StrengthCard(report: StatsReport, onOpenMachine: (Long) -> Unit, mo
                                 formatEstimate(trend.before),
                                 formatEstimate(trend.after),
                             ),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -344,7 +466,7 @@ internal fun RecordsCard(report: StatsReport, onOpenMachine: (Long) -> Unit, mod
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Text(
                         formatShortDate(event.date, report.to),

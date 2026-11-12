@@ -162,4 +162,21 @@
         <item quantity="one">%d set could not be classified</item>
         <item quantity="other">%d sets could not be classified</item>
     </plurals>
+    <string name="stats_page_body">Body</string>
+    <string name="stats_page_strength">Strength</string>
+    <string name="stats_page_habit">Habit</string>
+    <string name="stats_highlight_load">%1$s: %2$s sets a week</string>
+    <plurals name="stats_highlight_behind">
+        <item quantity="one">%1$s: %2$d day since last time</item>
+        <item quantity="other">%1$s: %2$d days since last time</item>
+    </plurals>
+    <string name="stats_highlight_gain">%1$s %2$s in the period</string>
+    <plurals name="stats_highlight_streak">
+        <item quantity="one">%d week meeting the goal</item>
+        <item quantity="other">%d weeks meeting the goal</item>
+    </plurals>
+    <string name="stats_highlight_kind_load">Most trained</string>
+    <string name="stats_highlight_kind_behind">Longest rest</string>
+    <string name="stats_highlight_kind_gain">Strength</string>
+    <string name="stats_highlight_kind_streak">Habit</string>
 </resources>
