@@ -11,7 +11,13 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.MuscleRecency
+import com.boratreino.core.model.MuscleWeek
+import com.boratreino.core.model.StatsPage
 import com.boratreino.core.model.StatsPeriod
+import com.boratreino.core.model.StatsReport
+import com.boratreino.core.model.StrengthTrend
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -27,10 +33,18 @@ class StatsContentTest {
     val compose = createComposeRule()
 
     private val full = StatsSamples.full
+    private val today = StatsSamples.today
 
-    private fun showPage(state: StatsUiState = StatsSamples.state(), actions: StatsActions = StatsActions()) {
+    /** Shows the page on [page] (the Body sub-page when null). */
+    private fun showPage(
+        state: StatsUiState = StatsSamples.state(),
+        actions: StatsActions = StatsActions(),
+        page: StatsPage? = null,
+    ) {
         compose.setContent {
-            StatsScreenHost { StatsContent(state = state, actions = actions, modifier = Modifier.fillMaxSize()) }
+            StatsScreenHost {
+                StatsContent(state = state, actions = actions, modifier = Modifier.fillMaxSize(), initialPage = page)
+            }
         }
     }
 
@@ -39,6 +53,26 @@ class StatsContentTest {
     }
 
     private fun shown(text: String) = compose.onNodeWithText(text).assertIsDisplayed()
+
+    private fun notShown(text: String) = compose.onNodeWithText(text).assertDoesNotExist()
+
+    private fun yOf(text: String): Float = compose.onNodeWithText(text).fetchSemanticsNode().positionInRoot.y
+
+    /** The report with no highlight at all: no strength gain, no group trained a lot, nothing behind, no goal streak. */
+    private fun withoutHighlights(report: StatsReport = full): StatsReport = report.copy(
+        strength = report.strength.filter { it.changePercent <= 0.0 },
+        muscleWeeks = emptyList(),
+        recency = MuscleGroup.entries.map { MuscleRecency(it, null, null) },
+        consistency = report.consistency.copy(weeksMetGoal = 0),
+    )
+
+    private fun trend(machineName: String, id: Long, percent: Double) = StrengthTrend(
+        machine = ProgressSamples.machine(id, machineName, MuscleGroup.LEGS),
+        before = 100.0,
+        after = 100.0 + percent,
+        changeKg = percent,
+        changePercent = percent,
+    )
 
     // The page
 
@@ -52,41 +86,74 @@ class StatsContentTest {
     }
 
     @Test
-    fun `the muscle groups card is the first card, above the summary`() {
+    fun `the page chips Body Strength and Habit are shown`() {
+        // Without highlights: a highlight card's kind label would repeat the chip's text.
+        showPage(StatsSamples.state(withoutHighlights()))
+        shown("Body")
+        shown("Strength")
+        shown("Habit")
+    }
+
+    @Test
+    fun `the body page is shown by default`() {
         showPage()
 
-        val week = compose.onNodeWithText("Muscle groups").fetchSemanticsNode().positionInRoot.y
-        val summary = compose.onNodeWithText("Summary").fetchSemanticsNode().positionInRoot.y
-        assertTrue(week < summary)
+        shown("Muscle groups")
+        notShown("Summary")
+        notShown("Strength trend")
+        notShown("Session length")
+    }
+
+    @Test
+    fun `the muscle groups card comes before the body map`() {
+        showPage()
+
+        assertTrue(yOf("Muscle groups") < yOf("Body map"))
     }
 
     @Test
     fun `the muscle groups card is left out of an empty period`() {
         showPage(StatsSamples.state(StatsSamples.empty))
 
-        compose.onNodeWithText("Muscle groups").assertDoesNotExist()
+        notShown("Muscle groups")
     }
 
     @Test
-    fun `the cards come with their titles`() {
+    fun `the body page cards come with their titles`() {
         showPage()
-        listOf(
-            "Muscle groups",
-            "Body map",
-            "Summary",
-            "Weekly volume",
-            "Hard sets per muscle group",
-            "Days since each muscle group was trained",
-            "Strength trend",
-            "Records",
-            "Rep ranges",
-            "Session length",
-        ).forEach { shown(it) }
+        shown("Muscle groups")
+        shown("Body map")
+        shown("Hard sets per muscle group")
+    }
+
+    @Test
+    fun `the strength page cards come with their titles`() {
+        showPage(page = StatsPage.STRENGTH)
+        shown("Strength trend")
+        shown("Records")
+        shown("Rep ranges")
+    }
+
+    @Test
+    fun `the habit page cards come with their titles`() {
+        showPage(page = StatsPage.HABIT)
+        shown("Summary")
+        shown("Weekly volume")
+        shown("Days since each muscle group was trained")
+        shown("Session length")
+    }
+
+    @Test
+    fun `the page passed as initial page is the one shown`() {
+        showPage(page = StatsPage.STRENGTH)
+
+        shown("Strength trend")
+        notShown("Muscle groups")
     }
 
     @Test
     fun `the summary has the sessions a week, the consistency and the best week`() {
-        showPage()
+        showPage(page = StatsPage.HABIT)
         shown("2.8 sessions a week")
         shown("Met your goal in 9 of 12 weeks")
         shown("Best week: 4 training days, week of 12 Oct")
@@ -94,19 +161,19 @@ class StatsContentTest {
 
     @Test
     fun `the overall strength change is in the summary`() {
-        showPage()
+        showPage(page = StatsPage.HABIT)
         shown("Strength: +6.4 % in this period")
     }
 
     @Test
     fun `without an overall strength change the summary leaves the line out`() {
-        showPage(StatsSamples.state(full.copy(overallStrengthPercent = null)))
-        compose.onNodeWithText("Strength: +6.4 % in this period").assertDoesNotExist()
+        showPage(StatsSamples.state(full.copy(overallStrengthPercent = null)), page = StatsPage.HABIT)
+        notShown("Strength: +6.4 % in this period")
     }
 
     @Test
     fun `the volume legend shows tonnes with one decimal and kilograms below a tonne`() {
-        showPage()
+        showPage(page = StatsPage.HABIT)
         shown("12.4 t")
         shown("8.2 t")
         shown("850 kg")
@@ -114,13 +181,13 @@ class StatsContentTest {
 
     @Test
     fun `a group that was never trained says Never`() {
-        showPage()
+        showPage(page = StatsPage.HABIT)
         shown("Never")
     }
 
     @Test
     fun `the recency rows say today and days ago`() {
-        showPage()
+        showPage(page = StatsPage.HABIT)
         shown("Today")
         shown("1 day ago")
         shown("2 days ago")
@@ -135,7 +202,7 @@ class StatsContentTest {
 
     @Test
     fun `the strength list shows the estimate and the change`() {
-        showPage()
+        showPage(page = StatsPage.STRENGTH)
         shown("95 kg → 100 kg est. 1RM")
         shown("+5.3 %")
         shown("+10.0 %")
@@ -143,13 +210,13 @@ class StatsContentTest {
 
     @Test
     fun `a plateau is flagged under the strength list`() {
-        showPage()
+        showPage(page = StatsPage.STRENGTH)
         shown("Lat pulldown: no progress in 5 sessions")
     }
 
     @Test
     fun `the records show what was beaten and when`() {
-        showPage()
+        showPage(page = StatsPage.STRENGTH)
         shown("Heaviest: 100 kg")
         shown("Most reps: 12 at 40 kg")
         shown("30 Oct")
@@ -157,13 +224,13 @@ class StatsContentTest {
 
     @Test
     fun `a machine in both lists appears twice`() {
-        showPage()
+        showPage(page = StatsPage.STRENGTH)
         compose.onAllNodesWithText("Leg press").assertCountEquals(2)
     }
 
     @Test
     fun `the rep ranges show their percentages`() {
-        // The card alone: on the full page it sits far down, and this test is about its texts.
+        // The card alone: on the page it sits far down, and this test is about its texts.
         showCard { RepRangesCard(StatsSamples.full) }
         // The bar and its legend are one accessibility element: a screen reader gets one sentence.
         compose.onNodeWithContentDescription(
@@ -174,9 +241,136 @@ class StatsContentTest {
 
     @Test
     fun `the session length shows the average and the time between sets`() {
-        showPage()
+        showPage(page = StatsPage.HABIT)
         shown("Average session: 62 min")
         shown("About 3.1 min between sets")
+    }
+
+    // Highlights
+
+    @Test
+    fun `the highlights are the first item below the page chips`() {
+        showPage()
+
+        assertTrue(yOf("3 months") < yOf("Bench press +10.0 % in the period"))
+        assertTrue(yOf("Bench press +10.0 % in the period") < yOf("Muscle groups"))
+    }
+
+    @Test
+    fun `at most three highlights are shown`() {
+        showPage()
+
+        compose.onNodeWithText("Bench press +10.0 % in the period").assertExists()
+        compose.onNodeWithText("Legs: 10.0 sets a week").assertExists()
+        compose.onNodeWithText("Core: 30 days since last time").assertExists()
+        notShown("9 weeks meeting the goal")
+    }
+
+    @Test
+    fun `the highlight sentences name the group, the machine and the count`() {
+        val report = withoutHighlights().copy(
+            muscleWeeks = listOf(MuscleWeek(today, MuscleGroup.LEGS, 156, 0.0)),
+            recency = listOf(MuscleRecency(MuscleGroup.BACK, today.minusDays(9), 9)) +
+                MuscleGroup.entries.filter { it != MuscleGroup.BACK }.map { MuscleRecency(it, null, null) },
+            strength = listOf(trend("Leg press", 1, 8.0)),
+        )
+        showPage(StatsSamples.state(report))
+
+        compose.onNodeWithText("Leg press +8.0 % in the period").assertExists()
+        compose.onNodeWithText("Legs: 12.0 sets a week").assertExists()
+        compose.onNodeWithText("Back: 9 days since last time").assertExists()
+    }
+
+    @Test
+    fun `the goal highlight counts the weeks meeting the goal`() {
+        val report = withoutHighlights().copy(consistency = full.consistency.copy(weeksMetGoal = 5))
+        showPage(StatsSamples.state(report))
+
+        compose.onNodeWithText("5 weeks meeting the goal").assertExists()
+    }
+
+    @Test
+    fun `each highlight card names its kind`() {
+        showPage()
+
+        compose.onNodeWithText("Most trained").assertExists()
+        compose.onNodeWithText("Longest rest").assertExists()
+    }
+
+    @Test
+    fun `tapping a highlight switches to the page that holds its card`() {
+        val report = withoutHighlights().copy(strength = full.strength.take(1))
+        showPage(StatsSamples.state(report))
+        notShown("Strength trend")
+
+        compose.onNodeWithText("Bench press +10.0 % in the period").performClick()
+
+        shown("Strength trend")
+        notShown("Muscle groups")
+    }
+
+    @Test
+    fun `tapping a body highlight shows the body page`() {
+        val report = withoutHighlights().copy(
+            muscleWeeks = listOf(MuscleWeek(today, MuscleGroup.LEGS, 156, 0.0)),
+        )
+        showPage(StatsSamples.state(report), page = StatsPage.HABIT)
+        notShown("Muscle groups")
+
+        compose.onNodeWithText("Legs: 12.0 sets a week").performClick()
+
+        shown("Muscle groups")
+        notShown("Summary")
+    }
+
+    @Test
+    fun `tapping a habit highlight shows the habit page`() {
+        val report = withoutHighlights().copy(consistency = full.consistency.copy(weeksMetGoal = 5))
+        showPage(StatsSamples.state(report))
+        notShown("Summary")
+
+        compose.onNodeWithText("5 weeks meeting the goal").performClick()
+
+        shown("Summary")
+        notShown("Muscle groups")
+    }
+
+    // Page chips
+
+    @Test
+    fun `tapping a page chip switches the page`() {
+        showPage(StatsSamples.state(withoutHighlights()))
+        shown("Muscle groups")
+
+        compose.onNodeWithText("Strength").performClick()
+        shown("Strength trend")
+        notShown("Muscle groups")
+
+        compose.onNodeWithText("Habit").performClick()
+        shown("Summary")
+        notShown("Strength trend")
+
+        compose.onNodeWithText("Body").performClick()
+        shown("Muscle groups")
+        notShown("Summary")
+    }
+
+    @Test
+    fun `an empty period shows the empty card on every page`() {
+        showPage(StatsSamples.state(StatsSamples.empty))
+        shown("No training in this period yet")
+
+        compose.onNodeWithText("Strength").performClick()
+        shown("No training in this period yet")
+        notShown("Strength trend")
+
+        compose.onNodeWithText("Habit").performClick()
+        shown("No training in this period yet")
+        notShown("Summary")
+
+        compose.onNodeWithText("Body").performClick()
+        shown("No training in this period yet")
+        notShown("Muscle groups")
     }
 
     // Empty and special periods
@@ -186,35 +380,38 @@ class StatsContentTest {
         showPage(StatsSamples.state(StatsSamples.empty))
         shown("4 weeks")
         shown("No training in this period yet")
-        compose.onNodeWithText("Summary").assertDoesNotExist()
-        compose.onNodeWithText("Records").assertDoesNotExist()
+        notShown("Summary")
+        notShown("Records")
     }
 
     @Test
     fun `a cardio-only period has a summary but no strength cards`() {
-        showPage(StatsSamples.state(StatsSamples.cardioOnly))
+        showPage(StatsSamples.state(StatsSamples.cardioOnly), page = StatsPage.HABIT)
         shown("Summary")
         shown("2 sessions a week")
-        compose.onNodeWithText("No training in this period yet").assertDoesNotExist()
-        compose.onNodeWithText("Weekly volume").assertDoesNotExist()
-        compose.onNodeWithText("Hard sets per muscle group").assertDoesNotExist()
-        compose.onNodeWithText("Strength trend").assertDoesNotExist()
-        compose.onNodeWithText("Rep ranges").assertDoesNotExist()
+        notShown("No training in this period yet")
+        notShown("Weekly volume")
+        notShown("Hard sets per muscle group")
+        notShown("Strength trend")
+        notShown("Rep ranges")
         shown("Average session: 40 min")
     }
 
     @Test
     fun `a period without time data leaves the session length out`() {
-        showPage(StatsSamples.state(full.copy(times = full.times.copy(averageMinutes = null, averageMinutesBetweenSets = null))))
-        compose.onNodeWithText("Session length").assertDoesNotExist()
+        showPage(
+            StatsSamples.state(full.copy(times = full.times.copy(averageMinutes = null, averageMinutesBetweenSets = null))),
+            page = StatsPage.HABIT,
+        )
+        notShown("Session length")
     }
 
     @Test
     fun `before the first report only the period chips are drawn`() {
         showPage(StatsUiState())
         shown("3 months")
-        compose.onNodeWithText("Summary").assertDoesNotExist()
-        compose.onNodeWithText("No training in this period yet").assertDoesNotExist()
+        notShown("Summary")
+        notShown("No training in this period yet")
     }
 
     // Taps
@@ -250,7 +447,7 @@ class StatsContentTest {
     @Test
     fun `tapping a machine in the strength list on the page opens it`() {
         var opened: Long? = null
-        showPage(actions = StatsActions(onOpenMachine = { opened = it }))
+        showPage(actions = StatsActions(onOpenMachine = { opened = it }), page = StatsPage.STRENGTH)
         compose.onAllNodesWithText("Lat pulldown")[0].performClick()
         assertEquals(3L, opened)
     }

@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.model.StatsPage
 import com.boratreino.core.model.StatsPeriod
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -22,10 +23,21 @@ class StatsScreenshotTest {
 
     private val full = StatsSamples.full
 
-    private fun page(name: String, state: StatsUiState, dark: Boolean = false, fontScale: Float = 1f) {
+    private fun page(
+        name: String,
+        state: StatsUiState,
+        dark: Boolean = false,
+        fontScale: Float = 1f,
+        initialPage: StatsPage? = null,
+    ) {
         compose.setContent {
             StatsScreenHost(dark, fontScale) {
-                StatsContent(state = state, actions = StatsActions(), modifier = Modifier.fillMaxSize())
+                StatsContent(
+                    state = state,
+                    actions = StatsActions(),
+                    modifier = Modifier.fillMaxSize(),
+                    initialPage = initialPage,
+                )
             }
         }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
@@ -42,7 +54,28 @@ class StatsScreenshotTest {
     fun `stats full`() = page("stats-full", StatsSamples.state())
 
     @Test
+    fun `stats body page`() = page("stats-page-body", StatsSamples.state(), initialPage = StatsPage.BODY)
+
+    @Test
+    fun `stats strength page`() = page("stats-page-strength", StatsSamples.state(), initialPage = StatsPage.STRENGTH)
+
+    @Test
+    fun `stats habit page`() = page("stats-page-habit", StatsSamples.state(), initialPage = StatsPage.HABIT)
+
+    @Test
+    fun `stats habit page dark`() =
+        page("stats-page-habit-dark", StatsSamples.state(), dark = true, initialPage = StatsPage.HABIT)
+
+    @Test
     fun `stats full dark`() = page("stats-full-dark", StatsSamples.state(), dark = true)
+
+    @Test
+    fun `stats strength page large text`() =
+        page("stats-page-strength-large", StatsSamples.state(), fontScale = 2f, initialPage = StatsPage.STRENGTH)
+
+    @Test
+    fun `stats empty period on the habit page`() =
+        page("stats-empty-habit", StatsSamples.state(StatsSamples.empty), initialPage = StatsPage.HABIT)
 
     @Test
     fun `stats full large text`() = page("stats-full-large", StatsSamples.state(), fontScale = 2f)
