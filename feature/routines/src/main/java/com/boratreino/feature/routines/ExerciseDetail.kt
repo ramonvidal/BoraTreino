@@ -25,11 +25,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Icon
+import com.boratreino.core.model.ExerciseImages
 import com.boratreino.core.model.LibraryEquipment
 import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.LibraryLevel
 import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraCard
+import com.boratreino.core.ui.ExerciseFrames
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
 
@@ -137,6 +139,10 @@ internal fun ExerciseDetailDialog(
         title = { Text(exercise.displayName(portuguese)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ExerciseFrames(
+                    slug = ExerciseImages.slugFor(detail.starterName ?: exercise.name, exercise.id),
+                    name = exercise.displayName(portuguese),
+                )
                 DetailLine(stringResource(R.string.library_detail_group), exercise.muscleGroup.label())
                 if (exercise.primaryMuscles.isNotEmpty()) {
                     DetailLine(
@@ -193,7 +199,13 @@ private fun DetailLine(label: String, value: String) {
 
 /** The machine editor's "How to do it" card: folded until tapped. */
 @Composable
-internal fun HowToCard(steps: List<String>, portuguese: Boolean, modifier: Modifier = Modifier) {
+internal fun HowToCard(
+    steps: List<String>,
+    portuguese: Boolean,
+    modifier: Modifier = Modifier,
+    imageSlug: String? = null,
+    imageName: String = "",
+) {
     if (steps.isEmpty()) return
     var expanded by rememberSaveable { mutableStateOf(false) }
     BoraCard(modifier = modifier.fillMaxWidth()) {
@@ -215,6 +227,7 @@ internal fun HowToCard(steps: List<String>, portuguese: Boolean, modifier: Modif
                 )
             }
             if (expanded) {
+                ExerciseFrames(imageSlug, imageName)
                 NumberedSteps(steps)
                 EnglishNote(portuguese)
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(bottom = 4.dp))

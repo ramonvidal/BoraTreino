@@ -100,7 +100,7 @@ import com.boratreino.core.ui.setTypeLabel
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.ExercisePreviewDialog
 import com.boratreino.core.ui.MachineThumb
-import com.boratreino.core.model.StarterMachines
+import com.boratreino.core.model.ExerciseImages
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.boratreino.core.ui.NumberPadDialog
@@ -356,7 +356,7 @@ private fun ExerciseHeader(state: MachineUiState, actions: MachineActions) {
         }
         if (machine != null) {
             var preview by remember { mutableStateOf(false) }
-            val hasPicture = StarterMachines.imageFor(machine.name) != null
+            val hasPicture = ExerciseImages.slugFor(machine.name, machine.libraryId) != null
             MachineThumb(machine, size = 48.dp, onClick = if (hasPicture) ({ preview = true }) else null)
             if (preview) ExercisePreviewDialog(machine, onDismiss = { preview = false })
             Column(Modifier.weight(1f)) {

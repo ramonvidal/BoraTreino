@@ -52,6 +52,7 @@ import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraButtonStyle
 import com.boratreino.core.ui.BoraChip
+import com.boratreino.core.model.LibraryExerciseImages
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.ThumbTile
 import com.boratreino.core.ui.label
@@ -316,11 +317,12 @@ private fun LibraryRow(row: PickerRow, checked: Boolean, onToggle: () -> Unit, o
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val starter = row.starter
-            // The picture is looked up by the English name, whichever name is shown. Library-only entries use the muscle tile.
+            // The picture is looked up by the English name, whichever name is shown; library-only entries use the
+            // library picture when there is one, else the muscle tile.
             if (starter != null) {
-                MachineThumb(name = starter.name, muscleGroup = starter.muscleGroup, size = 40.dp)
+                MachineThumb(name = starter.name, muscleGroup = starter.muscleGroup, size = 40.dp, libraryId = row.libraryId)
             } else {
-                ThumbTile(imageSlug = null, muscleGroup = row.group, size = 40.dp)
+                ThumbTile(imageSlug = row.libraryId?.let(LibraryExerciseImages::slugFor), muscleGroup = row.group, size = 40.dp)
             }
             Column(Modifier.weight(1f)) {
                 Text(

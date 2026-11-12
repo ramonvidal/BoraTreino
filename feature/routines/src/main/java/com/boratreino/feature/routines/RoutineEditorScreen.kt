@@ -260,7 +260,7 @@ private fun ItemRow(entry: RoutineEditorItem, index: Int, lastIndex: Int, callba
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            MachineThumb(name = entry.machineName, muscleGroup = entry.muscleGroup, size = 40.dp)
+            MachineThumb(name = entry.machineName, muscleGroup = entry.muscleGroup, size = 40.dp, libraryId = entry.libraryId)
             Column(Modifier.weight(1f)) {
                 Text(entry.machineName, style = MaterialTheme.typography.bodyLarge)
                 if (!cardio) {

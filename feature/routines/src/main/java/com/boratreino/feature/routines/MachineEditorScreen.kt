@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boratreino.core.model.ExerciseImages
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.RestTimerRules
@@ -197,7 +198,12 @@ internal fun MachineEditorContent(
             )
 
             if (state.steps.isNotEmpty()) {
-                HowToCard(steps = state.steps, portuguese = state.portuguese)
+                HowToCard(
+                    steps = state.steps,
+                    portuguese = state.portuguese,
+                    imageSlug = ExerciseImages.slugFor(state.name, state.libraryId),
+                    imageName = state.name,
+                )
             }
 
             BoraButton(

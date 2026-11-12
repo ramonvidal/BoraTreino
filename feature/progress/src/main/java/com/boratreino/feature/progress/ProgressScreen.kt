@@ -249,7 +249,7 @@ private fun ExerciseRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        MachineThumb(name = machine.name, muscleGroup = machine.muscleGroup, size = 44.dp)
+        MachineThumb(machine = machine, size = 44.dp)
         Column(Modifier.weight(1f)) {
             Text(
                 machine.name,

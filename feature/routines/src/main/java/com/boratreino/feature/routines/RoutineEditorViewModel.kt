@@ -41,6 +41,8 @@ internal data class RoutineEditorItem(
     val muscleGroup: MuscleGroup = MuscleGroup.LEGS,
     /** Cardio machines have no sets x reps target. */
     val kind: MachineKind = MachineKind.WEIGHT_REPS,
+    /** The library exercise the machine came from; gives it a picture when its name is not a starter's. */
+    val libraryId: String? = null,
 )
 
 /**
@@ -167,6 +169,7 @@ class RoutineEditorViewModel @Inject constructor(
                                 item = item,
                                 muscleGroup = known[item.machineId]?.muscleGroup ?: MuscleGroup.LEGS,
                                 kind = known[item.machineId]?.kind ?: MachineKind.WEIGHT_REPS,
+                                libraryId = known[item.machineId]?.libraryId,
                             )
                         },
                     )

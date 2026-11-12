@@ -38,6 +38,7 @@
   "Good morning": "barbell-good-mornings",
   "Dumbbell lateral raise": "lateral-dumbbell-raises",
   "Front raise": "front-dumbbell-raise",
+  "Upright row": "upright-barbell-rows",
   "Biceps curl machine": "biceps-curl-with-machine",
   "Cable biceps curl": "standing-biceps-curl-with-cable",
   "Triceps pushdown": "triceps-pushdown-with-cable",
@@ -50,6 +51,8 @@
   "Concentration curl": "concentration-curls-with-dumbbell",
   "Cable curl": "standing-biceps-curl-with-cable",
   "Rope triceps pushdown": "triceps-pushdown-with-rope-and-cable",
+  "Overhead dumbbell extension": "standing-triceps-extension-2",
+  "Skull crusher": "lying-triceps-press-with-barbell",
   "Close-grip bench press": "close-grip-barbell-bench-press",
   "Bench dips": "bench-dips",
   "Crunch": "crunches"

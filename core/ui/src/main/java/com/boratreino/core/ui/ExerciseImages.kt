@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.ExerciseImages
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MuscleGroup
-import com.boratreino.core.model.StarterMachines
 import kotlin.math.roundToInt
 
 /** The pictures are square, this many pixels on a side. */
@@ -174,7 +173,8 @@ fun ThumbTile(
 
 /**
  * A small tile with the picture of the machine named [name], or the muscle group's tile when there is none
- * (see [ThumbTile]). Same footprint either way. [onClick] only applies when a picture exists.
+ * (see [ThumbTile]). Same footprint either way. [onClick] only applies when a picture exists. The picture is the
+ * starter's by name, else the one of the library exercise [libraryId] (see [ExerciseImages.slugFor]).
  */
 @Composable
 fun MachineThumb(
@@ -183,8 +183,9 @@ fun MachineThumb(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     onClick: (() -> Unit)? = null,
+    libraryId: String? = null,
 ) {
-    val slug = remember(name) { StarterMachines.imageFor(name) }
+    val slug = remember(name, libraryId) { ExerciseImages.slugFor(name, libraryId) }
     val description = if (slug != null) stringResource(R.string.exercise_image_description, name) else stringResource(R.string.exercise_no_image)
     val clickable = if (slug != null && onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     ThumbTile(slug, muscleGroup, modifier = modifier.then(clickable), size = size, contentDescription = description)
@@ -198,30 +199,35 @@ fun MachineThumb(
     size: Dp = 44.dp,
     onClick: (() -> Unit)? = null,
 ) {
-    MachineThumb(machine.name, machine.muscleGroup, modifier, size, onClick)
+    MachineThumb(machine.name, machine.muscleGroup, modifier, size, onClick, machine.libraryId)
 }
 
 /** A dialog with both frames (start and end) of the machine's picture and the licence credit. */
 @Composable
 fun ExercisePreviewDialog(machine: Machine, onDismiss: () -> Unit) {
-    val slug = remember(machine.name) { StarterMachines.imageFor(machine.name) }
-    val description = stringResource(R.string.exercise_image_description, machine.name)
+    val slug = remember(machine.name, machine.libraryId) { ExerciseImages.slugFor(machine.name, machine.libraryId) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(machine.name) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
-                    Frame(slug, 1, stringResource(R.string.exercise_start), description)
-                    Frame(slug, 2, stringResource(R.string.exercise_end), description)
-                }
-                ExerciseCredit(style = MaterialTheme.typography.bodySmall)
-            }
-        },
+        text = { ExerciseFrames(slug, machine.name) },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.exercise_close)) }
         },
     )
+}
+
+/** Both frames (start and end) of the picture [slug] of the exercise [name], with the licence credit. Nothing when [slug] is null. */
+@Composable
+fun ExerciseFrames(slug: String?, name: String, modifier: Modifier = Modifier) {
+    if (slug == null) return
+    val description = stringResource(R.string.exercise_image_description, name)
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)) {
+            Frame(slug, 1, stringResource(R.string.exercise_start), description)
+            Frame(slug, 2, stringResource(R.string.exercise_end), description)
+        }
+        ExerciseCredit(style = MaterialTheme.typography.bodySmall)
+    }
 }
 
 @Composable

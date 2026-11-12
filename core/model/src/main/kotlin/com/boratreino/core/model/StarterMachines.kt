@@ -91,6 +91,9 @@ object StarterMachines {
         "Close-grip bench press" to "close-grip-barbell-bench-press",
         "Bench dips" to "bench-dips",
         "Crunch" to "crunches",
+        "Upright row" to "upright-barbell-rows",
+        "Overhead dumbbell extension" to "standing-triceps-extension-2",
+        "Skull crusher" to "lying-triceps-press-with-barbell",
     )
 
     val all: List<StarterMachine> = listOf(
@@ -244,4 +247,11 @@ object ExerciseImages {
     const val SOURCE_URL = "https://github.com/everkinetic/data"
     const val LICENSE_NAME = "CC BY-SA 4.0"
     const val LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
+
+    /**
+     * The picture slug for a machine: the starter whose name is [machineName] first (see [StarterMachines.imageFor]),
+     * else the picture of the library exercise [libraryId]; null when neither has one.
+     */
+    fun slugFor(machineName: String, libraryId: String?): String? =
+        StarterMachines.imageFor(machineName) ?: libraryId?.let(LibraryExerciseImages::slugFor)
 }
