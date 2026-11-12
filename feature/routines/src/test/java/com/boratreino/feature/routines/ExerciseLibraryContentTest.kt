@@ -246,6 +246,15 @@ class ExerciseLibraryContentTest {
         compose.onNodeWithContentDescription("How to do Barbell bench press").assertDoesNotExist()
     }
 
+    @Test
+    fun `a library exercise without a picture is listed with its info button and no licence credit`() {
+        show(state(rows = listOf(libraryRow("Pull-Up", "Pull-Up"))))
+
+        compose.onNodeWithText("Pull-Up").assertExists()
+        compose.onNodeWithContentDescription("How to do Pull-Up").assertExists()
+        compose.onNodeWithText("Exercise illustrations", substring = true).assertDoesNotExist()
+    }
+
     // Filters
 
     @Test

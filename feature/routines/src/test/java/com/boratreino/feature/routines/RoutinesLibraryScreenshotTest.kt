@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -181,5 +182,67 @@ class RoutinesLibraryScreenshotTest {
 
         compose.onNodeWithText("Added").assertExists()
         compose.onNodeWithText("Add").assertDoesNotExist()
+    }
+
+    @Test
+    fun `library rows with and without a picture are listed side by side`() {
+        setLibrary(
+            GymSamples.populated.copy(
+                pickerGroups = listOf(
+                    PickerGroup(
+                        MuscleGroup.ARMS,
+                        listOf(
+                            pickerRow("l:Zottman_Curl", "Zottman Curl", "Zottman_Curl"),
+                            pickerRow("l:Pull-Up", "Pull-Up", "Pull-Up"),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        compose.onNodeWithText("Zottman Curl").assertExists()
+        compose.onNodeWithText("Pull-Up").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/routines-library-pictures.png")
+    }
+
+    @Test
+    fun `how to do it with a picture shows both frames and the licence credit`() {
+        compose.setContent {
+            BoraTreinoTheme {
+                ExerciseDetailDialog(
+                    detail = LibraryDetail(exercise = zottman),
+                    portuguese = false,
+                    onAdd = {},
+                    onDismiss = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("Start").assertExists()
+        compose.onNodeWithText("End").assertExists()
+        compose.onNodeWithText("Exercise illustrations", substring = true).assertExists()
+        compose.onNodeWithText("CC BY-SA 4.0", substring = true).assertExists()
+        compose.onAllNodes(hasContentDescription("Illustration of Zottman Curl")).assertCountEquals(2)
+        compose.onNode(isDialog()).captureRoboImage("build/outputs/roborazzi/routines-library-detail-frames.png")
+    }
+
+    @Test
+    fun `how to do it without a picture shows no frames and no credit`() {
+        val pullUp = zottman.copy(id = "Pull-Up", name = "Pull-Up", namePt = "Barra fixa")
+        compose.setContent {
+            BoraTreinoTheme {
+                ExerciseDetailDialog(
+                    detail = LibraryDetail(exercise = pullUp),
+                    portuguese = false,
+                    onAdd = {},
+                    onDismiss = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("How to do it").assertExists()
+        compose.onNodeWithText("Start").assertDoesNotExist()
+        compose.onNodeWithText("End").assertDoesNotExist()
+        compose.onNodeWithText("Exercise illustrations", substring = true).assertDoesNotExist()
     }
 }

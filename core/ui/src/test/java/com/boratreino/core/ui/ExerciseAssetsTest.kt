@@ -19,6 +19,20 @@ class ExerciseAssetsTest {
         StarterMachines.all.mapNotNull { it.image }.toSet()
     }
 
+    /**
+     * Slugs of the library pictures. The generated object has no way to list them, so they are read from its
+     * source file (the `RAW` block: one `<id> <slug>` per line), from the module folder or the repository root.
+     */
+    private val librarySlugs: Set<String> by lazy {
+        val source = listOf(
+            File("../model/src/main/kotlin/com/boratreino/core/model/LibraryExerciseImages.kt"),
+            File("core/model/src/main/kotlin/com/boratreino/core/model/LibraryExerciseImages.kt"),
+        ).first { it.isFile }
+        source.readText().substringAfter("\"\"\"").substringBefore("\"\"\"")
+            .lineSequence().map { it.trim() }.filter { it.isNotEmpty() }
+            .map { it.substringAfter(' ') }.toSet()
+    }
+
     private val minBytes = 1024L
     private val maxBytes = 60L * 1024
 
@@ -43,14 +57,14 @@ class ExerciseAssetsTest {
             val frame = file.name.endsWith("-1.webp") || file.name.endsWith("-2.webp")
             assertTrue("${file.name} is not a frame file", frame)
             val slug = file.name.removeSuffix("-1.webp").removeSuffix("-2.webp")
-            assertTrue("${file.name} belongs to no starter", slug in usedSlugs)
+            assertTrue("${file.name} belongs to no starter or library exercise", slug in usedSlugs || slug in librarySlugs)
         }
     }
 
     @Test
-    fun `the picture folder is under 3 MB`() {
+    fun `the picture folder is under 5 MB`() {
         val total = exercises.listFiles().orEmpty().filter { it.isFile }.sumOf { it.length() }
-        assertTrue("picture folder is $total bytes", total < 3L * 1024 * 1024)
+        assertTrue("picture folder is $total bytes", total < 5L * 1024 * 1024)
     }
 
     @Test

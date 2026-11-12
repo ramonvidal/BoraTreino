@@ -55,8 +55,26 @@ class StarterMachineImagesTest {
     }
 
     @Test
-    fun `exactly 54 starters have a picture`() {
-        assertEquals(54, StarterMachines.all.count { it.image != null })
+    fun `exactly 57 starters have a picture`() {
+        assertEquals(57, StarterMachines.all.count { it.image != null })
+    }
+
+    @Test
+    fun `upright row has its picture in English and Portuguese`() {
+        assertEquals("upright-barbell-rows", StarterMachines.imageFor("Upright row"))
+        assertEquals("upright-barbell-rows", StarterMachines.imageFor("Remada alta"))
+    }
+
+    @Test
+    fun `overhead dumbbell extension has its picture in English and Portuguese`() {
+        assertEquals("standing-triceps-extension-2", StarterMachines.imageFor("Overhead dumbbell extension"))
+        assertEquals("standing-triceps-extension-2", StarterMachines.imageFor("Tríceps francês"))
+    }
+
+    @Test
+    fun `skull crusher has its picture in English and Portuguese`() {
+        assertEquals("lying-triceps-press-with-barbell", StarterMachines.imageFor("Skull crusher"))
+        assertEquals("lying-triceps-press-with-barbell", StarterMachines.imageFor("Tríceps testa"))
     }
 
     @Test
