@@ -84,13 +84,14 @@ class BodyMapCardTest {
     }
 
     @Test
-    fun `the body map is on the page between the muscle groups card and the summary`() {
+    fun `the body map is on the Body page below the muscle groups card`() {
         showPage(report)
 
         val week = compose.onNodeWithText("Muscle groups").fetchSemanticsNode().positionInRoot.y
         val body = compose.onNodeWithText("Body map").fetchSemanticsNode().positionInRoot.y
-        val summary = compose.onNodeWithText("Summary").fetchSemanticsNode().positionInRoot.y
-        assertTrue(week < body && body < summary)
+        assertTrue(week < body)
+        // The summary now lives on the Habit page.
+        compose.onNodeWithText("Summary").assertDoesNotExist()
     }
 
     @Test
