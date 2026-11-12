@@ -24,7 +24,7 @@ import org.robolectric.annotation.Config
 import java.time.DayOfWeek
 import java.time.LocalTime
 
-/** Play listing screenshot in Portuguese: Settings with reminders and the rest timer on (7). Saved to build/outputs/roborazzi. */
+/** Play listing screenshot in Portuguese: Settings with reminders and the rest timer on (8). Saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "pt-rBR-w360dp-h720dp-xxhdpi")
 class SettingsStoreScreenshotPtTest {
@@ -71,8 +71,8 @@ class SettingsStoreScreenshotPtTest {
     )
 
     @Test
-    fun `store 7 settings`() {
-        shoot("store-pt-7-settings") {
+    fun `store 8 settings`() {
+        shoot("store-pt-8-settings") {
             SettingsContent(state = state, actions = SettingsActions(), modifier = Modifier.fillMaxSize())
         }
         compose.onNodeWithText("Ajustes").assertExists()

@@ -1,1 +1,1 @@
-First release on Google Play: one-tap set logging, routines that tell you which one is next, progress charts, calendar with weekly goal, rest timer, reminders, backup and restore, English and Portuguese.
+What's new: a new light look, a library of about 750 exercises with how-to instructions and filters, Stats pages (Body, Strength and Habit), Agenda planning with several workouts per day, and a 3-step first-run setup. One button now says exactly what it logs.

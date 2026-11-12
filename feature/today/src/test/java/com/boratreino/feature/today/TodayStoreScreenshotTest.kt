@@ -24,7 +24,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.Instant
 
-/** Play listing screenshots in English: Today (1) and the machine logging screen (2). Saved to build/outputs/roborazzi. */
+/** Play listing screenshots in English: Today (1), the machine logging screen (2) and the rest day (7). Saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "w360dp-h720dp-xxhdpi")
 class TodayStoreScreenshotTest {
@@ -87,5 +87,12 @@ class TodayStoreScreenshotTest {
             MachineContent(state = state, actions = MachineActions(), modifier = Modifier.fillMaxSize())
         }
         compose.onNodeWithText("Rest 1:12").assertExists()
+    }
+
+    @Test
+    fun `store 7 rest day`() {
+        shoot("store-en-7-rest-day") {
+            TodayContent(state = TodaySamples.restDay, actions = TodayActions(), modifier = Modifier.fillMaxSize())
+        }
     }
 }

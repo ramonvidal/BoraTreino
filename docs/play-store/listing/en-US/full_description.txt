@@ -1,35 +1,43 @@
-Bora pro Treino! is a simple gym logbook made to be quick between sets.
+Bora pro Treino! is a gym logbook made to be quick between sets.
 
-Open a machine, see what you lifted last time and log today's set in one tap. Change the weight with big minus and plus buttons. No typing, no "start workout" step, no account.
+Open today's workout, see what you lifted last time and log the set in one tap. One button says exactly what it will log, like "Log 125 kg × 8". If today is different, change the weight with the big minus and plus buttons. No typing, no "start workout" step, no account.
 
 WHAT YOU GET
 
-• One-tap logging: "Same again" repeats last time's set, "Log set" saves the numbers on the screen.
+• Today: your next routine, whether your training follows a rotation or fixed weekdays (you set that in the Agenda tab), with a start or continue button and a progress ring.
 
-• Your gym, registered once: add every machine and exercise your gym has (pick from a list of about 100, many with a picture, or create your own) and keep setup notes like "seat 4".
+• One-tap logging: the button logs the set on the screen. Warm-up suggestions tell you what to lift before your heavy sets.
 
-• Routines (fichas): build routine A, B, C and more from your machines, with sets and rep targets. The app tells you which routine is next, whatever day of the week it is, so training four days a week just works.
+• Your gym, registered once: add your machines and exercises, or pick from a library of about 750 exercises. Each one has instructions on how to do it, and you can filter by muscle group, equipment and level. Or create your own. Machines from the library show how to do them.
 
-• Progress that tells you when to go up: when you reach the top of your rep range on every set, the machine suggests the next weight. New records get a little celebration.
+• Routines (fichas): build routine A, B, C and more, with sets and rep targets. After a training, a routine can be updated to match what you did, in one tap, with undo. A training finishes by itself when the last exercise in its routine is done.
 
-• Rest timer after each set, with a countdown notification and a buzz when it is time for the next one.
+• Rest timer that keeps working with the screen off, with a countdown notification and a buzz when it is time for the next set.
 
-• Calendar of your training days with a weekly goal and a streak of weeks. Forgot to log something? Add or fix a past training.
+• Agenda: a week strip shows the workouts you trained and the ones you planned. Plan several workouts per day and reorder them. Keep track of your weekly goal and your streak of weeks. Forgot to log something? Add or fix a past training.
 
-• Progress charts for every machine: your top weight over 3 months, 1 year or all time.
+• Progress, Exercises page: a sparkline for each exercise and how much it changed.
 
-• Cardio too: log minutes, calories and distance for the treadmill, bike and more, and see your week.
+• Progress, Stats: split into Body, Strength and Habit, with highlights. The body map shows front and back, with direct and indirect sets for each muscle group. Also strength per body weight, balance between muscle groups, records and rep ranges.
 
-• Optional Health Connect: send each finished training to Health Connect. It is off by default and the app never reads from it.
+• Training summary with an image you can share.
+
+• Cardio too: log minutes, calories and distance for the treadmill, bike and more.
+
+• Optional Health Connect: send each finished training to Health Connect. It is off by default, it only writes, and the app never reads from it.
 
 • Training reminders that tell you what is next.
 
 • Backup and restore with a simple file, to move your history to a new phone.
 
-• English and Brazilian Portuguese (Baianês), light and dark mode.
+• First-run setup in 3 steps.
+
+• English and Brazilian Portuguese (Baianês), with a light look.
 
 PRIVATE BY DESIGN
 
 Everything stays on your phone (the Health Connect option only writes to your own Health Connect). There is no account, no ads, no tracking and the app does not even ask for internet access.
 
 Exercise illustrations: Everkinetic (everkinetic.com, by Greg Priday), CC BY-SA 4.0.
+Body map outlines: react-body-highlighter (MIT)
+Exercise library: free-exercise-db (public domain)

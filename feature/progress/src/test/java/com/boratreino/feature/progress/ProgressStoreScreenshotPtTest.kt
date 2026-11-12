@@ -7,8 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -17,15 +19,15 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineProgress
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.ProgressMetric
-import com.boratreino.core.model.ProgressOverview
 import com.boratreino.core.model.ProgressRange
+import com.boratreino.core.model.StatsPage
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** Play listing screenshots in Portuguese: Leg press over three months (5) and the Progress overview (6). Saved to build/outputs/roborazzi. */
+/** Play listing screenshots in Portuguese: Leg press over three months (5) and the Stats body page (6). Saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "pt-rBR-w360dp-h720dp-xxhdpi")
 class ProgressStoreScreenshotPtTest {
@@ -49,7 +51,7 @@ class ProgressStoreScreenshotPtTest {
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
-    // Portuguese gym names on the same history as the English samples.
+    // Portuguese gym name on the same history as the English samples.
 
     private fun machine(id: Long, name: String, group: MuscleGroup, kind: MachineKind = MachineKind.WEIGHT_REPS) = Machine(
         id = id,
@@ -63,11 +65,6 @@ class ProgressStoreScreenshotPtTest {
     )
 
     private val legPress = machine(1L, "Leg press", MuscleGroup.LEGS)
-    private val cadeiraExtensora = machine(2L, "Cadeira extensora", MuscleGroup.LEGS)
-    private val puxadaFrontal = machine(3L, "Puxada frontal", MuscleGroup.BACK)
-    private val remadaBaixa = machine(4L, "Remada baixa", MuscleGroup.BACK)
-    private val barraFixa = machine(5L, "Barra fixa", MuscleGroup.BACK, MachineKind.BODYWEIGHT_REPS)
-    private val supinoReto = machine(6L, "Supino reto", MuscleGroup.CHEST)
 
     @Test
     fun `store 5 machine progress`() {
@@ -84,26 +81,28 @@ class ProgressStoreScreenshotPtTest {
         }
     }
 
+    /**
+     * The Stats body page: the highlights, then the muscle groups card at the top after one scroll step, so the
+     * body map (with every shade and the body weight) shows under the pinned period and page chips.
+     */
     @Test
-    fun `store 6 progress overview`() {
-        val overview = ProgressOverview(
-            machines = listOf(
-                MachineProgress(legPress, ProgressMetric.WEIGHT, ProgressSamples.legPressHistory.points),
-                MachineProgress(puxadaFrontal, ProgressMetric.WEIGHT, ProgressSamples.latPulldownHistory.points),
-                MachineProgress(barraFixa, ProgressMetric.REPS, ProgressSamples.pullUpsHistory.points),
-                MachineProgress(remadaBaixa, ProgressMetric.WEIGHT, ProgressSamples.seatedRowHistory.points),
-                MachineProgress(supinoReto, ProgressMetric.WEIGHT, ProgressSamples.chestPressHistory.points),
-                MachineProgress(cadeiraExtensora, ProgressMetric.WEIGHT, ProgressSamples.legExtensionHistory.points),
-            ),
-            trainingsThisMonth = 9,
-            recordsThisMonth = 4,
+    fun `store 6 stats body`() {
+        val state = BodyInsightSamples.state(
+            report = BodyInsightSamples.bodyMapReport,
+            bodyWeightKg = 76.0,
+            weights = BodyInsightSamples.weights,
         )
-        shoot("store-pt-6-progress-overview") {
-            ProgressContent(
-                state = buildProgressState(overview, ProgressSamples.today),
-                actions = ProgressActions(),
-                modifier = Modifier.fillMaxSize(),
-            )
+        compose.setContent {
+            StoreFrame {
+                StatsContent(
+                    state = state,
+                    actions = StatsActions(),
+                    modifier = Modifier.fillMaxSize(),
+                    initialPage = StatsPage.BODY,
+                )
+            }
         }
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(1)
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/store-pt-6-stats-body.png")
     }
 }

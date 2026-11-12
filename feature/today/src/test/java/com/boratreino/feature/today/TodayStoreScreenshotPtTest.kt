@@ -29,7 +29,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.Instant
 
-/** Play listing screenshots in Portuguese: Today (1) and the machine logging screen (2). Saved to build/outputs/roborazzi. */
+/** Play listing screenshots in Portuguese: Today (1), the machine logging screen (2) and the rest day (7). Saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "pt-rBR-w360dp-h720dp-xxhdpi")
 class TodayStoreScreenshotPtTest {
@@ -176,5 +176,19 @@ class TodayStoreScreenshotPtTest {
             MachineContent(state = state, actions = MachineActions(), modifier = Modifier.fillMaxSize())
         }
         compose.onNodeWithText("Anterior").assertExists()
+    }
+
+    /** A rest day with no session: the mascot, the recent machines and no exercise list, as on the English sample. */
+    @Test
+    fun `store 7 rest day`() {
+        val restDay = TodayUiState(
+            loaded = true,
+            session = null,
+            recent = listOf(legPress, puxadaFrontal, supinoReto),
+            routines = RoutineUi(chips = chips(null), freeSelected = false, restDay = true),
+        )
+        shoot("store-pt-7-rest-day") {
+            TodayContent(state = restDay, actions = TodayActions(), modifier = Modifier.fillMaxSize())
+        }
     }
 }

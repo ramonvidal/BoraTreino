@@ -1,35 +1,43 @@
 O Bora pro Treino! é um diário de academia simples, feito pra ser rápido entre as séries.
 
-Abra um aparelho, veja o que você levantou da última vez e registre a série de hoje com um toque. Mude a carga com os botões grandes de menos e mais. Sem digitar, sem "iniciar treino", sem conta.
+Abra o treino de hoje, veja o que você levantou da última vez e registre a série com um toque. Um botão só, que diz exatamente o que vai registrar, tipo "Registrar 125 kg × 8". Se hoje está diferente, mude a carga com os botões grandes de menos e mais. Sem digitar, sem "iniciar treino", sem conta.
 
 O QUE VOCÊ TEM
 
-• Registro com um toque: "Repetir" faz a série igual à da última vez, "Registrar série" salva os números da tela.
+• Hoje: a sua próxima ficha, seja por rodízio ou por dias fixos da semana (você escolhe na Agenda), com botão de começar ou continuar e um anel de progresso.
 
-• Sua academia, cadastrada uma vez: adicione todos os aparelhos e exercícios que ela tem (escolha numa lista com cerca de 100, muitos com desenho, ou crie o seu) e guarde a regulagem, tipo "banco 4".
+• Registro com um toque: o botão registra a série que está na tela. Sugestões de aquecimento dizem o que fazer antes das séries pesadas.
 
-• Fichas: monte a ficha A, B, C e outras com seus aparelhos, com séries e faixa de repetições. O app diz qual ficha é a próxima, seja qual for o dia da semana, então treinar quatro vezes por semana funciona direitinho.
+• Sua academia, cadastrada uma vez: adicione seus aparelhos e exercícios, ou escolha numa biblioteca com cerca de 750 exercícios. Cada um tem o passo a passo de como fazer, e dá pra filtrar por grupo muscular, equipamento e nível. Ou crie o seu. Aparelho vindo da biblioteca mostra como fazer.
 
-• Evolução que avisa quando subir: quando você chega ao topo da faixa de repetições em todas as séries, o aparelho sugere a próxima carga. Recorde novo ganha uma comemoração.
+• Fichas: monte a ficha A, B, C e outras, com séries e faixa de repetições. Depois do treino, a ficha pode ser atualizada pra refletir o que você fez, com um toque e desfazer. O treino termina sozinho quando o último exercício da ficha é feito.
 
-• Cronômetro de descanso depois de cada série, com notificação de contagem regressiva e uma vibração quando chega a hora da próxima.
+• Cronômetro de descanso que continua contando com a tela desligada, com notificação de contagem regressiva e uma vibração quando chega a hora da próxima série.
 
-• Agenda com seus dias de treino, meta semanal e sequência de semanas. Esqueceu de registrar? Adicione ou corrija um treino passado.
+• Agenda: uma faixa com a semana mostra os treinos feitos e os planejados. Planeje vários treinos no mesmo dia e mude a ordem. Acompanhe a meta semanal e a sequência de semanas. Esqueceu de registrar? Adicione ou corrija um treino passado.
 
-• Gráficos de evolução de cada aparelho: sua maior carga em 3 meses, 1 ano ou desde o começo.
+• Evolução, página de Exercícios: um gráfico pequeno de cada exercício e o quanto ele mudou.
 
-• Cardio também: registre minutos, calorias e distância da esteira, bicicleta e mais, e veja sua semana.
+• Evolução, Estatísticas: divididas em Corpo, Força e Hábito, com destaques. O mapa corporal mostra frente e costas, com séries diretas e indiretas por grupo muscular. Também tem força por peso corporal, equilíbrio entre os grupos, recordes e faixas de repetições.
 
-• Health Connect opcional: envie cada treino terminado para o Health Connect. Vem desligado e o app nunca lê nada de lá.
+• Resumo do treino com uma imagem pra compartilhar.
+
+• Cardio também: registre minutos, calorias e distância da esteira, bicicleta e mais.
+
+• Health Connect opcional: envie cada treino terminado pro Health Connect. Vem desligado, só escreve e o app nunca lê nada de lá.
 
 • Lembretes de treino que dizem o que vem a seguir.
 
 • Backup e restauração com um arquivo simples, pra levar seu histórico pra um celular novo.
 
-• Português do Brasil (Baianês) e inglês, tema claro e escuro.
+• Configuração inicial em 3 passos.
+
+• Português do Brasil (Baianês) e inglês, com visual claro.
 
 PRIVADO DE FÁBRICA
 
 Tudo fica no seu celular (a opção do Health Connect só escreve no seu próprio Health Connect). Não tem conta, não tem anúncio, não tem rastreamento e o app nem pede acesso à internet.
 
 Ilustrações dos exercícios: Everkinetic (everkinetic.com, de Greg Priday), CC BY-SA 4.0.
+Contornos do mapa corporal: react-body-highlighter (MIT)
+Biblioteca de exercícios: free-exercise-db (domínio público)

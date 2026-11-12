@@ -1,1 +1,1 @@
-Primeira versão no Google Play: registro de série com um toque, fichas que dizem qual é a próxima, gráficos de evolução, agenda com meta semanal, descanso, lembretes, backup e restauração, em português e inglês.
+Novidades: visual novo e claro, biblioteca com cerca de 750 exercícios (com passo a passo e filtros), páginas de Estatísticas (Corpo, Força e Hábito), Agenda pra planejar vários treinos por dia e configuração inicial em 3 passos. Agora um botão só, que diz exatamente o que vai registrar.
