@@ -71,7 +71,12 @@ class SettingsStoreScreenshotTest {
     @Test
     fun `store 7 settings`() {
         shoot("store-en-7-settings") {
-            SettingsContent(state = state, actions = SettingsActions(), modifier = Modifier.fillMaxSize())
+            SettingsContent(
+                state = state,
+                actions = SettingsActions(),
+                modifier = Modifier.fillMaxSize(),
+                initialPage = SettingsPage.TRAINING,
+            )
         }
         compose.onNodeWithText("Weekly goal").assertExists()
     }

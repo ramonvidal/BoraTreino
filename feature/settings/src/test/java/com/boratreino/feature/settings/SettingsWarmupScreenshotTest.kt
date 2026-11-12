@@ -43,7 +43,12 @@ class SettingsWarmupScreenshotTest {
         compose.setContent {
             BoraTreinoTheme(darkTheme = dark) {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsContent(state = state, actions = actions, modifier = Modifier.fillMaxSize())
+                    SettingsContent(
+                        state = state,
+                        actions = actions,
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.TRAINING,
+                    )
                 }
             }
         }
@@ -56,7 +61,7 @@ class SettingsWarmupScreenshotTest {
         setContent(warmupState(on = true))
         compose.onNodeWithText("Warm-up").assertExists()
         compose.onNodeWithText("Warm-up suggestions").assertExists()
-        compose.onNodeWithText("Offers warm-up sets on the machine screen, from your working weight.").assertExists()
+        compose.onNodeWithText("Offers warm-up sets on the exercise screen, from your working weight.").assertExists()
         shoot("settings-warmup-on")
     }
 
@@ -111,7 +116,12 @@ class SettingsWarmupPtScreenshotTest {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsContent(state = state, actions = SettingsActions(), modifier = Modifier.fillMaxSize())
+                    SettingsContent(
+                        state = state,
+                        actions = SettingsActions(),
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.TRAINING,
+                    )
                 }
             }
         }

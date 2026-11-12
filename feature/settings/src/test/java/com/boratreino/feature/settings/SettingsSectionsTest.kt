@@ -26,8 +26,9 @@ import java.time.DayOfWeek
 import java.time.LocalTime
 
 /**
- * Settings grouped in four labelled sections (Training, Body, Data, App) and the compact weekly
- * goal row. Tall viewport so every section is on screen at once; saved to build/outputs/roborazzi.
+ * The Training sub-page: goal, reminders, notifications when shown, rest timer and warm-up, in that
+ * order, and nothing from the other pages. Tall viewport so the whole page is on screen; saved to
+ * build/outputs/roborazzi.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h4000dp")
@@ -54,7 +55,12 @@ class SettingsSectionsTest {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsContent(state = state, actions = actions, modifier = Modifier.fillMaxSize())
+                    SettingsContent(
+                        state = state,
+                        actions = actions,
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.TRAINING,
+                    )
                 }
             }
         }
@@ -64,24 +70,22 @@ class SettingsSectionsTest {
     private fun top(text: String): Float = compose.onNodeWithText(text).fetchSemanticsNode().boundsInRoot.top
 
     @Test
-    fun `the four section titles are in order`() {
+    fun `the training cards are in order`() {
         setContent(state())
 
-        val tops = listOf("Training", "Body", "Data", "App").map { top(it) }
+        val tops = listOf("Weekly goal", "Training reminders", "Rest timer", "Warm-up").map { top(it) }
 
-        assertTrue("sections out of order: $tops", tops.zipWithNext().all { (a, b) -> a < b })
+        assertTrue("cards out of order: $tops", tops.zipWithNext().all { (a, b) -> a < b })
     }
 
     @Test
-    fun `the training cards sit under the Training title and above Body`() {
+    fun `the training page has no body, data or app cards`() {
         setContent(state())
 
-        val training = top("Training")
-        val body = top("Body")
-        assertTrue(top("Weekly goal") > training)
-        assertTrue(top("Rest timer") > training)
-        assertTrue(top("Rest timer") < body)
-        assertTrue(top("Warm-up") < body)
+        compose.onNodeWithText("Your body").assertDoesNotExist()
+        compose.onNodeWithText("Backup").assertDoesNotExist()
+        compose.onNodeWithText("Language").assertDoesNotExist()
+        compose.onNodeWithText("About").assertDoesNotExist()
     }
 
     @Test
@@ -111,7 +115,23 @@ class SettingsSectionsTest {
     }
 
     @Test
-    fun `the sections shot`() {
+    fun `the rest timer hint says the rest time is set per exercise`() {
+        setContent(state())
+
+        compose.onNodeWithText("Each exercise can have its own rest time in its editor.").assertExists()
+    }
+
+    @Test
+    fun `the warm-up hint says the warm-up is on the exercise screen`() {
+        setContent(state())
+
+        compose.onNodeWithText(
+            "Offers warm-up sets on the exercise screen, from your working weight.",
+        ).assertExists()
+    }
+
+    @Test
+    fun `the training page shot`() {
         setContent(state())
 
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/settings-sections.png")

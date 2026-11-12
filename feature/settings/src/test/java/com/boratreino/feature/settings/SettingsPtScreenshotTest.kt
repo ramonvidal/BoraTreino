@@ -44,7 +44,12 @@ class SettingsPtScreenshotTest {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsContent(state = state, actions = SettingsActions(), modifier = Modifier.fillMaxSize())
+                    SettingsContent(
+                        state = state,
+                        actions = SettingsActions(),
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.TRAINING,
+                    )
                 }
             }
         }

@@ -15,6 +15,7 @@ import com.boratreino.core.model.PreviousComparison
 import com.boratreino.core.model.Record
 import com.boratreino.core.model.RecordEvent
 import com.boratreino.core.model.RoutineUpdate
+import com.boratreino.core.model.Sex
 import com.boratreino.core.model.TrainingSummary
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -93,10 +94,11 @@ class TodaySummarySheetTest {
     }
 
     @Test
-    fun `a free session is named Free training`() {
+    fun `a session without a routine is named No routine`() {
         setContent(SummaryUi(summary(routineName = null)))
 
-        compose.onNodeWithText("Free training").assertExists()
+        compose.onNodeWithText("No routine").assertExists()
+        compose.onNodeWithText("Free training").assertDoesNotExist()
     }
 
     @Test
@@ -293,5 +295,33 @@ class TodaySummarySheetTest {
         )
 
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-summary-sheet.png")
+    }
+
+    // Mascot: the mascot has no text or tag, so the screenshots show it and the numbers prove the sheet still lays out
+
+    @Test
+    fun `the summary opens with the woman mascot above the numbers`() {
+        setContent(SummaryUi(summary(), mascotSex = Sex.FEMALE))
+
+        compose.onNodeWithText("Training complete").assertExists()
+        compose.onNodeWithText("Duration").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-summary-mascot-female.png")
+    }
+
+    @Test
+    fun `the summary opens with the man mascot above the numbers`() {
+        setContent(SummaryUi(summary(), mascotSex = Sex.MALE))
+
+        compose.onNodeWithText("Training complete").assertExists()
+        compose.onNodeWithText("Duration").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-summary-mascot-male.png")
+    }
+
+    @Test
+    fun `the summary still shows the default mascot when no sex is chosen`() {
+        setContent(SummaryUi(summary()))
+
+        compose.onNodeWithText("Training complete").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-summary-mascot-none.png")
     }
 }

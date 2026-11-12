@@ -145,10 +145,10 @@ class TodayShareTest {
     }
 
     @Test
-    fun `a free session is named Free training`() {
+    fun `a session without a routine is named No routine`() {
         val texts = summaryTexts(context.resources, summary(routineName = null), Locale.US)
 
-        assertEquals("Free training", texts.routineName)
+        assertEquals("No routine", texts.routineName)
     }
 
     @Test

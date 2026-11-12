@@ -46,7 +46,12 @@ class SettingsHealthScreenshotTest {
         compose.setContent {
             BoraTreinoTheme(darkTheme = dark) {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsContent(state = healthState(health), actions = SettingsActions(), modifier = Modifier.fillMaxSize())
+                    SettingsContent(
+                        state = healthState(health),
+                        actions = SettingsActions(),
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.DATA,
+                    )
                 }
             }
         }
@@ -112,6 +117,7 @@ class SettingsHealthPtScreenshotTest {
                         state = healthState(health, AppLanguage.BAIANES),
                         actions = SettingsActions(),
                         modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.DATA,
                     )
                 }
             }

@@ -32,7 +32,10 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
-/** The Settings screen from fixed states, light, dark, large text and each dialog; saved to build/outputs/roborazzi. */
+/**
+ * The Settings screen from fixed states: the list, the sub-pages each dialog opens from, light, dark
+ * and large text; saved to build/outputs/roborazzi.
+ */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h3600dp")
 class SettingsScreenshotTest {
@@ -70,12 +73,24 @@ class SettingsScreenshotTest {
         }
     }
 
-    private fun shoot(name: String, state: SettingsUiState, dark: Boolean = false, fontScale: Float = 1f) {
+    /** [page] is the sub-page to open; null shows the list. */
+    private fun shoot(
+        name: String,
+        state: SettingsUiState,
+        page: SettingsPage? = null,
+        dark: Boolean = false,
+        fontScale: Float = 1f,
+    ) {
         compose.setContent {
             BoraTreinoTheme(darkTheme = dark) {
                 CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                     Surface(Modifier.fillMaxSize()) {
-                        SettingsContent(state = state, actions = SettingsActions(), modifier = Modifier.fillMaxSize())
+                        SettingsContent(
+                            state = state,
+                            actions = SettingsActions(),
+                            modifier = Modifier.fillMaxSize(),
+                            initialPage = page,
+                        )
                     }
                 }
             }
@@ -86,25 +101,27 @@ class SettingsScreenshotTest {
     @Test
     fun `settings main`() {
         shoot("settings-main", main)
-        compose.onNodeWithText("Weekly goal").assertExists()
+        compose.onNodeWithText("Training").assertExists()
     }
 
     @Test
-    fun `settings dark`() = shoot("settings-dark", main, dark = true)
+    fun `settings dark`() = shoot("settings-dark", main, SettingsPage.TRAINING, dark = true)
 
     @Test
-    fun `settings large text`() = shoot("settings-large", main, fontScale = 2f)
+    fun `settings large text`() = shoot("settings-large", main, SettingsPage.TRAINING, fontScale = 2f)
 
     @Test
     fun `settings with reminders off`() = shoot(
         "settings-reminders-off",
         main.copy(reminders = main.reminders.copy(enabled = false)),
+        SettingsPage.TRAINING,
     )
 
     @Test
     fun `settings with notifications off`() = shoot(
         "settings-notifications-off",
         main.copy(notificationsGranted = false),
+        SettingsPage.TRAINING,
     )
 
     @Test
@@ -120,12 +137,17 @@ class SettingsScreenshotTest {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsContent(state = main.copy(importConfirm = summary), actions = SettingsActions(), modifier = Modifier.fillMaxSize())
+                    SettingsContent(
+                        state = main.copy(importConfirm = summary),
+                        actions = SettingsActions(),
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.DATA,
+                    )
                 }
             }
         }
         compose.onNodeWithText(
-            "Replace everything on this phone with this backup? 6 machines, 3 routines, 120 trainings, 1,304 sets (2 Sep – 2 Nov 2026).",
+            "Replace everything on this phone with this backup? 6 exercises, 3 routines, 120 trainings, 1,304 sets (2 Sep – 2 Nov 2026).",
         ).assertExists()
         compose.onNode(isDialog()).captureRoboImage("build/outputs/roborazzi/settings-import-confirm.png")
     }
@@ -140,6 +162,7 @@ class SettingsScreenshotTest {
                         actions = SettingsActions(),
                         modifier = Modifier.fillMaxSize(),
                         updatesCard = { UpdatesSlotPlaceholder() },
+                        initialPage = SettingsPage.APP,
                     )
                 }
             }
@@ -150,14 +173,15 @@ class SettingsScreenshotTest {
 
     @Test
     fun `settings about shows the installed version`() {
-        shoot("settings-about", main)
+        shoot("settings-about", main, SettingsPage.APP)
         compose.onNodeWithText("Bora pro Treino! 0.40").assertExists()
     }
 
     @Test
-    fun `settings with Baianes chosen`() = shoot(
+    fun `settings with Baianês chosen`() = shoot(
         "settings-language",
         main.copy(language = AppLanguage.BAIANES),
+        SettingsPage.APP,
     )
 
     @Test
@@ -165,7 +189,12 @@ class SettingsScreenshotTest {
         compose.setContent {
             BoraTreinoTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsContent(state = main.copy(timePickerOpen = true), actions = SettingsActions(), modifier = Modifier.fillMaxSize())
+                    SettingsContent(
+                        state = main.copy(timePickerOpen = true),
+                        actions = SettingsActions(),
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.TRAINING,
+                    )
                 }
             }
         }

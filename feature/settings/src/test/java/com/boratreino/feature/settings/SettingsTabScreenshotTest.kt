@@ -36,18 +36,32 @@ private fun tabState(beep: Boolean, language: AppLanguage = AppLanguage.ENGLISH)
     language = language,
 )
 
-/** Settings as a bottom-bar tab: a title and no back arrow, with the rest section and its beep switch. */
+/**
+ * Settings as a bottom-bar tab: a title and no back arrow on the list. The rest section and its beep
+ * switch are on the Training page, which the tab opens from its first row.
+ */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class SettingsTabScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun shoot(name: String, state: SettingsUiState, dark: Boolean = false, actions: SettingsActions = SettingsActions()) {
+    private fun shoot(
+        name: String,
+        state: SettingsUiState,
+        dark: Boolean = false,
+        actions: SettingsActions = SettingsActions(),
+        page: SettingsPage? = null,
+    ) {
         compose.setContent {
             BoraTreinoTheme(darkTheme = dark) {
                 Surface(Modifier.fillMaxSize()) {
-                    SettingsContent(state = state, actions = actions, modifier = Modifier.fillMaxSize())
+                    SettingsContent(
+                        state = state,
+                        actions = actions,
+                        modifier = Modifier.fillMaxSize(),
+                        initialPage = page,
+                    )
                 }
             }
         }
@@ -63,8 +77,8 @@ class SettingsTabScreenshotTest {
     }
 
     @Test
-    fun `settings tab shows the rest section with the beep switch`() {
-        shoot("settings-tab-beep-off", tabState(beep = false))
+    fun `settings tab shows the rest section with the beep switch on the training page`() {
+        shoot("settings-tab-beep-off", tabState(beep = false), page = SettingsPage.TRAINING)
 
         compose.onNodeWithText("Rest timer").assertExists()
         compose.onNodeWithText("Beep when rest ends").assertExists()
@@ -72,21 +86,28 @@ class SettingsTabScreenshotTest {
 
     @Test
     fun `settings tab with the beep on`() {
-        shoot("settings-tab-beep-on", tabState(beep = true))
+        shoot("settings-tab-beep-on", tabState(beep = true), page = SettingsPage.TRAINING)
 
         compose.onNodeWithText("Beep when rest ends").assertExists()
     }
 
     @Test
-    fun `settings tab dark with the beep off`() = shoot("settings-tab-beep-off-dark", tabState(beep = false), dark = true)
+    fun `settings tab dark with the beep off`() =
+        shoot("settings-tab-beep-off-dark", tabState(beep = false), dark = true, page = SettingsPage.TRAINING)
 
     @Test
-    fun `settings tab dark with the beep on`() = shoot("settings-tab-beep-on-dark", tabState(beep = true), dark = true)
+    fun `settings tab dark with the beep on`() =
+        shoot("settings-tab-beep-on-dark", tabState(beep = true), dark = true, page = SettingsPage.TRAINING)
 
     @Test
     fun `tapping the beep switch reports the new value`() {
         var received: Boolean? = null
-        shoot("settings-tab-beep-tap", tabState(beep = false), actions = SettingsActions(onRestBeep = { received = it }))
+        shoot(
+            "settings-tab-beep-tap",
+            tabState(beep = false),
+            actions = SettingsActions(onRestBeep = { received = it }),
+            page = SettingsPage.TRAINING,
+        )
 
         compose.onNodeWithText("Beep when rest ends").performClick()
 
@@ -102,6 +123,7 @@ class SettingsTabScreenshotTest {
                         state = tabState(beep = true).copy(restTimer = RestTimerSettings(enabled = false, beep = true)),
                         actions = SettingsActions(),
                         modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.TRAINING,
                     )
                 }
             }
@@ -126,6 +148,7 @@ class SettingsTabPtScreenshotTest {
                         state = tabState(beep = beep, language = AppLanguage.BAIANES),
                         actions = SettingsActions(),
                         modifier = Modifier.fillMaxSize(),
+                        initialPage = SettingsPage.TRAINING,
                     )
                 }
             }
