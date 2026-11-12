@@ -1,6 +1,9 @@
 package com.boratreino.feature.today
 
 import android.content.res.Resources
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -149,10 +153,8 @@ internal fun SetDots(done: Int, target: Int, modifier: Modifier = Modifier) {
     }
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(target) { index ->
-            Box(
-                Modifier.size(10.dp).clip(CircleShape)
-                    .background(if (index < done) Sunny.Ok else Sunny.Outline),
-            )
+            val dot by animateColorAsState(if (index < done) Sunny.Ok else Sunny.Outline, tween(150), label = "setDot")
+            Box(Modifier.size(10.dp).clip(CircleShape).background(dot))
         }
     }
 }
@@ -185,7 +187,8 @@ internal fun RowDivider() {
 @Composable
 internal fun ProgressRing(fraction: Float, modifier: Modifier = Modifier) {
     val ink = Sunny.Ink
-    val clamped = fraction.coerceIn(0f, 1f)
+    val target = fraction.coerceIn(0f, 1f)
+    val clamped by animateFloatAsState(target, tween(400), label = "ring")
     Box(modifier.size(74.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(74.dp)) {
             val stroke = 8.dp.toPx()
@@ -197,7 +200,7 @@ internal fun ProgressRing(fraction: Float, modifier: Modifier = Modifier) {
             }
         }
         Text(
-            "${(clamped * 100).toInt()}%",
+            "${(target * 100).toInt()}%",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = ink,

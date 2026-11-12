@@ -62,7 +62,7 @@
     <string name="routine_delete_body">Your logged sets are kept.</string>
     <string name="routine_delete_confirm">Delete</string>
     <string name="routines_intro_title">Your gym</string>
-    <string name="routines_intro_body">Register every machine and exercise your gym has. Your routines (fichas) are built from this list.</string>
+    <string name="routines_intro_body">Register every exercise your gym has. Your routines (fichas) are built from this list.</string>
     <string name="routines_gym_heading">Exercises \u00b7 %1$d</string>
     <string name="routines_section">Routines</string>
     <string name="routines_search">Search exercises</string>

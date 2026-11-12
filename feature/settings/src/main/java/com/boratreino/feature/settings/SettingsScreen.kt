@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ActivityNotFoundException
 import android.os.Build
 import android.text.format.DateFormat
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -22,17 +23,15 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -42,13 +41,19 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -59,6 +64,9 @@ import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.model.Sex
 import com.boratreino.core.notify.NotificationPermission
 import com.boratreino.core.settings.AppLanguage
+import com.boratreino.core.ui.BoraButton
+import com.boratreino.core.ui.BoraButtonStyle
+import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.BoraSwitchColors
 import com.boratreino.core.ui.ExerciseCredit
@@ -202,6 +210,9 @@ internal fun SettingsScreen(
     )
 }
 
+/** The sub-pages of Settings; the main screen is a list of rows that open them. */
+internal enum class SettingsPage { TRAINING, BODY, DATA, APP }
+
 /** Drawn from its state alone, so screenshot tests can render it. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,13 +222,27 @@ internal fun SettingsContent(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     updatesCard: (@Composable () -> Unit)? = null,
+    initialPage: SettingsPage? = null,
 ) {
+    var page by rememberSaveable { mutableStateOf(initialPage) }
+    BackHandler(enabled = page != null) { page = null }
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
+            val open = page
             TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
+                title = { Text(stringResource(if (open == null) R.string.settings_title else open.titleRes())) },
+                navigationIcon = {
+                    if (open != null) {
+                        IconButton(onClick = { page = null }) {
+                            Icon(
+                                painterResource(CoreUiR.drawable.ic_back),
+                                contentDescription = stringResource(CoreUiR.string.back),
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -231,21 +256,36 @@ internal fun SettingsContent(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                item { SectionTitle(stringResource(R.string.settings_section_training), first = true) }
-                item { GoalSection(state, actions) }
-                item { RemindersSection(state, actions) }
-                if (state.showNotificationsSection) item { NotificationsSection(actions) }
-                item { RestTimerSection(state, actions) }
-                item { WarmupSection(state, actions) }
-                item { SectionTitle(stringResource(R.string.settings_section_body)) }
-                item { BodySection(state.body, actions) }
-                item { SectionTitle(stringResource(R.string.settings_section_data)) }
-                item { BackupSection(actions) }
-                if (state.health != HealthCardState.Hidden) item { HealthSection(state.health, actions) }
-                item { SectionTitle(stringResource(R.string.settings_section_app)) }
-                if (updatesCard != null) item { updatesCard() }
-                item { LanguageSection(state, actions) }
-                item { AboutSection(state) }
+                when (page) {
+                    null -> {
+                        SettingsPage.entries.forEach { entry ->
+                            item(key = entry.name) {
+                                PageRow(
+                                    title = stringResource(entry.titleRes()),
+                                    summary = entry.summary(state),
+                                    onClick = { page = entry },
+                                )
+                            }
+                        }
+                    }
+                    SettingsPage.TRAINING -> {
+                        item { GoalSection(state, actions) }
+                        item { RemindersSection(state, actions) }
+                        if (state.showNotificationsSection) item { NotificationsSection(actions) }
+                        item { RestTimerSection(state, actions) }
+                        item { WarmupSection(state, actions) }
+                    }
+                    SettingsPage.BODY -> item { BodySection(state.body, actions) }
+                    SettingsPage.DATA -> {
+                        item { BackupSection(actions) }
+                        if (state.health != HealthCardState.Hidden) item { HealthSection(state.health, actions) }
+                    }
+                    SettingsPage.APP -> {
+                        if (updatesCard != null) item { updatesCard() }
+                        item { LanguageSection(state, actions) }
+                        item { AboutSection(state) }
+                    }
+                }
             }
         }
     }
@@ -255,25 +295,70 @@ internal fun SettingsContent(
     if (state.importConfirm != null) ImportDialog(state.importConfirm, actions)
 }
 
-/** The small grey heading above a group of cards. */
+private fun SettingsPage.titleRes(): Int = when (this) {
+    SettingsPage.TRAINING -> R.string.settings_section_training
+    SettingsPage.BODY -> R.string.settings_body_title
+    SettingsPage.DATA -> R.string.settings_section_data
+    SettingsPage.APP -> R.string.settings_section_app
+}
+
+/** The muted line under a row's title: what the page currently holds. */
 @Composable
-private fun SectionTitle(title: String, first: Boolean = false) {
-    Text(
-        title,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 4.dp, top = if (first) 0.dp else 12.dp),
+private fun SettingsPage.summary(state: SettingsUiState): String = when (this) {
+    SettingsPage.TRAINING -> stringResource(
+        R.string.settings_training_summary,
+        pluralStringResource(R.plurals.settings_summary_goal, state.weeklyGoal, state.weeklyGoal),
+        if (state.restTimer.enabled) {
+            stringResource(R.string.settings_summary_rest, state.restTimer.defaultSeconds)
+        } else {
+            stringResource(R.string.settings_summary_rest_off)
+        },
     )
+    SettingsPage.BODY -> {
+        val weight = state.body.draft.weightKg
+        val height = state.body.draft.heightCm
+        if (weight == null || height == null) {
+            stringResource(R.string.settings_body_not_set)
+        } else {
+            stringResource(R.string.settings_body_summary, weight.plain(), height)
+        }
+    }
+    SettingsPage.DATA -> stringResource(R.string.settings_data_summary)
+    SettingsPage.APP -> stringResource(R.string.settings_app_summary, state.language.label, state.installedVersion)
+}
+
+/** One row of the main list: title, current value, chevron. */
+@Composable
+private fun PageRow(title: String, summary: String, onClick: () -> Unit) {
+    BoraCard(Modifier.fillMaxWidth(), onClick = onClick) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 64.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    summary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                painterResource(CoreUiR.drawable.ic_expand_more),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.rotate(-90f),
+            )
+        }
+    }
 }
 
 @Composable
 internal fun SectionCard(title: String, content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+    BoraCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             content()
         }
     }
@@ -400,10 +485,11 @@ private fun HealthSection(health: HealthCardState, actions: SettingsActions) {
             HealthCardState.Hidden -> Unit
             HealthCardState.NeedsInstall -> {
                 Hint(stringResource(R.string.settings_health_missing))
-                Button(
+                BoraButton(
+                    text = stringResource(R.string.settings_health_get),
                     onClick = actions.onGetHealthConnect,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text(stringResource(R.string.settings_health_get)) }
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
             HealthCardState.Off, HealthCardState.PermissionDenied, HealthCardState.On -> {
                 SwitchRow(
@@ -432,9 +518,11 @@ private fun NotificationsSection(actions: SettingsActions) {
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f),
             )
-            Button(onClick = actions.onAllowNotifications, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text(stringResource(R.string.settings_notifications_allow))
-            }
+            BoraButton(
+                text = stringResource(R.string.settings_notifications_allow),
+                onClick = actions.onAllowNotifications,
+                style = BoraButtonStyle.Tonal,
+            )
         }
     }
 }
@@ -443,14 +531,17 @@ private fun NotificationsSection(actions: SettingsActions) {
 private fun BackupSection(actions: SettingsActions) {
     SectionCard(stringResource(R.string.settings_backup_title)) {
         Hint(stringResource(R.string.settings_backup_hint))
-        Button(
+        BoraButton(
+            text = stringResource(R.string.settings_backup_export),
             onClick = actions.onExport,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) { Text(stringResource(R.string.settings_backup_export)) }
-        OutlinedButton(
+            modifier = Modifier.fillMaxWidth(),
+        )
+        BoraButton(
+            text = stringResource(R.string.settings_backup_import),
             onClick = actions.onImport,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) { Text(stringResource(R.string.settings_backup_import)) }
+            modifier = Modifier.fillMaxWidth(),
+            style = BoraButtonStyle.Tonal,
+        )
     }
 }
 

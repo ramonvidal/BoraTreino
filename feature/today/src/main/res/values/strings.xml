@@ -15,7 +15,7 @@
     <string name="today_hero_start">Start: %1$s</string>
     <string name="today_hero_continue">Continue: %1$s</string>
     <string name="today_hero_finish">Finish training</string>
-    <string name="today_hero_free">Free training</string>
+    <string name="today_hero_free">No routine</string>
     <string name="today_switcher_next">%1$s · next in rotation</string>
     <string name="today_switcher_title">Choose a routine</string>
     <string name="today_exercises_title">Exercises</string>
@@ -135,7 +135,7 @@
 
     <!-- Training summary sheet and share picture -->
     <string name="summary_title">Training complete</string>
-    <string name="summary_free_training">Free training</string>
+    <string name="summary_free_training">No routine</string>
     <string name="summary_duration">Duration</string>
     <string name="summary_sets">Sets</string>
     <string name="summary_volume">Volume</string>

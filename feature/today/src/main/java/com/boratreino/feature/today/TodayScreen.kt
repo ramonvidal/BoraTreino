@@ -237,7 +237,7 @@ internal fun TodayContent(
     }
 
     state.skipDialog?.let { SkipMachineDialog(it, actions) }
-    state.summary?.let { TodaySummarySheet(it, actions.summary) }
+    state.summary?.let { TodaySummarySheet(it.copy(mascotSex = state.mascotSex), actions.summary) }
 }
 
 /** "Wednesday, 11 November" in the phone's language; null without a date. */

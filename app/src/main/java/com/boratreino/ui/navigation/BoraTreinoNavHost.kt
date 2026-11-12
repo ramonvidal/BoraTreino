@@ -2,6 +2,14 @@ package com.boratreino.ui.navigation
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -23,6 +31,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -127,6 +137,10 @@ fun BoraTreinoNavHost() {
             navController = navController,
             startDestination = TopLevelDestination.Today.route,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = { if (isTabSwitch()) TAB_FADE_IN else SLIDE_IN },
+            exitTransition = { if (isTabSwitch()) TAB_FADE_OUT else SLIDE_OUT_PARALLAX },
+            popEnterTransition = { if (isTabSwitch()) TAB_FADE_IN else SLIDE_IN_PARALLAX },
+            popExitTransition = { if (isTabSwitch()) TAB_FADE_OUT else SLIDE_OUT },
         ) {
             todayGraph(
                 navController = navController,
@@ -159,3 +173,22 @@ private fun NavHostController.navigateToTab(route: String) {
         restoreState = true
     }
 }
+
+private val TAB_ROUTES = TopLevelDestination.entries.map { it.route }.toSet()
+
+private fun NavDestination?.isTab(): Boolean = this?.route in TAB_ROUTES
+
+/** Tab to tab changes fade so the tabs do not slide; anything involving a full-screen route slides. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch(): Boolean =
+    initialState.destination.isTab() && targetState.destination.isTab()
+
+private const val SLIDE_MS = 220
+private const val FADE_MS = 150
+
+private val TAB_FADE_IN: EnterTransition = fadeIn(tween(FADE_MS))
+private val TAB_FADE_OUT: ExitTransition = fadeOut(tween(FADE_MS))
+private val SLIDE_IN: EnterTransition = slideInHorizontally(tween(SLIDE_MS)) { it }
+private val SLIDE_OUT: ExitTransition = slideOutHorizontally(tween(SLIDE_MS)) { it }
+/** The screen underneath moves a little and fades while a full screen slides over it. */
+private val SLIDE_OUT_PARALLAX: ExitTransition = slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeOut(tween(SLIDE_MS))
+private val SLIDE_IN_PARALLAX: EnterTransition = slideInHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeIn(tween(SLIDE_MS))

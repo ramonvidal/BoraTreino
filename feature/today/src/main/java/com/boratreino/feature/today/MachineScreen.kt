@@ -12,6 +12,11 @@ import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -395,12 +400,12 @@ private const val MAX_DOTS = 8
 private fun SetDots(done: Int, total: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(total) { i ->
-            Box(
-                Modifier.size(10.dp).background(
-                    if (i < done) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
-                    CircleShape,
-                ),
+            val dot by animateColorAsState(
+                if (i < done) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
+                tween(150),
+                label = "setDot",
             )
+            Box(Modifier.size(10.dp).background(dot, CircleShape))
         }
     }
 }
@@ -510,7 +515,7 @@ private fun SetTable(
                     LaunchedEffect(Unit) { visible.targetState = true }
                     AnimatedVisibility(
                         visibleState = visible,
-                        enter = fadeIn(tween(200)) + expandVertically(tween(200)),
+                        enter = fadeIn(tween(200)) + expandVertically(tween(200)) + slideInVertically(tween(200)) { it / 2 },
                     ) {
                         val flash = remember { Animatable(if (fresh) 1f else 0f) }
                         LaunchedEffect(Unit) { if (fresh) flash.animateTo(0f, tween(600)) }
@@ -557,7 +562,7 @@ private fun SetTable(
                                     Icon(
                                         painterResource(CoreUiR.drawable.ic_emoji_events),
                                         contentDescription = stringResource(R.string.machine_record_mark),
-                                        modifier = Modifier.padding(start = 4.dp).size(18.dp),
+                                        modifier = Modifier.padding(start = 4.dp).size(18.dp).recordScaleIn(),
                                         tint = MaterialTheme.colorScheme.secondary,
                                     )
                                 }
@@ -1022,7 +1027,7 @@ private fun EditSetSheet(machine: Machine, editor: SetEditor, actions: MachineAc
 @Composable
 private fun RecordCard(text: String) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().recordScaleIn(),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -1036,4 +1041,12 @@ private fun RecordCard(text: String) {
             Text(text, style = MaterialTheme.typography.titleSmall)
         }
     }
+}
+
+/** A one-shot spring scale-in from 60 % when the badge first enters composition; no infinite animation. */
+@Composable
+private fun Modifier.recordScaleIn(): Modifier {
+    val scale = remember { Animatable(0.6f) }
+    LaunchedEffect(Unit) { scale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) }
+    return graphicsLayer { scaleX = scale.value; scaleY = scale.value }
 }

@@ -134,7 +134,7 @@ internal object BodyInput {
 /** Turns a kcal figure into text with the phone's grouping, e.g. "1,780". */
 private fun NumberFormat.kcal(value: Int): String = format(value)
 
-private fun Double.plain(): String = if (this % 1.0 == 0.0) toLong().toString() else "%.1f".format(Locale.US, this)
+internal fun Double.plain(): String = if (this % 1.0 == 0.0) toLong().toString() else "%.1f".format(Locale.US, this)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

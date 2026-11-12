@@ -1,6 +1,7 @@
 package com.boratreino.feature.today
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ import com.boratreino.core.model.TrainingSummary
 import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraButtonStyle
 import com.boratreino.core.ui.BoraCard
+import com.boratreino.core.ui.Mascot
 import com.boratreino.core.ui.R as CoreUiR
 
 /** The summary on screen: the training, and whether its routine can be updated or just was. */
@@ -35,6 +37,8 @@ internal data class SummaryUi(
     val canUpdateRoutine: Boolean = false,
     /** Set after the routine was updated from this training; the sheet then offers Undo. */
     val routineUpdate: com.boratreino.core.model.RoutineUpdate? = null,
+    /** Which mascot opens the summary (null: the default one). */
+    val mascotSex: com.boratreino.core.model.Sex? = null,
 )
 
 /** What the sheet can ask for. */
@@ -72,6 +76,8 @@ internal fun TrainingSummaryContent(
             .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Mascot(summary.mascotSex, size = 96.dp) }
+
         Column {
             Text(texts.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
