@@ -5,7 +5,7 @@
     <string name="progress_empty">Registre um treino pra ver sua evolução. Bora!</string>
     <string name="progress_summary">Neste mês: %1$s · %2$s</string>
     <string name="progress_most_improved">Maiores evoluções do mês</string>
-    <string name="progress_machines">Aparelhos</string>
+    <string name="progress_machines">Exercícios</string>
     <string name="progress_from_to_kg">%1$s → %2$s kg</string>
     <string name="progress_from_to_reps">%1$s → %2$s reps</string>
     <string name="progress_best_kg">Melhor: %1$s kg</string>
@@ -21,7 +21,7 @@
     <string name="progress_detail_pair">%1$s · %2$s</string>
     <string name="progress_trend_weight">Tendência: %1$s a %2$s kg</string>
     <string name="progress_trend_reps">Tendência: %1$s a %2$s reps</string>
-    <string name="progress_machine_not_found">Esse aparelho não foi encontrado.</string>
+    <string name="progress_machine_not_found">Esse exercício não foi encontrado.</string>
     <string name="progress_tile_best">Melhor</string>
     <string name="progress_tile_change">Variação</string>
     <string name="progress_no_change">Sem variação</string>
@@ -61,7 +61,7 @@
     <string name="progress_trend_one_rm">Tendência: %1$s a %2$s kg est.</string>
     <string name="progress_chart_description_one_rm">1RM estimado de %1$s kg em %2$s até %3$s kg em %4$s; melhor %5$s kg</string>
     <string name="progress_chart_description_one_one_rm">1RM estimado %1$s kg em %2$s</string>
-    <string name="progress_page_machines">Aparelhos</string>
+    <string name="progress_page_machines">Exercícios</string>
     <string name="progress_page_stats">Estatísticas</string>
     <string name="stats_period_4w">4 semanas</string>
     <string name="stats_empty">Nenhum treino nesse período ainda</string>
@@ -123,6 +123,16 @@
     <string name="stats_balance_right">%2$d %1$s</string>
     <string name="stats_balance_ratio">%1$s : 1</string>
     <string name="stats_balance_note">Séries de trabalho neste período. Muitos programas buscam volume parecido de empurrar e puxar.</string>
+    <string name="stats_page_body">Corpo</string>
+    <string name="stats_page_strength">Força</string>
+    <string name="stats_page_habit">Hábito</string>
+    <string name="stats_highlight_load">%1$s: %2$s séries por semana</string>
+    <string name="stats_highlight_gain">%1$s %2$s no período</string>
+    <string name="stats_highlight_kind_load">Mais treinado</string>
+    <string name="stats_highlight_kind_behind">Mais tempo parado</string>
+    <string name="stats_highlight_kind_gain">Força</string>
+    <string name="stats_highlight_kind_streak">Hábito</string>
+    <string name="progress_today">hoje</string>
     <plurals name="progress_trainings">
         <item quantity="one">%d treino</item>
         <item quantity="other">%d treinos</item>
@@ -162,5 +172,17 @@
     <plurals name="stats_balance_unclassified">
         <item quantity="one">%d série não pôde ser classificada</item>
         <item quantity="other">%d séries não puderam ser classificadas</item>
+    </plurals>
+    <plurals name="stats_highlight_behind">
+        <item quantity="one">%1$s: %2$d dia desde a última vez</item>
+        <item quantity="other">%1$s: %2$d dias desde a última vez</item>
+    </plurals>
+    <plurals name="stats_highlight_streak">
+        <item quantity="one">%d semana batendo a meta</item>
+        <item quantity="other">%d semanas batendo a meta</item>
+    </plurals>
+    <plurals name="progress_days_ago">
+        <item quantity="one">há %d dia</item>
+        <item quantity="other">há %d dias</item>
     </plurals>
 </resources>

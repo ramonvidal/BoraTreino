@@ -144,7 +144,7 @@ feature/progress,progress_trainings,other,%d trainings,%d treinos
 feature/progress,progress_records,one,%d record,%d recorde
 feature/progress,progress_records,other,%d records,%d recordes
 feature/progress,progress_most_improved,,Most improved this month,Maiores evoluções do mês
-feature/progress,progress_machines,,Machines,Aparelhos
+feature/progress,progress_machines,,Exercises,Exercícios
 feature/progress,progress_from_to_kg,,%1$s → %2$s kg,%1$s → %2$s kg
 feature/progress,progress_from_to_reps,,%1$s → %2$s reps,%1$s → %2$s reps
 feature/progress,progress_best_kg,,Best %1$s kg,Melhor: %1$s kg
@@ -166,7 +166,7 @@ feature/progress,progress_detail,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
 feature/progress,progress_detail_pair,,%1$s · %2$s,%1$s · %2$s
 feature/progress,progress_trend_weight,,Trend: %1$s to %2$s kg,Tendência: %1$s a %2$s kg
 feature/progress,progress_trend_reps,,Trend: %1$s to %2$s reps,Tendência: %1$s a %2$s reps
-feature/progress,progress_machine_not_found,,This machine was not found.,Esse aparelho não foi encontrado.
+feature/progress,progress_machine_not_found,,This exercise was not found.,Esse exercício não foi encontrado.
 feature/progress,progress_tile_best,,Best,Melhor
 feature/progress,progress_tile_change,,Change,Variação
 feature/progress,progress_no_change,,No change,Sem variação
@@ -206,7 +206,7 @@ feature/progress,progress_one_rm_top,,%1$s kg est. (%2$s),%1$s kg est. (%2$s)
 feature/progress,progress_trend_one_rm,,Trend: %1$s to %2$s kg est.,Tendência: %1$s a %2$s kg est.
 feature/progress,progress_chart_description_one_rm,,Estimated 1RM from %1$s kg on %2$s to %3$s kg on %4$s; best %5$s kg,1RM estimado de %1$s kg em %2$s até %3$s kg em %4$s; melhor %5$s kg
 feature/progress,progress_chart_description_one_one_rm,,Estimated 1RM %1$s kg on %2$s,1RM estimado %1$s kg em %2$s
-feature/progress,progress_page_machines,,Machines,Aparelhos
+feature/progress,progress_page_machines,,Exercises,Exercícios
 feature/progress,progress_page_stats,,Stats,Estatísticas
 feature/progress,stats_period_4w,,4 weeks,4 semanas
 feature/progress,stats_empty,,No training in this period yet,Nenhum treino nesse período ainda
@@ -278,6 +278,22 @@ feature/progress,stats_balance_ratio,,%1$s : 1,%1$s : 1
 feature/progress,stats_balance_note,,Working sets in this period. Many programs aim for similar push and pull volume.,Séries de trabalho neste período. Muitos programas buscam volume parecido de empurrar e puxar.
 feature/progress,stats_balance_unclassified,one,%d set could not be classified,%d série não pôde ser classificada
 feature/progress,stats_balance_unclassified,other,%d sets could not be classified,%d séries não puderam ser classificadas
+feature/progress,stats_page_body,,Body,Corpo
+feature/progress,stats_page_strength,,Strength,Força
+feature/progress,stats_page_habit,,Habit,Hábito
+feature/progress,stats_highlight_load,,%1$s: %2$s sets a week,%1$s: %2$s séries por semana
+feature/progress,stats_highlight_behind,one,%1$s: %2$d day since last time,%1$s: %2$d dia desde a última vez
+feature/progress,stats_highlight_behind,other,%1$s: %2$d days since last time,%1$s: %2$d dias desde a última vez
+feature/progress,stats_highlight_gain,,%1$s %2$s in the period,%1$s %2$s no período
+feature/progress,stats_highlight_streak,one,%d week meeting the goal,%d semana batendo a meta
+feature/progress,stats_highlight_streak,other,%d weeks meeting the goal,%d semanas batendo a meta
+feature/progress,stats_highlight_kind_load,,Most trained,Mais treinado
+feature/progress,stats_highlight_kind_behind,,Longest rest,Mais tempo parado
+feature/progress,stats_highlight_kind_gain,,Strength,Força
+feature/progress,stats_highlight_kind_streak,,Habit,Hábito
+feature/progress,progress_today,,today,hoje
+feature/progress,progress_days_ago,one,%d day ago,há %d dia
+feature/progress,progress_days_ago,other,%d days ago,há %d dias
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha
