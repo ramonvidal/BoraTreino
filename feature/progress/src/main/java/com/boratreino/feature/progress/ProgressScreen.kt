@@ -1,6 +1,9 @@
 package com.boratreino.feature.progress
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,18 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,31 +26,36 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.CardioWeek
+import com.boratreino.core.model.Machine
 import com.boratreino.core.model.ProgressMetric
+import com.boratreino.core.ui.BoraCard
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.EmptyState
+import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
-import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
+import kotlin.math.roundToInt
 
 /** What the Progress front page can ask for. */
 internal data class ProgressActions(
     val onOpenMachine: (machineId: Long) -> Unit = {},
 )
 
-/** The two pages of the Progress tab. */
+/** The two pages of the Progress tab. [MACHINES] is the Exercises page (the name is kept for the saved choice). */
 internal enum class ProgressPage { MACHINES, STATS }
 
-/** The Progress tab: a Machines | Stats switch above the chosen page. The choice survives rotation. */
+/** The Progress tab: a large title and an Exercises | Stats switch above the chosen page. The choice survives rotation. */
 @Composable
 internal fun ProgressShell(
     onOpenMachine: (machineId: Long) -> Unit,
@@ -64,18 +65,16 @@ internal fun ProgressShell(
     val page = ProgressPage.entries.firstOrNull { it.name == chosen } ?: ProgressPage.MACHINES
     // statusBarsPadding keeps the switch clear of the status bar and consumes that inset, so the pages' own Scaffolds do not add it again below the switch.
     Column(modifier.fillMaxSize().statusBarsPadding()) {
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
-            ProgressPage.entries.forEachIndexed { index, option ->
-                SegmentedButton(
-                    selected = page == option,
-                    onClick = { chosen = option.name },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = ProgressPage.entries.size),
-                    modifier = Modifier.heightIn(min = 48.dp),
-                ) {
-                    Text(
-                        stringResource(
+        Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
+            Text(stringResource(R.string.progress_title), style = MaterialTheme.typography.headlineMedium)
+            Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ProgressPage.entries.forEach { option ->
+                    BoraChip(
+                        label = stringResource(
                             if (option == ProgressPage.MACHINES) R.string.progress_page_machines else R.string.progress_page_stats,
                         ),
+                        selected = page == option,
+                        onClick = { chosen = option.name },
                     )
                 }
             }
@@ -115,7 +114,7 @@ internal fun ProgressContent(
             else -> LazyColumn(
                 Modifier.fillMaxSize().padding(innerPadding),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item(key = "summary") { SummaryCard(state) }
                 state.cardioThisWeek?.let { week ->
@@ -126,9 +125,7 @@ internal fun ProgressContent(
                     item(key = "improved") { ImprovedCard(state.improved, actions.onOpenMachine) }
                 }
                 item(key = "machines-header") { SectionTitle(stringResource(R.string.progress_machines)) }
-                items(state.machines, key = { it.machine.id }) { row ->
-                    MachineRowCard(row, state, actions.onOpenMachine)
-                }
+                item(key = "machines") { MachinesCard(state, actions.onOpenMachine) }
             }
         }
     }
@@ -139,24 +136,17 @@ private fun SectionTitle(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 8.dp, start = 4.dp),
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 4.dp, start = 4.dp),
     )
-}
-
-@Composable
-private fun SoftCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) { content() }
 }
 
 /** "This month": three big numbers, each with a small label. */
 @Composable
 private fun SummaryCard(state: ProgressUiState) {
-    SoftCard {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.progress_this_month), style = MaterialTheme.typography.titleMedium)
+    BoraCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.progress_this_month), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 BigNumber(state.trainingsThisMonth, stringResource(R.string.progress_stat_trainings), Modifier.weight(1f))
                 BigNumber(state.recordsThisMonth, stringResource(R.string.progress_stat_records), Modifier.weight(1f))
@@ -171,111 +161,136 @@ private fun BigNumber(value: Int, label: String, modifier: Modifier = Modifier) 
     Column(modifier.heightIn(min = 56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             value.toString(),
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onSurface,
         )
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 /** "Cardio this week: 45 min · 320 kcal". */
 @Composable
 private fun CardioWeekCard(week: CardioWeek) {
-    SoftCard {
+    BoraCard(Modifier.fillMaxWidth()) {
         Text(
             stringResource(R.string.progress_cardio_week, cardioText(week.minutes, week.calories, week.distanceM)),
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(16.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(vertical = 8.dp),
         )
     }
 }
 
 @Composable
 private fun ImprovedCard(rows: List<ImprovedRow>, onOpen: (Long) -> Unit) {
-    SoftCard {
-        Column {
-            rows.forEachIndexed { index, row ->
-                if (index > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                ImprovedRowItem(row, onOpen)
+    BoraCard(Modifier.fillMaxWidth()) {
+        rows.forEachIndexed { index, row ->
+            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            val from = formatKg(row.improvement.from)
+            val to = formatKg(row.improvement.to)
+            val detail = when (row.metric) {
+                ProgressMetric.WEIGHT, ProgressMetric.ONE_RM -> stringResource(R.string.progress_from_to_kg, from, to)
+                ProgressMetric.REPS -> stringResource(R.string.progress_from_to_reps, from, to)
+                ProgressMetric.MINUTES -> stringResource(R.string.progress_from_to_minutes, from, to)
             }
+            ExerciseRow(
+                machine = row.machine,
+                detail = detail,
+                metric = row.metric,
+                trend = row.trend,
+                changePercent = row.improvement.percent,
+                onClick = { onOpen(row.machine.id) },
+            )
         }
     }
 }
 
+/** The Exercises list: one card, one row per exercise. */
 @Composable
-private fun ImprovedRowItem(row: ImprovedRow, onOpen: (Long) -> Unit) {
-    val from = formatKg(row.improvement.from)
-    val to = formatKg(row.improvement.to)
+private fun MachinesCard(state: ProgressUiState, onOpen: (Long) -> Unit) {
+    BoraCard(Modifier.fillMaxWidth()) {
+        state.machines.forEachIndexed { index, row ->
+            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            val best = when (row.metric) {
+                ProgressMetric.WEIGHT, ProgressMetric.ONE_RM -> stringResource(R.string.progress_best_kg, formatKg(row.best))
+                ProgressMetric.REPS -> row.best.toInt().let { pluralStringResource(R.plurals.progress_best_reps, it, it) }
+                ProgressMetric.MINUTES -> stringResource(R.string.progress_best_minutes, row.best.toInt())
+            }
+            val days = daysSince(row.lastTrained, state.today)
+            val ago = if (days <= 0) stringResource(R.string.progress_today) else pluralStringResource(R.plurals.progress_days_ago, days, days)
+            ExerciseRow(
+                machine = row.machine,
+                detail = stringResource(R.string.progress_detail_pair, best, ago),
+                metric = row.metric,
+                trend = row.trend,
+                changePercent = trendChangePercent(row.trend),
+                onClick = { onOpen(row.machine.id) },
+            )
+        }
+    }
+}
+
+/** Thumb, bold name, muted detail, a sparkline and the latest change as a coloured number. */
+@Composable
+private fun ExerciseRow(
+    machine: Machine,
+    detail: String,
+    metric: ProgressMetric,
+    trend: List<Double>,
+    changePercent: Double?,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable { onOpen(row.machine.id) }
+            .clickable(onClick = onClick)
             .heightIn(min = 64.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        MachineThumb(name = machine.name, muscleGroup = machine.muscleGroup, size = 44.dp)
         Column(Modifier.weight(1f)) {
-            Text(row.machine.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(
-                    painterResource(CoreUiR.drawable.ic_arrow_upward),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.secondary,
-                )
-                Text(
-                    deltaText(row.metric, row.improvement.delta),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            }
             Text(
-                text = when (row.metric) {
-                    ProgressMetric.WEIGHT, ProgressMetric.ONE_RM -> stringResource(R.string.progress_from_to_kg, from, to)
-                    ProgressMetric.REPS -> stringResource(R.string.progress_from_to_reps, from, to)
-                    ProgressMetric.MINUTES -> stringResource(R.string.progress_from_to_minutes, from, to)
-                },
-                style = MaterialTheme.typography.bodySmall,
+                machine.name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                detail,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
-        TrendLine(row.trend, trendDescription(row.metric, row.trend))
+        ExerciseSparkline(trend, trendDescription(metric, trend))
+        ChangeNumber(changePercent)
     }
 }
 
+/** "+8 %" in the secondary colour, "-3 %" in the error colour, "0" muted; blank when there is nothing to compare. */
 @Composable
-private fun MachineRowCard(row: MachineRow, state: ProgressUiState, onOpen: (Long) -> Unit) {
-    val best = when (row.metric) {
-        ProgressMetric.WEIGHT, ProgressMetric.ONE_RM -> stringResource(R.string.progress_best_kg, formatKg(row.best))
-        ProgressMetric.REPS -> row.best.toInt().let { pluralStringResource(R.plurals.progress_best_reps, it, it) }
-        ProgressMetric.MINUTES -> stringResource(R.string.progress_best_minutes, row.best.toInt())
+private fun ChangeNumber(percent: Double?) {
+    val scheme = MaterialTheme.colorScheme
+    if (percent == null) {
+        Spacer(Modifier.width(48.dp))
+        return
     }
-    val last = stringResource(R.string.progress_last_trained, formatShortDate(row.lastTrained, state.today))
-    Card(
-        onClick = { onOpen(row.machine.id) },
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(row.machine.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    row.machine.muscleGroup.label(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    stringResource(R.string.progress_detail_pair, best, last),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            TrendLine(row.trend, trendDescription(row.metric, row.trend))
-        }
+    val rounded = percent.roundToInt()
+    val color: Color = when {
+        rounded > 0 -> scheme.secondary
+        rounded < 0 -> scheme.error
+        else -> scheme.onSurfaceVariant
     }
+    Text(
+        signedPercent(percent),
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        color = color,
+        modifier = Modifier.widthIn(min = 48.dp),
+        textAlign = TextAlign.End,
+    )
 }

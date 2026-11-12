@@ -8,6 +8,7 @@ import com.boratreino.core.model.SessionPoint
 import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -88,3 +89,25 @@ internal fun topText(metric: ProgressMetric, point: SessionPoint): String = when
 @Composable
 internal fun setsText(point: SessionPoint): String =
     pluralStringResource(R.plurals.progress_sets, point.setCount, point.setCount)
+
+/** Whole days from [date] to [today]; 0 for today (and for a date in the future). */
+internal fun daysSince(date: LocalDate, today: LocalDate): Int =
+    ChronoUnit.DAYS.between(date, today).toInt().coerceAtLeast(0)
+
+/** Percent change from the first to the last of [trend] (oldest first); null with fewer than two values or a first value of 0 or less. */
+internal fun trendChangePercent(trend: List<Double>): Double? {
+    if (trend.size < 2) return null
+    val first = trend.first()
+    if (first <= 0.0) return null
+    return (trend.last() - first) / first * 100.0
+}
+
+/** "+8 %" for a rise, "-3 %" for a fall, "0" when it rounds to nothing. */
+internal fun signedPercent(percent: Double): String {
+    val rounded = percent.roundToInt()
+    return when {
+        rounded > 0 -> "+$rounded %"
+        rounded < 0 -> "$rounded %"
+        else -> "0"
+    }
+}

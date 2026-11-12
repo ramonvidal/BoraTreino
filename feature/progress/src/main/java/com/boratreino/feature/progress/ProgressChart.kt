@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -105,6 +106,7 @@ internal fun ProgressChart(
 ) {
     val colors = MaterialTheme.colorScheme
     val lineColor = colors.primary
+    val recordColor = colors.secondary
     val ringColor = colors.surfaceContainerLowest
     val gridColor = colors.outlineVariant
     val crosshairColor = colors.outline
@@ -112,7 +114,7 @@ internal fun ProgressChart(
     val axisLabelColor = colors.onSurfaceVariant
     val tooltipBackground = colors.inverseSurface
     val tooltipTextColor = colors.inverseOnSurface
-    val labelStyle = MaterialTheme.typography.labelSmall
+    val labelStyle = MaterialTheme.typography.labelMedium
     val tooltipStyle = MaterialTheme.typography.labelMedium
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
@@ -219,7 +221,7 @@ internal fun ProgressChart(
             val big = BestMarkerDiameter.toPx() / 2f
             centers.forEachIndexed { i, center ->
                 val show = points.size <= MAX_MARKERS || i == last || i == best || i == selected
-                if (show) marker(center, if (i == best) big else regular, ring, lineColor, ringColor)
+                if (show) marker(center, if (i == best) big else regular, ring, if (i == best || i == last) recordColor else lineColor, ringColor)
             }
 
             // Value labels: only the last and the best point; the last wins when they collide.
@@ -303,4 +305,27 @@ private fun DrawScope.valueLabel(
 private fun DrawScope.marker(center: Offset, radius: Float, ring: Float, color: Color, ringColor: Color) {
     drawCircle(ringColor, radius + ring, center)
     drawCircle(color, radius, center)
+}
+
+/** A 64 x 28 dp sparkline of [values] (oldest first): an Ink line, the last point a green dot. */
+@Composable
+internal fun ExerciseSparkline(values: List<Double>, description: String, modifier: Modifier = Modifier) {
+    val lineColor = MaterialTheme.colorScheme.primary
+    val dotColor = MaterialTheme.colorScheme.secondary
+    Canvas(
+        modifier
+            .size(width = 64.dp, height = 28.dp)
+            .semantics { contentDescription = description },
+    ) {
+        val dotRadius = 3.dp.toPx()
+        val offsets = trendOffsets(values, size.width, size.height, inset = dotRadius + 1.dp.toPx())
+        if (offsets.size >= 2) {
+            val path = Path().apply {
+                moveTo(offsets.first().x, offsets.first().y)
+                for (i in 1 until offsets.size) lineTo(offsets[i].x, offsets[i].y)
+            }
+            drawPath(path, lineColor, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        }
+        offsets.lastOrNull()?.let { drawCircle(dotColor, dotRadius, it) }
+    }
 }

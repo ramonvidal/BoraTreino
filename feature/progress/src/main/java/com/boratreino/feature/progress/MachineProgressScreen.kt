@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -34,6 +33,7 @@ import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.ProgressRange
 import com.boratreino.core.model.SessionPoint
+import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.cardioText
@@ -129,6 +129,7 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
                 Text(
                     stringResource(R.string.progress_sessions),
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 4.dp),
                 )
             }
@@ -174,18 +175,15 @@ private fun Tiles(state: MachineProgressUiState) {
 
 @Composable
 private fun StatTile(label: String, value: String, hint: String?, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
+    BoraCard(modifier = modifier) {
         Column(
-            Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(16.dp),
+            Modifier.fillMaxWidth().heightIn(min = 64.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.headlineSmall)
+            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             if (hint != null) {
-                Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(hint, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -247,12 +245,9 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
         ProgressMetric.MINUTES -> stringResource(R.string.progress_chart_title_minutes)
         ProgressMetric.ONE_RM -> stringResource(R.string.progress_chart_title_one_rm)
     }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+    BoraCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             if (points.isEmpty()) {
                 Box(Modifier.fillMaxWidth().heightIn(min = 96.dp), contentAlignment = Alignment.Center) {
                     Text(
@@ -285,7 +280,7 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
                 if (state.metric == ProgressMetric.ONE_RM) {
                     Text(
                         stringResource(R.string.progress_one_rm_note),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -341,10 +336,7 @@ private fun chartDescription(state: MachineProgressUiState): String {
 
 @Composable
 private fun SessionRow(state: MachineProgressUiState, point: SessionPoint) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
+    BoraCard(modifier = Modifier.fillMaxWidth()) {
         Text(
             stringResource(
                 R.string.progress_detail,
@@ -353,7 +345,7 @@ private fun SessionRow(state: MachineProgressUiState, point: SessionPoint) {
                 setsText(point),
             ),
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp),
         )
     }
 }
@@ -362,12 +354,9 @@ private fun SessionRow(state: MachineProgressUiState, point: SessionPoint) {
 @Composable
 private fun WeeksCard(weeks: List<CardioWeek>, today: LocalDate) {
     val currentStart = weeks.last().weekStart
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.progress_weeks_title), style = MaterialTheme.typography.titleMedium)
+    BoraCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.progress_weeks_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             WeeklyBars(weeks, description = weeksDescription(weeks))
             for (week in weeks.asReversed()) {
                 if (week.minutes == 0 && week.calories == 0 && week.distanceM == 0) continue

@@ -11,7 +11,7 @@
         <item quantity="other">%d records</item>
     </plurals>
     <string name="progress_most_improved">Most improved this month</string>
-    <string name="progress_machines">Machines</string>
+    <string name="progress_machines">Exercises</string>
     <string name="progress_from_to_kg">%1$s → %2$s kg</string>
     <string name="progress_from_to_reps">%1$s → %2$s reps</string>
     <string name="progress_best_kg">Best %1$s kg</string>
@@ -40,7 +40,7 @@
     <string name="progress_trend_weight">Trend: %1$s to %2$s kg</string>
     <string name="progress_trend_reps">Trend: %1$s to %2$s reps</string>
 
-    <string name="progress_machine_not_found">This machine was not found.</string>
+    <string name="progress_machine_not_found">This exercise was not found.</string>
     <string name="progress_tile_best">Best</string>
     <string name="progress_tile_change">Change</string>
     <string name="progress_no_change">No change</string>
@@ -80,7 +80,7 @@
     <string name="progress_trend_one_rm">Trend: %1$s to %2$s kg est.</string>
     <string name="progress_chart_description_one_rm">Estimated 1RM from %1$s kg on %2$s to %3$s kg on %4$s; best %5$s kg</string>
     <string name="progress_chart_description_one_one_rm">Estimated 1RM %1$s kg on %2$s</string>
-    <string name="progress_page_machines">Machines</string>
+    <string name="progress_page_machines">Exercises</string>
     <string name="progress_page_stats">Stats</string>
     <string name="stats_period_4w">4 weeks</string>
     <string name="stats_empty">No training in this period yet</string>
@@ -179,4 +179,9 @@
     <string name="stats_highlight_kind_behind">Longest rest</string>
     <string name="stats_highlight_kind_gain">Strength</string>
     <string name="stats_highlight_kind_streak">Habit</string>
+    <string name="progress_today">today</string>
+    <plurals name="progress_days_ago">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
 </resources>
