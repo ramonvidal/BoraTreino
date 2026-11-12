@@ -6,6 +6,12 @@
     <string name="settings_section_body">Corpo</string>
     <string name="settings_section_data">Dados</string>
     <string name="settings_section_app">App</string>
+    <string name="settings_training_summary">%1$s · %2$s</string>
+    <string name="settings_summary_rest">Descanso: %1$d s</string>
+    <string name="settings_summary_rest_off">Descanso: desligado</string>
+    <string name="settings_body_summary">%1$s kg · %2$d cm</string>
+    <string name="settings_data_summary">Backup, Health Connect</string>
+    <string name="settings_app_summary">%1$s · versão %2$s</string>
     <string name="settings_goal_title">Meta semanal</string>
     <string name="settings_goal_label">Dias por semana</string>
     <string name="settings_reminders_title">Lembretes de treino</string>
@@ -18,10 +24,10 @@
     <string name="settings_rest_beep">Apitar quando o descanso acabar</string>
     <string name="settings_rest_default">Descanso padrão</string>
     <string name="settings_rest_seconds">%1$d s</string>
-    <string name="settings_rest_hint">Cada aparelho pode ter seu próprio descanso, no editor dele.</string>
+    <string name="settings_rest_hint">Cada exercício pode ter seu próprio descanso, no editor dele.</string>
     <string name="settings_warmup_title">Aquecimento</string>
     <string name="settings_warmup_switch">Sugestões de aquecimento</string>
-    <string name="settings_warmup_hint">Oferece séries de aquecimento na tela do aparelho, a partir da sua carga de trabalho.</string>
+    <string name="settings_warmup_hint">Oferece séries de aquecimento na tela do exercício, a partir da sua carga de trabalho.</string>
     <string name="settings_health_title">Health Connect</string>
     <string name="settings_health_hint">Envia cada treino terminado para o Health Connect (sessões de exercício, e calorias e distância no cardio). Nada é lido.</string>
     <string name="settings_health_switch">Enviar treinos para o Health Connect</string>
@@ -72,9 +78,13 @@
     <string name="settings_body_recent_weights">Pesos recentes</string>
     <string name="settings_body_show_estimate">Mostrar estimativa de energia diária</string>
     <string name="settings_body_range_error">Digite um valor de %1$s a %2$s</string>
+    <plurals name="settings_summary_goal">
+        <item quantity="one">Meta: %1$d dia</item>
+        <item quantity="other">Meta: %1$d dias</item>
+    </plurals>
     <plurals name="settings_import_machines">
-        <item quantity="one">%1$s aparelho</item>
-        <item quantity="other">%1$s aparelhos</item>
+        <item quantity="one">%1$s exercício</item>
+        <item quantity="other">%1$s exercícios</item>
     </plurals>
     <plurals name="settings_import_routines">
         <item quantity="one">%1$s ficha</item>

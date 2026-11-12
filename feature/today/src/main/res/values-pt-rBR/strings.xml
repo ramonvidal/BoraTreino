@@ -13,7 +13,7 @@
     <string name="today_hero_start">Começar: %1$s</string>
     <string name="today_hero_continue">Continuar: %1$s</string>
     <string name="today_hero_finish">Concluir treino</string>
-    <string name="today_hero_free">Treino livre</string>
+    <string name="today_hero_free">Sem ficha</string>
     <string name="today_switcher_next">%1$s · próxima no rodízio</string>
     <string name="today_switcher_title">Escolher a ficha</string>
     <string name="today_exercises_title">Exercícios</string>
@@ -91,7 +91,7 @@
     <string name="machine_record_mark">Recorde</string>
     <string name="machine_type_value">Digite o número</string>
     <string name="summary_title">Treino concluído</string>
-    <string name="summary_free_training">Treino livre</string>
+    <string name="summary_free_training">Sem ficha</string>
     <string name="summary_duration">Duração</string>
     <string name="summary_sets">Séries</string>
     <string name="summary_volume">Volume</string>

@@ -353,7 +353,7 @@ feature/routines,routine_delete_title,,Delete this routine?,Apagar esta ficha?
 feature/routines,routine_delete_body,,Your logged sets are kept.,As séries que você registrou continuam guardadas.
 feature/routines,routine_delete_confirm,,Delete,Apagar
 feature/routines,routines_intro_title,,Your gym,Sua academia
-feature/routines,routines_intro_body,,Register every machine and exercise your gym has. Your routines (fichas) are built from this list.,Cadastre cada aparelho e exercício da sua academia. Suas fichas são montadas a partir dessa lista.
+feature/routines,routines_intro_body,,Register every exercise your gym has. Your routines (fichas) are built from this list.,Cadastre cada exercício da sua academia. Suas fichas são montadas a partir dessa lista.
 feature/routines,routines_gym_heading,,Exercises \u00b7 %1$d,Exercícios · %1$d
 feature/routines,routines_section,,Routines,Fichas
 feature/routines,routines_search,,Search exercises,Buscar exercícios
@@ -442,6 +442,14 @@ feature/settings,settings_section_training,,Training,Treino
 feature/settings,settings_section_body,,Body,Corpo
 feature/settings,settings_section_data,,Data,Dados
 feature/settings,settings_section_app,,App,App
+feature/settings,settings_training_summary,,%1$s · %2$s,%1$s · %2$s
+feature/settings,settings_summary_rest,,Rest: %1$d s,Descanso: %1$d s
+feature/settings,settings_summary_rest_off,,Rest: off,Descanso: desligado
+feature/settings,settings_body_summary,,%1$s kg · %2$d cm,%1$s kg · %2$d cm
+feature/settings,settings_data_summary,,"Backup, Health Connect","Backup, Health Connect"
+feature/settings,settings_app_summary,,%1$s · version %2$s,%1$s · versão %2$s
+feature/settings,settings_summary_goal,one,Goal: %1$d day,Meta: %1$d dia
+feature/settings,settings_summary_goal,other,Goal: %1$d days,Meta: %1$d dias
 feature/settings,settings_goal_title,,Weekly goal,Meta semanal
 feature/settings,settings_goal_label,,Days per week,Dias por semana
 feature/settings,settings_reminders_title,,Training reminders,Lembretes de treino
@@ -454,10 +462,10 @@ feature/settings,settings_rest_switch,,Count down after each set,Contar depois d
 feature/settings,settings_rest_beep,,Beep when rest ends,Apitar quando o descanso acabar
 feature/settings,settings_rest_default,,Default rest,Descanso padrão
 feature/settings,settings_rest_seconds,,%1$d s,%1$d s
-feature/settings,settings_rest_hint,,Each machine can have its own rest time in its editor.,"Cada aparelho pode ter seu próprio descanso, no editor dele."
+feature/settings,settings_rest_hint,,Each exercise can have its own rest time in its editor.,"Cada exercício pode ter seu próprio descanso, no editor dele."
 feature/settings,settings_warmup_title,,Warm-up,Aquecimento
 feature/settings,settings_warmup_switch,,Warm-up suggestions,Sugestões de aquecimento
-feature/settings,settings_warmup_hint,,"Offers warm-up sets on the machine screen, from your working weight.","Oferece séries de aquecimento na tela do aparelho, a partir da sua carga de trabalho."
+feature/settings,settings_warmup_hint,,"Offers warm-up sets on the exercise screen, from your working weight.","Oferece séries de aquecimento na tela do exercício, a partir da sua carga de trabalho."
 feature/settings,settings_health_title,,Health Connect,Health Connect
 feature/settings,settings_health_hint,,"Send each finished training to Health Connect (exercise sessions, and calories and distance for cardio). Nothing is read.","Envia cada treino terminado para o Health Connect (sessões de exercício, e calorias e distância no cardio). Nada é lido."
 feature/settings,settings_health_switch,,Send trainings to Health Connect,Enviar treinos para o Health Connect
@@ -480,8 +488,8 @@ feature/settings,settings_import_message,,Replace everything on this phone with 
 feature/settings,settings_import_message_dates,,Replace everything on this phone with this backup? %1$s (%2$s).,Trocar tudo neste celular por este backup? %1$s (%2$s).
 feature/settings,settings_import_replace,,Replace,Trocar
 feature/settings,settings_import_counts,,"%1$s, %2$s, %3$s, %4$s","%1$s, %2$s, %3$s, %4$s"
-feature/settings,settings_import_machines,one,%1$s machine,%1$s aparelho
-feature/settings,settings_import_machines,other,%1$s machines,%1$s aparelhos
+feature/settings,settings_import_machines,one,%1$s exercise,%1$s exercício
+feature/settings,settings_import_machines,other,%1$s exercises,%1$s exercícios
 feature/settings,settings_import_routines,one,%1$s routine,%1$s ficha
 feature/settings,settings_import_routines,other,%1$s routines,%1$s fichas
 feature/settings,settings_import_trainings,one,%1$s training,%1$s treino
@@ -545,7 +553,7 @@ feature/today,today_done,,Done,Concluir
 feature/today,today_hero_start,,Start: %1$s,Começar: %1$s
 feature/today,today_hero_continue,,Continue: %1$s,Continuar: %1$s
 feature/today,today_hero_finish,,Finish training,Concluir treino
-feature/today,today_hero_free,,Free training,Treino livre
+feature/today,today_hero_free,,No routine,Sem ficha
 feature/today,today_switcher_next,,%1$s · next in rotation,%1$s · próxima no rodízio
 feature/today,today_switcher_title,,Choose a routine,Escolher a ficha
 feature/today,today_exercises_title,,Exercises,Exercícios
@@ -635,7 +643,7 @@ feature/today,machine_no_previous,,-,-
 feature/today,machine_record_mark,,Record,Recorde
 feature/today,machine_type_value,,Type the number,Digite o número
 feature/today,summary_title,,Training complete,Treino concluído
-feature/today,summary_free_training,,Free training,Treino livre
+feature/today,summary_free_training,,No routine,Sem ficha
 feature/today,summary_duration,,Duration,Duração
 feature/today,summary_sets,,Sets,Séries
 feature/today,summary_volume,,Volume,Volume

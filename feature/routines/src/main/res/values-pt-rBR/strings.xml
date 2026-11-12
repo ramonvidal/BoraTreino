@@ -56,7 +56,7 @@
     <string name="routine_delete_body">As séries que você registrou continuam guardadas.</string>
     <string name="routine_delete_confirm">Apagar</string>
     <string name="routines_intro_title">Sua academia</string>
-    <string name="routines_intro_body">Cadastre cada aparelho e exercício da sua academia. Suas fichas são montadas a partir dessa lista.</string>
+    <string name="routines_intro_body">Cadastre cada exercício da sua academia. Suas fichas são montadas a partir dessa lista.</string>
     <string name="routines_gym_heading">Exercícios · %1$d</string>
     <string name="routines_section">Fichas</string>
     <string name="routines_search">Buscar exercícios</string>
