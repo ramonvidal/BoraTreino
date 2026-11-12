@@ -89,12 +89,10 @@ feature/calendar,calendar_goal_title,,Weekly goal,Meta semanal
 feature/calendar,calendar_goal_label,,Training days per week,Dias de treino por semana
 feature/calendar,calendar_previous_month,,Previous month,Mês anterior
 feature/calendar,calendar_next_month,,Next month,Próximo mês
-feature/calendar,calendar_schedule_title,,Which routine is next,Qual ficha vem agora
-feature/calendar,calendar_schedule_in_turn,,In turn,Em rodízio
-feature/calendar,calendar_schedule_weekdays,,On weekdays,Por dia da semana
-feature/calendar,calendar_training_days,,Training days,Dias de treino
-feature/calendar,calendar_training_days_hint,,Rotation moves to the next routine on these days. If you skip a day the routine stays the next one.,"O rodízio passa pra próxima ficha nesses dias. Se você pular um dia, a ficha continua sendo a próxima."
-feature/calendar,calendar_schedule_weekdays_hint,,Choose each routine's days when you edit it.,Escolha os dias de cada ficha na hora de editar.
+feature/calendar,calendar_rotation_title,,Rotation days,Dias de rodízio
+feature/calendar,calendar_rotation_hint,,"Routines in rotation are trained on these days, one after the other. If you skip a day the routine stays the next one. Routines set to specific days come up on their own days.","As fichas em rodízio são treinadas nesses dias, uma depois da outra. Se você pular um dia, a ficha continua sendo a próxima. As fichas em dias certos vêm nos dias delas."
+feature/calendar,calendar_in_rotation,,In rotation,Em rodízio
+feature/calendar,calendar_rotation_pointer,,Change a routine's days in its editor (Routines tab).,Troque os dias de uma ficha no editor dela (aba Fichas).
 feature/calendar,calendar_free_training,,No routine,Sem ficha
 feature/calendar,calendar_session_counts,,%1$s · %2$s,%1$s · %2$s
 feature/calendar,calendar_session_summary,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
@@ -338,6 +336,12 @@ feature/routines,routine_name,,Name,Nome
 feature/routines,routine_name_error,,Give the routine a name.,Dê um nome à ficha.
 feature/routines,routine_short_name,,Short name,Nome curto
 feature/routines,routine_weekdays,,Weekdays,Dias da semana
+feature/routines,routine_when_title,,When do you train this?,Quando você treina essa ficha?
+feature/routines,routine_when_rotation,,In rotation,Em rodízio
+feature/routines,routine_when_days,,On specific days,Em dias certos
+feature/routines,routine_when_rotation_hint,,"It comes up in turn with your other rotation routines, on your training days (set in the Agenda tab).","Ela entra no rodízio com as outras fichas, nos seus dias de treino (definidos na aba Agenda)."
+feature/routines,routine_when_days_hint,,It is always the next routine on the days you pick. Pick at least one day.,Ela é sempre a próxima ficha nos dias que você escolher. Escolha pelo menos um dia.
+feature/routines,routines_schedule_rotation,,In rotation,Em rodízio
 feature/routines,routine_machines,,Exercises,Exercícios
 feature/routines,routine_no_machines,,No exercises yet.,Nenhum exercício ainda.
 feature/routines,routine_add_machine,,Add exercise,Adicionar exercício

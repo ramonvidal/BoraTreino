@@ -41,6 +41,12 @@
     <string name="routine_name_error">Dê um nome à ficha.</string>
     <string name="routine_short_name">Nome curto</string>
     <string name="routine_weekdays">Dias da semana</string>
+    <string name="routine_when_title">Quando você treina essa ficha?</string>
+    <string name="routine_when_rotation">Em rodízio</string>
+    <string name="routine_when_days">Em dias certos</string>
+    <string name="routine_when_rotation_hint">Ela entra no rodízio com as outras fichas, nos seus dias de treino (definidos na aba Agenda).</string>
+    <string name="routine_when_days_hint">Ela é sempre a próxima ficha nos dias que você escolher. Escolha pelo menos um dia.</string>
+    <string name="routines_schedule_rotation">Em rodízio</string>
     <string name="routine_machines">Exercícios</string>
     <string name="routine_no_machines">Nenhum exercício ainda.</string>
     <string name="routine_add_machine">Adicionar exercício</string>

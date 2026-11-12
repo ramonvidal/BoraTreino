@@ -11,12 +11,10 @@
     <string name="calendar_goal_label">Dias de treino por semana</string>
     <string name="calendar_previous_month">Mês anterior</string>
     <string name="calendar_next_month">Próximo mês</string>
-    <string name="calendar_schedule_title">Qual ficha vem agora</string>
-    <string name="calendar_schedule_in_turn">Em rodízio</string>
-    <string name="calendar_schedule_weekdays">Por dia da semana</string>
-    <string name="calendar_training_days">Dias de treino</string>
-    <string name="calendar_training_days_hint">O rodízio passa pra próxima ficha nesses dias. Se você pular um dia, a ficha continua sendo a próxima.</string>
-    <string name="calendar_schedule_weekdays_hint">Escolha os dias de cada ficha na hora de editar.</string>
+    <string name="calendar_rotation_title">Dias de rodízio</string>
+    <string name="calendar_rotation_hint">As fichas em rodízio são treinadas nesses dias, uma depois da outra. Se você pular um dia, a ficha continua sendo a próxima. As fichas em dias certos vêm nos dias delas.</string>
+    <string name="calendar_in_rotation">Em rodízio</string>
+    <string name="calendar_rotation_pointer">Troque os dias de uma ficha no editor dela (aba Fichas).</string>
     <string name="calendar_free_training">Sem ficha</string>
     <string name="calendar_session_counts">%1$s · %2$s</string>
     <string name="calendar_session_summary">%1$s · %2$s · %3$s</string>
