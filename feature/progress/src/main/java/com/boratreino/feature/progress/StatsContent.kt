@@ -78,7 +78,7 @@ internal fun StatsContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             PeriodChips(state.period, actions.onPeriod)
-            StatsPageChips(page) { page = it }
+            StatsPageChips(page, onPage = { page = it })
         }
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
@@ -92,7 +92,7 @@ internal fun StatsContent(
             }
             val highlights = StatsHighlights.of(report)
             if (highlights.isNotEmpty()) {
-                item(key = "highlights") { HighlightsStrip(highlights) { page = it } }
+                item(key = "highlights") { HighlightsStrip(highlights, onPage = { page = it }) }
             }
             when (page) {
                 StatsPage.BODY -> bodyItems(state, report)
