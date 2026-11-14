@@ -131,9 +131,32 @@ class SettingsSectionsTest {
     }
 
     @Test
+    fun `the rest timer card shows the rest alarm check`() {
+        setContent(state())
+
+        compose.onNodeWithText("Rest alarm check").assertExists()
+        compose.onNodeWithText("Test the alarm (15 s)").assertExists()
+        compose.onNodeWithText("Battery settings").assertExists()
+    }
+
+    @Test
+    fun `the rest timer card hides the rest alarm check when the timer is off`() {
+        setContent(state().copy(restTimer = RestTimerSettings(enabled = false, defaultSeconds = 90)))
+
+        compose.onNodeWithText("Test the alarm (15 s)").assertDoesNotExist()
+    }
+
+    @Test
     fun `the training page shot`() {
         setContent(state())
 
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/settings-sections.png")
+    }
+
+    @Test
+    fun `the training page shot with the rest timer off`() {
+        setContent(state().copy(restTimer = RestTimerSettings(enabled = false, defaultSeconds = 90)))
+
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/settings-sections-rest-off.png")
     }
 }

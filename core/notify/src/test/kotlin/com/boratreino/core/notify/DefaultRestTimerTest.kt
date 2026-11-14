@@ -352,6 +352,44 @@ class DefaultRestTimerTest {
 
         assertNull(shadowOf(alarmManager).nextScheduledAlarm)
     }
+
+    @Test
+    fun `skip after an extend leaves no scheduled alarm`() {
+        val alarmManager = RuntimeEnvironment.getApplication().getSystemService(AlarmManager::class.java)
+        timer.start(90)
+        timer.extend(30)
+        scope.runCurrent()
+
+        timer.skip()
+
+        assertNull(shadowOf(alarmManager).nextScheduledAlarm)
+    }
+
+    @Test
+    fun `extend replaces the alarm with the later end time`() {
+        val alarmManager = RuntimeEnvironment.getApplication().getSystemService(AlarmManager::class.java)
+        timer.start(90)
+
+        timer.extend(30)
+
+        assertEquals(secondsFromStart(120).toEpochMilli(), shadowOf(alarmManager).nextScheduledAlarm?.triggerAtTime)
+    }
+
+    @Test
+    fun `a cancel racing a live alarm leaves the end time in the live alarm intent`() {
+        val app = RuntimeEnvironment.getApplication()
+        val alarmManager = app.getSystemService(AlarmManager::class.java)
+        timer.start(90)
+        val live = requireNotNull(shadowOf(alarmManager).nextScheduledAlarm?.operation)
+
+        // A second timer with no rest of its own cancels while the first timer's alarm is still scheduled.
+        DefaultRestTimer(app, clock, scope).skip()
+
+        assertEquals(
+            secondsFromStart(90).toEpochMilli(),
+            shadowOf(live).savedIntent.getLongExtra(RestAlarmReceiver.EXTRA_ENDS_AT, 0L),
+        )
+    }
 }
 
 /** A clock the test moves by hand. */

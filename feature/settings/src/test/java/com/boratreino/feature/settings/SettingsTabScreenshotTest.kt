@@ -100,6 +100,14 @@ class SettingsTabScreenshotTest {
         shoot("settings-tab-beep-on-dark", tabState(beep = true), dark = true, page = SettingsPage.TRAINING)
 
     @Test
+    fun `settings tab with the rest alarm check`() =
+        shoot("settings-tab-rest-alarm", tabState(beep = false), page = SettingsPage.TRAINING)
+
+    @Test
+    fun `settings tab dark with the rest alarm check`() =
+        shoot("settings-tab-rest-alarm-dark", tabState(beep = false), dark = true, page = SettingsPage.TRAINING)
+
+    @Test
     fun `tapping the beep switch reports the new value`() {
         var received: Boolean? = null
         shoot(
@@ -164,4 +172,7 @@ class SettingsTabPtScreenshotTest {
 
     @Test
     fun `settings tab pt dark`() = shoot("settings-tab-pt-dark", beep = true, dark = true)
+
+    @Test
+    fun `settings tab pt rest alarm check`() = shoot("settings-tab-pt-rest-alarm", beep = false)
 }
