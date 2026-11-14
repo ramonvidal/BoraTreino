@@ -34,11 +34,12 @@ internal class RestAlarmReceiver : BroadcastReceiver() {
         val endsAt = intent.getLongExtra(EXTRA_ENDS_AT, 0L)
         if (endsAt <= 0L) return
         // Keep the broadcast open first: finishing it lets the system freeze the process, which cut the beep.
-        val pending = goAsync()
+        // goAsync() is null when onReceive is called outside a real broadcast dispatch (tests), hence the null-safe calls.
+        val pending: PendingResult? = goAsync()
         Notifications.postRestOver(context)
         // One signal per rest: if the in-process timer already ended this rest, it buzzed and beeped.
         if (!RestSignal.claim(endsAt)) {
-            pending.finish()
+            pending?.finish()
             return
         }
         RestSignal.buzz(context)
@@ -53,7 +54,7 @@ internal class RestAlarmReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 // Settings unreadable: no beep.
             } finally {
-                pending.finish()
+                pending?.finish()
             }
         }
     }
