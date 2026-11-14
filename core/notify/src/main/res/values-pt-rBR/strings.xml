@@ -3,6 +3,8 @@
 <resources>
     <string name="notify_rest_channel">Descanso</string>
     <string name="notify_rest_channel_description">Contagem entre as séries e o aviso quando acabar</string>
+    <string name="notify_rest_over_channel">Descanso acabou</string>
+    <string name="notify_rest_over_channel_description">O aviso quando o descanso acabar</string>
     <string name="notify_reminders_channel">Lembretes de treino</string>
     <string name="notify_reminders_channel_description">Um empurrãozinho nos seus dias de treino</string>
     <string name="notify_rest">Descanso</string>
