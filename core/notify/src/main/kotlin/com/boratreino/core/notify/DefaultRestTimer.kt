@@ -116,14 +116,15 @@ internal class DefaultRestTimer internal constructor(
         }
     }
 
-    private fun alarmIntent(endsAtMillis: Long = 0L): PendingIntent = PendingIntent.getBroadcast(
+    private fun alarmIntent(endsAtMillis: Long): PendingIntent = PendingIntent.getBroadcast(
         context,
         ALARM_REQUEST,
-        Intent(context, RestAlarmReceiver::class.java)
-            .setAction(RestAlarmReceiver.ACTION_REST_OVER)
-            .putExtra(RestAlarmReceiver.EXTRA_ENDS_AT, endsAtMillis),
+        alarmBroadcast().putExtra(RestAlarmReceiver.EXTRA_ENDS_AT, endsAtMillis),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
+
+    private fun alarmBroadcast(): Intent =
+        Intent(context, RestAlarmReceiver::class.java).setAction(RestAlarmReceiver.ACTION_REST_OVER)
 
     /**
      * An alarm-clock alarm: exact, it wakes the phone even in Doze and needs no special permission. An inexact
@@ -141,7 +142,16 @@ internal class DefaultRestTimer internal constructor(
 
     private fun cancelAlarm() {
         try {
-            context.getSystemService(AlarmManager::class.java)?.cancel(alarmIntent())
+            // NO_CREATE: look the scheduled alarm up without rewriting its extras (UPDATE_CURRENT with endsAt 0
+            // changed the intent of an alarm that was already being delivered, so the receiver saw a wrong end).
+            val existing = PendingIntent.getBroadcast(
+                context,
+                ALARM_REQUEST,
+                alarmBroadcast(),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE,
+            ) ?: return
+            context.getSystemService(AlarmManager::class.java)?.cancel(existing)
+            existing.cancel()
         } catch (e: RuntimeException) {
             // Nothing to cancel.
         }

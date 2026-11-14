@@ -2,6 +2,8 @@
 <resources>
     <string name="notify_rest_channel">Rest timer</string>
     <string name="notify_rest_channel_description">Countdown between sets and the buzz when it is over</string>
+    <string name="notify_rest_over_channel">Rest over</string>
+    <string name="notify_rest_over_channel_description">The alert when your rest ends</string>
     <string name="notify_reminders_channel">Training reminders</string>
     <string name="notify_reminders_channel_description">A nudge on your training days</string>
 

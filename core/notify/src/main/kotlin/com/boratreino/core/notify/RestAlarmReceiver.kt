@@ -11,6 +11,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -29,17 +30,26 @@ internal class RestAlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_REST_OVER) return
+        // 0 means a stale intent (the rest was cancelled while this alarm was being delivered): signal nothing.
+        val endsAt = intent.getLongExtra(EXTRA_ENDS_AT, 0L)
+        if (endsAt <= 0L) return
+        // Keep the broadcast open first: finishing it lets the system freeze the process, which cut the beep.
+        val pending = goAsync()
         Notifications.postRestOver(context)
         // One signal per rest: if the in-process timer already ended this rest, it buzzed and beeped.
-        val endsAt = intent.getLongExtra(EXTRA_ENDS_AT, 0L)
-        if (!RestSignal.claim(endsAt)) return
+        if (!RestSignal.claim(endsAt)) {
+            pending.finish()
+            return
+        }
         RestSignal.buzz(context)
         val app = context.applicationContext
-        val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
-                val settings = EntryPointAccessors.fromApplication(app, SettingsEntryPoint::class.java).trainingSettings()
-                if (settings.restTimer.first().beep) RestBeep.play()
+                // Well under the ~10 s limit of a broadcast.
+                withTimeoutOrNull(WAIT_LIMIT_MS) {
+                    val settings = EntryPointAccessors.fromApplication(app, SettingsEntryPoint::class.java).trainingSettings()
+                    if (settings.restTimer.first().beep) RestBeep.playAndWait()
+                }
             } catch (e: Exception) {
                 // Settings unreadable: no beep.
             } finally {
@@ -51,5 +61,6 @@ internal class RestAlarmReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_REST_OVER = "com.boratreino.core.notify.REST_OVER"
         const val EXTRA_ENDS_AT = "ends_at_millis"
+        private const val WAIT_LIMIT_MS = 5_000L
     }
 }

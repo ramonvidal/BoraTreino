@@ -1,6 +1,7 @@
 package com.boratreino.core.notify
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -33,7 +34,13 @@ internal object RestSignal {
                 @Suppress("DEPRECATION")
                 context.getSystemService(Vibrator::class.java)
             }
-            vibrator?.vibrate(VibrationEffect.createWaveform(Notifications.REST_VIBRATION, -1))
+            // Alarm usage: a vibration with unknown usage from a background app can be dropped by the system.
+            val attributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            @Suppress("DEPRECATION")
+            vibrator?.vibrate(VibrationEffect.createWaveform(Notifications.REST_VIBRATION, -1), attributes)
         } catch (e: Throwable) {
             // No vibrator or not allowed: the notification still vibrates when it can.
         }

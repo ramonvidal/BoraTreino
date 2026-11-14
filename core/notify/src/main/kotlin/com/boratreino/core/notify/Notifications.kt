@@ -2,6 +2,8 @@ package com.boratreino.core.notify
 
 import android.app.PendingIntent
 import android.content.Context
+import android.media.AudioAttributes
+import android.provider.Settings
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -19,6 +21,23 @@ fun createNotificationChannels(context: Context) {
                 .setVibrationPattern(Notifications.REST_VIBRATION)
                 .build(),
         )
+        // A second channel for the alert: the "rest" channel cannot be changed once created and may have been
+        // muted by the user; this one is loud, with the default notification sound.
+        manager.createNotificationChannel(
+            NotificationChannelCompat.Builder(Notifications.REST_OVER_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_HIGH)
+                .setName(context.getString(R.string.notify_rest_over_channel))
+                .setDescription(context.getString(R.string.notify_rest_over_channel_description))
+                .setVibrationEnabled(true)
+                .setVibrationPattern(Notifications.REST_VIBRATION)
+                .setSound(
+                    Settings.System.DEFAULT_NOTIFICATION_URI,
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build(),
+                )
+                .build(),
+        )
         manager.createNotificationChannel(
             NotificationChannelCompat.Builder(Notifications.REMINDERS_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_DEFAULT)
                 .setName(context.getString(R.string.notify_reminders_channel))
@@ -33,6 +52,7 @@ fun createNotificationChannels(context: Context) {
 /** Builds and posts this module's notifications. Every post is guarded by the permission and never throws. */
 internal object Notifications {
     const val REST_CHANNEL_ID = "rest"
+    const val REST_OVER_CHANNEL_ID = "rest_over"
     const val REMINDERS_CHANNEL_ID = "reminders"
     const val REST_ONGOING_ID = 1_001
     const val REST_OVER_ID = 1_002
@@ -70,12 +90,12 @@ internal object Notifications {
      */
     fun postRestOver(context: Context) {
         cancel(context, REST_ONGOING_ID)
-        val notification = NotificationCompat.Builder(context, REST_CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, REST_OVER_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notify_rest_over))
             .setContentText(context.getString(R.string.notify_next_set))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVibrate(REST_VIBRATION)
             .setOnlyAlertOnce(true)
             .setAutoCancel(true)

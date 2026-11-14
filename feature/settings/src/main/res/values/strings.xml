@@ -31,6 +31,11 @@
     <string name="settings_rest_beep">Beep when rest ends</string>
     <string name="settings_rest_default">Default rest</string>
     <string name="settings_rest_seconds">%1$d s</string>
+    <string name="settings_rest_check">Rest alarm check</string>
+    <string name="settings_rest_test">Test the alarm (15 s)</string>
+    <string name="settings_rest_test_hint">Starts a 15 second rest. Turn the screen off or open another app and wait: you should feel the buzz and hear the beep.</string>
+    <string name="settings_rest_battery">Battery settings</string>
+    <string name="settings_rest_battery_hint">If it only rings when you open the app, set this app to Unrestricted battery use in the phone settings.</string>
     <string name="settings_rest_hint">Each exercise can have its own rest time in its editor.</string>
 
     <string name="settings_warmup_title">Warm-up</string>

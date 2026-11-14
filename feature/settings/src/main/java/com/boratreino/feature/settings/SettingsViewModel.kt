@@ -20,6 +20,8 @@ import com.boratreino.core.model.WeekGoalRules
 import com.boratreino.core.health.HealthAvailability
 import com.boratreino.core.health.HealthConnectAccess
 import com.boratreino.core.notify.ReminderScheduler
+import com.boratreino.core.notify.RestTimer
+import com.boratreino.core.notify.RestTimerState
 import com.boratreino.core.settings.AppLanguage
 import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.settings.HealthSettings
@@ -36,7 +38,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -129,6 +133,7 @@ class SettingsViewModel @Inject constructor(
     private val bodySettings: BodySettings,
     @ApplicationContext private val context: Context,
     private val clock: Clock,
+    private val restTimer: RestTimer = NoRestTimer,
 ) : ViewModel() {
 
     private val eventChannel = Channel<SettingsEvent>(Channel.BUFFERED)
@@ -318,6 +323,9 @@ class SettingsViewModel @Inject constructor(
         settings.setRestTimer(settings.restTimer.first().copy(beep = beep))
     }
 
+    /** Starts the shortest rest, so the owner can lock the phone and check the buzz and the beep. */
+    fun testRestAlarm() = restTimer.start(RestTimerRules.MIN_SECONDS)
+
     fun setWarmupCalculator(enabled: Boolean) = save {
         settings.setWarmupCalculator(enabled)
     }
@@ -412,6 +420,15 @@ class SettingsViewModel @Inject constructor(
 }
 
 private const val RECENT_WEIGHTS = 5
+
+/** Default for tests that build the view model without a timer. */
+private object NoRestTimer : RestTimer {
+    override val state: StateFlow<RestTimerState> = MutableStateFlow(RestTimerState())
+    override val finished: SharedFlow<Unit> = MutableSharedFlow()
+    override fun start(seconds: Int) = Unit
+    override fun extend(seconds: Int) = Unit
+    override fun skip() = Unit
+}
 
 private fun roundTo10(kcal: Double): Int = (kcal / 10.0).roundToInt() * 10
 

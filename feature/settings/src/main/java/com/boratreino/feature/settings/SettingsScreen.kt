@@ -2,7 +2,10 @@ package com.boratreino.feature.settings
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -108,6 +111,8 @@ internal data class SettingsActions(
     val onDismissBodyField: () -> Unit = {},
     val onBodyGoalStep: (up: Boolean) -> Unit = {},
     val onShowEnergyEstimate: (Boolean) -> Unit = {},
+    val onTestRestAlarm: () -> Unit = {},
+    val onOpenBatterySettings: () -> Unit = {},
 )
 
 @Composable
@@ -198,6 +203,16 @@ internal fun SettingsScreen(
             onDismissBodyField = viewModel::dismissBodyField,
             onBodyGoalStep = viewModel::stepBodyGoal,
             onShowEnergyEstimate = viewModel::setShowEnergyEstimate,
+            onTestRestAlarm = viewModel::testRestAlarm,
+            onOpenBatterySettings = {
+                try {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")),
+                    )
+                } catch (e: ActivityNotFoundException) {
+                    // No settings app: nothing to open.
+                }
+            },
             onGetHealthConnect = {
                 try {
                     context.startActivity(viewModel.healthInstallIntent())
@@ -472,6 +487,21 @@ private fun RestTimerSection(state: SettingsUiState, actions: SettingsActions) {
                     ) { actions.onRestSeconds(seconds) }
                 }
             }
+            Text(
+                stringResource(R.string.settings_rest_check),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            BoraButton(
+                text = stringResource(R.string.settings_rest_test),
+                onClick = actions.onTestRestAlarm,
+                style = BoraButtonStyle.Tonal,
+            )
+            Hint(stringResource(R.string.settings_rest_test_hint))
+            TextButton(onClick = actions.onOpenBatterySettings) {
+                Text(stringResource(R.string.settings_rest_battery))
+            }
+            Hint(stringResource(R.string.settings_rest_battery_hint))
         }
         Hint(stringResource(R.string.settings_rest_hint))
     }

@@ -253,6 +253,9 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
       a ring on today; a "muscle groups this week" card in Stats.
 - [x] **Rest timer ends on time.** With the screen off, the end is an alarm-clock alarm, so it
       is not held back by Doze. 30 s is one of the options (30 to 180 s).
+      The end alert is its own loud notification channel (`rest_over`), the receiver stays open until
+      the beep finished, the buzz uses alarm attributes, and Settings has a 15 s test plus a shortcut to
+      the app's battery settings.
 - [ ] **Extras (later).** Home-screen widget (opens the next routine), photo of a machine's
       setup, reading heart rate from Health Connect, Wear OS tile.
 
