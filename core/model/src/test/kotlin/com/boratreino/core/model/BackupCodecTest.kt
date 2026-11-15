@@ -104,7 +104,7 @@ class BackupCodecTest {
 
     @Test
     fun `the file names the app, the version, the export time and the weekdays by name`() {
-        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":6"))
+        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":7"))
         assertTrue(text.contains("\"exportedAt\":\"2026-11-02T20:15:30.250Z\""))
         assertTrue(text.contains("\"weekdays\":[\"MONDAY\",\"WEDNESDAY\"]"))
         assertTrue(text.contains("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]"))
@@ -210,27 +210,27 @@ class BackupCodecTest {
 
     @Test
     fun `version 0 is invalid`() {
-        assertInvalid(text.replace("\"version\":6", "\"version\":0"))
+        assertInvalid(text.replace("\"version\":7", "\"version\":0"))
     }
 
     @Test
     fun `a negative version is invalid`() {
-        assertInvalid(text.replace("\"version\":6", "\"version\":-1"))
+        assertInvalid(text.replace("\"version\":7", "\"version\":-1"))
     }
 
     @Test
     fun `a missing, text or fractional version is invalid`() {
-        assertInvalid(text.replace("\"version\":6,", ""))
-        assertInvalid(text.replace("\"version\":6", "\"version\":\"1\""))
-        assertInvalid(text.replace("\"version\":6", "\"version\":1.0"))
+        assertInvalid(text.replace("\"version\":7,", ""))
+        assertInvalid(text.replace("\"version\":7", "\"version\":\"1\""))
+        assertInvalid(text.replace("\"version\":7", "\"version\":1.0"))
     }
 
     @Test
     fun `a newer version is too new, even when its fields are odd`() {
-        assertEquals(BackupDecodeResult.TooNew(7), decoded(text.replace("\"version\":6", "\"version\":7")))
+        assertEquals(BackupDecodeResult.TooNew(8), decoded(text.replace("\"version\":7", "\"version\":8")))
         assertEquals(
-            BackupDecodeResult.TooNew(7),
-            decoded("{\"app\":\"boratreino\",\"version\":7,\"machines\":\"odd\",\"sets\":42}"),
+            BackupDecodeResult.TooNew(8),
+            decoded("{\"app\":\"boratreino\",\"version\":8,\"machines\":\"odd\",\"sets\":42}"),
         )
         assertEquals(BackupDecodeResult.TooNew(99), decoded("{\"app\":\"boratreino\",\"version\":99}"))
     }
@@ -321,8 +321,8 @@ class BackupCodecTest {
     // Set types
 
     @Test
-    fun `the format version is 6`() {
-        assertEquals(6, BackupCodec.FORMAT_VERSION)
+    fun `the format version is 7`() {
+        assertEquals(7, BackupCodec.FORMAT_VERSION)
     }
 
     @Test
@@ -414,8 +414,28 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `a version 7 file is too new`() {
-        assertEquals(BackupDecodeResult.TooNew(7), decoded(versionOneFile().replace("\"version\":1", "\"version\":7")))
+    fun `a version 8 file is too new`() {
+        assertEquals(BackupDecodeResult.TooNew(8), decoded(versionOneFile().replace("\"version\":1", "\"version\":8")))
+    }
+
+    @Test
+    fun `a version 6 file without measurements is read with none`() {
+        val v6 = """
+            {"app":"boratreino","version":6,
+             "machines":[{"id":1,"name":"Leg press","muscleGroup":"LEGS","kind":"WEIGHT_REPS","stepKg":2.5,"setupNote":null,"restSeconds":null,"archived":false,"libraryId":"Leg_Press"}],
+             "plans":[{"id":1,"scheduleMode":"WEEKDAYS","trainingDays":["MONDAY"]}],
+             "routines":[{"id":1,"planId":1,"name":"Routine A","shortName":"A","position":0,"weekdays":["MONDAY"]}],
+             "items":[{"routineId":1,"machineId":1,"position":0,"targetSets":3,"repsMin":8,"repsMax":12}],
+             "sessions":[{"id":4,"startedAt":"2026-11-02T10:00:00Z","endedAt":"2026-11-02T10:45:00Z","routineId":1,"note":null}],
+             "sets":[{"id":7,"sessionId":4,"machineId":1,"position":0,"weightKg":40.0,"reps":10,"loggedAt":"2026-11-02T10:01:00Z","type":"NORMAL"}],
+             "plannedWorkouts":[{"date":"2026-11-12","routineId":1,"position":0}]}
+        """.trimIndent()
+
+        val ok = assertOk(v6)
+
+        assertEquals(emptyList<BodyMeasurement>(), ok.data.measurements)
+        assertEquals("Leg_Press", ok.data.machines.single().libraryId)
+        assertEquals(1, ok.data.plannedWorkouts.size)
     }
 
     @Test

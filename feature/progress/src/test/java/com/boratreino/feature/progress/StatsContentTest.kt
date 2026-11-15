@@ -11,6 +11,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.model.BodyMeasurement
+import com.boratreino.core.model.MeasurementType
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.MuscleRecency
 import com.boratreino.core.model.MuscleWeek
@@ -481,5 +483,59 @@ class StatsContentTest {
     fun `the empty card says there is no training yet`() {
         showCard { StatsEmptyCard() }
         shown("No training in this period yet")
+    }
+
+    // Body measurements
+
+    private val measured = listOf(
+        BodyMeasurement(id = 2, date = today.minusDays(2), type = MeasurementType.WAIST, valueCm = 82.5),
+        BodyMeasurement(id = 1, date = today.minusDays(40), type = MeasurementType.WAIST, valueCm = 84.5),
+    )
+
+    @Test
+    fun `the measurements card is shown on the body page with its change over the period`() {
+        showPage(StatsSamples.state().copy(measurements = measured))
+
+        shown("Measurements")
+        shown("-2.0 cm in the period")
+    }
+
+    @Test
+    fun `the measurements card is the last card of the body page`() {
+        showPage(StatsSamples.state().copy(measurements = measured))
+
+        assertTrue(yOf("Measurements") > yOf("Hard sets per muscle group"))
+    }
+
+    @Test
+    fun `the measurements card is shown after the empty card on the body page of an empty period`() {
+        showPage(StatsSamples.state(StatsSamples.empty))
+
+        shown("Measurements")
+        shown("No measurements yet")
+        assertTrue(yOf("Measurements") > yOf("No training in this period yet"))
+    }
+
+    @Test
+    fun `the measurements card is not on the strength or habit page`() {
+        showPage(StatsSamples.state().copy(measurements = measured))
+        shown("Measurements")
+
+        compose.onNodeWithText("Strength").performClick()
+        notShown("Measurements")
+
+        compose.onNodeWithText("Habit").performClick()
+        notShown("Measurements")
+    }
+
+    @Test
+    fun `the measurements card is not on the strength or habit page of an empty period`() {
+        showPage(StatsSamples.state(StatsSamples.empty))
+
+        compose.onNodeWithText("Strength").performClick()
+        notShown("Measurements")
+
+        compose.onNodeWithText("Habit").performClick()
+        notShown("Measurements")
     }
 }

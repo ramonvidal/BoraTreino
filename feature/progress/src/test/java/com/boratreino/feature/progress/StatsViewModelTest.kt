@@ -2,8 +2,12 @@ package com.boratreino.feature.progress
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.data.MeasurementRepository
 import com.boratreino.core.data.StatsRepository
+import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.BodyProfile
+import com.boratreino.core.model.MeasurementRules
+import com.boratreino.core.model.MeasurementType
 import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.model.Sex
@@ -86,15 +90,48 @@ class StatsViewModelTest {
         override suspend fun setShowEnergyEstimate(show: Boolean) = Unit
     }
 
+    /** Keeps the measurements newest first, as the repository does; [add] clamps like the real one. */
+    private class FakeMeasurementRepository(initial: List<BodyMeasurement> = emptyList()) : MeasurementRepository {
+        val items = MutableStateFlow(initial.sortedWith(newestFirst))
+        val added = mutableListOf<Triple<LocalDate, MeasurementType, Double>>()
+        private var nextId = (initial.maxOfOrNull { it.id } ?: 0L) + 1
+
+        override fun observeAll(): Flow<List<BodyMeasurement>> = items
+
+        override suspend fun add(date: LocalDate, type: MeasurementType, valueCm: Double): Long {
+            added += Triple(date, type, valueCm)
+            val id = nextId++
+            val entry = BodyMeasurement(id = id, date = date, type = type, valueCm = MeasurementRules.clamp(valueCm))
+            items.value = (items.value + entry).sortedWith(newestFirst)
+            return id
+        }
+
+        override suspend fun delete(id: Long): BodyMeasurement? {
+            val gone = items.value.firstOrNull { it.id == id }
+            items.value = items.value.filterNot { it.id == id }
+            return gone
+        }
+
+        override suspend fun restore(measurement: BodyMeasurement) {
+            items.value = (items.value + measurement).sortedWith(newestFirst)
+        }
+
+        private companion object {
+            val newestFirst = compareByDescending<BodyMeasurement> { it.date }.thenByDescending { it.id }
+        }
+    }
+
     private val repository = FakeStatsRepository()
     private val settings = FakeSettings()
     private val body = FakeBody()
+    private val measurements = FakeMeasurementRepository()
 
     private fun TestScope.viewModel(
         handle: SavedStateHandle = SavedStateHandle(),
         bodySettings: BodySettings = body,
+        measurementRepository: MeasurementRepository = measurements,
     ): StatsViewModel {
-        val vm = StatsViewModel(repository, settings, bodySettings, handle)
+        val vm = StatsViewModel(repository, settings, bodySettings, handle, measurementRepository)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect { } }
         runCurrent()
         return vm
@@ -102,12 +139,13 @@ class StatsViewModelTest {
 
     @Test
     fun `before anything is collected the state is the empty initial one`() = runTest(dispatcher) {
-        val vm = StatsViewModel(repository, settings, body, SavedStateHandle())
+        val vm = StatsViewModel(repository, settings, body, SavedStateHandle(), measurements)
         val state = vm.state.value
         assertFalse(state.loaded)
         assertNull(state.report)
         assertEquals(StatsPeriod.THREE_MONTHS, state.period)
         assertEquals(4, state.weeklyGoal)
+        assertTrue(state.measurements.isEmpty())
     }
 
     @Test
@@ -232,5 +270,60 @@ class StatsViewModelTest {
         runCurrent()
 
         assertEquals(81.0, vm.state.value.bodyWeightKg!!, 1e-9)
+    }
+
+    // Body measurements
+
+    private val measured = listOf(
+        BodyMeasurement(id = 2, date = LocalDate.of(2026, 11, 1), type = MeasurementType.WAIST, valueCm = 82.5),
+        BodyMeasurement(id = 1, date = LocalDate.of(2026, 10, 1), type = MeasurementType.WAIST, valueCm = 84.0),
+    )
+
+    @Test
+    fun `the measurements come from the repository newest first`() = runTest(dispatcher) {
+        val vm = viewModel(measurementRepository = FakeMeasurementRepository(measured))
+
+        assertEquals(measured, vm.state.value.measurements)
+    }
+
+    @Test
+    fun `adding a measurement passes it to the repository and it appears in the state`() = runTest(dispatcher) {
+        val repo = FakeMeasurementRepository()
+        val vm = viewModel(measurementRepository = repo)
+        val date = LocalDate.of(2026, 11, 2)
+
+        vm.addMeasurement(date, MeasurementType.CHEST, 90.0)
+        runCurrent()
+
+        assertEquals(listOf(Triple(date, MeasurementType.CHEST, 90.0)), repo.added)
+        val shown = vm.state.value.measurements.single()
+        assertEquals(date, shown.date)
+        assertEquals(MeasurementType.CHEST, shown.type)
+        assertEquals(90.0, shown.valueCm, 1e-9)
+    }
+
+    @Test
+    fun `a value above the maximum is clamped by the repository`() = runTest(dispatcher) {
+        val vm = viewModel(measurementRepository = FakeMeasurementRepository())
+
+        vm.addMeasurement(LocalDate.of(2026, 11, 2), MeasurementType.WAIST, 1000.0)
+        runCurrent()
+
+        assertEquals(MeasurementRules.MAX_CM, vm.state.value.measurements.single().valueCm, 1e-9)
+    }
+
+    @Test
+    fun `deleting a measurement removes it and undo puts it back with the same id`() = runTest(dispatcher) {
+        val vm = viewModel(measurementRepository = FakeMeasurementRepository(measured))
+        val original = vm.state.value.measurements.first { it.id == 1L }
+
+        vm.deleteMeasurement(1L)
+        runCurrent()
+        assertEquals(listOf(2L), vm.state.value.measurements.map { it.id })
+
+        vm.undoDeleteMeasurement(original)
+        runCurrent()
+        assertEquals(original, vm.state.value.measurements.first { it.id == 1L })
+        assertEquals(measured, vm.state.value.measurements)
     }
 }

@@ -2,6 +2,7 @@ package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
 import com.boratreino.core.model.BackupData
+import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.Routine
@@ -32,6 +33,8 @@ internal class FakeWorkoutStore : WorkoutStore {
     private val routines = mutableListOf<Routine>()
     private val items = mutableListOf<RoutineItem>()
     private val planned = mutableListOf<PlannedWorkout>()
+    private val measurements = mutableListOf<BodyMeasurement>()
+    private var nextMeasurementId = 1L
     private var nextMachineId = 1L
     private var nextSessionId = 1L
     private var nextSetId = 1L
@@ -442,6 +445,35 @@ internal class FakeWorkoutStore : WorkoutStore {
 
     override fun observeSessions(): Flow<List<Session>> = observe { sessionsByStart() }
 
+    // Body measurements
+
+    /** Newest date first, then highest id first, like the store's query. */
+    private fun measurementsNewestFirst(): List<BodyMeasurement> =
+        measurements.sortedWith(compareByDescending<BodyMeasurement> { it.date }.thenByDescending { it.id })
+
+    override fun observeMeasurements(): Flow<List<BodyMeasurement>> = observe { measurementsNewestFirst() }
+
+    override suspend fun addMeasurement(measurement: BodyMeasurement): Long {
+        val id = nextMeasurementId++
+        measurements += measurement.copy(id = id)
+        changed()
+        return id
+    }
+
+    override suspend fun measurement(id: Long): BodyMeasurement? = measurements.firstOrNull { it.id == id }
+
+    override suspend fun deleteMeasurement(id: Long) {
+        if (measurements.removeAll { it.id == id }) changed()
+    }
+
+    /** Re-inserts with the given id, replacing a row with that id; the counter stays ahead of it. */
+    override suspend fun restoreMeasurement(measurement: BodyMeasurement) {
+        measurements.removeAll { it.id == measurement.id }
+        measurements += measurement
+        nextMeasurementId = maxOf(nextMeasurementId, measurement.id + 1)
+        changed()
+    }
+
     // Backup
 
     /** Everything, each table by id (items by routine then position). */
@@ -453,6 +485,7 @@ internal class FakeWorkoutStore : WorkoutStore {
         sessions = sessions.sortedBy { it.id },
         sets = sets.sortedBy { it.id },
         plannedWorkouts = planned.sortedWith(PLANNED_ORDER),
+        measurements = measurements.sortedBy { it.id },
     )
 
     /** Replaces every table; ids are kept and the counters continue after the highest id seen. */
@@ -464,6 +497,7 @@ internal class FakeWorkoutStore : WorkoutStore {
         plans.clear()
         machineRows.clear()
         planned.clear()
+        measurements.clear()
         machineRows += data.machines
         planned += data.plannedWorkouts
         plans += data.plans
@@ -471,11 +505,13 @@ internal class FakeWorkoutStore : WorkoutStore {
         items += data.items
         sessions += data.sessions
         sets += data.sets
+        measurements += data.measurements
         nextMachineId = maxOf(nextMachineId, (data.machines.maxOfOrNull { it.id } ?: 0L) + 1)
         nextPlanId = maxOf(nextPlanId, (data.plans.maxOfOrNull { it.id } ?: 0L) + 1)
         nextRoutineId = maxOf(nextRoutineId, (data.routines.maxOfOrNull { it.id } ?: 0L) + 1)
         nextSessionId = maxOf(nextSessionId, (data.sessions.maxOfOrNull { it.id } ?: 0L) + 1)
         nextSetId = maxOf(nextSetId, (data.sets.maxOfOrNull { it.id } ?: 0L) + 1)
+        nextMeasurementId = maxOf(nextMeasurementId, (data.measurements.maxOfOrNull { it.id } ?: 0L) + 1)
         changed()
     }
 

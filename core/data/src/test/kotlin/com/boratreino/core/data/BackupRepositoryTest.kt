@@ -6,8 +6,10 @@ import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.BackupDecodeResult
 import com.boratreino.core.model.BackupSummary
 
+import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.MeasurementType
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
@@ -312,9 +314,9 @@ class BackupRepositoryTest {
 
     @Test
     fun `a newer backup previews as too new`() {
-        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":7,\"machines\":\"odd\"}")
+        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":8,\"machines\":\"odd\"}")
 
-        assertEquals(BackupPreview.TooNew(7), preview)
+        assertEquals(BackupPreview.TooNew(8), preview)
     }
 
     @Test
@@ -378,5 +380,69 @@ class BackupRepositoryTest {
         repo.import(seed)
 
         assertEquals(emptySet<Long>(), training.observeTodayPlan().first().skipped)
+    }
+
+    // body measurements
+
+    /** Ids ascend in the same order the file writes them (date, then type), so both orders agree. */
+    private val measurements = listOf(
+        BodyMeasurement(1, LocalDate.of(2026, 10, 1), MeasurementType.WAIST, 84.0),
+        BodyMeasurement(2, LocalDate.of(2026, 10, 1), MeasurementType.ARM, 33.5),
+        BodyMeasurement(3, LocalDate.of(2026, 11, 1), MeasurementType.WAIST, 82.5),
+        BodyMeasurement(4, LocalDate.of(2026, 11, 2), MeasurementType.NECK, 38.5),
+    )
+
+    @Test
+    fun `measurements survive an export and an import`() = runTest {
+        store.replaceAll(seed.copy(measurements = measurements))
+        val exported = repo.export()
+        val otherStore = FakeWorkoutStore()
+        val otherRepo = repoOn(otherStore, TestClock(now, zone))
+
+        val preview = otherRepo.preview(exported)
+        assertTrue(preview is BackupPreview.Ready)
+        val ready = preview as BackupPreview.Ready
+        assertEquals(measurements, ready.data.measurements)
+        otherRepo.import(ready.data)
+
+        assertEquals(measurements, otherStore.exportAll().measurements)
+    }
+
+    @Test
+    fun `an import replaces the measurements that were there`() = runTest {
+        store.replaceAll(seed.copy(measurements = measurements))
+        val replacement = BodyMeasurement(9, LocalDate.of(2026, 11, 3), MeasurementType.THIGH, 55.0)
+
+        repo.import(seed.copy(measurements = listOf(replacement)))
+
+        assertEquals(listOf(replacement), store.exportAll().measurements)
+        assertEquals(listOf(replacement), store.observeMeasurements().first())
+    }
+
+    @Test
+    fun `a version 6 backup without measurements empties the measurements table on import`() = runTest {
+        store.replaceAll(seed.copy(measurements = measurements))
+        val v6 = """
+            {"app":"boratreino","version":6,"machines":[],
+             "plans":[{"id":1,"scheduleMode":"IN_TURN","trainingDays":[]}],
+             "routines":[{"id":1,"planId":1,"name":"Routine A","shortName":"A","position":0,"weekdays":[]}],
+             "items":[],"sessions":[],"sets":[],"plannedWorkouts":[]}
+        """.trimIndent()
+
+        val preview = repo.preview(v6)
+        assertTrue(preview is BackupPreview.Ready)
+        repo.import((preview as BackupPreview.Ready).data)
+
+        assertEquals(emptyList<BodyMeasurement>(), store.exportAll().measurements)
+        assertEquals(emptyList<BodyMeasurement>(), store.observeMeasurements().first())
+        assertEquals(1, store.exportAll().routines.size)
+    }
+
+    @Test
+    fun `a backup with an unknown measurement type previews as invalid`() {
+        val json = BackupCodec.encode(seed.copy(measurements = measurements), now)
+        assertTrue(json.contains("\"type\":\"NECK\""))
+
+        assertTrue(repo.preview(json.replace("\"type\":\"NECK\"", "\"type\":\"CALF\"")) is BackupPreview.Invalid)
     }
 }
