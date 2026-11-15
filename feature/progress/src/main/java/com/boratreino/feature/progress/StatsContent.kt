@@ -49,7 +49,6 @@ import com.boratreino.core.model.StatsPage
 import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.ui.BoraCard
-import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
 import java.time.LocalDate
@@ -61,53 +60,42 @@ private const val WEEK_DAYS = 7
 private const val MAX_RECORDS = 10
 
 /**
- * The Stats page: pinned period chips and sub-page switch, then the highlights and the cards of
- * the chosen sub-page. Drawn from its state alone; [initialPage] only seeds the first sub-page
- * (screenshot tests), the choice then survives rotation.
+ * The cards of ONE stats [page] (the header and page switch live in [ProgressShell]). Drawn from
+ * its state alone. The highlights strip is the first item of the Body page only.
  */
 @Composable
 internal fun StatsContent(
     state: StatsUiState,
     actions: StatsActions,
     modifier: Modifier = Modifier,
-    initialPage: StatsPage? = null,
+    page: StatsPage = StatsPage.BODY,
 ) {
     val report = state.report
-    var page by rememberSaveable { mutableStateOf(initialPage ?: StatsPage.BODY) }
     var measureType by rememberSaveable { mutableStateOf<String?>(null) }
     var logSheetOpen by rememberSaveable { mutableStateOf(false) }
     val selectedMeasure = MeasurementType.entries.firstOrNull { it.name == measureType }
-    Column(modifier.fillMaxSize()) {
-        Column(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            PeriodChips(state.period, actions.onPeriod)
-            StatsPageChips(page, onPage = { page = it })
+    LazyColumn(
+        modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (report == null) return@LazyColumn
+        if (report.isEmptyPeriod()) {
+            item(key = "empty") { StatsEmptyCard() }
+            if (page == StatsPage.BODY) measurementsItem(state, report, selectedMeasure, { measureType = it.name }, { logSheetOpen = true }, actions)
+            return@LazyColumn
         }
-        LazyColumn(
-            Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (report == null) return@LazyColumn
-            if (report.isEmptyPeriod()) {
-                item(key = "empty") { StatsEmptyCard() }
-                if (page == StatsPage.BODY) measurementsItem(state, report, selectedMeasure, { measureType = it.name }, { logSheetOpen = true }, actions)
-                return@LazyColumn
-            }
-            val highlights = StatsHighlights.of(report)
-            if (highlights.isNotEmpty()) {
-                item(key = "highlights") { HighlightsStrip(highlights, onPage = { page = it }) }
-            }
-            when (page) {
-                StatsPage.BODY -> {
-                    bodyItems(state, report)
-                    measurementsItem(state, report, selectedMeasure, { measureType = it.name }, { logSheetOpen = true }, actions)
+        when (page) {
+            StatsPage.BODY -> {
+                val highlights = StatsHighlights.of(report)
+                if (highlights.isNotEmpty()) {
+                    item(key = "highlights") { HighlightsStrip(highlights, onPage = actions.onOpenPage) }
                 }
-                StatsPage.STRENGTH -> strengthItems(report, actions)
-                StatsPage.HABIT -> habitItems(report)
+                bodyItems(state, report)
+                measurementsItem(state, report, selectedMeasure, { measureType = it.name }, { logSheetOpen = true }, actions)
             }
+            StatsPage.STRENGTH -> strengthItems(report, actions)
+            StatsPage.HABIT -> habitItems(report)
         }
     }
     if (logSheetOpen) {
@@ -188,30 +176,6 @@ private fun LazyListScope.habitItems(report: StatsReport) {
     }
 }
 
-/** The Body / Strength / Habit switch. */
-@Composable
-internal fun StatsPageChips(selected: StatsPage, onPage: (StatsPage) -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        StatsPage.entries.forEach { page ->
-            BoraChip(
-                label = stringResource(
-                    when (page) {
-                        StatsPage.BODY -> R.string.stats_page_body
-                        StatsPage.STRENGTH -> R.string.stats_page_strength
-                        StatsPage.HABIT -> R.string.stats_page_habit
-                    },
-                ),
-                selected = page == selected,
-                onClick = { onPage(page) },
-            )
-        }
-    }
-}
-
 /** Up to three cards in a row that scrolls sideways; tapping one opens the page that holds its card. */
 @Composable
 internal fun HighlightsStrip(highlights: List<Highlight>, onPage: (StatsPage) -> Unit, modifier: Modifier = Modifier) {
@@ -268,24 +232,7 @@ private fun HighlightCard(highlight: Highlight, onPage: (StatsPage) -> Unit) {
 }
 
 @Composable
-internal fun PeriodChips(selected: StatsPeriod, onPeriod: (StatsPeriod) -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        StatsPeriod.entries.forEach { period ->
-            BoraChip(
-                label = periodLabel(period),
-                selected = period == selected,
-                onClick = { onPeriod(period) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun periodLabel(period: StatsPeriod): String = stringResource(
+internal fun periodLabel(period: StatsPeriod): String = stringResource(
     when (period) {
         StatsPeriod.ONE_WEEK -> R.string.stats_period_1w
         StatsPeriod.FOUR_WEEKS -> R.string.stats_period_4w

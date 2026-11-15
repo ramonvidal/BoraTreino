@@ -100,7 +100,12 @@
     <string name="stats_percent_plain">%1$s %%</string>
     <string name="stats_volume_title">Weekly volume</string>
     <string name="stats_volume_tonnes">%1$s t</string>
-    <string name="stats_volume_chart_description">Weekly volume over %1$d weeks: %2$s in total, best week %3$s</string>
+    <plurals name="stats_volume_chart_description">
+        <item quantity="one">Weekly volume over %1$d week: %2$s in total, best week %3$s</item>
+        <item quantity="other">Weekly volume over %1$d weeks: %2$s in total, best week %3$s</item>
+    </plurals>
+    <string name="stats_period_title">Period</string>
+    <string name="stats_period_pill_description">Period: %1$s</string>
     <string name="stats_hard_sets_title">Hard sets per muscle group</string>
     <string name="stats_sets_per_week">%1$s a week</string>
     <string name="stats_hard_sets_note">Many programs use roughly 10 to 20 hard sets per muscle group per week.</string>

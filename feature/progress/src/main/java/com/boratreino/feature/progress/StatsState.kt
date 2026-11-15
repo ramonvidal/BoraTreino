@@ -2,6 +2,7 @@ package com.boratreino.feature.progress
 
 import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.MeasurementType
+import com.boratreino.core.model.StatsPage
 import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.model.WeightEntry
@@ -28,4 +29,6 @@ internal data class StatsActions(
     val onAddMeasurement: (LocalDate, MeasurementType, Double) -> Unit = { _, _, _ -> },
     val onDeleteMeasurement: (Long) -> Unit = {},
     val onUndoDeleteMeasurement: (BodyMeasurement) -> Unit = {},
+    /** A highlight card was tapped: open the page that holds its card. */
+    val onOpenPage: (StatsPage) -> Unit = {},
 )

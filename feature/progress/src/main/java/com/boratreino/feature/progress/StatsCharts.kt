@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -100,8 +101,9 @@ internal fun StackedWeekBars(weeks: List<WeekStats>, muscleWeeks: List<MuscleWee
     val baseline = MaterialTheme.colorScheme.outlineVariant
     val byWeek = remember(muscleWeeks) { muscleWeeks.groupBy { it.weekStart } }
     val maxVolume = remember(weeks) { weeks.maxOfOrNull { it.volumeKg } ?: 0.0 }
-    val description = stringResource(
-        R.string.stats_volume_chart_description,
+    val description = pluralStringResource(
+        R.plurals.stats_volume_chart_description,
+        weeks.size,
         weeks.size,
         volumeText(weeks.sumOf { it.volumeKg }),
         volumeText(maxVolume),

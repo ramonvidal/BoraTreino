@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,8 +39,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.ProgressMetric
+import com.boratreino.core.model.StatsPage
 import com.boratreino.core.ui.BoraCard
-import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.cardioText
@@ -52,36 +53,59 @@ internal data class ProgressActions(
     val onOpenMachine: (machineId: Long) -> Unit = {},
 )
 
-/** The two pages of the Progress tab. [MACHINES] is the Exercises page (the name is kept for the saved choice). */
-internal enum class ProgressPage { MACHINES, STATS }
+/** The pages of the Progress tab. The saved choice is the enum name; an unknown or old name falls back to [EXERCISES]. */
+internal enum class ProgressPage { EXERCISES, BODY, STRENGTH, HABIT }
 
-/** The Progress tab: a large title and an Exercises | Stats switch above the chosen page. The choice survives rotation. */
+private fun StatsPage.toProgressPage(): ProgressPage = when (this) {
+    StatsPage.BODY -> ProgressPage.BODY
+    StatsPage.STRENGTH -> ProgressPage.STRENGTH
+    StatsPage.HABIT -> ProgressPage.HABIT
+}
+
+private fun ProgressPage.toStatsPage(): StatsPage? = when (this) {
+    ProgressPage.EXERCISES -> null
+    ProgressPage.BODY -> StatsPage.BODY
+    ProgressPage.STRENGTH -> StatsPage.STRENGTH
+    ProgressPage.HABIT -> StatsPage.HABIT
+}
+
+/**
+ * The Progress tab: one fixed header (title, period pill, page chips) above the chosen page.
+ * The page choice survives rotation; the period pill is hidden on Exercises.
+ */
 @Composable
 internal fun ProgressShell(
     onOpenMachine: (machineId: Long) -> Unit,
     modifier: Modifier = Modifier,
+    statsViewModel: StatsViewModel = hiltViewModel(),
 ) {
-    var chosen by rememberSaveable { mutableStateOf(ProgressPage.MACHINES.name) }
-    val page = ProgressPage.entries.firstOrNull { it.name == chosen } ?: ProgressPage.MACHINES
-    // statusBarsPadding keeps the switch clear of the status bar and consumes that inset, so the pages' own Scaffolds do not add it again below the switch.
+    var chosen by rememberSaveable { mutableStateOf(ProgressPage.EXERCISES.name) }
+    val page = ProgressPage.entries.firstOrNull { it.name == chosen } ?: ProgressPage.EXERCISES
+    val stats by statsViewModel.state.collectAsStateWithLifecycle()
+    val actions = remember(statsViewModel, onOpenMachine) {
+        StatsActions(
+            onPeriod = statsViewModel::setPeriod,
+            onOpenMachine = onOpenMachine,
+            onAddMeasurement = statsViewModel::addMeasurement,
+            onDeleteMeasurement = statsViewModel::deleteMeasurement,
+            onUndoDeleteMeasurement = statsViewModel::undoDeleteMeasurement,
+            onOpenPage = { chosen = it.toProgressPage().name },
+        )
+    }
+    // statusBarsPadding keeps the header clear of the status bar and consumes that inset, so the pages' own Scaffolds do not add it again below it.
     Column(modifier.fillMaxSize().statusBarsPadding()) {
-        Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
-            Text(stringResource(R.string.progress_title), style = MaterialTheme.typography.headlineMedium)
-            Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ProgressPage.entries.forEach { option ->
-                    BoraChip(
-                        label = stringResource(
-                            if (option == ProgressPage.MACHINES) R.string.progress_page_machines else R.string.progress_page_stats,
-                        ),
-                        selected = page == option,
-                        onClick = { chosen = option.name },
-                    )
-                }
-            }
-        }
-        when (page) {
-            ProgressPage.MACHINES -> ProgressScreen(onOpenMachine = onOpenMachine, modifier = Modifier.weight(1f))
-            ProgressPage.STATS -> StatsScreen(onOpenMachine = onOpenMachine, modifier = Modifier.weight(1f))
+        ProgressHeader(
+            page = page,
+            onPage = { chosen = it.name },
+            period = stats.period,
+            onPeriod = actions.onPeriod,
+            showPeriod = page != ProgressPage.EXERCISES,
+        )
+        val statsPage = page.toStatsPage()
+        if (statsPage == null) {
+            ProgressScreen(onOpenMachine = onOpenMachine, modifier = Modifier.weight(1f))
+        } else {
+            StatsContent(state = stats, actions = actions, modifier = Modifier.weight(1f), page = statsPage)
         }
     }
 }
