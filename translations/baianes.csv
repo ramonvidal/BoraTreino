@@ -5,6 +5,16 @@ app,nav_calendar,,Calendar,Agenda
 app,nav_progress,,Progress,Evolução
 app,nav_routines,,Routines,Fichas
 app,nav_settings,,Settings,Ajustes
+app,widget_description,,Opens your next workout,Abre seu próximo treino
+app,widget_label,,Next workout,Próximo treino
+app,widget_free_workout,,Free workout,Sem ficha
+app,widget_rest_day,,Rest day,Dia de descanso
+app,widget_no_routine,,No routine yet,Ainda sem ficha
+app,widget_continue,,Continue: %1$s,Continuar: %1$s
+app,widget_preview_title,,Routine B,Ficha B
+app,widget_preview_detail,,4 exercises,4 exercícios
+app,widget_exercises,one,%d exercise,%d exercício
+app,widget_exercises,other,%d exercises,%d exercícios
 core/health,health_rationale_title,,Health Connect,Health Connect
 core/health,health_rationale_text,,"Bora pro Treino! can send each finished training to Health Connect: the exercise session, and the calories and distance of your cardio. It only writes. It never reads anything from Health Connect, and you can turn it off in Settings or remove the data in Health Connect at any time.","O Bora pro Treino! pode enviar cada treino terminado ao Health Connect: a sessão de exercício e as calorias e a distância do seu cardio. Ele só escreve. Nunca lê nada do Health Connect, e você pode desligar em Ajustes ou apagar os dados no Health Connect quando quiser."
 core/health,health_privacy_policy,,Privacy policy,Política de privacidade
@@ -278,6 +288,22 @@ feature/progress,stats_balance_ratio,,%1$s : 1,%1$s : 1
 feature/progress,stats_balance_note,,Working sets in this period. Many programs aim for similar push and pull volume.,Séries de trabalho neste período. Muitos programas buscam volume parecido de empurrar e puxar.
 feature/progress,stats_balance_unclassified,one,%d set could not be classified,%d série não pôde ser classificada
 feature/progress,stats_balance_unclassified,other,%d sets could not be classified,%d séries não puderam ser classificadas
+feature/progress,stats_measure_title,,Measurements,Medidas
+feature/progress,stats_measure_waist,,Waist,Cintura
+feature/progress,stats_measure_hips,,Hips,Quadril
+feature/progress,stats_measure_chest,,Chest,Peito
+feature/progress,stats_measure_arm,,Arm,Braço
+feature/progress,stats_measure_thigh,,Thigh,Coxa
+feature/progress,stats_measure_neck,,Neck,Pescoço
+feature/progress,stats_measure_value,,%1$s cm,%1$s cm
+feature/progress,stats_measure_change,,%1$s cm in the period,%1$s cm no período
+feature/progress,stats_measure_empty,,No measurements yet,Nenhuma medida ainda
+feature/progress,stats_measure_log,,Log measurement,Registrar medida
+feature/progress,stats_measure_history,,Latest entries,Últimos registros
+feature/progress,stats_measure_delete,,Delete measurement of %1$s,Apagar medida de %1$s
+feature/progress,stats_measure_deleted,,Measurement deleted,Medida apagada
+feature/progress,stats_measure_chart,,%1$s: %2$s cm to %3$s cm,%1$s: de %2$s cm a %3$s cm
+feature/progress,stats_measure_value_description,,Value in cm,Valor em cm
 feature/progress,stats_page_body,,Body,Corpo
 feature/progress,stats_page_strength,,Strength,Força
 feature/progress,stats_page_habit,,Habit,Hábito

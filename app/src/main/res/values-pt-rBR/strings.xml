@@ -7,4 +7,16 @@
     <string name="nav_progress">Evolução</string>
     <string name="nav_routines">Fichas</string>
     <string name="nav_settings">Ajustes</string>
+    <string name="widget_description">Abre seu próximo treino</string>
+    <string name="widget_label">Próximo treino</string>
+    <string name="widget_free_workout">Sem ficha</string>
+    <string name="widget_rest_day">Dia de descanso</string>
+    <string name="widget_no_routine">Ainda sem ficha</string>
+    <string name="widget_continue">Continuar: %1$s</string>
+    <string name="widget_preview_title">Ficha B</string>
+    <string name="widget_preview_detail">4 exercícios</string>
+    <plurals name="widget_exercises">
+        <item quantity="one">%d exercício</item>
+        <item quantity="other">%d exercícios</item>
+    </plurals>
 </resources>
