@@ -1,12 +1,12 @@
 package com.boratreino.widget
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.view.View
 import android.widget.RemoteViews
 import com.boratreino.R
 import com.boratreino.core.model.Sex
-import com.boratreino.core.notify.Notifications
 import com.boratreino.core.ui.R as CoreUiR
 
 /** Builds the widget's [RemoteViews] from a [NextWorkoutWidgetState]; holds no data logic. */
@@ -22,9 +22,15 @@ class NextWorkoutWidgetRenderer(private val context: Context) {
         val detail = detail(state)
         views.setViewVisibility(R.id.widget_detail, if (detail == null) View.GONE else View.VISIBLE)
         views.setTextViewText(R.id.widget_detail, detail.orEmpty())
-        Notifications.openAppIntent(context)?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
+        openAppIntent()?.let { views.setOnClickPendingIntent(R.id.widget_root, it) }
         return views
     }
+
+    /** Opens the app on its launch screen (the Today tab). */
+    private fun openAppIntent(): PendingIntent? =
+        context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
+            PendingIntent.getActivity(context, 0, it, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        }
 
     /** Pushes [state] to every placed widget; does nothing when there is none. */
     fun update(manager: AppWidgetManager, ids: IntArray, state: NextWorkoutWidgetState) {
