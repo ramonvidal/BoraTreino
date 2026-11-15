@@ -2,8 +2,10 @@ package com.boratreino.feature.progress
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -14,6 +16,7 @@ import com.boratreino.core.model.MuscleWeek
 import com.boratreino.core.model.StatsReport
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -21,7 +24,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * "Muscle groups": seven groups, their average sets a week over the whole period, and the words the card gives them.
+ * "Muscle groups": six trained groups (cardio is left out), their average sets a week over the whole period, and the
+ * words the card gives them.
  * The shading is a picture, so the screenshot shows it; the words and the numbers are checked here.
  */
 @RunWith(AndroidJUnit4::class)
@@ -74,16 +78,40 @@ class WeekMusclesCardTest {
     }
 
     @Test
-    fun `the description lists the seven groups with their average and direct sets, in the order of the groups`() {
+    fun `the description lists the six trained groups with their average and direct sets, in the order of the groups`() {
         showCard(full)
 
         assertEquals(
             "Legs: 10.0 sets a week (10.0 direct), Chest: 8.0 sets a week (8.0 direct), " +
                 "Back: 0.5 sets a week (0.5 direct), Shoulders: 0.0 sets a week (0.0 direct), " +
-                "Arms: 0.0 sets a week (0.0 direct), Core: 0.0 sets a week (0.0 direct), " +
-                "Cardio: 0.0 sets a week (0.0 direct)",
+                "Arms: 0.0 sets a week (0.0 direct), Core: 0.0 sets a week (0.0 direct)",
             description(),
         )
+    }
+
+    @Test
+    fun `the card draws six squares, one for each trained group`() {
+        showCard(StatsSamples.empty)
+
+        // Every square shows its number once, and an empty report shows 0.0 in each of them.
+        compose.onAllNodesWithText("0.0", useUnmergedTree = true).assertCountEquals(6)
+    }
+
+    @Test
+    fun `each trained group has one square labelled with its name`() {
+        showCard(full)
+
+        listOf("Legs", "Chest", "Back", "Shoulders", "Arms", "Core").forEach { name ->
+            compose.onAllNodesWithText(name, useUnmergedTree = true).assertCountEquals(1)
+        }
+    }
+
+    @Test
+    fun `the card has no cardio square, text or description`() {
+        showCard(full)
+
+        compose.onAllNodesWithText("Cardio", substring = true, useUnmergedTree = true).assertCountEquals(0)
+        assertFalse(description().contains("Cardio"))
     }
 
     @Test
@@ -104,8 +132,7 @@ class WeekMusclesCardTest {
         assertEquals(
             "Legs: 0.0 sets a week (0.0 direct), Chest: 0.0 sets a week (0.0 direct), " +
                 "Back: 0.0 sets a week (0.0 direct), Shoulders: 0.0 sets a week (0.0 direct), " +
-                "Arms: 0.0 sets a week (0.0 direct), Core: 0.0 sets a week (0.0 direct), " +
-                "Cardio: 0.0 sets a week (0.0 direct)",
+                "Arms: 0.0 sets a week (0.0 direct), Core: 0.0 sets a week (0.0 direct)",
             description(),
         )
     }
