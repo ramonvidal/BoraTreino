@@ -8,8 +8,12 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/** How far back the statistics look. */
-enum class StatsPeriod { FOUR_WEEKS, THREE_MONTHS, ONE_YEAR, ALL }
+/**
+ * How far back the statistics look.
+ * [ONE_WEEK] is a single week bucket: the current calendar week, this week so far (first day of the week up to today).
+ * Anything that needs two points to compare (strength trends, strength index) is empty for it.
+ */
+enum class StatsPeriod { ONE_WEEK, FOUR_WEEKS, THREE_MONTHS, ONE_YEAR, ALL }
 
 /** Rep buckets for the rep-range split. */
 enum class RepRange { R1_5, R6_8, R9_12, R13_PLUS }
@@ -182,6 +186,7 @@ object StatsRules {
         currentWeek: LocalDate,
         firstDayOfWeek: DayOfWeek,
     ): Int = when (period) {
+        StatsPeriod.ONE_WEEK -> 1
         StatsPeriod.FOUR_WEEKS -> 4
         StatsPeriod.THREE_MONTHS -> 13
         StatsPeriod.ONE_YEAR -> 52
@@ -276,6 +281,8 @@ object StatsRules {
         weekCount: Int,
         first: DayOfWeek,
     ): List<StrengthTrend> {
+        // A trend compares an early window with a late one: one week has nothing to compare.
+        if (weekCount < 2) return emptyList()
         val window = minOf(MAX_STRENGTH_WINDOW_WEEKS, weekCount / 2).coerceAtLeast(1)
         val firstEnd = from.plusWeeks(window.toLong())              // exclusive
         val lastStart = from.plusWeeks((weekCount - window).toLong())
@@ -311,6 +318,7 @@ object StatsRules {
      * machine value get no point.
      */
     private fun strengthIndex(inPeriod: List<Entry>, from: LocalDate, weekCount: Int): List<IndexPoint> {
+        if (weekCount < 2) return emptyList()   // a single point is not a trend
         val values = inPeriod.filter(::isNonCardio).groupBy { it.machine }.values.map { entries ->
             (0 until weekCount).map { i ->
                 val start = from.plusWeeks(maxOf(0, i - MAX_STRENGTH_WINDOW_WEEKS + 1).toLong())

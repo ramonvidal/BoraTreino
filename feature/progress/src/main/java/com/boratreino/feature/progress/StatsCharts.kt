@@ -67,6 +67,7 @@ internal object StatsPalette {
 
 private val ChartHeight = 160.dp
 private val BarGap = 2.dp
+private val SingleBarWidth = 72.dp
 private val LegendDot = 12.dp
 
 /** One horizontal bar: [label] on the left, the bar sized by [value], [valueLabel] on the right. */
@@ -114,7 +115,8 @@ internal fun StackedWeekBars(weeks: List<WeekStats>, muscleWeeks: List<MuscleWee
             val plotHeight = size.height - line
             val slot = size.width / weeks.size
             val gap = if (slot > 6.dp.toPx()) BarGap.toPx() else 1.dp.toPx()
-            val barWidth = (slot - gap).coerceAtLeast(1f)
+            // One week: a single bar of sensible width, centred, instead of one the width of the card.
+            val barWidth = (slot - gap).coerceAtLeast(1f).let { if (weeks.size == 1) minOf(it, SingleBarWidth.toPx()) else it }
             weeks.forEachIndexed { i, week ->
                 var bottom = plotHeight
                 val parts = byWeek[week.weekStart].orEmpty().sortedBy { it.muscleGroup }
@@ -123,7 +125,7 @@ internal fun StackedWeekBars(weeks: List<WeekStats>, muscleWeeks: List<MuscleWee
                     if (h > 0f) {
                         drawRect(
                             colors.getValue(part.muscleGroup),
-                            Offset(i * slot + gap / 2f, bottom - h),
+                            Offset(if (weeks.size == 1) (size.width - barWidth) / 2f else i * slot + gap / 2f, bottom - h),
                             Size(barWidth, h),
                         )
                         bottom -= h

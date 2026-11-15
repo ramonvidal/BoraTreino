@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><style>
+  :root{
+    --brand:#FEC204; --brand-soft:#FFF1B8; --ink:#1F1B16; --muted:#6B645A; --page:#FAF7F0; --card:#FFFFFF;
+    --ok:#2E6B52; --ok-soft:#DDEBE4; --pink:#E6397F; --line:#EEE8DC; --tile:#F3EEE3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#D9D4C8;font-family:"Figtree","Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink)}
+  .board{display:flex;gap:28px;padding:28px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .cap{font-size:15px;font-weight:700;color:#3b352c}
+  .phone{width:360px;height:780px;background:var(--page);border-radius:34px;overflow:hidden;position:relative;
+         box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;flex-direction:column}
+  .status{height:28px;flex:none}
+  .scroll{flex:1;overflow:hidden;padding:0 16px 12px}
+  .nav{flex:none;height:64px;background:#fff;border-top:1px solid var(--line);display:flex}
+  .nav div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--muted);gap:5px;font-weight:600}
+  .nav i{width:22px;height:22px;border-radius:7px;background:#E4DDCF;display:block}
+  .nav .on{color:var(--ink)} .nav .on i{background:var(--brand)}
+  h1{font-size:28px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.3px}
+  .label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border-radius:20px;padding:14px 16px}
+  .hero{background:var(--brand);border-radius:24px;padding:18px;position:relative}
+  .hero .date{font-size:13px;font-weight:700;opacity:.75}
+  .hero .pick{display:inline-flex;align-items:center;gap:6px;background:rgba(31,27,22,.1);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;margin-top:10px}
+  .ring{position:absolute;right:16px;top:16px;width:74px;height:74px}
+  .btn{display:flex;align-items:center;justify-content:center;height:56px;border-radius:18px;font-weight:800;font-size:17px}
+  .btn.ink{background:var(--ink);color:#fff}
+  .btn.tonal{background:var(--brand-soft);color:var(--ink)}
+  .btn.text{height:44px;font-size:14px;font-weight:700;color:var(--ink)}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .thumb{width:48px;height:48px;border-radius:14px;background:var(--tile);flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .thumb img{width:44px;height:44px;object-fit:contain;mix-blend-mode:multiply}
+  .thumb.g{background:#E8DDF0;font-weight:800;color:#6B3E86}
+  .name{font-weight:700;font-size:16px} .sub{font-size:13px;color:var(--muted)}
+  .dots{display:flex;gap:5px;margin-left:auto}
+  .dots b{width:10px;height:10px;border-radius:50%;background:#E4DDCF;display:block} .dots b.f{background:var(--ok)}
+  .done .name,.done .sub{color:#A39B8D}
+  .check{margin-left:auto;width:26px;height:26px;border-radius:50%;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+  .cur{background:var(--brand-soft);margin:0 -16px;padding:10px 16px;border-bottom:0}
+  .chip{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;background:#fff;font-size:13px;font-weight:700}
+  .chip.y{background:var(--brand)} .chip.t{background:var(--brand-soft)}
+  .top{display:flex;align-items:center;gap:10px;padding:6px 0 10px}
+  .back{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th{font-size:11px;text-align:left;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;padding:2px 0 8px}
+  td{padding:9px 0;border-top:1px solid var(--line)}
+  td.p{color:#A39B8D} td.t{font-weight:800} td.n{color:#A39B8D;font-weight:600}
+  .panel{flex:none;background:#fff;border-radius:26px 26px 0 0;padding:14px 16px 16px;box-shadow:0 -6px 18px rgba(0,0,0,.06)}
+  .rest{display:flex;align-items:center;gap:10px;background:var(--ok-soft);border-radius:14px;padding:8px 12px;font-weight:800;color:var(--ok)}
+  .rest .bar{flex:1;height:5px;border-radius:3px;background:#C3DACF;position:relative}
+  .rest .bar::after{content:"";position:absolute;left:0;top:0;bottom:0;width:62%;background:var(--ok);border-radius:3px}
+  .steps{display:flex;gap:14px;margin:12px 0}
+  .step{flex:1;text-align:center}
+  .num{font-size:40px;font-weight:800;line-height:1.05}
+  .pm{display:flex;gap:8px;margin-top:6px}
+  .pm span{flex:1;height:48px;border-radius:14px;background:var(--tile);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700}
+  .seg{display:flex;background:#EFE9DC;border-radius:14px;padding:4px;gap:4px}
+  .seg div{flex:1;text-align:center;font-size:14px;font-weight:700;padding:8px 0;border-radius:11px;color:var(--muted)}
+  .seg .on{background:#fff;color:var(--ink)}
+  .hl{display:flex;gap:10px}
+  .hl .card{flex:1;padding:12px}
+  .hl .big{font-size:22px;font-weight:800}
+  .legend{display:flex;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:12px;height:12px;border-radius:4px;display:block}
+  .bal{height:12px;border-radius:6px;background:#C9D6E0;position:relative;margin:6px 0 2px}
+  .bal::after{content:"";position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--ink)}
+  .bal.a::after{width:60%} .bal.b::after{width:55%}
+  .mascot{width:150px;height:150px;border-radius:44px;display:block;margin:26px auto 14px;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+  .center{text-align:center}
+
+.top{display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:8px 14px;font-weight:800;font-size:14px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs b{flex:1;text-align:center;padding:9px 0;border-radius:999px;background:var(--tile);font-size:13px;font-weight:700}
+.tabs b.on{background:var(--brand)}
+.tabs.s b{font-size:12px}
+.hl{display:flex;gap:8px;margin-bottom:10px;overflow:hidden}
+.hl .card{flex:none;width:170px;padding:10px 12px;font-size:12px}
+.hl .card small{display:block;color:var(--muted);font-weight:700;font-size:11px}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:18px 16px 22px;box-shadow:0 -8px 24px rgba(0,0,0,.15)}
+.sheet .opt{padding:13px 4px;font-weight:700;font-size:16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.sheet .opt:last-child{border-bottom:0}
+.dim{position:absolute;inset:0;background:rgba(31,27,22,.35)}
+.mini{height:64px;border-radius:12px;background:var(--tile);margin-top:8px;display:flex;align-items:flex-end;gap:4px;padding:8px}
+.mini i{flex:1;background:var(--ink);border-radius:3px 3px 0 0;display:block}
+.sec{font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin:12px 0 6px}
+.see{font-size:12px;font-weight:800;color:var(--ink);text-decoration:underline}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.k{font-size:22px;font-weight:800}
+</style></head><body><div class="board"><div class="col"><div class="cap">A · Uma linha de abas + período num botão (recomendo)</div><div class="phone"><div class="status"></div><div class="scroll"><div class="top"><h1>Evolução</h1><span class="pill">3 meses ▾</span></div><div class="tabs s"><b>Exercícios</b><b class="on">Corpo</b><b>Força</b><b>Hábito</b></div><div class="hl"><div class="card"><small>MAIS TREINADO</small>Pernas: 10,0 séries/sem</div><div class="card"><small>FORÇA</small>Supino +10 %</div></div><div class="card"><b>Grupos musculares</b><div class="muted" style="font-size:12px">Séries por semana no período</div><div class="mini"><i style="height:90%"></i><i style="height:60%"></i><i style="height:25%"></i><i style="height:15%"></i><i style="height:5%"></i></div></div><div class="card" style="margin-top:10px"><b>Mapa do corpo</b><div class="mini" style="height:90px"></div></div></div><div class="nav"><div><i></i>Treino</div><div><i></i>Agenda</div><div class="on"><i></i>Evolução</div><div><i></i>Fichas</div><div><i></i>Ajustes</div></div></div></div><div class="col"><div class="cap">A · O botão do período abre uma folha (com 1 semana)</div><div class="phone"><div class="status"></div><div class="scroll"><div class="top"><h1>Evolução</h1><span class="pill">3 meses ▾</span></div><div class="tabs s"><b>Exercícios</b><b class="on">Corpo</b><b>Força</b><b>Hábito</b></div><div class="card" style="height:200px"></div></div><div class="nav"><div><i></i>Treino</div><div><i></i>Agenda</div><div class="on"><i></i>Evolução</div><div><i></i>Fichas</div><div><i></i>Ajustes</div></div><div class="dim"></div><div class="sheet"><div class="label" style="margin-bottom:6px">Período</div><div class="opt">1 semana<span>✓</span></div><div class="opt">4 semanas</div><div class="opt">3 meses</div><div class="opt">1 ano</div><div class="opt">Tudo</div></div></div></div><div class="col"><div class="cap">B · Visão geral primeiro, detalhes ao tocar</div><div class="phone"><div class="status"></div><div class="scroll"><div class="top"><h1>Evolução</h1><span class="pill">3 meses ▾</span></div><div class="hl"><div class="card"><small>MAIS TREINADO</small>Pernas: 10,0 séries/sem</div><div class="card"><small>FORÇA</small>Supino +10 %</div></div><div class="grid2"><div class="card"><div class="muted" style="font-size:12px;font-weight:700">TREINOS</div><div class="k">9</div><div class="see">Hábito ›</div></div><div class="card"><div class="muted" style="font-size:12px;font-weight:700">FORÇA</div><div class="k">+6,4 %</div><div class="see">Força ›</div></div></div><div class="card" style="margin-top:8px"><div style="display:flex;justify-content:space-between"><b>Corpo</b><span class="see">Ver tudo ›</span></div><div class="mini" style="height:80px"></div></div><div class="card" style="margin-top:8px"><div style="display:flex;justify-content:space-between"><b>Exercícios</b><span class="see">Ver todos ›</span></div><div class="row"><div class="thumb"></div><div style="flex:1"><b>Leg press</b><div class="muted" style="font-size:13px">Best 120 kg</div></div><b style="color:#2E6B52">+20 %</b></div></div></div><div class="nav"><div><i></i>Treino</div><div><i></i>Agenda</div><div class="on"><i></i>Evolução</div><div><i></i>Fichas</div><div><i></i>Ajustes</div></div></div></div><div class="col"><div class="cap">C · Só duas abas; Corpo, Força e Hábito numa rolagem</div><div class="phone"><div class="status"></div><div class="scroll"><div class="top"><h1>Evolução</h1><span class="pill">3 meses ▾</span></div><div class="tabs"><b>Exercícios</b><b class="on">Geral</b></div><div class="hl"><div class="card"><small>FORÇA</small>Supino +10 %</div><div class="card"><small>HÁBITO</small>5 sem. na meta</div></div><div class="sec">Corpo</div><div class="card"><div class="mini"></div></div><div class="sec">Força</div><div class="card"><b>Tendência de força</b><div class="muted" style="font-size:13px">Supino 60 → 66 kg</div></div><div class="sec">Hábito</div><div class="card"><b>2,8 treinos por semana</b></div></div><div class="nav"><div><i></i>Treino</div><div><i></i>Agenda</div><div class="on"><i></i>Evolução</div><div><i></i>Fichas</div><div><i></i>Ajustes</div></div></div></div></div></body></html>

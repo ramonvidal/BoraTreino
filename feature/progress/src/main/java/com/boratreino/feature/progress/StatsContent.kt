@@ -287,6 +287,7 @@ internal fun PeriodChips(selected: StatsPeriod, onPeriod: (StatsPeriod) -> Unit,
 @Composable
 private fun periodLabel(period: StatsPeriod): String = stringResource(
     when (period) {
+        StatsPeriod.ONE_WEEK -> R.string.stats_period_1w
         StatsPeriod.FOUR_WEEKS -> R.string.stats_period_4w
         StatsPeriod.THREE_MONTHS -> R.string.progress_range_3m
         StatsPeriod.ONE_YEAR -> R.string.progress_range_1y

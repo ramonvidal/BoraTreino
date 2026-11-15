@@ -82,6 +82,7 @@
     <string name="progress_chart_description_one_one_rm">Estimated 1RM %1$s kg on %2$s</string>
     <string name="progress_page_machines">Exercises</string>
     <string name="progress_page_stats">Stats</string>
+    <string name="stats_period_1w">1 week</string>
     <string name="stats_period_4w">4 weeks</string>
     <string name="stats_empty">No training in this period yet</string>
     <string name="stats_summary_title">Summary</string>
