@@ -218,6 +218,7 @@ feature/progress,progress_chart_description_one_rm,,Estimated 1RM from %1$s kg o
 feature/progress,progress_chart_description_one_one_rm,,Estimated 1RM %1$s kg on %2$s,1RM estimado %1$s kg em %2$s
 feature/progress,progress_page_machines,,Exercises,Exercícios
 feature/progress,progress_page_stats,,Stats,Estatísticas
+feature/progress,stats_period_1w,,1 week,1 semana
 feature/progress,stats_period_4w,,4 weeks,4 semanas
 feature/progress,stats_empty,,No training in this period yet,Nenhum treino nesse período ainda
 feature/progress,stats_summary_title,,Summary,Resumo
