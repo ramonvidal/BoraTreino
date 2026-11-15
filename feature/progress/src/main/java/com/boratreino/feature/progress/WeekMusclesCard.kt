@@ -37,13 +37,19 @@ internal fun weekSetsByGroup(report: StatsReport): Map<MuscleGroup, Int> {
     return MuscleGroup.entries.associateWith { group -> sets[group].orEmpty().sumOf { it.workingSets } }
 }
 
-/** One row of seven rounded squares, shaded by the average effective sets a week over the period. */
+/**
+ * The groups the body map and the muscle-groups card show. CARDIO is left out: it has no place
+ * on a body and muscle load ignores cardio sets by design, so it would always read 0.0.
+ */
+internal val TrainedGroups: List<MuscleGroup> = MuscleGroup.entries.filter { it != MuscleGroup.CARDIO }
+
+/** One row of six rounded squares, shaded by the average effective sets a week over the period. */
 @Composable
 internal fun WeekMusclesCard(report: StatsReport, modifier: Modifier = Modifier) {
     val load = BodyInsightRules.muscleLoad(report)
     val direct = BodyInsightRules.directLoad(report)
-    val names = MuscleGroup.entries.associateWith { it.label() }
-    val description = MuscleGroup.entries.map { group ->
+    val names = TrainedGroups.associateWith { it.label() }
+    val description = TrainedGroups.map { group ->
         stringResource(
             R.string.stats_week_muscle_sets,
             names.getValue(group),
@@ -57,7 +63,7 @@ internal fun WeekMusclesCard(report: StatsReport, modifier: Modifier = Modifier)
             Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = description },
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            MuscleGroup.entries.forEach { group ->
+            TrainedGroups.forEach { group ->
                 MuscleSquare(names.getValue(group), load.getValue(group), Modifier.weight(1f))
             }
         }
@@ -90,7 +96,7 @@ private fun MuscleSquare(name: String, sets: Double, modifier: Modifier = Modifi
         }
         Text(
             name,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
             color = colors.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 1,

@@ -32,15 +32,7 @@ import com.boratreino.core.model.StatsReport
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.theme.Sunny
 
-/** The groups the body map paints; CARDIO has no place on a body. */
-private val MapGroups = listOf(
-    MuscleGroup.LEGS,
-    MuscleGroup.CHEST,
-    MuscleGroup.BACK,
-    MuscleGroup.SHOULDERS,
-    MuscleGroup.ARMS,
-    MuscleGroup.CORE,
-)
+private val MapGroups = TrainedGroups
 
 private const val MIN_SHADE = 1
 private const val MAX_SHADE = 3
