@@ -96,6 +96,18 @@ class StatsScreenshotTest {
     fun `stats one year selected`() =
         page("stats-one-year", StatsSamples.state(full.copy(period = StatsPeriod.ONE_YEAR)))
 
+    @Test
+    fun `stats one week body`() =
+        page("stats-week-body", StatsSamples.state(StatsSamples.oneWeek), initialPage = StatsPage.BODY)
+
+    @Test
+    fun `stats one week strength`() =
+        page("stats-week-strength", StatsSamples.state(StatsSamples.oneWeek), initialPage = StatsPage.STRENGTH)
+
+    @Test
+    fun `stats one week habit`() =
+        page("stats-week-habit", StatsSamples.state(StatsSamples.oneWeek), initialPage = StatsPage.HABIT)
+
     // The cards, light
 
     @Test

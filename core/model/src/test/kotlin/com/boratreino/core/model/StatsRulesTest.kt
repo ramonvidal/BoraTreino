@@ -1225,4 +1225,144 @@ class StatsRulesTest {
             reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks,
         )
     }
+
+    // One week: this week so far
+
+    @Test
+    fun `one week is the current week so far as a single bucket`() {
+        val r = report(Log(), StatsPeriod.ONE_WEEK)
+
+        assertEquals(StatsPeriod.ONE_WEEK, r.period)
+        assertEquals(d(11, 2), r.from)
+        assertEquals(today, r.to)
+        assertEquals(listOf(d(11, 2)), r.weeks.map { it.weekStart })
+    }
+
+    @Test
+    fun `one week starts on the first day of the week`() {
+        val r = report(Log(), StatsPeriod.ONE_WEEK, first = DayOfWeek.SUNDAY)
+
+        assertEquals(d(11, 1), r.from)
+        assertEquals(listOf(d(11, 1)), r.weeks.map { it.weekStart })
+    }
+
+    @Test
+    fun `one week counts only the sets and sessions of this week up to today`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(10, 30), m, 50.0, 10) // last week
+        log.lift(d(11, 2), m, 60.0, 5)   // Monday of this week
+        log.lift(d(11, 4), m, 40.0, 10)  // Wednesday
+        log.lift(d(11, 6), m, 99.0, 9)   // after today
+
+        val week = report(log, StatsPeriod.ONE_WEEK).weeks.single()
+
+        assertEquals(2, week.sessions)
+        assertEquals(2, week.trainingDays)
+        assertEquals(2, week.workingSets)
+        assertEquals(700.0, week.volumeKg, 1e-9)
+    }
+
+    @Test
+    fun `one week has no strength trend or index but still gives the best estimates`() {
+        val log = Log()
+        val press = log.machine()
+        log.lift(d(11, 2), press, 80.0, 5)   // about 93 kg
+        log.lift(d(11, 4), press, 100.0, 1)  // 100 kg
+
+        val r = report(log, StatsPeriod.ONE_WEEK)
+
+        assertTrue(r.strength.isEmpty())
+        assertNull(r.overallStrengthPercent)
+        assertTrue(r.strengthIndex.isEmpty())
+        assertEquals(listOf(press), r.strengthNow.map { it.machine.id })
+        assertEquals(100.0, r.strengthNow.single().estimate1rm, 1e-9)
+    }
+
+    @Test
+    fun `one week lists only the records set this week`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(10, 27), m, 100.0, 1) // last week: a record, but outside the period
+        log.lift(d(11, 3), m, 105.0, 1)  // this week: a new best
+
+        val records = report(log, StatsPeriod.ONE_WEEK).records
+
+        assertEquals(1, records.size)
+        assertEquals(d(11, 3), records.single().date)
+        assertEquals(m, records.single().machine.id)
+    }
+
+    @Test
+    fun `one week keeps the rep ranges, session times and muscle weeks of this week`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(10, 27), m, 50.0, 10) // last week, 9 to 12 reps
+        val s = log.session(d(11, 2), endedAfterSeconds = 3600)
+        log.set(s, m, 60.0, 5)           // this week, 1 to 5 reps
+
+        val r = report(log, StatsPeriod.ONE_WEEK)
+
+        assertEquals(100.0, r.repRanges.first { it.range == RepRange.R1_5 }.percent, 1e-9)
+        assertEquals(0, r.repRanges.first { it.range == RepRange.R9_12 }.sets)
+        assertEquals(1, r.times.sessionsCounted)
+        assertEquals(60, r.times.averageMinutes)
+        assertEquals(listOf(d(11, 2)), r.muscleWeeks.map { it.weekStart })
+        assertEquals(1, r.muscleWeeks.single().workingSets)
+    }
+
+    @Test
+    fun `one week plateaus still look at the whole history`() {
+        val (log, _) = plateauLog(listOf(100.0, 90.0, 90.0, 90.0, 90.0, 90.0))
+
+        assertEquals(5, report(log, StatsPeriod.ONE_WEEK).plateaus.single().sessionsWithoutImprovement)
+    }
+
+    @Test
+    fun `one week is counted once this week has met the goal`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(11, 2), m, 50.0, 10)
+        log.lift(d(11, 3), m, 50.0, 10)
+        log.lift(d(11, 4), m, 50.0, 10)
+
+        val c = report(log, StatsPeriod.ONE_WEEK, goal = 3).consistency
+
+        assertEquals(1, c.weeksCounted)
+        assertEquals(1, c.weeksMetGoal)
+        assertEquals(3.0, c.sessionsPerWeek, 1e-9)
+        assertEquals(d(11, 2), c.bestWeekStart)
+        assertEquals(3, c.bestWeekTrainingDays)
+    }
+
+    @Test
+    fun `one week is not counted while this week is short of the goal`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(11, 2), m, 50.0, 10)
+        log.lift(d(11, 3), m, 50.0, 10)
+
+        val c = report(log, StatsPeriod.ONE_WEEK, goal = 3).consistency
+
+        assertEquals(0, c.weeksCounted)
+        assertEquals(0, c.weeksMetGoal)
+        assertEquals(2, c.bestWeekTrainingDays)
+    }
+
+    @Test
+    fun `one week with nothing logged gives empty figures and does not throw`() {
+        val r = report(Log(), StatsPeriod.ONE_WEEK, goal = 3)
+
+        assertEquals(1, r.weeks.size)
+        assertEquals(0, r.weeks.single().workingSets)
+        assertEquals(0, r.consistency.weeksCounted)
+        assertEquals(0.0, r.consistency.sessionsPerWeek, 0.0)
+        assertNull(r.consistency.bestWeekStart)
+        assertTrue(r.strength.isEmpty())
+        assertTrue(r.strengthNow.isEmpty())
+        assertTrue(r.strengthIndex.isEmpty())
+        assertTrue(r.records.isEmpty())
+        assertTrue(r.repRanges.all { it.percent == 0.0 })
+        assertEquals(SessionTimes(0, null, null), r.times)
+    }
 }

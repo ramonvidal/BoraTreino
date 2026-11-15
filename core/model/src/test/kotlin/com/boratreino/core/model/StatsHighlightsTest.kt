@@ -4,7 +4,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 /** Highlights the Progress tab leads with. Built from report fixtures; dates are 2026. */
 class StatsHighlightsTest {
@@ -254,5 +256,75 @@ class StatsHighlightsTest {
     @Test
     fun `no goal streak when no week met the goal`() {
         assertTrue(StatsHighlights.of(report(weeksMetGoal = 0)).isEmpty())
+    }
+
+    // One week: the report comes from StatsRules, so the week and its rules are the real ones
+
+    private val monday = LocalDate.of(2026, 11, 2)
+    private val wednesday = LocalDate.of(2026, 11, 4)
+
+    /** A set on the session of [date] (a session of its own, at ten in the morning UTC). */
+    private class Logged(val date: LocalDate, val machineId: Long, val kg: Double, val reps: Int)
+
+    private fun oneWeek(goal: Int, vararg logged: Logged): StatsReport {
+        val machines = listOf(machine(1, MuscleGroup.LEGS), machine(2, MuscleGroup.CHEST))
+        val sessions = logged.mapIndexed { i, l ->
+            Session(i + 1L, l.date.atTime(10, 0).toInstant(ZoneOffset.UTC), null, null, null)
+        }
+        val sets = logged.mapIndexed { i, l ->
+            WorkoutSet(
+                id = i + 1L,
+                sessionId = i + 1L,
+                machineId = l.machineId,
+                position = 0,
+                weightKg = l.kg,
+                reps = l.reps,
+                seconds = null,
+                calories = null,
+                distanceM = null,
+                loggedAt = sessions[i].startedAt,
+                type = SetType.NORMAL,
+            )
+        }
+        return StatsRules.report(StatsPeriod.ONE_WEEK, today, DayOfWeek.MONDAY, goal, machines, sessions, sets, ZoneOffset.UTC)
+    }
+
+    @Test
+    fun `one week never gives a strength gain, even when the weight rose this week`() {
+        val kinds = StatsHighlights.of(
+            oneWeek(3, Logged(monday, 1, 80.0, 5), Logged(wednesday, 1, 100.0, 1)),
+            max = 10,
+        ).map { it.kind }
+
+        assertTrue(HighlightKind.STRENGTH_GAIN !in kinds)
+    }
+
+    @Test
+    fun `one week shows the muscle load of its sets`() {
+        val highlight = StatsHighlights.of(
+            oneWeek(3, Logged(monday, 1, 100.0, 10), Logged(wednesday, 1, 100.0, 10)),
+            max = 10,
+        ).first { it.kind == HighlightKind.MUSCLE_LOAD }
+
+        assertEquals(MuscleGroup.LEGS, highlight.muscleGroup)
+        assertEquals(2.0, highlight.value, 1e-9)
+        assertEquals(StatsPage.BODY, highlight.target)
+    }
+
+    @Test
+    fun `one week gives a goal streak only when this week met the goal`() {
+        val sets = arrayOf(Logged(monday, 1, 100.0, 10), Logged(wednesday, 1, 100.0, 10))
+
+        val met = StatsHighlights.of(oneWeek(2, *sets), max = 10).single { it.kind == HighlightKind.GOAL_STREAK }
+        assertEquals(1.0, met.value, 1e-9)
+        assertEquals(StatsPage.HABIT, met.target)
+
+        val short = StatsHighlights.of(oneWeek(3, *sets), max = 10).map { it.kind }
+        assertTrue(HighlightKind.GOAL_STREAK !in short)
+    }
+
+    @Test
+    fun `one week with nothing logged gives no highlights and does not throw`() {
+        assertTrue(StatsHighlights.of(oneWeek(3)).isEmpty())
     }
 }

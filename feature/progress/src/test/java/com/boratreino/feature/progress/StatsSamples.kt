@@ -1,6 +1,7 @@
 package com.boratreino.feature.progress
 
 import com.boratreino.core.model.Consistency
+import com.boratreino.core.model.MachineEstimate
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.MuscleRecency
@@ -161,6 +162,60 @@ internal object StatsSamples {
         plateaus = emptyList(),
         repRanges = noRepRanges,
         times = SessionTimes(8, 40, null),
+    )
+
+    /**
+     * This week so far: the one bucket starts today (a Monday). Four sessions on four days, this week's estimates
+     * and records only, no strength trend and no strength index. The plateau is the whole history's.
+     */
+    val oneWeek = StatsReport(
+        period = StatsPeriod.ONE_WEEK,
+        from = today,
+        to = today,
+        weeks = listOf(WeekStats(today, sessions = 4, trainingDays = 4, workingSets = 11, volumeKg = 7_800.0)),
+        muscleWeeks = listOf(
+            MuscleWeek(today, MuscleGroup.LEGS, 5, 4_800.0),
+            MuscleWeek(today, MuscleGroup.CHEST, 6, 3_000.0),
+        ),
+        recency = recency,
+        consistency = Consistency(
+            weeksCounted = 1,
+            weeksMetGoal = 1,
+            goal = 4,
+            sessionsPerWeek = 4.0,
+            bestWeekStart = today,
+            bestWeekTrainingDays = 4,
+        ),
+        strength = emptyList(),
+        overallStrengthPercent = null,
+        records = listOf(RecordEvent(legsPress, today, Record.HeaviestWeight(120.0))),
+        plateaus = plateaus,
+        repRanges = listOf(
+            RepRangeShare(RepRange.R1_5, 0, 0.0),
+            RepRangeShare(RepRange.R6_8, 4, 36.4),
+            RepRangeShare(RepRange.R9_12, 7, 63.6),
+            RepRangeShare(RepRange.R13_PLUS, 0, 0.0),
+        ),
+        times = SessionTimes(sessionsCounted = 4, averageMinutes = 58, averageMinutesBetweenSets = 2.9),
+        strengthNow = listOf(MachineEstimate(legsPress, 120.0), MachineEstimate(benchPress, 96.0)),
+        strengthIndex = emptyList(),
+    )
+
+    /** This week so far with nothing logged yet. */
+    val oneWeekEmpty = StatsReport(
+        period = StatsPeriod.ONE_WEEK,
+        from = today,
+        to = today,
+        weeks = listOf(WeekStats(today, 0, 0, 0, 0.0)),
+        muscleWeeks = emptyList(),
+        recency = neverRecency,
+        consistency = Consistency(0, 0, 4, 0.0, null, 0),
+        strength = emptyList(),
+        overallStrengthPercent = null,
+        records = emptyList(),
+        plateaus = emptyList(),
+        repRanges = noRepRanges,
+        times = SessionTimes(0, null, null),
     )
 
     fun state(report: StatsReport = full, period: StatsPeriod = report.period) =

@@ -81,10 +81,20 @@ class StatsContentTest {
     @Test
     fun `the period chips are shown`() {
         showPage()
+        shown("1 week")
         shown("4 weeks")
         shown("3 months")
         shown("1 year")
         shown("All")
+    }
+
+    @Test
+    fun `the one week chip comes first, before the four weeks chip`() {
+        showCard { PeriodChips(StatsPeriod.THREE_MONTHS, {}) }
+
+        val oneWeek = compose.onNodeWithText("1 week").fetchSemanticsNode().positionInRoot.x
+        val fourWeeks = compose.onNodeWithText("4 weeks").fetchSemanticsNode().positionInRoot.x
+        assertTrue(oneWeek < fourWeeks)
     }
 
     @Test
@@ -375,6 +385,56 @@ class StatsContentTest {
         notShown("Muscle groups")
     }
 
+    // One week
+
+    @Test
+    fun `one week body page has the muscle groups and the strength per body weight, not the strength vs weight chart`() {
+        showPage(StatsSamples.state(StatsSamples.oneWeek).copy(bodyWeightKg = 80.0))
+
+        shown("Muscle groups")
+        shown("Strength per body weight")
+        notShown("Body weight and strength together")
+    }
+
+    @Test
+    fun `one week strength page has no strength trend but keeps the records and rep ranges`() {
+        showPage(StatsSamples.state(StatsSamples.oneWeek), page = StatsPage.STRENGTH)
+
+        notShown("Strength trend")
+        shown("Records")
+        shown("Rep ranges")
+    }
+
+    @Test
+    fun `one week habit page has the summary and the single weekly volume bar`() {
+        showPage(StatsSamples.state(StatsSamples.oneWeek), page = StatsPage.HABIT)
+
+        shown("Summary")
+        shown("Weekly volume")
+        // The bar chart's one description: its total and best week are the one week's volume.
+        compose.onNodeWithContentDescription("7.8 t in total, best week 7.8 t", substring = true).assertIsDisplayed()
+        shown("Days since each muscle group was trained")
+        shown("Session length")
+    }
+
+    @Test
+    fun `one week highlights name the muscle load of this week`() {
+        showPage(StatsSamples.state(StatsSamples.oneWeek))
+
+        compose.onNodeWithText("Chest: 6.0 sets a week").assertExists()
+    }
+
+    @Test
+    fun `an empty one week period shows the empty card on every page`() {
+        showPage(StatsSamples.state(StatsSamples.oneWeekEmpty))
+        shown("No training in this period yet")
+        notShown("Muscle groups")
+
+        compose.onNodeWithText("Habit").performClick()
+        shown("No training in this period yet")
+        notShown("Summary")
+    }
+
     // Empty and special periods
 
     @Test
@@ -428,6 +488,16 @@ class StatsContentTest {
         compose.onNodeWithText("4 weeks").performClick()
 
         assertEquals(listOf(StatsPeriod.ONE_YEAR, StatsPeriod.ALL, StatsPeriod.FOUR_WEEKS), asked)
+    }
+
+    @Test
+    fun `tapping the one week chip asks for one week`() {
+        val asked = mutableListOf<StatsPeriod>()
+        showPage(actions = StatsActions(onPeriod = { asked += it }))
+
+        compose.onNodeWithText("1 week").performClick()
+
+        assertEquals(listOf(StatsPeriod.ONE_WEEK), asked)
     }
 
     @Test

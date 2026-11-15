@@ -225,6 +225,18 @@ class StatsViewModelTest {
     }
 
     @Test
+    fun `the one week period is restored from the saved state and a fresh handle starts on three months`() = runTest(dispatcher) {
+        val handle = SavedStateHandle()
+        viewModel(handle).setPeriod(StatsPeriod.ONE_WEEK)
+        runCurrent()
+
+        val restored = viewModel(handle)
+        assertEquals(StatsPeriod.ONE_WEEK, restored.state.value.period)
+        assertEquals(StatsPeriod.ONE_WEEK, restored.state.value.report!!.period)
+        assertEquals(StatsPeriod.THREE_MONTHS, viewModel(SavedStateHandle()).state.value.period)
+    }
+
+    @Test
     fun `a view model over a fresh handle does not inherit another one's period`() = runTest(dispatcher) {
         viewModel().setPeriod(StatsPeriod.ALL)
         runCurrent()
