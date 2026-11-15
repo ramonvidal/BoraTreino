@@ -28,7 +28,7 @@ class StatsScreenshotTest {
         state: StatsUiState,
         dark: Boolean = false,
         fontScale: Float = 1f,
-        initialPage: StatsPage? = null,
+        statsPage: StatsPage = StatsPage.BODY,
     ) {
         compose.setContent {
             StatsScreenHost(dark, fontScale) {
@@ -36,7 +36,7 @@ class StatsScreenshotTest {
                     state = state,
                     actions = StatsActions(),
                     modifier = Modifier.fillMaxSize(),
-                    initialPage = initialPage,
+                    page = statsPage,
                 )
             }
         }
@@ -54,28 +54,28 @@ class StatsScreenshotTest {
     fun `stats full`() = page("stats-full", StatsSamples.state())
 
     @Test
-    fun `stats body page`() = page("stats-page-body", StatsSamples.state(), initialPage = StatsPage.BODY)
+    fun `stats body page`() = page("stats-page-body", StatsSamples.state(), statsPage = StatsPage.BODY)
 
     @Test
-    fun `stats strength page`() = page("stats-page-strength", StatsSamples.state(), initialPage = StatsPage.STRENGTH)
+    fun `stats strength page`() = page("stats-page-strength", StatsSamples.state(), statsPage = StatsPage.STRENGTH)
 
     @Test
-    fun `stats habit page`() = page("stats-page-habit", StatsSamples.state(), initialPage = StatsPage.HABIT)
+    fun `stats habit page`() = page("stats-page-habit", StatsSamples.state(), statsPage = StatsPage.HABIT)
 
     @Test
     fun `stats habit page dark`() =
-        page("stats-page-habit-dark", StatsSamples.state(), dark = true, initialPage = StatsPage.HABIT)
+        page("stats-page-habit-dark", StatsSamples.state(), dark = true, statsPage = StatsPage.HABIT)
 
     @Test
     fun `stats full dark`() = page("stats-full-dark", StatsSamples.state(), dark = true)
 
     @Test
     fun `stats strength page large text`() =
-        page("stats-page-strength-large", StatsSamples.state(), fontScale = 2f, initialPage = StatsPage.STRENGTH)
+        page("stats-page-strength-large", StatsSamples.state(), fontScale = 2f, statsPage = StatsPage.STRENGTH)
 
     @Test
     fun `stats empty period on the habit page`() =
-        page("stats-empty-habit", StatsSamples.state(StatsSamples.empty), initialPage = StatsPage.HABIT)
+        page("stats-empty-habit", StatsSamples.state(StatsSamples.empty), statsPage = StatsPage.HABIT)
 
     @Test
     fun `stats full large text`() = page("stats-full-large", StatsSamples.state(), fontScale = 2f)
@@ -98,20 +98,17 @@ class StatsScreenshotTest {
 
     @Test
     fun `stats one week body`() =
-        page("stats-week-body", StatsSamples.state(StatsSamples.oneWeek), initialPage = StatsPage.BODY)
+        page("stats-week-body", StatsSamples.state(StatsSamples.oneWeek), statsPage = StatsPage.BODY)
 
     @Test
     fun `stats one week strength`() =
-        page("stats-week-strength", StatsSamples.state(StatsSamples.oneWeek), initialPage = StatsPage.STRENGTH)
+        page("stats-week-strength", StatsSamples.state(StatsSamples.oneWeek), statsPage = StatsPage.STRENGTH)
 
     @Test
     fun `stats one week habit`() =
-        page("stats-week-habit", StatsSamples.state(StatsSamples.oneWeek), initialPage = StatsPage.HABIT)
+        page("stats-week-habit", StatsSamples.state(StatsSamples.oneWeek), statsPage = StatsPage.HABIT)
 
     // The cards, light
-
-    @Test
-    fun `period chips`() = card("stats-period-chips") { PeriodChips(StatsPeriod.THREE_MONTHS, {}) }
 
     @Test
     fun `summary card`() = card("stats-summary") { SummaryCard(full) }
@@ -170,7 +167,4 @@ class StatsScreenshotTest {
 
     @Test
     fun `recency card large text`() = card("stats-recency-large", fontScale = 2f) { RecencyCard(full) }
-
-    @Test
-    fun `period chips large text`() = card("stats-period-chips-large", fontScale = 2f) { PeriodChips(StatsPeriod.ALL, {}) }
 }

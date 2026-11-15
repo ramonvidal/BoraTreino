@@ -1,5 +1,6 @@
 package com.boratreino.feature.progress
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -82,8 +83,9 @@ class ProgressStoreScreenshotPtTest {
     }
 
     /**
-     * The Stats body page: the highlights, then the muscle groups card at the top after one scroll step, so the
-     * body map (with every shade and the body weight) shows under the pinned period and page chips.
+     * The Progress body page as the listing shows it: the header (title, period pill, page chips) above the
+     * highlights, then the muscle groups card after one scroll step, so the body map (with every shade and the
+     * body weight) shows right under the header.
      */
     @Test
     fun `store 6 stats body`() {
@@ -94,12 +96,21 @@ class ProgressStoreScreenshotPtTest {
         )
         compose.setContent {
             StoreFrame {
-                StatsContent(
-                    state = state,
-                    actions = StatsActions(),
-                    modifier = Modifier.fillMaxSize(),
-                    initialPage = StatsPage.BODY,
-                )
+                Column(Modifier.fillMaxSize()) {
+                    ProgressHeader(
+                        page = ProgressPage.BODY,
+                        onPage = {},
+                        period = state.period,
+                        onPeriod = {},
+                        showPeriod = true,
+                    )
+                    StatsContent(
+                        state = state,
+                        actions = StatsActions(),
+                        modifier = Modifier.weight(1f),
+                        page = StatsPage.BODY,
+                    )
+                }
             }
         }
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(1)

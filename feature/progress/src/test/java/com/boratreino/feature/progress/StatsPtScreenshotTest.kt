@@ -66,9 +66,6 @@ class StatsPtScreenshotTest {
     // The cards, light
 
     @Test
-    fun `period chips`() = card("stats-period-chips") { PeriodChips(StatsPeriod.THREE_MONTHS, {}) }
-
-    @Test
     fun `summary card`() = card("stats-summary") { SummaryCard(full) }
 
     @Test
@@ -125,7 +122,4 @@ class StatsPtScreenshotTest {
 
     @Test
     fun `recency card large text`() = card("stats-recency-large", fontScale = 2f) { RecencyCard(full) }
-
-    @Test
-    fun `period chips large text`() = card("stats-period-chips-large", fontScale = 2f) { PeriodChips(StatsPeriod.ALL, {}) }
 }

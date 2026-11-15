@@ -17,7 +17,6 @@ import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.MuscleRecency
 import com.boratreino.core.model.MuscleWeek
 import com.boratreino.core.model.StatsPage
-import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.model.StrengthTrend
 import org.junit.Assert.assertEquals
@@ -37,15 +36,15 @@ class StatsContentTest {
     private val full = StatsSamples.full
     private val today = StatsSamples.today
 
-    /** Shows the page on [page] (the Body sub-page when null). */
+    /** Shows one page of the stats (the Body page by default). */
     private fun showPage(
         state: StatsUiState = StatsSamples.state(),
         actions: StatsActions = StatsActions(),
-        page: StatsPage? = null,
+        page: StatsPage = StatsPage.BODY,
     ) {
         compose.setContent {
             StatsScreenHost {
-                StatsContent(state = state, actions = actions, modifier = Modifier.fillMaxSize(), initialPage = page)
+                StatsContent(state = state, actions = actions, modifier = Modifier.fillMaxSize(), page = page)
             }
         }
     }
@@ -77,34 +76,6 @@ class StatsContentTest {
     )
 
     // The page
-
-    @Test
-    fun `the period chips are shown`() {
-        showPage()
-        shown("1 week")
-        shown("4 weeks")
-        shown("3 months")
-        shown("1 year")
-        shown("All")
-    }
-
-    @Test
-    fun `the one week chip comes first, before the four weeks chip`() {
-        showCard { PeriodChips(StatsPeriod.THREE_MONTHS, {}) }
-
-        val oneWeek = compose.onNodeWithText("1 week").fetchSemanticsNode().positionInRoot.x
-        val fourWeeks = compose.onNodeWithText("4 weeks").fetchSemanticsNode().positionInRoot.x
-        assertTrue(oneWeek < fourWeeks)
-    }
-
-    @Test
-    fun `the page chips Body Strength and Habit are shown`() {
-        // Without highlights: a highlight card's kind label would repeat the chip's text.
-        showPage(StatsSamples.state(withoutHighlights()))
-        shown("Body")
-        shown("Strength")
-        shown("Habit")
-    }
 
     @Test
     fun `the body page is shown by default`() {
@@ -156,7 +127,7 @@ class StatsContentTest {
     }
 
     @Test
-    fun `the page passed as initial page is the one shown`() {
+    fun `the page passed is the one shown`() {
         showPage(page = StatsPage.STRENGTH)
 
         shown("Strength trend")
@@ -181,6 +152,21 @@ class StatsContentTest {
     fun `without an overall strength change the summary leaves the line out`() {
         showPage(StatsSamples.state(full.copy(overallStrengthPercent = null)), page = StatsPage.HABIT)
         notShown("Strength: +6.4 % in this period")
+    }
+
+    @Test
+    fun `the volume chart description says one week in the singular`() {
+        showPage(StatsSamples.state(StatsSamples.oneWeek), page = StatsPage.HABIT)
+
+        compose.onNodeWithContentDescription("Weekly volume over 1 week: 7.8 t in total, best week 7.8 t").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the volume chart description says the weeks in the plural`() {
+        showPage(page = StatsPage.HABIT)
+
+        compose.onNodeWithContentDescription("Weekly volume over 13 weeks:", substring = true).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Weekly volume over 1 week:", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -261,11 +247,26 @@ class StatsContentTest {
     // Highlights
 
     @Test
-    fun `the highlights are the first item below the page chips`() {
+    fun `the highlights are the first item of the body page`() {
         showPage()
 
-        assertTrue(yOf("3 months") < yOf("Bench press +10.0 % in the period"))
         assertTrue(yOf("Bench press +10.0 % in the period") < yOf("Muscle groups"))
+    }
+
+    @Test
+    fun `the highlights are left out of the strength page`() {
+        showPage(page = StatsPage.STRENGTH)
+
+        notShown("Bench press +10.0 % in the period")
+        notShown("Legs: 10.0 sets a week")
+    }
+
+    @Test
+    fun `the highlights are left out of the habit page`() {
+        val report = withoutHighlights().copy(consistency = full.consistency.copy(weeksMetGoal = 5))
+        showPage(StatsSamples.state(report), page = StatsPage.HABIT)
+
+        notShown("5 weeks meeting the goal")
     }
 
     @Test
@@ -310,79 +311,61 @@ class StatsContentTest {
     }
 
     @Test
-    fun `tapping a highlight switches to the page that holds its card`() {
+    fun `tapping a strength highlight reports the strength page`() {
         val report = withoutHighlights().copy(strength = full.strength.take(1))
-        showPage(StatsSamples.state(report))
-        notShown("Strength trend")
+        val opened = mutableListOf<StatsPage>()
+        showPage(StatsSamples.state(report), StatsActions(onOpenPage = { opened += it }))
 
         compose.onNodeWithText("Bench press +10.0 % in the period").performClick()
 
-        shown("Strength trend")
-        notShown("Muscle groups")
+        assertEquals(listOf(StatsPage.STRENGTH), opened)
     }
 
     @Test
-    fun `tapping a body highlight shows the body page`() {
+    fun `tapping a body highlight reports the body page`() {
         val report = withoutHighlights().copy(
             muscleWeeks = listOf(MuscleWeek(today, MuscleGroup.LEGS, 156, 0.0)),
         )
-        showPage(StatsSamples.state(report), page = StatsPage.HABIT)
-        notShown("Muscle groups")
+        val opened = mutableListOf<StatsPage>()
+        showPage(StatsSamples.state(report), StatsActions(onOpenPage = { opened += it }))
 
         compose.onNodeWithText("Legs: 12.0 sets a week").performClick()
 
-        shown("Muscle groups")
-        notShown("Summary")
+        assertEquals(listOf(StatsPage.BODY), opened)
     }
 
     @Test
-    fun `tapping a habit highlight shows the habit page`() {
+    fun `tapping a habit highlight reports the habit page`() {
         val report = withoutHighlights().copy(consistency = full.consistency.copy(weeksMetGoal = 5))
-        showPage(StatsSamples.state(report))
-        notShown("Summary")
+        val opened = mutableListOf<StatsPage>()
+        showPage(StatsSamples.state(report), StatsActions(onOpenPage = { opened += it }))
 
         compose.onNodeWithText("5 weeks meeting the goal").performClick()
 
-        shown("Summary")
-        notShown("Muscle groups")
+        assertEquals(listOf(StatsPage.HABIT), opened)
     }
 
-    // Page chips
+    // Empty pages
 
     @Test
-    fun `tapping a page chip switches the page`() {
-        showPage(StatsSamples.state(withoutHighlights()))
-        shown("Muscle groups")
-
-        compose.onNodeWithText("Strength").performClick()
-        shown("Strength trend")
-        notShown("Muscle groups")
-
-        compose.onNodeWithText("Habit").performClick()
-        shown("Summary")
-        notShown("Strength trend")
-
-        compose.onNodeWithText("Body").performClick()
-        shown("Muscle groups")
-        notShown("Summary")
-    }
-
-    @Test
-    fun `an empty period shows the empty card on every page`() {
+    fun `an empty period shows the empty card on the body page`() {
         showPage(StatsSamples.state(StatsSamples.empty))
         shown("No training in this period yet")
+        notShown("Muscle groups")
+    }
 
-        compose.onNodeWithText("Strength").performClick()
+    @Test
+    fun `an empty period shows the empty card on the strength page`() {
+        showPage(StatsSamples.state(StatsSamples.empty), page = StatsPage.STRENGTH)
         shown("No training in this period yet")
         notShown("Strength trend")
+    }
 
-        compose.onNodeWithText("Habit").performClick()
+    @Test
+    fun `an empty period shows the empty card on the habit page`() {
+        showPage(StatsSamples.state(StatsSamples.empty), page = StatsPage.HABIT)
         shown("No training in this period yet")
         notShown("Summary")
-
-        compose.onNodeWithText("Body").performClick()
-        shown("No training in this period yet")
-        notShown("Muscle groups")
     }
 
     // One week
@@ -425,12 +408,15 @@ class StatsContentTest {
     }
 
     @Test
-    fun `an empty one week period shows the empty card on every page`() {
+    fun `an empty one week period shows the empty card on the body page`() {
         showPage(StatsSamples.state(StatsSamples.oneWeekEmpty))
         shown("No training in this period yet")
         notShown("Muscle groups")
+    }
 
-        compose.onNodeWithText("Habit").performClick()
+    @Test
+    fun `an empty one week period shows the empty card on the habit page`() {
+        showPage(StatsSamples.state(StatsSamples.oneWeekEmpty), page = StatsPage.HABIT)
         shown("No training in this period yet")
         notShown("Summary")
     }
@@ -440,7 +426,6 @@ class StatsContentTest {
     @Test
     fun `an empty period shows the friendly card and nothing else`() {
         showPage(StatsSamples.state(StatsSamples.empty))
-        shown("4 weeks")
         shown("No training in this period yet")
         notShown("Summary")
         notShown("Records")
@@ -469,44 +454,14 @@ class StatsContentTest {
     }
 
     @Test
-    fun `before the first report only the period chips are drawn`() {
+    fun `before the first report the page is blank`() {
         showPage(StatsUiState())
-        shown("3 months")
+        notShown("Muscle groups")
         notShown("Summary")
         notShown("No training in this period yet")
     }
 
     // Taps
-
-    @Test
-    fun `tapping a period chip asks for that period`() {
-        val asked = mutableListOf<StatsPeriod>()
-        showPage(actions = StatsActions(onPeriod = { asked += it }))
-
-        compose.onNodeWithText("1 year").performClick()
-        compose.onNodeWithText("All").performClick()
-        compose.onNodeWithText("4 weeks").performClick()
-
-        assertEquals(listOf(StatsPeriod.ONE_YEAR, StatsPeriod.ALL, StatsPeriod.FOUR_WEEKS), asked)
-    }
-
-    @Test
-    fun `tapping the one week chip asks for one week`() {
-        val asked = mutableListOf<StatsPeriod>()
-        showPage(actions = StatsActions(onPeriod = { asked += it }))
-
-        compose.onNodeWithText("1 week").performClick()
-
-        assertEquals(listOf(StatsPeriod.ONE_WEEK), asked)
-    }
-
-    @Test
-    fun `the chips alone report taps`() {
-        var asked: StatsPeriod? = null
-        showCard { PeriodChips(StatsPeriod.THREE_MONTHS, { asked = it }) }
-        compose.onNodeWithText("1 year").performClick()
-        assertEquals(StatsPeriod.ONE_YEAR, asked)
-    }
 
     @Test
     fun `tapping a machine in the strength list opens it`() {
@@ -587,26 +542,26 @@ class StatsContentTest {
     }
 
     @Test
-    fun `the measurements card is not on the strength or habit page`() {
-        // No highlights: their kind labels ("Strength", "Habit") would repeat the page chips' texts.
-        showPage(StatsSamples.state(withoutHighlights()).copy(measurements = measured))
-        shown("Measurements")
-
-        compose.onNodeWithText("Strength").performClick()
-        notShown("Measurements")
-
-        compose.onNodeWithText("Habit").performClick()
+    fun `the measurements card is not on the strength page`() {
+        showPage(StatsSamples.state().copy(measurements = measured), page = StatsPage.STRENGTH)
         notShown("Measurements")
     }
 
     @Test
-    fun `the measurements card is not on the strength or habit page of an empty period`() {
-        showPage(StatsSamples.state(StatsSamples.empty))
-
-        compose.onNodeWithText("Strength").performClick()
+    fun `the measurements card is not on the habit page`() {
+        showPage(StatsSamples.state().copy(measurements = measured), page = StatsPage.HABIT)
         notShown("Measurements")
+    }
 
-        compose.onNodeWithText("Habit").performClick()
+    @Test
+    fun `the measurements card is not on the strength page of an empty period`() {
+        showPage(StatsSamples.state(StatsSamples.empty), page = StatsPage.STRENGTH)
+        notShown("Measurements")
+    }
+
+    @Test
+    fun `the measurements card is not on the habit page of an empty period`() {
+        showPage(StatsSamples.state(StatsSamples.empty), page = StatsPage.HABIT)
         notShown("Measurements")
     }
 }
