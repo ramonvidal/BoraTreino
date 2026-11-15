@@ -34,6 +34,19 @@
             </intent-filter>
         </activity>
 
+        <!-- Home-screen widget "Next workout"; refreshed every 30 minutes and while the app runs. -->
+        <receiver
+            android:name=".widget.NextWorkoutWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_workout_widget_info" />
+        </receiver>
+
         <!-- Remembers the language picked in the app on older Androids too. -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
