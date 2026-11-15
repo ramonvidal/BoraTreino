@@ -40,6 +40,9 @@ import com.boratreino.core.ui.R as CoreUiR
  * The one header of the Progress tab: the title with the period pill at its right (hidden when
  * [showPeriod] is false), and one row of page chips. The pill opens the period sheet.
  */
+/** Added to a label's length to get its chip weight in the page row. */
+private const val CHIP_WEIGHT_PADDING = 4
+
 @Composable
 internal fun ProgressHeader(
     page: ProgressPage,
@@ -65,11 +68,13 @@ internal fun ProgressHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ProgressPage.entries.forEach { option ->
+                val label = stringResource(pageLabel(option))
                 BoraChip(
-                    label = stringResource(pageLabel(option)),
+                    label = label,
                     selected = option == page,
                     onClick = { onPage(option) },
-                    modifier = Modifier.weight(1f),
+                    // The chips share the row by label length, so "Exercises" does not wrap next to "Body".
+                    modifier = Modifier.weight((label.length + CHIP_WEIGHT_PADDING).toFloat()),
                 )
             }
         }
