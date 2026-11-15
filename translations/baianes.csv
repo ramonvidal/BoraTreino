@@ -232,7 +232,10 @@ feature/progress,stats_percent,,%1$s %%,%1$s %%
 feature/progress,stats_percent_plain,,%1$s %%,%1$s %%
 feature/progress,stats_volume_title,,Weekly volume,Volume por semana
 feature/progress,stats_volume_tonnes,,%1$s t,%1$s t
-feature/progress,stats_volume_chart_description,,"Weekly volume over %1$d weeks: %2$s in total, best week %3$s","Volume por semana em %1$d semanas: %2$s no total, melhor semana %3$s"
+feature/progress,stats_volume_chart_description,one,"Weekly volume over %1$d week: %2$s in total, best week %3$s","Volume por semana em %1$d semana: %2$s no total, melhor semana %3$s"
+feature/progress,stats_volume_chart_description,other,"Weekly volume over %1$d weeks: %2$s in total, best week %3$s","Volume por semana em %1$d semanas: %2$s no total, melhor semana %3$s"
+feature/progress,stats_period_title,,Period,Período
+feature/progress,stats_period_pill_description,,Period: %1$s,Período: %1$s
 feature/progress,stats_hard_sets_title,,Hard sets per muscle group,Séries pesadas por grupo muscular
 feature/progress,stats_sets_per_week,,%1$s a week,%1$s por semana
 feature/progress,stats_hard_sets_note,,Many programs use roughly 10 to 20 hard sets per muscle group per week.,Muitos programas usam mais ou menos de 10 a 20 séries pesadas por grupo muscular por semana.

@@ -73,7 +73,8 @@
     <string name="stats_percent_plain">%1$s %%</string>
     <string name="stats_volume_title">Volume por semana</string>
     <string name="stats_volume_tonnes">%1$s t</string>
-    <string name="stats_volume_chart_description">Volume por semana em %1$d semanas: %2$s no total, melhor semana %3$s</string>
+    <string name="stats_period_title">Período</string>
+    <string name="stats_period_pill_description">Período: %1$s</string>
     <string name="stats_hard_sets_title">Séries pesadas por grupo muscular</string>
     <string name="stats_sets_per_week">%1$s por semana</string>
     <string name="stats_hard_sets_note">Muitos programas usam mais ou menos de 10 a 20 séries pesadas por grupo muscular por semana.</string>
@@ -177,6 +178,10 @@
     <plurals name="stats_best_week">
         <item quantity="one">Melhor semana: %1$d dia de treino, semana de %2$s</item>
         <item quantity="other">Melhor semana: %1$d dias de treino, semana de %2$s</item>
+    </plurals>
+    <plurals name="stats_volume_chart_description">
+        <item quantity="one">Volume por semana em %1$d semana: %2$s no total, melhor semana %3$s</item>
+        <item quantity="other">Volume por semana em %1$d semanas: %2$s no total, melhor semana %3$s</item>
     </plurals>
     <plurals name="stats_days_ago">
         <item quantity="one">há %d dia</item>
