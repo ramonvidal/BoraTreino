@@ -518,7 +518,8 @@ class StatsContentTest {
 
     @Test
     fun `the measurements card is not on the strength or habit page`() {
-        showPage(StatsSamples.state().copy(measurements = measured))
+        // No highlights: their kind labels ("Strength", "Habit") would repeat the page chips' texts.
+        showPage(StatsSamples.state(withoutHighlights()).copy(measurements = measured))
         shown("Measurements")
 
         compose.onNodeWithText("Strength").performClick()
