@@ -162,6 +162,22 @@
         <item quantity="one">%d set could not be classified</item>
         <item quantity="other">%d sets could not be classified</item>
     </plurals>
+    <string name="stats_measure_title">Measurements</string>
+    <string name="stats_measure_waist">Waist</string>
+    <string name="stats_measure_hips">Hips</string>
+    <string name="stats_measure_chest">Chest</string>
+    <string name="stats_measure_arm">Arm</string>
+    <string name="stats_measure_thigh">Thigh</string>
+    <string name="stats_measure_neck">Neck</string>
+    <string name="stats_measure_value">%1$s cm</string>
+    <string name="stats_measure_change">%1$s cm in the period</string>
+    <string name="stats_measure_empty">No measurements yet</string>
+    <string name="stats_measure_log">Log measurement</string>
+    <string name="stats_measure_history">Latest entries</string>
+    <string name="stats_measure_delete">Delete measurement of %1$s</string>
+    <string name="stats_measure_deleted">Measurement deleted</string>
+    <string name="stats_measure_chart">%1$s: %2$s cm to %3$s cm</string>
+    <string name="stats_measure_value_description">Value in cm</string>
     <string name="stats_page_body">Body</string>
     <string name="stats_page_strength">Strength</string>
     <string name="stats_page_habit">Habit</string>

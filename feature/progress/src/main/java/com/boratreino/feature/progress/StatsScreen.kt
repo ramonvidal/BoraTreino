@@ -15,7 +15,13 @@ internal fun StatsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val actions = remember(viewModel, onOpenMachine) {
-        StatsActions(onPeriod = viewModel::setPeriod, onOpenMachine = onOpenMachine)
+        StatsActions(
+            onPeriod = viewModel::setPeriod,
+            onOpenMachine = onOpenMachine,
+            onAddMeasurement = viewModel::addMeasurement,
+            onDeleteMeasurement = viewModel::deleteMeasurement,
+            onUndoDeleteMeasurement = viewModel::undoDeleteMeasurement,
+        )
     }
     StatsContent(state = state, actions = actions, modifier = modifier)
 }

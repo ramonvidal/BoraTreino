@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.BodyInsightRules
 import com.boratreino.core.model.Highlight
+import com.boratreino.core.model.MeasurementType
 import com.boratreino.core.model.HighlightKind
 import com.boratreino.core.model.MuscleRecency
 import com.boratreino.core.model.Record
@@ -51,6 +52,7 @@ import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
+import java.time.LocalDate
 import kotlin.math.roundToInt
 import com.boratreino.core.ui.R as CoreUiR
 
@@ -72,6 +74,9 @@ internal fun StatsContent(
 ) {
     val report = state.report
     var page by rememberSaveable { mutableStateOf(initialPage ?: StatsPage.BODY) }
+    var measureType by rememberSaveable { mutableStateOf<String?>(null) }
+    var logSheetOpen by rememberSaveable { mutableStateOf(false) }
+    val selectedMeasure = MeasurementType.entries.firstOrNull { it.name == measureType }
     Column(modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
@@ -88,6 +93,7 @@ internal fun StatsContent(
             if (report == null) return@LazyColumn
             if (report.isEmptyPeriod()) {
                 item(key = "empty") { StatsEmptyCard() }
+                if (page == StatsPage.BODY) measurementsItem(state, report, selectedMeasure, { measureType = it.name }, { logSheetOpen = true }, actions)
                 return@LazyColumn
             }
             val highlights = StatsHighlights.of(report)
@@ -95,11 +101,48 @@ internal fun StatsContent(
                 item(key = "highlights") { HighlightsStrip(highlights, onPage = { page = it }) }
             }
             when (page) {
-                StatsPage.BODY -> bodyItems(state, report)
+                StatsPage.BODY -> {
+                    bodyItems(state, report)
+                    measurementsItem(state, report, selectedMeasure, { measureType = it.name }, { logSheetOpen = true }, actions)
+                }
                 StatsPage.STRENGTH -> strengthItems(report, actions)
                 StatsPage.HABIT -> habitItems(report)
             }
         }
+    }
+    if (logSheetOpen) {
+        LogMeasurementSheet(
+            measurements = state.measurements,
+            initialType = selectedMeasure ?: defaultMeasurementType(state.measurements),
+            onSave = { type, valueCm ->
+                actions.onAddMeasurement(LocalDate.now(), type, valueCm)
+                measureType = type.name
+                logSheetOpen = false
+            },
+            onDismiss = { logSheetOpen = false },
+        )
+    }
+}
+
+private fun LazyListScope.measurementsItem(
+    state: StatsUiState,
+    report: StatsReport,
+    selected: MeasurementType?,
+    onType: (MeasurementType) -> Unit,
+    onLog: () -> Unit,
+    actions: StatsActions,
+) {
+    item(key = "measurements") {
+        MeasurementsCard(
+            measurements = state.measurements,
+            from = report.from,
+            today = report.to,
+            selectedType = selected,
+            onType = onType,
+            onLog = onLog,
+            onDelete = { actions.onDeleteMeasurement(it.id) },
+            onUndo = actions.onUndoDeleteMeasurement,
+        )
     }
 }
 

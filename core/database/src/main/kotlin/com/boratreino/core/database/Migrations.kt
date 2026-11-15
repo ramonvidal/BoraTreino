@@ -57,3 +57,14 @@ internal val MIGRATION_6_7: Migration = object : Migration(6, 7) {
         db.execSQL("ALTER TABLE planned_workouts ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
     }
 }
+
+/** Version 8: body measurements (tape measurements by date and type, in centimetres). */
+internal val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `body_measurements` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`date` TEXT NOT NULL, `type` TEXT NOT NULL, `valueCm` REAL NOT NULL)",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_body_measurements_type_date` ON `body_measurements` (`type`, `date`)")
+    }
+}

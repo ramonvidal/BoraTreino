@@ -28,6 +28,12 @@ internal interface BackupDao {
     @Query("SELECT * FROM planned_workouts ORDER BY date ASC, position ASC, routineId ASC")
     suspend fun plannedWorkouts(): List<PlannedWorkoutEntity>
 
+    @Query("SELECT * FROM body_measurements ORDER BY id ASC")
+    suspend fun measurements(): List<BodyMeasurementEntity>
+
+    @Query("DELETE FROM body_measurements")
+    suspend fun deleteMeasurements()
+
     @Query("DELETE FROM planned_workouts")
     suspend fun deletePlannedWorkouts()
 
@@ -66,6 +72,9 @@ internal interface BackupDao {
 
     @Insert
     suspend fun insertSets(sets: List<WorkoutSetEntity>)
+
+    @Insert
+    suspend fun insertMeasurements(measurements: List<BodyMeasurementEntity>)
 
     @Insert
     suspend fun insertPlannedWorkouts(planned: List<PlannedWorkoutEntity>)

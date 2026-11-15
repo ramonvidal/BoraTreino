@@ -14,6 +14,8 @@ data class BackupData(
     val sessions: List<Session>,
     val sets: List<WorkoutSet>,
     val plannedWorkouts: List<PlannedWorkout> = emptyList(),
+    /** Body measurements; empty for backups made before version 7. */
+    val measurements: List<BodyMeasurement> = emptyList(),
 )
 
 /** Counts and date range of a backup; days come from each session's startedAt in the given zone. */
@@ -48,7 +50,7 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 6
+    const val FORMAT_VERSION = 7
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {
@@ -125,6 +127,14 @@ object BackupCodec {
                     "date" to it.date.toString(),
                     "routineId" to it.routineId,
                     "position" to it.position,
+                )
+            },
+            "measurements" to data.measurements.sortedWith(compareBy({ it.date }, { it.type }, { it.id })).map {
+                linkedMapOf(
+                    "id" to it.id,
+                    "date" to it.date.toString(),
+                    "type" to it.type.name,
+                    "valueCm" to it.valueCm,
                 )
             },
         )
@@ -256,6 +266,20 @@ object BackupCodec {
             else -> problem("\"plannedWorkouts\" must be a list")
         }
 
+        val measurements = when (val raw = root["measurements"]) {
+            null -> emptyList()
+            is List<*> -> raw.map {
+                val o = it as? Map<*, *> ?: problem("\"measurements\" must hold objects")
+                BodyMeasurement(
+                    id = longOf(o, "id"),
+                    date = dateOf(stringOf(o, "date"), "date"),
+                    type = enumOf<MeasurementType>(o, "type"),
+                    valueCm = doubleOf(o, "valueCm"),
+                )
+            }
+            else -> problem("\"measurements\" must be a list")
+        }
+
         val machineIds = machines.map { it.id }.toSet()
         val planIds = plans.map { it.id }.toSet()
         val routineIds = routines.map { it.id }.toSet()
@@ -275,7 +299,7 @@ object BackupCodec {
         if (sets.any { it.sessionId !in sessionIds }) problem("A set points to a missing session")
         if (sets.any { it.machineId !in machineIds }) problem("A set points to a missing machine")
 
-        return BackupDecodeResult.Ok(BackupData(machines, plans, routines, items, sessions, sets, plannedWorkouts), exportedAt)
+        return BackupDecodeResult.Ok(BackupData(machines, plans, routines, items, sessions, sets, plannedWorkouts, measurements), exportedAt)
     }
 
     private fun objects(root: Map<*, *>, key: String): List<Map<*, *>> {

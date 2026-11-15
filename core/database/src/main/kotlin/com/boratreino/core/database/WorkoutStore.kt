@@ -1,6 +1,7 @@
 package com.boratreino.core.database
 
 import com.boratreino.core.model.BackupData
+import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
@@ -164,6 +165,19 @@ interface WorkoutStore {
     suspend fun reorderPlannedWorkouts(date: LocalDate, routineIds: List<Long>)
     /** Removes [routineId]'s plan on [date]; other routines planned that day stay. */
     suspend fun clearPlannedWorkout(date: LocalDate, routineId: Long)
+
+    // Body measurements
+
+    /** Every measurement, newest date first, then highest id first. */
+    fun observeMeasurements(): Flow<List<BodyMeasurement>>
+    /** Inserts [measurement] (id ignored) and returns its new id. */
+    suspend fun addMeasurement(measurement: BodyMeasurement): Long
+    /** One measurement, or null when missing. */
+    suspend fun measurement(id: Long): BodyMeasurement?
+    /** Deletes the measurement; nothing happens when it is missing. */
+    suspend fun deleteMeasurement(id: Long)
+    /** Re-inserts [measurement] with its own id (replacing one with that id). */
+    suspend fun restoreMeasurement(measurement: BodyMeasurement)
 
     // Backup
 

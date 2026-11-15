@@ -14,8 +14,8 @@ import org.robolectric.annotation.Config
 /**
  * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays; migration
  * 3 -> 4 adds planned_workouts; 4 -> 5 makes its key (date, routineId); 5 -> 6 adds machines.libraryId; 6 -> 7 adds
- * planned_workouts.position. Needs schemas/.../2.json to 7.json, which Room writes on the first build with those versions
- * (the schemas folder is a test asset; 7.json is written by CI, so the 6 -> 7 tests fail until it is committed).
+ * planned_workouts.position; 7 -> 8 adds body_measurements. Needs schemas/.../2.json to 8.json, which Room writes on the first
+ * build with those versions (8.json is written by CI, so the 7 -> 8 tests fail until it is committed).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -540,6 +540,53 @@ class MigrationTest {
             c.moveToNext()
             assertEquals(1L, c.getLong(0))
             assertEquals(5, c.getInt(1))
+        }
+    }
+
+    // 7 -> 8: body measurements table; existing data is untouched.
+
+    @Test
+    fun `migrating 7 to 8 creates an empty measurements table and keeps planned workouts`() {
+        helper.createDatabase(name, 7).apply {
+            insertV3Data()
+            execSQL("INSERT INTO planned_workouts (date, routineId, position) VALUES ('2026-11-12', 2, 3)")
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 8, true, MIGRATION_7_8)
+
+        db.query("SELECT COUNT(*) FROM body_measurements").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+        db.query("SELECT date, routineId, position FROM planned_workouts").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals("2026-11-12", c.getString(0))
+            assertEquals(2L, c.getLong(1))
+            assertEquals(3, c.getInt(2))
+        }
+    }
+
+    @Test
+    fun `after 7 to 8 measurements get generated ids and keep their fields`() {
+        helper.createDatabase(name, 7).close()
+        val db = helper.runMigrationsAndValidate(name, 8, true, MIGRATION_7_8)
+
+        db.execSQL("INSERT INTO body_measurements (date, type, valueCm) VALUES ('2026-11-12', 'WAIST', 82.5)")
+        db.execSQL("INSERT INTO body_measurements (date, type, valueCm) VALUES ('2026-11-13', 'ARM', 35.0)")
+
+        db.query("SELECT id, date, type, valueCm FROM body_measurements ORDER BY id").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            assertEquals("2026-11-12", c.getString(1))
+            assertEquals("WAIST", c.getString(2))
+            assertEquals(82.5, c.getDouble(3), 0.0)
+            c.moveToNext()
+            assertEquals(2L, c.getLong(0))
+            assertEquals("ARM", c.getString(2))
+            assertEquals(35.0, c.getDouble(3), 0.0)
         }
     }
 }

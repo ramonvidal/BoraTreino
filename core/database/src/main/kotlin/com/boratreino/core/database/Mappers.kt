@@ -1,6 +1,8 @@
 package com.boratreino.core.database
 
+import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MeasurementType
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
@@ -135,3 +137,9 @@ internal fun RoutinePlan.toEntity() = RoutinePlanEntity(
 internal fun PlannedWorkoutEntity.toModel() = PlannedWorkout(date = LocalDate.parse(date), routineId = routineId, position = position)
 
 internal fun PlannedWorkout.toEntity() = PlannedWorkoutEntity(date = date.toString(), routineId = routineId, position = position)
+
+internal fun BodyMeasurementEntity.toModel() =
+    BodyMeasurement(id = id, date = LocalDate.parse(date), type = MeasurementType.valueOf(type), valueCm = valueCm)
+
+internal fun BodyMeasurement.toEntity() =
+    BodyMeasurementEntity(id = id, date = date.toString(), type = type.name, valueCm = valueCm)

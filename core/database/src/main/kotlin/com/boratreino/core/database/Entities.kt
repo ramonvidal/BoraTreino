@@ -99,6 +99,18 @@ internal data class PlannedWorkoutEntity(
     @ColumnInfo(defaultValue = "0") val position: Int = 0,
 )
 
+/** A tape measurement; [date] is an ISO date, [type] a MeasurementType name. */
+@Entity(
+    tableName = "body_measurements",
+    indices = [Index("type", "date")],
+)
+internal data class BodyMeasurementEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val date: String,
+    val type: String,
+    val valueCm: Double,
+)
+
 @Entity(
     tableName = "sessions",
     foreignKeys = [

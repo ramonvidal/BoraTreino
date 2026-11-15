@@ -275,3 +275,19 @@ internal interface PlannedWorkoutDao {
     @Query("DELETE FROM planned_workouts WHERE date = :date AND routineId = :routineId")
     suspend fun delete(date: String, routineId: Long)
 }
+
+@Dao
+internal interface BodyMeasurementDao {
+    @Query("SELECT * FROM body_measurements ORDER BY date DESC, id DESC")
+    fun observeAll(): Flow<List<BodyMeasurementEntity>>
+
+    @Query("SELECT * FROM body_measurements WHERE id = :id")
+    suspend fun get(id: Long): BodyMeasurementEntity?
+
+    /** Id 0 gets a new id; a given id is kept (restore). */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(measurement: BodyMeasurementEntity): Long
+
+    @Query("DELETE FROM body_measurements WHERE id = :id")
+    suspend fun delete(id: Long)
+}
