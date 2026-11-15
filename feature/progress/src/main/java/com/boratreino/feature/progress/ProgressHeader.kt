@@ -1,6 +1,8 @@
 package com.boratreino.feature.progress
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -31,17 +34,45 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.StatsPeriod
-import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.R as CoreUiR
 
 /**
  * The one header of the Progress tab: the title with the period pill at its right (hidden when
  * [showPeriod] is false), and one row of page chips. The pill opens the period sheet.
  */
-/** Added to a label's length to get its chip weight in the page row. */
-private const val CHIP_WEIGHT_PADDING = 4
+/** Added to a label's length to get its tab weight in the page row. */
+private const val TAB_WEIGHT_PADDING = 2
+
+/**
+ * One tab of the page row: the BoraChip look (yellow when selected, sand otherwise, pill) with a small side padding
+ * and a single line, so four labels fit at 360 dp in English and Portuguese ("Exercícios", "Hábito").
+ */
+@Composable
+private fun PageTab(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .heightIn(min = 40.dp)
+            .clip(CircleShape)
+            .background(if (selected) scheme.primaryContainer else scheme.surfaceVariant)
+            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
+            .semantics { contentDescription = label }
+            .padding(horizontal = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) scheme.onPrimaryContainer else scheme.onSurface,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
 
 @Composable
 internal fun ProgressHeader(
@@ -69,12 +100,12 @@ internal fun ProgressHeader(
         ) {
             ProgressPage.entries.forEach { option ->
                 val label = stringResource(pageLabel(option))
-                BoraChip(
+                // The chips share the row by label length, so "Exercises" does not take more than it needs.
+                PageTab(
                     label = label,
                     selected = option == page,
                     onClick = { onPage(option) },
-                    // The chips share the row by label length, so "Exercises" does not wrap next to "Body".
-                    modifier = Modifier.weight((label.length + CHIP_WEIGHT_PADDING).toFloat()),
+                    modifier = Modifier.weight((label.length + TAB_WEIGHT_PADDING).toFloat()),
                 )
             }
         }
