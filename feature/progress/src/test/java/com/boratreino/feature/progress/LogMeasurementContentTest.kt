@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.MeasurementType
@@ -31,6 +32,21 @@ class LogMeasurementContentTest {
     private fun count(text: String): Int = compose.onAllNodesWithText(text).fetchSemanticsNodes().size
 
     private fun shown(text: String) = compose.onNodeWithText(text).assertIsDisplayed()
+
+    /** The test clock's time, so holds are timed from the press at 0 ms. */
+    private var clockAt = 0L
+
+    /** Moves the test clock to [ms] (absolute, from the press at 0). */
+    private fun advanceTo(ms: Long) {
+        compose.mainClock.advanceTimeBy(ms - clockAt, ignoreFrameDuration = true)
+        clockAt = ms
+    }
+
+    private fun holdPlus() = compose.onNodeWithContentDescription("Increase Value in cm").performTouchInput { down(center) }
+
+    private fun releasePlus() = compose.onNodeWithContentDescription("Increase Value in cm").performTouchInput { up() }
+
+    private fun holdMinus() = compose.onNodeWithContentDescription("Decrease Value in cm").performTouchInput { down(center) }
 
     private fun sheet(
         measurements: List<BodyMeasurement> = emptyList(),
@@ -115,5 +131,56 @@ class LogMeasurementContentTest {
         compose.onNodeWithText("Save").performClick()
 
         assertEquals(listOf(MeasurementType.HIPS to 80.0), saved)
+    }
+
+    @Test
+    fun `holding the plus button raises the value by more than one step`() {
+        sheet()
+        compose.mainClock.autoAdvance = false
+
+        holdPlus()
+        // Press at 80.5, then repeats at 400, 550, 700, 850 and 1000 ms: 83 cm by 1149 ms.
+        advanceTo(1_149)
+
+        shown("83 cm")
+    }
+
+    @Test
+    fun `releasing the plus button stops the value rising`() {
+        sheet()
+        compose.mainClock.autoAdvance = false
+
+        holdPlus()
+        advanceTo(549)
+        shown("81 cm")
+
+        releasePlus()
+        advanceTo(3_000)
+
+        shown("81 cm")
+    }
+
+    @Test
+    fun `holding the plus button stops at the largest value`() {
+        sheet(measurements = listOf(waist(1, today, 299.0)))
+        compose.mainClock.autoAdvance = false
+        shown("299 cm")
+
+        holdPlus()
+        advanceTo(2_500)
+
+        shown("300 cm")
+    }
+
+    @Test
+    fun `holding the minus button stops at the smallest value`() {
+        sheet(measurements = listOf(waist(1, today, 11.0)))
+        compose.mainClock.autoAdvance = false
+        shown("11 cm")
+
+        holdMinus()
+        advanceTo(2_500)
+
+        shown("10 cm")
     }
 }
