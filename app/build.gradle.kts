@@ -95,6 +95,7 @@ android {
 }
 
 dependencies {
+    testImplementation(libs.junit)
     implementation(projects.core.model)
     implementation(projects.core.ui)
     implementation(projects.core.notify)

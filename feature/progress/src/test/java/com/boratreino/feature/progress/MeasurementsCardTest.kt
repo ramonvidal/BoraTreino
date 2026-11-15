@@ -105,7 +105,7 @@ class MeasurementsCardTest {
     }
 
     @Test
-    fun `the log button is there next to measurements too`() {
+    fun `the log button is shown with measurements too`() {
         var logged = 0
         card(listOf(waist(1, august, 84.5)), onLog = { logged++ })
 
