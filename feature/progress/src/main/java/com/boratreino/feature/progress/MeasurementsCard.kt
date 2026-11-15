@@ -2,8 +2,9 @@ package com.boratreino.feature.progress
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -89,6 +89,7 @@ private fun cmText(valueCm: Double): String = stringResource(R.string.stats_meas
  * the last entries (each with a delete icon and an Undo row afterwards) and the "Log measurement"
  * button. [selectedType] null means the default type. Drawn from its arguments alone.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun MeasurementsCard(
     measurements: List<BodyMeasurement>,
@@ -110,7 +111,7 @@ internal fun MeasurementsCard(
         }
     }
     StatsCard(stringResource(R.string.stats_measure_title), modifier) {
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             MeasurementType.entries.forEach { entry ->
                 BoraChip(label = entry.label(), selected = entry == type, onClick = { onType(entry) })
             }
@@ -246,6 +247,7 @@ internal fun LogMeasurementSheet(
 }
 
 /** Type chips, a big value with minus and plus (no keyboard) and Save; starts at the type's latest value or 80 cm. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun LogMeasurementContent(
     measurements: List<BodyMeasurement>,
@@ -260,7 +262,7 @@ internal fun LogMeasurementContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(stringResource(R.string.stats_measure_log), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             MeasurementType.entries.forEach { entry ->
                 BoraChip(label = entry.label(), selected = entry == type, onClick = { type = entry })
             }
