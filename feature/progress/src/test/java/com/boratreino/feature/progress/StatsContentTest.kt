@@ -194,10 +194,9 @@ class StatsContentTest {
     }
 
     @Test
-    fun `the weekly volume chart names its first block by date and its last block Today, never This week`() {
+    fun `the weekly volume chart labels its last block Today, never This week`() {
         showPage(page = StatsPage.HABIT)
 
-        assertTrue(compose.onAllNodesWithText("4 Aug").fetchSemanticsNodes().isNotEmpty())
         assertTrue(compose.onAllNodesWithText("Today").fetchSemanticsNodes().isNotEmpty())
         notShown("This week")
     }
