@@ -144,7 +144,7 @@ internal fun StackedWeekBars(weeks: List<WeekStats>, muscleWeeks: List<MuscleWee
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    stringResource(R.string.progress_week_this),
+                    stringResource(R.string.stats_today),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

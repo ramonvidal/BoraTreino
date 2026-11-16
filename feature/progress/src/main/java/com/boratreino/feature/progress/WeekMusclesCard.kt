@@ -30,13 +30,6 @@ import com.boratreino.core.model.StatsReport
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.theme.Sunny
 
-/** Working sets this week per muscle group: the report's current (last) week; zero for groups not trained. */
-internal fun weekSetsByGroup(report: StatsReport): Map<MuscleGroup, Int> {
-    val weekStart = report.weeks.lastOrNull()?.weekStart ?: return MuscleGroup.entries.associateWith { 0 }
-    val sets = report.muscleWeeks.filter { it.weekStart == weekStart }.groupBy { it.muscleGroup }
-    return MuscleGroup.entries.associateWith { group -> sets[group].orEmpty().sumOf { it.workingSets } }
-}
-
 /**
  * The groups the body map and the muscle-groups card show. CARDIO is left out: it has no place
  * on a body and muscle load ignores cardio sets by design, so it would always read 0.0.

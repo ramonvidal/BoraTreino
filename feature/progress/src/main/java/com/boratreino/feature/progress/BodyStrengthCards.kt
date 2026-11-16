@@ -147,7 +147,7 @@ private fun WeekAxisLabels(weekStarts: List<LocalDate>) {
     val color = MaterialTheme.colorScheme.onSurfaceVariant
     Row(Modifier.fillMaxWidth().padding(end = EndLabelWidth), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(formatShortDate(weekStarts.first(), today), style = MaterialTheme.typography.labelMedium, color = color)
-        Text(stringResource(R.string.progress_week_this), style = MaterialTheme.typography.labelMedium, color = color)
+        Text(stringResource(R.string.stats_today), style = MaterialTheme.typography.labelMedium, color = color)
     }
 }
 

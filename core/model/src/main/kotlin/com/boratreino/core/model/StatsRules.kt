@@ -9,9 +9,10 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
- * How far back the statistics look.
- * [ONE_WEEK] is a single week bucket: the current calendar week, this week so far (first day of the week up to today).
- * Anything that needs two points to compare (strength trends, strength index) is empty for it.
+ * How far back the statistics look: a rolling window that ends today, made of 7-day blocks anchored on today
+ * (not on calendar weeks). [ONE_WEEK] is the last 7 days, today included, a single block; [FOUR_WEEKS] is 28 days,
+ * [THREE_MONTHS] 91, [ONE_YEAR] 364, [ALL] reaches back to the first session (at least 4 blocks).
+ * Anything that needs two points to compare (strength trends, strength index) is empty for [ONE_WEEK].
  */
 enum class StatsPeriod { ONE_WEEK, FOUR_WEEKS, THREE_MONTHS, ONE_YEAR, ALL }
 
@@ -19,6 +20,7 @@ enum class StatsPeriod { ONE_WEEK, FOUR_WEEKS, THREE_MONTHS, ONE_YEAR, ALL }
 enum class RepRange { R1_5, R6_8, R9_12, R13_PLUS }
 
 data class WeekStats(
+    /** First day of the 7-day block (blocks end on the day before the next one; the last ends today). */
     val weekStart: LocalDate,
     val sessions: Int,
     val trainingDays: Int,
@@ -26,6 +28,7 @@ data class WeekStats(
     val volumeKg: Double,
 )
 
+/** [weekStart] is the first day of the 7-day block. */
 data class MuscleWeek(val weekStart: LocalDate, val muscleGroup: MuscleGroup, val workingSets: Int, val volumeKg: Double)
 
 /** Whole history; [lastTrained] and [daysSince] are null when the group was never trained. */
@@ -59,10 +62,10 @@ data class SessionTimes(val sessionsCounted: Int, val averageMinutes: Int?, val 
 /** A machine's best estimated one-rep max over the last window of the period. */
 data class MachineEstimate(val machine: Machine, val estimate1rm: Double)
 
-/** A value indexed to 100.0 at the first point of a series. */
+/** A value indexed to 100.0 at the first point of a series; [weekStart] is the first day of a 7-day block. */
 data class IndexPoint(val weekStart: LocalDate, val percent: Double)
 
-/** Number of working sets of a week that worked [muscleGroup] indirectly (as a secondary muscle). */
+/** Number of working sets of a 7-day block ([weekStart] = its first day) that worked [muscleGroup] indirectly (as a secondary muscle). */
 data class IndirectWeek(val weekStart: LocalDate, val muscleGroup: MuscleGroup, val sets: Int)
 
 /** Working non-cardio sets of the whole period, split by opposites. */
@@ -78,11 +81,11 @@ data class BalanceStats(
 
 data class StatsReport(
     val period: StatsPeriod,
-    /** First day of the first week of the period. */
+    /** First day of the first 7-day block of the period: today minus (7 x blocks - 1) days. */
     val from: LocalDate,
     /** Today. */
     val to: LocalDate,
-    /** Zero-filled, oldest first, one per week of the period (including the current one). */
+    /** Zero-filled, oldest first, one per 7-day block of the period; the last block ends today. */
     val weeks: List<WeekStats>,
     /** Only groups with working sets in a week; zero-volume weeks are omitted. */
     val muscleWeeks: List<MuscleWeek>,
@@ -112,6 +115,7 @@ data class StatsReport(
 object StatsRules {
     private const val MIN_ALL_WEEKS = 4
     private const val MAX_STRENGTH_WINDOW_WEEKS = 4
+    private const val DAYS_IN_BLOCK = 7L
     private const val PLATEAU_MIN_SESSIONS = 6
     private const val PLATEAU_AFTER_SESSIONS = 4
     private const val MAX_GAP_MINUTES = 15L
@@ -130,6 +134,10 @@ object StatsRules {
     /** A set with the date of its session and its machine. */
     private class Entry(val set: WorkoutSet, val machine: Machine, val date: LocalDate, val session: Session)
 
+    /**
+     * [firstDayOfWeek] is kept for source compatibility; it no longer shapes the period, which is a rolling window
+     * of 7-day blocks anchored on [today].
+     */
     fun report(
         period: StatsPeriod,
         today: LocalDate,
@@ -152,19 +160,18 @@ object StatsRules {
             Entry(set, machine, dateOf.getValue(session.id), session)
         }
 
-        val currentWeek = WeekGoalRules.weekStart(today, firstDayOfWeek)
-        val weekCount = weekCount(period, sessions.map { dateOf.getValue(it.id) }, currentWeek, firstDayOfWeek)
-        val from = currentWeek.minusWeeks((weekCount - 1).toLong())
+        val weekCount = weekCount(period, sessions.map { dateOf.getValue(it.id) }, today)
+        val from = today.minusDays(DAYS_IN_BLOCK * weekCount - 1)
         val inPeriod = all.filter { !it.date.isBefore(from) && !it.date.isAfter(today) }
 
-        val weeks = weekStats(inPeriod, from, weekCount, firstDayOfWeek)
-        val strength = strengthTrends(inPeriod, from, weekCount, firstDayOfWeek)
+        val weeks = weekStats(inPeriod, from, weekCount)
+        val strength = strengthTrends(inPeriod, from, weekCount)
         return StatsReport(
             period = period,
             from = from,
             to = today,
             weeks = weeks,
-            muscleWeeks = muscleWeeks(inPeriod, firstDayOfWeek),
+            muscleWeeks = muscleWeeks(inPeriod, from),
             recency = recency(all, today),
             consistency = consistency(weeks, weeklyGoal),
             strength = strength,
@@ -176,34 +183,38 @@ object StatsRules {
             strengthNow = strengthNow(inPeriod, from, weekCount),
             strengthIndex = strengthIndex(inPeriod, from, weekCount),
             balance = balance(inPeriod, library),
-            indirectWeeks = indirectWeeks(inPeriod, library, firstDayOfWeek),
+            indirectWeeks = indirectWeeks(inPeriod, library, from),
         )
     }
 
     private fun weekCount(
         period: StatsPeriod,
         sessionDates: List<LocalDate>,
-        currentWeek: LocalDate,
-        firstDayOfWeek: DayOfWeek,
+        today: LocalDate,
     ): Int = when (period) {
         StatsPeriod.ONE_WEEK -> 1
         StatsPeriod.FOUR_WEEKS -> 4
         StatsPeriod.THREE_MONTHS -> 13
         StatsPeriod.ONE_YEAR -> 52
         StatsPeriod.ALL -> {
-            val first = sessionDates.minOrNull()?.let { WeekGoalRules.weekStart(it, firstDayOfWeek) } ?: currentWeek
-            (ChronoUnit.WEEKS.between(first, currentWeek).toInt() + 1).coerceAtLeast(MIN_ALL_WEEKS)
+            val first = sessionDates.minOrNull() ?: today
+            val days = ChronoUnit.DAYS.between(first, today) + 1
+            Math.floorDiv(days + DAYS_IN_BLOCK - 1, DAYS_IN_BLOCK).toInt().coerceAtLeast(MIN_ALL_WEEKS)
         }
     }
+
+    /** First day of the 7-day block of the period (which starts on [from]) that contains [date]. */
+    private fun blockStart(date: LocalDate, from: LocalDate): LocalDate =
+        from.plusDays(DAYS_IN_BLOCK * Math.floorDiv(ChronoUnit.DAYS.between(from, date), DAYS_IN_BLOCK))
 
     private fun isStrengthSet(e: Entry): Boolean = e.set.isWorking && !CardioRules.isCardio(e.set)
 
     private fun volumeOf(set: WorkoutSet): Double = (set.weightKg ?: 0.0) * (set.reps ?: 0)
 
-    private fun weekStats(inPeriod: List<Entry>, from: LocalDate, count: Int, first: DayOfWeek): List<WeekStats> {
-        val byWeek = inPeriod.groupBy { WeekGoalRules.weekStart(it.date, first) }
+    private fun weekStats(inPeriod: List<Entry>, from: LocalDate, count: Int): List<WeekStats> {
+        val byWeek = inPeriod.groupBy { blockStart(it.date, from) }
         return (0 until count).map { i ->
-            val start = from.plusWeeks(i.toLong())
+            val start = from.plusDays(DAYS_IN_BLOCK * i)
             val entries = byWeek[start].orEmpty()
             val trained = entries.filter { it.set.isWorking || CardioRules.isCardio(it.set) }
             val strengthSets = entries.filter(::isStrengthSet)
@@ -217,9 +228,9 @@ object StatsRules {
         }
     }
 
-    private fun muscleWeeks(inPeriod: List<Entry>, first: DayOfWeek): List<MuscleWeek> =
+    private fun muscleWeeks(inPeriod: List<Entry>, from: LocalDate): List<MuscleWeek> =
         inPeriod.filter(::isStrengthSet)
-            .groupBy { WeekGoalRules.weekStart(it.date, first) to it.machine.muscleGroup }
+            .groupBy { blockStart(it.date, from) to it.machine.muscleGroup }
             .map { (key, entries) ->
                 MuscleWeek(key.first, key.second, entries.size, entries.sumOf { volumeOf(it.set) })
             }
@@ -238,12 +249,12 @@ object StatsRules {
     private fun indirectWeeks(
         inPeriod: List<Entry>,
         library: Map<String, LibraryExercise>,
-        first: DayOfWeek,
+        from: LocalDate,
     ): List<IndirectWeek> {
         val counts = HashMap<Pair<LocalDate, MuscleGroup>, Int>()
         for (e in inPeriod) {
             if (!isStrengthSet(e) || e.machine.kind == MachineKind.CARDIO) continue
-            val week = WeekGoalRules.weekStart(e.date, first)
+            val week = blockStart(e.date, from)
             for (group in indirectGroups(e.machine, library)) counts.merge(week to group, 1, Int::plus)
         }
         return counts.map { (key, n) -> IndirectWeek(key.first, key.second, n) }
@@ -260,14 +271,13 @@ object StatsRules {
         }
     }
 
+    /** Every block is complete (the last one ends today), so all blocks count toward the goal. */
     private fun consistency(weeks: List<WeekStats>, weeklyGoal: Int): Consistency {
         val goal = weeklyGoal.coerceIn(WeekGoalRules.MIN_GOAL, WeekGoalRules.MAX_GOAL)
-        val current = weeks.last()
-        val counted = if (current.trainingDays >= goal) weeks else weeks.dropLast(1)
         val best = weeks.filter { it.trainingDays > 0 }.maxWithOrNull(compareBy({ it.trainingDays }, { it.weekStart }))
         return Consistency(
-            weeksCounted = counted.size,
-            weeksMetGoal = counted.count { it.trainingDays >= goal },
+            weeksCounted = weeks.size,
+            weeksMetGoal = weeks.count { it.trainingDays >= goal },
             goal = goal,
             sessionsPerWeek = if (weeks.isEmpty()) 0.0 else weeks.sumOf { it.sessions }.toDouble() / weeks.size,
             bestWeekStart = best?.weekStart,
@@ -279,13 +289,12 @@ object StatsRules {
         inPeriod: List<Entry>,
         from: LocalDate,
         weekCount: Int,
-        first: DayOfWeek,
     ): List<StrengthTrend> {
         // A trend compares an early window with a late one: one week has nothing to compare.
         if (weekCount < 2) return emptyList()
         val window = minOf(MAX_STRENGTH_WINDOW_WEEKS, weekCount / 2).coerceAtLeast(1)
-        val firstEnd = from.plusWeeks(window.toLong())              // exclusive
-        val lastStart = from.plusWeeks((weekCount - window).toLong())
+        val firstEnd = from.plusDays(DAYS_IN_BLOCK * window)              // exclusive
+        val lastStart = from.plusDays(DAYS_IN_BLOCK * (weekCount - window))
         return inPeriod
             .filter { it.machine.kind != MachineKind.CARDIO && !CardioRules.isCardio(it.set) }
             .groupBy { it.machine }
@@ -303,7 +312,7 @@ object StatsRules {
     /** Best estimate of each non-cardio machine over the same last window as the strength trend. */
     private fun strengthNow(inPeriod: List<Entry>, from: LocalDate, weekCount: Int): List<MachineEstimate> {
         val window = minOf(MAX_STRENGTH_WINDOW_WEEKS, weekCount / 2).coerceAtLeast(1)
-        val lastStart = from.plusWeeks((weekCount - window).toLong())
+        val lastStart = from.plusDays(DAYS_IN_BLOCK * (weekCount - window))
         return inPeriod.filter { isNonCardio(it) && it.date >= lastStart }
             .groupBy { it.machine }
             .mapNotNull { (machine, entries) -> entries.bestEstimate()?.let { MachineEstimate(machine, it) } }
@@ -311,8 +320,8 @@ object StatsRules {
     }
 
     /**
-     * Chain-linked strength index, 100.0 at the first week with a value. A machine's value in a week is its best
-     * estimate over the trailing 4 weeks ending that week. Each next point is the previous index times the mean of
+     * Chain-linked strength index, 100.0 at the first block with a value. A machine's value in a block is its best
+     * estimate over the trailing 4 blocks ending that block. Each next point is the previous index times the mean of
      * value(this week) / value(previous week) over the machines that have a value in both weeks, so a machine joining
      * or leaving does not move the index. With no such machine the previous index carries forward; weeks without any
      * machine value get no point.
@@ -321,8 +330,8 @@ object StatsRules {
         if (weekCount < 2) return emptyList()   // a single point is not a trend
         val values = inPeriod.filter(::isNonCardio).groupBy { it.machine }.values.map { entries ->
             (0 until weekCount).map { i ->
-                val start = from.plusWeeks(maxOf(0, i - MAX_STRENGTH_WINDOW_WEEKS + 1).toLong())
-                val endExclusive = from.plusWeeks((i + 1).toLong())
+                val start = from.plusDays(DAYS_IN_BLOCK * maxOf(0, i - MAX_STRENGTH_WINDOW_WEEKS + 1))
+                val endExclusive = from.plusDays(DAYS_IN_BLOCK * (i + 1))
                 entries.filter { it.date >= start && it.date < endExclusive }.bestEstimate()
             }
         }
@@ -340,7 +349,7 @@ object StatsRules {
                 }
                 if (ratios.isNotEmpty()) index *= ratios.average()
             }
-            points.add(IndexPoint(from.plusWeeks(i.toLong()), index))
+            points.add(IndexPoint(from.plusDays(DAYS_IN_BLOCK * i), index))
             previousWeek = i
         }
         return points
