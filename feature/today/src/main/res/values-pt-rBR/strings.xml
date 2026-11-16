@@ -94,6 +94,7 @@
     <string name="summary_free_training">Sem ficha</string>
     <string name="summary_duration">Duração</string>
     <string name="summary_sets">Séries</string>
+    <string name="summary_cardio">Cardio</string>
     <string name="summary_volume">Volume</string>
     <string name="summary_machines">Exercícios</string>
     <string name="summary_minutes_value">%1$d min</string>
