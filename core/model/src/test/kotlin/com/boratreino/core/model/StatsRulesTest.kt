@@ -778,6 +778,25 @@ class StatsRulesTest {
     }
 
     @Test
+    fun `a cardio session logged at its end averages its full minutes, not the one minute after the set`() {
+        val log = Log()
+        val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
+        val m = log.machine()
+        // A 60 min bike, logged when it ended at 11:00: the session starts and ends at 11:00.
+        val cardioEnd = at(d(11, 3), 11, 0)
+        log.sessions += Session(1L, cardioEnd, cardioEnd, null, null)
+        log.sets += WorkoutSet(1L, 1L, bike, 0, null, null, 3600, null, null, cardioEnd)
+        // A 40 min weights session.
+        val weights = log.session(d(11, 4), endedAfterSeconds = 40 * 60)
+        log.set(weights, m, 50.0, 10)
+
+        val times = report(log).times
+
+        assertEquals(2, times.sessionsCounted)
+        assertEquals(50, times.averageMinutes) // (60 + 40) / 2
+    }
+
+    @Test
     fun `the average is rounded to whole minutes`() {
         val log = Log()
         log.machine()

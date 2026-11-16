@@ -37,16 +37,20 @@ class TodayShareTest {
         volumeKg: Double = 980.0,
         records: List<RecordEvent> = emptyList(),
         previous: PreviousComparison? = null,
+        workingSets: Int = 9,
+        cardioMinutes: Int = 0,
+        machineCount: Int = 3,
     ) = TrainingSummary(
         sessionId = sessionId,
         routineName = routineName,
         date = date,
         durationMinutes = minutes,
-        workingSets = 9,
+        workingSets = workingSets,
         volumeKg = volumeKg,
-        machineCount = 3,
+        machineCount = machineCount,
         records = records,
         previous = previous,
+        cardioMinutes = cardioMinutes,
     )
 
     private fun render(summary: TrainingSummary): java.io.File {
@@ -138,10 +142,86 @@ class TodayShareTest {
     }
 
     @Test
-    fun `a session without a real duration shows a dash`() {
+    fun `a session without a real duration has no duration cell`() {
         val texts = summaryTexts(context.resources, summary(minutes = null), Locale.US)
 
-        assertEquals("-", texts.stats.first().value)
+        assertEquals(listOf("Sets", "Volume", "Exercises"), texts.stats.map { it.label })
+        assertEquals(listOf("9", "980 kg", "3"), texts.stats.map { it.value })
+    }
+
+    @Test
+    fun `a cardio-only session shows its cardio minutes, and no sets or volume cells`() {
+        val texts = summaryTexts(
+            context.resources,
+            summary(minutes = 60, volumeKg = 0.0, workingSets = 0, cardioMinutes = 60, machineCount = 1),
+            Locale.US,
+        )
+
+        assertEquals(listOf("Duration", "Cardio", "Exercises"), texts.stats.map { it.label })
+        assertEquals(listOf("60 min", "60 min", "1"), texts.stats.map { it.value })
+    }
+
+    @Test
+    fun `a mixed session shows the cardio cell after volume and before exercises`() {
+        val texts = summaryTexts(
+            context.resources,
+            summary(minutes = 90, cardioMinutes = 20),
+            Locale.US,
+        )
+
+        assertEquals(listOf("Duration", "Sets", "Volume", "Cardio", "Exercises"), texts.stats.map { it.label })
+        assertEquals(listOf("90 min", "9", "980 kg", "20 min", "3"), texts.stats.map { it.value })
+    }
+
+    @Test
+    fun `a session without cardio has no cardio cell`() {
+        val texts = summaryTexts(context.resources, summary(cardioMinutes = 0), Locale.US)
+
+        assertTrue(texts.stats.none { it.label == "Cardio" })
+    }
+
+    @Test
+    fun `a summary with five cells still makes a 1080 by 1350 PNG`() {
+        val file = render(summary(minutes = 90, cardioMinutes = 20))
+
+        assertEquals(5, summaryTexts(context.resources, summary(minutes = 90, cardioMinutes = 20), Locale.US).stats.size)
+        assertEquals(1080 to 1350, size(file))
+    }
+
+    @Test
+    fun `a cardio-only session against a strength session says the sets went down`() {
+        val texts = summaryTexts(
+            context.resources,
+            summary(
+                minutes = 60,
+                volumeKg = 0.0,
+                workingSets = 0,
+                cardioMinutes = 60,
+                machineCount = 1,
+                previous = PreviousComparison(900.0, 7, -100.0, -7),
+            ),
+            Locale.US,
+        )
+
+        assertEquals(listOf("Volume -100 % vs last time", "Sets -7"), texts.comparison)
+    }
+
+    @Test
+    fun `a cardio-only session against a cardio-only session has no comparison line`() {
+        val texts = summaryTexts(
+            context.resources,
+            summary(
+                minutes = 60,
+                volumeKg = 0.0,
+                workingSets = 0,
+                cardioMinutes = 60,
+                machineCount = 1,
+                previous = PreviousComparison(0.0, 0, null, 0),
+            ),
+            Locale.US,
+        )
+
+        assertTrue(texts.comparison.isEmpty())
     }
 
     @Test

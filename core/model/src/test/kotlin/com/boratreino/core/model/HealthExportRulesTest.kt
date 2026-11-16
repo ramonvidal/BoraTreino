@@ -104,6 +104,35 @@ class HealthExportRulesTest {
     }
 
     @Test
+    fun `a cardio session logged at its end is exported from where the cardio began for its full minutes`() {
+        // A 60 min treadmill, logged at 19:00 when it ended: the session began at 18:00.
+        val loggedAt = Instant.parse("2026-11-02T19:00:00Z")
+        val sets = listOf(
+            WorkoutSet(
+                id = 1L,
+                sessionId = 5L,
+                machineId = 1L,
+                position = 0,
+                weightKg = null,
+                reps = null,
+                seconds = 3600,
+                calories = 400,
+                distanceM = 6000,
+                loggedAt = loggedAt,
+            ),
+        )
+
+        val result = requireNotNull(export(sets, session(startedAt = loggedAt, endedAt = loggedAt)))
+
+        assertEquals(start, result.start)
+        assertEquals(loggedAt, result.end)
+        assertEquals(Duration.ofMinutes(60), Duration.between(result.start, result.end))
+        assertEquals(HealthExerciseKind.TREADMILL, result.kind)
+        assertEquals(400, result.activeCalories)
+        assertEquals(6000, result.distanceM)
+    }
+
+    @Test
     fun `a cardio-only session takes its kind from the machine and sums calories and distance`() {
         val sets = listOf(
             cardio(1, 1L, 20, calories = 150, distanceM = 3000),

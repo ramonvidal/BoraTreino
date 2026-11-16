@@ -30,7 +30,7 @@ class EnergyRulesTest {
     private fun cardio(calories: Int?, id: Long = 2L) = WorkoutSet(
         id = id, sessionId = 1L, machineId = 2L, position = 1,
         weightKg = null, reps = null, seconds = 600, calories = calories, distanceM = null,
-        loggedAt = start,
+        loggedAt = start.plusSeconds(3600), // logged when it ended, at the end of the hour
     )
 
     private fun sessionOf(vararg sets: WorkoutSet, minutes: Long? = 60) = SessionSets(session(minutes = minutes), sets.toList())
@@ -130,6 +130,57 @@ class EnergyRulesTest {
     fun `an open session counts up to now`() {
         val open = SessionSets(session(minutes = null, startedAt = now.minusSeconds(30 * 60)), listOf(strength()))
         assertEquals(160.0, burn(male, open), 1e-9)
+    }
+
+    @Test
+    fun `strength burn is timed from the start of a cardio set logged at the end`() {
+        // Cardio of 60 min logged at 11:00, when it ended; the weights set at 11:10; the session ends at 11:20.
+        // It began at 10:00, so it lasts 80 min: 4 * 80 * 80 / 60 for the weights, plus the cardio calories.
+        val at11 = start.plusSeconds(3600)
+        val sets = listOf(
+            WorkoutSet(1L, 1L, 2L, 0, null, null, 3600, 150, null, at11),
+            strength(id = 2L).copy(loggedAt = at11.plusSeconds(600), position = 1),
+        )
+        val open = SessionSets(Session(1L, at11, at11.plusSeconds(1200), null, null), sets)
+
+        assertEquals(150.0 + 320.0 * 4.0 / 3.0, burn(male, open), 1e-6)
+    }
+
+    @Test
+    fun `a cardio set that began the session gives it its full minutes, not zero`() {
+        // Session added with the same start and end, then a 60 min cardio logged at 11:00: 60 min, not 20.
+        val at11 = start.plusSeconds(3600)
+        val sets = listOf(
+            WorkoutSet(1L, 1L, 2L, 0, null, null, 3600, 150, null, at11),
+            strength(id = 2L).copy(loggedAt = at11, position = 1),
+        )
+        val hand = SessionSets(Session(1L, at11, at11, null, null), sets)
+
+        assertEquals(150.0 + 320.0, burn(male, hand), 1e-6)
+    }
+
+    @Test
+    fun `the three hour cap applies to the time from the start of the cardio`() {
+        // Five hours of cardio logged at 15:00 and the weights a minute later: the session began at 10:00, capped at 3 h.
+        val at15 = start.plusSeconds(5 * 3600L)
+        val sets = listOf(
+            WorkoutSet(1L, 1L, 2L, 0, null, null, 5 * 3600, 500, null, at15),
+            strength(id = 2L).copy(loggedAt = at15.plusSeconds(60), position = 1),
+        )
+        val open = SessionSets(Session(1L, at15, at15.plusSeconds(300), null, null), sets)
+
+        assertEquals(500.0 + 960.0, burn(male, open), 1e-6)
+    }
+
+    @Test
+    fun `a cardio-only session burns its logged calories and no strength estimate`() {
+        val at11 = start.plusSeconds(3600)
+        val only = SessionSets(
+            Session(1L, at11, at11, null, null),
+            listOf(WorkoutSet(1L, 1L, 2L, 0, null, null, 3600, 300, null, at11)),
+        )
+
+        assertEquals(300.0, burn(male, only), 1e-9)
     }
 
     @Test

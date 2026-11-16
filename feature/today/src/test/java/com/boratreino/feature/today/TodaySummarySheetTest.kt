@@ -3,7 +3,9 @@ package com.boratreino.feature.today
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -57,6 +59,7 @@ class TodaySummarySheetTest {
         machines: Int = 3,
         records: List<RecordEvent> = emptyList(),
         previous: PreviousComparison? = null,
+        cardioMinutes: Int = 0,
     ) = TrainingSummary(
         sessionId = 5L,
         routineName = routineName,
@@ -67,6 +70,7 @@ class TodaySummarySheetTest {
         machineCount = machines,
         records = records,
         previous = previous,
+        cardioMinutes = cardioMinutes,
     )
 
     private fun setContent(
@@ -131,11 +135,46 @@ class TodaySummarySheetTest {
     }
 
     @Test
-    fun `a session with no real duration shows a dash for it`() {
+    fun `a session with no real duration has no duration cell`() {
         setContent(SummaryUi(summary(minutes = null)))
 
-        compose.onNodeWithText("-").assertExists()
+        compose.onNodeWithText("Duration").assertDoesNotExist()
         compose.onNodeWithText("62 min").assertDoesNotExist()
+        compose.onNodeWithText("Sets").assertExists()
+    }
+
+    // Cardio
+
+    @Test
+    fun `a cardio-only session shows its cardio minutes and no sets or volume cells`() {
+        setContent(SummaryUi(summary(minutes = 60, sets = 0, volumeKg = 0.0, machines = 1, cardioMinutes = 60)))
+
+        compose.onNodeWithText("Duration").assertExists()
+        compose.onNodeWithText("Cardio").assertExists()
+        compose.onAllNodesWithText("60 min").assertCountEquals(2)
+        compose.onNodeWithText("Sets").assertDoesNotExist()
+        compose.onNodeWithText("Volume").assertDoesNotExist()
+        compose.onNodeWithText("Exercises").assertExists()
+    }
+
+    @Test
+    fun `a mixed session shows five numbers and the cardio minutes`() {
+        setContent(SummaryUi(summary(minutes = 90, sets = 9, volumeKg = 980.0, machines = 3, cardioMinutes = 20)))
+
+        compose.onNodeWithText("90 min").assertExists()
+        compose.onNodeWithText("9").assertExists()
+        compose.onNodeWithText("980 kg").assertExists()
+        compose.onNodeWithText("20 min").assertExists()
+        compose.onNodeWithText("3").assertExists()
+        compose.onNodeWithText("Cardio").assertExists()
+    }
+
+    @Test
+    fun `five numbers lay out and are captured`() {
+        setContent(SummaryUi(summary(minutes = 90, sets = 9, volumeKg = 980.0, machines = 3, cardioMinutes = 20)))
+
+        compose.onNodeWithText("Cardio").assertExists()
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-summary-sheet-five-numbers.png")
     }
 
     // Records
@@ -215,6 +254,15 @@ class TodaySummarySheetTest {
         compose.onNodeWithText("Sets +9").assertExists()
         compose.onNodeWithText("Volume same as last time").assertDoesNotExist()
         compose.onNodeWithText("Volume +0 % vs last time").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a cardio-only session against a strength session shows the volume and sets it lost`() {
+        val previous = PreviousComparison(volumeKg = 900.0, workingSets = 7, volumeChangePercent = -100.0, setsChange = -7)
+        setContent(SummaryUi(summary(minutes = 60, sets = 0, volumeKg = 0.0, machines = 1, cardioMinutes = 60, previous = previous)))
+
+        compose.onNodeWithText("Volume -100 % vs last time").assertExists()
+        compose.onNodeWithText("Sets -7").assertExists()
     }
 
     // Buttons

@@ -10,11 +10,21 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionDetail
+import com.boratreino.core.model.SessionMachine
+import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.theme.BoraTreinoTheme
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -106,6 +116,29 @@ class CalendarDayDetailTest {
         compose.onNodeWithText("Delete").performClick()
 
         assertEquals(sessionId, deleted)
+    }
+
+    // A past day with a cardio session logged at its end
+
+    @Test
+    fun `a cardio session logged at its end shows the time range from where the cardio began`() {
+        val zone = ZoneId.of("UTC")
+        val bike = Machine(9L, "Bike", MuscleGroup.CARDIO, MachineKind.CARDIO, 1.0, null, null, false)
+        // A 60 min bike, logged at 19:00 when it ended; the session itself starts and ends at 19:00.
+        val loggedAt = Instant.parse("2026-11-03T19:00:00Z")
+        val cardio = WorkoutSet(1L, 90L, bike.id, 0, null, null, 3600, null, null, loggedAt)
+        val detail = SessionDetail(
+            session = Session(90L, loggedAt, loggedAt, null, null),
+            routine = null,
+            machines = listOf(SessionMachine(bike, listOf(cardio))),
+        )
+        val format = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault()).withZone(zone)
+
+        show(dayState(yesterday, sessions = listOf(detail)))
+
+        compose.onNodeWithText("Edit").assertExists()
+        compose.onNodeWithText("${format.format(Instant.parse("2026-11-03T18:00:00Z"))}–${format.format(loggedAt)}").assertExists()
+        compose.onNodeWithText(format.format(loggedAt)).assertDoesNotExist()
     }
 
     // A past day without a session

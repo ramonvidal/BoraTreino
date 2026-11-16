@@ -213,14 +213,102 @@ class TrainingSummaryRulesTest {
     }
 
     @Test
-    fun `a session longer than six hours is capped at 360 minutes`() {
-        val longer = Duration.ofHours(9).toSeconds()
-        assertEquals(360, build(session = session(endedAt = start.plusSeconds(longer))).durationMinutes)
+    fun `a session longer than ten hours is capped at 600 minutes`() {
+        val longer = Duration.ofHours(11).toSeconds()
+        assertEquals(600, build(session = session(endedAt = start.plusSeconds(longer))).durationMinutes)
     }
 
     @Test
-    fun `a session of exactly six hours is 360 minutes`() {
-        assertEquals(360, build(session = session(endedAt = start.plusSeconds(6 * 3600L))).durationMinutes)
+    fun `a session of exactly ten hours is 600 minutes and nine hours is not capped`() {
+        assertEquals(600, build(session = session(endedAt = start.plusSeconds(10 * 3600L))).durationMinutes)
+        assertEquals(540, build(session = session(endedAt = start.plusSeconds(9 * 3600L))).durationMinutes)
+    }
+
+    @Test
+    fun `a cardio set logged at the end counts from the start of the cardio`() {
+        val summary = build(
+            session = session(startedAt = start.plusSeconds(3600), endedAt = start.plusSeconds(3600)),
+            sets = listOf(set(1, machineId = 3L, weightKg = null, reps = null, seconds = 3600, at = 3600)),
+        )
+
+        assertEquals(60, summary.durationMinutes)
+    }
+
+    // Cardio
+
+    @Test
+    fun `a cardio-only session has its cardio minutes and no working sets or volume`() {
+        val summary = build(
+            session = session(startedAt = start.plusSeconds(3600), endedAt = start.plusSeconds(3600)),
+            sets = listOf(set(1, machineId = 3L, weightKg = null, reps = null, seconds = 3600, at = 3600)),
+        )
+
+        assertEquals(60, summary.durationMinutes)
+        assertEquals(0, summary.workingSets)
+        assertEquals(60, summary.cardioMinutes)
+        assertEquals(1, summary.machineCount)
+        assertEquals(0.0, summary.volumeKg, 0.001)
+    }
+
+    @Test
+    fun `a mixed session counts its weights sets and its cardio minutes apart`() {
+        val summary = build(
+            sets = listOf(
+                set(1, machineId = 1L, weightKg = 100.0, reps = 10, at = 1),
+                set(2, machineId = 1L, weightKg = 100.0, reps = 10, at = 2),
+                set(3, machineId = 3L, weightKg = null, reps = null, seconds = 1200, at = 1500),
+            ),
+        )
+
+        assertEquals(62, summary.durationMinutes)
+        assertEquals(2, summary.workingSets)
+        assertEquals(2000.0, summary.volumeKg, 0.001)
+        assertEquals(2, summary.machineCount)
+        assertEquals(20, summary.cardioMinutes)
+    }
+
+    @Test
+    fun `a session without cardio has no cardio minutes`() {
+        assertEquals(0, build(sets = listOf(set(1, weightKg = 100.0, reps = 10))).cardioMinutes)
+    }
+
+    @Test
+    fun `the previous session comparison leaves out its cardio sets`() {
+        val previousSession = session(id = 4L, startedAt = start.minusSeconds(7 * 86_400L))
+        val previousSets = listOf(
+            set(-2, weightKg = 100.0, reps = 10, sessionId = 4L),
+            set(-1, machineId = 3L, weightKg = null, reps = null, seconds = 1200, sessionId = 4L),
+        )
+        val summary = build(
+            sets = listOf(
+                set(1, weightKg = 100.0, reps = 10),
+                set(2, weightKg = 100.0, reps = 10),
+                set(3, machineId = 3L, weightKg = null, reps = null, seconds = 600, at = 3),
+            ),
+            previous = previousSession to previousSets,
+        )
+
+        val previous = requireNotNull(summary.previous)
+        assertEquals(1, previous.workingSets)
+        assertEquals(1000.0, previous.volumeKg, 0.001)
+        assertEquals(100.0, previous.volumeChangePercent!!, 0.001)
+        assertEquals(1, previous.setsChange)
+    }
+
+    @Test
+    fun `a previous cardio-only session has no working sets and no volume to compare`() {
+        val previousSession = session(id = 4L, startedAt = start.minusSeconds(7 * 86_400L))
+        val previousSets = listOf(set(-1, machineId = 3L, weightKg = null, reps = null, seconds = 1200, sessionId = 4L))
+        val summary = build(
+            sets = listOf(set(1, weightKg = 100.0, reps = 10)),
+            previous = previousSession to previousSets,
+        )
+
+        val previous = requireNotNull(summary.previous)
+        assertEquals(0, previous.workingSets)
+        assertEquals(0.0, previous.volumeKg, 0.001)
+        assertNull(previous.volumeChangePercent)
+        assertEquals(1, previous.setsChange)
     }
 
     // Records
