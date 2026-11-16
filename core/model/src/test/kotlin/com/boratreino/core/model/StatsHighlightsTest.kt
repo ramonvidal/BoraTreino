@@ -15,8 +15,9 @@ class StatsHighlightsTest {
     private fun machine(id: Long, group: MuscleGroup = MuscleGroup.CHEST) =
         Machine(id, "Machine $id", group, MachineKind.WEIGHT_REPS, 2.5, null, null, false)
 
+    /** In the last 7-day block of a four week period (the block of 30 Oct to 5 Nov). */
     private fun muscleWeek(group: MuscleGroup, sets: Int) =
-        MuscleWeek(today.minusWeeks(1), group, sets, sets * 100.0)
+        MuscleWeek(today.minusDays(6), group, sets, sets * 100.0)
 
     /** Every group in enum order; the given groups get [daysSince], the others were never trained. */
     private fun recencyOf(vararg daysSince: Pair<MuscleGroup, Int>): List<MuscleRecency> {
@@ -35,10 +36,10 @@ class StatsHighlightsTest {
         strength: List<StrengthTrend> = emptyList(),
     ): StatsReport = StatsReport(
         period = StatsPeriod.FOUR_WEEKS,
-        from = today.minusWeeks(weekCount.toLong() - 1),
+        from = blocksFrom(weekCount),
         to = today,
         weeks = (0 until weekCount).map { i ->
-            WeekStats(today.minusWeeks(i.toLong()), sessions = 0, trainingDays = 0, workingSets = 0, volumeKg = 0.0)
+            WeekStats(blocksFrom(weekCount).plusWeeks(i.toLong()), sessions = 0, trainingDays = 0, workingSets = 0, volumeKg = 0.0)
         },
         muscleWeeks = muscleWeeks,
         recency = recency,
@@ -57,6 +58,9 @@ class StatsHighlightsTest {
         repRanges = emptyList(),
         times = SessionTimes(0, null, null),
     )
+
+    /** Rolling blocks: the period starts 7 x blocks - 1 days before today, every block is 7 days and the last ends today. */
+    private fun blocksFrom(weekCount: Int): LocalDate = today.minusDays(7L * weekCount - 1)
 
     private fun trend(id: Long, changePercent: Double) = StrengthTrend(
         machine = machine(id),

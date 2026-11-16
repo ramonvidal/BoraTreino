@@ -22,8 +22,8 @@ import java.time.LocalDate
 internal object StatsSamples {
     val today: LocalDate = ProgressSamples.today
 
-    /** Monday of the first of the 13 weeks (12 weeks before the week of 2 Nov). */
-    val from: LocalDate = today.minusWeeks(12)
+    /** First day of the first of the 13 blocks: 90 days before today, so the last block is 27 Oct to 2 Nov. */
+    val from: LocalDate = today.minusDays(90)
 
     private val legsPress = ProgressSamples.machine(1, "Leg press", MuscleGroup.LEGS)
     private val benchPress = ProgressSamples.machine(2, "Bench press", MuscleGroup.CHEST)
@@ -42,6 +42,7 @@ internal object StatsSamples {
     private const val BACK_VOLUME = 850.0
     private const val BACK_WEEK = 6
 
+    /** First day of block [i] (7 days each). */
     private fun weekStart(i: Int): LocalDate = from.plusWeeks(i.toLong())
 
     private val fullMuscleWeeks: List<MuscleWeek> = (0 until 13).flatMap { i ->
@@ -76,11 +77,11 @@ internal object StatsSamples {
     )
 
     private val consistency = Consistency(
-        weeksCounted = 12,
+        weeksCounted = 13,
         weeksMetGoal = 9,
         goal = 4,
         sessionsPerWeek = 2.8,
-        bestWeekStart = LocalDate.of(2026, 10, 12),
+        bestWeekStart = LocalDate.of(2026, 10, 13),
         bestWeekTrainingDays = 4,
     )
 
@@ -126,19 +127,22 @@ internal object StatsSamples {
         times = SessionTimes(sessionsCounted = 30, averageMinutes = 62, averageMinutesBetweenSets = 3.1),
     )
 
-    private fun emptyWeeks(count: Int) = (0 until count).map { WeekStats(today.minusWeeks((count - 1 - it).toLong()), 0, 0, 0, 0.0) }
+    /** The four blocks of the four week period (from 6 Oct), nothing logged. */
+    private val fourWeeksFrom: LocalDate = today.minusDays(27)
+
+    private fun emptyWeeks(count: Int) = (0 until count).map { WeekStats(fourWeeksFrom.plusWeeks(it.toLong()), 0, 0, 0, 0.0) }
 
     private val neverRecency = MuscleGroup.entries.map { MuscleRecency(it, null, null) }
 
     /** Nothing logged in the period. */
     val empty = StatsReport(
         period = StatsPeriod.FOUR_WEEKS,
-        from = today.minusWeeks(3),
+        from = fourWeeksFrom,
         to = today,
         weeks = emptyWeeks(4),
         muscleWeeks = emptyList(),
         recency = neverRecency,
-        consistency = Consistency(3, 0, 4, 0.0, null, 0),
+        consistency = Consistency(4, 0, 4, 0.0, null, 0),
         strength = emptyList(),
         overallStrengthPercent = null,
         records = emptyList(),
@@ -150,12 +154,12 @@ internal object StatsSamples {
     /** Only cardio sessions: sessions and training days but no working (strength) sets. */
     val cardioOnly = StatsReport(
         period = StatsPeriod.FOUR_WEEKS,
-        from = today.minusWeeks(3),
+        from = fourWeeksFrom,
         to = today,
-        weeks = (0 until 4).map { WeekStats(today.minusWeeks((3 - it).toLong()), sessions = 2, trainingDays = 2, workingSets = 0, volumeKg = 0.0) },
+        weeks = (0 until 4).map { WeekStats(fourWeeksFrom.plusWeeks(it.toLong()), sessions = 2, trainingDays = 2, workingSets = 0, volumeKg = 0.0) },
         muscleWeeks = emptyList(),
         recency = MuscleGroup.entries.map { if (it == MuscleGroup.CARDIO) MuscleRecency(it, today.minusDays(1), 1) else MuscleRecency(it, null, null) },
-        consistency = Consistency(3, 0, 4, 2.0, today.minusWeeks(1), 2),
+        consistency = Consistency(4, 0, 4, 2.0, LocalDate.of(2026, 10, 20), 2),
         strength = emptyList(),
         overallStrengthPercent = null,
         records = emptyList(),
@@ -164,18 +168,21 @@ internal object StatsSamples {
         times = SessionTimes(8, 40, null),
     )
 
+    /** The one block of the last seven days: 27 Oct to 2 Nov. */
+    private val oneWeekFrom: LocalDate = today.minusDays(6)
+
     /**
-     * This week so far: the one bucket starts today (a Monday). Four sessions on four days, this week's estimates
-     * and records only, no strength trend and no strength index. The plateau is the whole history's.
+     * The last seven days: the one block starts six days before today. Four sessions on four days, this block's
+     * estimates and records only, no strength trend and no strength index. The plateau is the whole history's.
      */
     val oneWeek = StatsReport(
         period = StatsPeriod.ONE_WEEK,
-        from = today,
+        from = oneWeekFrom,
         to = today,
-        weeks = listOf(WeekStats(today, sessions = 4, trainingDays = 4, workingSets = 11, volumeKg = 7_800.0)),
+        weeks = listOf(WeekStats(oneWeekFrom, sessions = 4, trainingDays = 4, workingSets = 11, volumeKg = 7_800.0)),
         muscleWeeks = listOf(
-            MuscleWeek(today, MuscleGroup.LEGS, 5, 4_800.0),
-            MuscleWeek(today, MuscleGroup.CHEST, 6, 3_000.0),
+            MuscleWeek(oneWeekFrom, MuscleGroup.LEGS, 5, 4_800.0),
+            MuscleWeek(oneWeekFrom, MuscleGroup.CHEST, 6, 3_000.0),
         ),
         recency = recency,
         consistency = Consistency(
@@ -183,7 +190,7 @@ internal object StatsSamples {
             weeksMetGoal = 1,
             goal = 4,
             sessionsPerWeek = 4.0,
-            bestWeekStart = today,
+            bestWeekStart = oneWeekFrom,
             bestWeekTrainingDays = 4,
         ),
         strength = emptyList(),
@@ -201,15 +208,15 @@ internal object StatsSamples {
         strengthIndex = emptyList(),
     )
 
-    /** This week so far with nothing logged yet. */
+    /** The last seven days with nothing logged yet. */
     val oneWeekEmpty = StatsReport(
         period = StatsPeriod.ONE_WEEK,
-        from = today,
+        from = oneWeekFrom,
         to = today,
-        weeks = listOf(WeekStats(today, 0, 0, 0, 0.0)),
+        weeks = listOf(WeekStats(oneWeekFrom, 0, 0, 0, 0.0)),
         muscleWeeks = emptyList(),
         recency = neverRecency,
-        consistency = Consistency(0, 0, 4, 0.0, null, 0),
+        consistency = Consistency(1, 0, 4, 0.0, null, 0),
         strength = emptyList(),
         overallStrengthPercent = null,
         records = emptyList(),

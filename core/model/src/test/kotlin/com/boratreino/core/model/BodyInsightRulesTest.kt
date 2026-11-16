@@ -18,12 +18,12 @@ class BodyInsightRulesTest {
     private fun muscleWeek(week: LocalDate, group: MuscleGroup, sets: Int) =
         MuscleWeek(week, group, sets, sets * 100.0)
 
-    /** Thirteen weeks from Monday 10 Aug 2026, as a report would hold them. */
+    /** Thirteen 7-day blocks from Thursday 13 Aug 2026 to Wednesday 11 Nov, as a rolling report holds them. */
     private val weeks: List<WeekStats> = (0 until 13).map { i ->
-        WeekStats(d(8, 10).plusWeeks(i.toLong()), sessions = 0, trainingDays = 0, workingSets = 0, volumeKg = 0.0)
+        WeekStats(d(8, 13).plusWeeks(i.toLong()), sessions = 0, trainingDays = 0, workingSets = 0, volumeKg = 0.0)
     }
 
-    private fun weekOf(i: Int): LocalDate = d(8, 10).plusWeeks(i.toLong())
+    private fun weekOf(i: Int): LocalDate = d(8, 13).plusWeeks(i.toLong())
 
     // Relative strength
 
@@ -225,17 +225,17 @@ class BodyInsightRulesTest {
 
     // Muscle load: average effective sets a week over every week of the report
 
-    /** A report with [weekCount] weeks from 10 Aug 2026 and the given muscle weeks; the rest is empty. */
+    /** A report with [weekCount] 7-day blocks from 13 Aug 2026 (the last ends 11 Nov) and the given muscle weeks; the rest is empty. */
     private fun reportOf(
         weekCount: Int,
         muscleWeeks: List<MuscleWeek> = emptyList(),
         indirectWeeks: List<IndirectWeek> = emptyList(),
     ): StatsReport = StatsReport(
         period = StatsPeriod.THREE_MONTHS,
-        from = d(8, 10),
-        to = d(11, 5),
+        from = d(8, 13),
+        to = d(11, 11),
         weeks = (0 until weekCount).map { i ->
-            WeekStats(d(8, 10).plusWeeks(i.toLong()), sessions = 0, trainingDays = 0, workingSets = 0, volumeKg = 0.0)
+            WeekStats(d(8, 13).plusWeeks(i.toLong()), sessions = 0, trainingDays = 0, workingSets = 0, volumeKg = 0.0)
         },
         muscleWeeks = muscleWeeks,
         recency = emptyList(),

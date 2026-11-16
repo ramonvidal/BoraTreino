@@ -11,11 +11,12 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 
 /**
- * Statistics rules. "Today" is Thursday 2026-11-05 and weeks start on Monday unless a test says otherwise, so the
- * current week starts on Monday 2026-11-02. Every test builds a tiny data set on explicit dates.
+ * Statistics rules. "Today" is Wednesday 2026-11-11. The periods are rolling: 7-day blocks that end today, so the
+ * four week period starts on Thursday 15 Oct and its blocks start on 15 Oct, 22 Oct, 29 Oct and 5 Nov. Every test
+ * builds a tiny data set on explicit dates.
  */
 class StatsRulesTest {
-    private val today = LocalDate.of(2026, 11, 5)
+    private val today = LocalDate.of(2026, 11, 11)
     private val utc: ZoneId = ZoneOffset.UTC
 
     private fun d(month: Int, day: Int, year: Int = 2026): LocalDate = LocalDate.of(year, month, day)
@@ -97,90 +98,21 @@ class StatsRulesTest {
     // Period windows
 
     @Test
-    fun `four weeks is the current week and the three before`() {
+    fun `four weeks is four rolling blocks of seven days ending today`() {
         val r = report(Log(), StatsPeriod.FOUR_WEEKS)
 
-        assertEquals(d(10, 12), r.from)
+        assertEquals(d(10, 15), r.from)
         assertEquals(today, r.to)
         assertEquals(StatsPeriod.FOUR_WEEKS, r.period)
-        assertEquals(listOf(d(10, 12), d(10, 19), d(10, 26), d(11, 2)), r.weeks.map { it.weekStart })
+        assertEquals(listOf(d(10, 15), d(10, 22), d(10, 29), d(11, 5)), r.weeks.map { it.weekStart })
     }
 
     @Test
-    fun `three months is 13 weeks`() {
-        val r = report(Log(), StatsPeriod.THREE_MONTHS)
-
-        assertEquals(13, r.weeks.size)
-        assertEquals(d(8, 10), r.from)
-        assertEquals(d(8, 10), r.weeks.first().weekStart)
-        assertEquals(d(11, 2), r.weeks.last().weekStart)
-    }
-
-    @Test
-    fun `one year is 52 weeks`() {
-        val r = report(Log(), StatsPeriod.ONE_YEAR)
-
-        assertEquals(52, r.weeks.size)
-        assertEquals(d(11, 10, 2025), r.from)
-        assertEquals(d(11, 2), r.weeks.last().weekStart)
-    }
-
-    @Test
-    fun `all starts at the week of the first session`() {
+    fun `four weeks starts 27 days back so a set 28 days back is left out and one 27 days back counts`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(9, 16), m, 50.0, 10) // Wednesday, week of Monday 14 September
-        log.lift(d(11, 3), m, 50.0, 10)
-
-        val r = report(log, StatsPeriod.ALL)
-
-        assertEquals(d(9, 14), r.from)
-        assertEquals(8, r.weeks.size)
-        assertEquals(d(9, 14), r.weeks.first().weekStart)
-        assertEquals(d(11, 2), r.weeks.last().weekStart)
-    }
-
-    @Test
-    fun `all is at least four weeks when the first session is this week`() {
-        val log = Log()
-        log.lift(d(11, 3), log.machine(), 50.0, 10)
-
-        val r = report(log, StatsPeriod.ALL)
-
-        assertEquals(4, r.weeks.size)
-        assertEquals(d(10, 12), r.from)
-    }
-
-    @Test
-    fun `all is four weeks when there are no sessions`() {
-        val r = report(Log(), StatsPeriod.ALL)
-
-        assertEquals(4, r.weeks.size)
-        assertEquals(d(10, 12), r.from)
-        assertTrue(r.weeks.all { it.sessions == 0 && it.workingSets == 0 && it.volumeKg == 0.0 })
-    }
-
-    @Test
-    fun `weeks can start on a Sunday`() {
-        val log = Log()
-        val m = log.machine()
-        log.lift(d(11, 1), m, 50.0, 10) // Sunday, first day of the current week
-        log.lift(d(10, 11), m, 50.0, 10) // Sunday, first day of the first week
-
-        val r = report(log, first = DayOfWeek.SUNDAY)
-
-        assertEquals(d(10, 11), r.from)
-        assertEquals(d(11, 1), r.weeks.last().weekStart)
-        assertEquals(1, r.weeks.last().sessions)
-        assertEquals(1, r.weeks.first().sessions)
-    }
-
-    @Test
-    fun `sets before the first day of the period are left out of the weeks but sets on it count`() {
-        val log = Log()
-        val m = log.machine()
-        log.lift(d(10, 11), m, 50.0, 10) // Sunday before the period
-        log.lift(d(10, 12), m, 50.0, 10) // first day of the period
+        log.lift(d(10, 14), m, 50.0, 10) // 28 days back: before the period
+        log.lift(d(10, 15), m, 50.0, 10) // 27 days back: first day of the first block
 
         val r = report(log)
 
@@ -188,13 +120,157 @@ class StatsRulesTest {
     }
 
     @Test
+    fun `three months is 90 days back and 13 blocks`() {
+        val r = report(Log(), StatsPeriod.THREE_MONTHS)
+
+        assertEquals(13, r.weeks.size)
+        assertEquals(d(8, 13), r.from)
+        assertEquals(d(8, 13), r.weeks.first().weekStart)
+        assertEquals(d(11, 5), r.weeks.last().weekStart)
+    }
+
+    @Test
+    fun `one year is 363 days back and 52 blocks`() {
+        val r = report(Log(), StatsPeriod.ONE_YEAR)
+
+        assertEquals(52, r.weeks.size)
+        assertEquals(d(11, 13, 2025), r.from)
+        assertEquals(d(11, 5), r.weeks.last().weekStart)
+    }
+
+    @Test
+    fun `one week is the last seven days so on a Wednesday it starts the Thursday before`() {
+        val r = report(Log(), StatsPeriod.ONE_WEEK)
+
+        assertEquals(StatsPeriod.ONE_WEEK, r.period)
+        assertEquals(d(11, 5), r.from)
+        assertEquals(today, r.to)
+        assertEquals(listOf(d(11, 5)), r.weeks.map { it.weekStart })
+    }
+
+    @Test
+    fun `one week includes a set on the Thursday before and leaves out the Wednesday before`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(11, 4), m, 50.0, 10) // Wednesday, 7 days back: before the period
+        log.lift(d(11, 5), m, 50.0, 10) // Thursday, 6 days back: first day of the period
+
+        val week = report(log, StatsPeriod.ONE_WEEK).weeks.single()
+
+        assertEquals(1, week.sessions)
+        assertEquals(1, week.workingSets)
+    }
+
+    @Test
+    fun `the report is the same for every first day of the week`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(10, 14), m, 50.0, 10)
+        log.lift(d(10, 16), m, 60.0, 5)
+        log.lift(d(11, 5), m, 70.0, 3)
+        log.lift(d(11, 9), m, 80.0, 1)
+
+        for (period in StatsPeriod.entries) {
+            val monday = report(log, period, first = DayOfWeek.MONDAY)
+            for (first in DayOfWeek.entries) {
+                assertEquals("$period from $first", monday, report(log, period, first = first))
+            }
+        }
+    }
+
+    /** A report for ALL whose only session is on [date]. */
+    private fun allFrom(date: LocalDate): StatsReport {
+        val log = Log()
+        log.lift(date, log.machine(), 50.0, 10)
+        return report(log, StatsPeriod.ALL)
+    }
+
+    @Test
+    fun `all with the first session ten days back is four blocks at least`() {
+        val r = allFrom(d(11, 1))
+
+        assertEquals(4, r.weeks.size)
+        assertEquals(d(10, 15), r.from)
+    }
+
+    @Test
+    fun `all with the first session 27 days back is exactly four blocks`() {
+        val r = allFrom(d(10, 15))
+
+        assertEquals(4, r.weeks.size)
+        assertEquals(d(10, 15), r.from)
+    }
+
+    @Test
+    fun `all with the first session 28 days back is five blocks`() {
+        val r = allFrom(d(10, 14))
+
+        assertEquals(5, r.weeks.size)
+        assertEquals(d(10, 8), r.from)
+    }
+
+    @Test
+    fun `all with the first session 29 days back is five blocks`() {
+        val r = allFrom(d(10, 13))
+
+        assertEquals(5, r.weeks.size)
+        assertEquals(d(10, 8), r.from)
+    }
+
+    @Test
+    fun `all with the first session 35 days back is six blocks`() {
+        val r = allFrom(d(10, 7))
+
+        assertEquals(6, r.weeks.size)
+        assertEquals(d(10, 1), r.from)
+    }
+
+    @Test
+    fun `all with the first session on the last day of its block starts that block`() {
+        val r = allFrom(d(9, 16))
+
+        assertEquals(9, r.weeks.size)
+        assertEquals(d(9, 10), r.from)
+        assertEquals(d(9, 10), r.weeks.first().weekStart)
+    }
+
+    @Test
+    fun `all with the first session today is four blocks`() {
+        val r = allFrom(today)
+
+        assertEquals(4, r.weeks.size)
+        assertEquals(d(10, 15), r.from)
+    }
+
+    @Test
+    fun `all with no sessions is four blocks`() {
+        val r = report(Log(), StatsPeriod.ALL)
+
+        assertEquals(4, r.weeks.size)
+        assertEquals(d(10, 15), r.from)
+        assertTrue(r.weeks.all { it.sessions == 0 && it.workingSets == 0 && it.volumeKg == 0.0 })
+    }
+
+    @Test
     fun `sets after today are left out`() {
         val log = Log()
-        log.lift(d(11, 6), log.machine(), 50.0, 10)
+        log.lift(d(11, 12), log.machine(), 50.0, 10)
 
         val r = report(log)
 
         assertTrue(r.weeks.all { it.sessions == 0 })
+    }
+
+    @Test
+    fun `a set on a block boundary goes to the block that starts on it`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(10, 21), m, 50.0, 10) // last day of the first block
+        log.lift(d(10, 22), m, 50.0, 10) // first day of the second
+        log.lift(d(11, 4), m, 50.0, 10)  // last day of the third
+        log.lift(d(11, 5), m, 50.0, 10)  // first day of the last
+
+        assertEquals(listOf(1, 1, 1, 1), report(log).weeks.map { it.sessions })
     }
 
     // Weeks
@@ -202,7 +278,7 @@ class StatsRulesTest {
     @Test
     fun `weeks are zero filled and oldest first`() {
         val log = Log()
-        log.lift(d(10, 20), log.machine(), 40.0, 10)
+        log.lift(d(10, 23), log.machine(), 40.0, 10) // second block
 
         val r = report(log)
 
@@ -215,7 +291,7 @@ class StatsRulesTest {
     fun `volume is weight times reps of working sets and warm ups are left out`() {
         val log = Log()
         val m = log.machine()
-        val s = log.session(d(11, 3))
+        val s = log.session(d(11, 9))
         log.set(s, m, 50.0, 10, position = 0)                              // 500
         log.set(s, m, 20.0, 10, type = SetType.WARMUP, position = 1)       // excluded
         log.set(s, m, null, 8, position = 2)                               // counts as a set, 0 volume
@@ -231,7 +307,7 @@ class StatsRulesTest {
     fun `a set with null reps adds no volume`() {
         val log = Log()
         val m = log.machine()
-        val s = log.session(d(11, 3))
+        val s = log.session(d(11, 9))
         log.set(s, m, 50.0, null)
 
         val week = report(log).weeks.last()
@@ -244,9 +320,9 @@ class StatsRulesTest {
     fun `training days are distinct dates and sessions are distinct ids`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(11, 3), m, 50.0, 10)
-        log.lift(d(11, 3), m, 50.0, 10) // second session the same day
-        log.lift(d(11, 4), m, 50.0, 10)
+        log.lift(d(11, 9), m, 50.0, 10)
+        log.lift(d(11, 9), m, 50.0, 10) // second session the same day
+        log.lift(d(11, 10), m, 50.0, 10)
 
         val week = report(log).weeks.last()
 
@@ -258,8 +334,8 @@ class StatsRulesTest {
     fun `a warm up only session does not count as a session or a training day`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(11, 3), m, 50.0, 10)
-        log.lift(d(11, 4), m, 30.0, 10, type = SetType.WARMUP)
+        log.lift(d(11, 9), m, 50.0, 10)
+        log.lift(d(11, 10), m, 30.0, 10, type = SetType.WARMUP)
 
         val week = report(log).weeks.last()
 
@@ -272,7 +348,7 @@ class StatsRulesTest {
     fun `a cardio only session is a session and a training day without working sets or volume`() {
         val log = Log()
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
-        log.cardio(d(11, 3), bike)
+        log.cardio(d(11, 9), bike)
 
         val week = report(log).weeks.last()
 
@@ -286,7 +362,7 @@ class StatsRulesTest {
     fun `a set that carries seconds is cardio and is left out of volume even on a weight machine`() {
         val log = Log()
         val m = log.machine()
-        val s = log.session(d(11, 3))
+        val s = log.session(d(11, 9))
         log.set(s, m, 50.0, 10, position = 0)
         log.set(s, m, 40.0, 10, position = 1, seconds = 600)
 
@@ -306,21 +382,21 @@ class StatsRulesTest {
         val back = log.machine(MuscleGroup.BACK)
         val arms = log.machine(MuscleGroup.ARMS)
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
-        val current = log.session(d(11, 3))
+        val current = log.session(d(11, 9))
         log.set(current, chest, 50.0, 10, position = 0)        // 500
         log.set(current, chest, 50.0, 8, position = 1)         // 400
         log.set(current, legs, 100.0, 5, position = 2)         // 500
         log.set(current, arms, 20.0, 10, type = SetType.WARMUP, position = 3)
         log.set(current, bike, null, null, seconds = 600, position = 4)
-        log.lift(d(10, 28), back, 40.0, 10)                    // 400, earlier week
+        log.lift(d(10, 27), back, 40.0, 10)                    // 400, the block of 22 Oct
 
         val weeks = report(log).muscleWeeks
 
         assertEquals(
             listOf(
-                MuscleWeek(d(10, 26), MuscleGroup.BACK, 1, 400.0),
-                MuscleWeek(d(11, 2), MuscleGroup.LEGS, 1, 500.0),
-                MuscleWeek(d(11, 2), MuscleGroup.CHEST, 2, 900.0),
+                MuscleWeek(d(10, 22), MuscleGroup.BACK, 1, 400.0),
+                MuscleWeek(d(11, 5), MuscleGroup.LEGS, 1, 500.0),
+                MuscleWeek(d(11, 5), MuscleGroup.CHEST, 2, 900.0),
             ),
             weeks,
         )
@@ -335,21 +411,21 @@ class StatsRulesTest {
         val legs = log.machine(MuscleGroup.LEGS)
         val arms = log.machine(MuscleGroup.ARMS)
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
-        log.lift(d(11, 3), chest, 50.0, 10)
+        log.lift(d(11, 9), chest, 50.0, 10)
         log.lift(d(10, 1), legs, 100.0, 5)        // far outside four weeks
-        log.lift(d(11, 4), arms, 20.0, 10, type = SetType.WARMUP)
+        log.lift(d(11, 10), arms, 20.0, 10, type = SetType.WARMUP)
         log.cardio(d(10, 30), bike)
 
         val recency = report(log).recency
 
         assertEquals(MuscleGroup.entries.toList(), recency.map { it.muscleGroup })
         val byGroup = recency.associateBy { it.muscleGroup }
-        assertEquals(d(11, 3), byGroup.getValue(MuscleGroup.CHEST).lastTrained)
+        assertEquals(d(11, 9), byGroup.getValue(MuscleGroup.CHEST).lastTrained)
         assertEquals(2, byGroup.getValue(MuscleGroup.CHEST).daysSince)
         assertEquals(d(10, 1), byGroup.getValue(MuscleGroup.LEGS).lastTrained)
-        assertEquals(35, byGroup.getValue(MuscleGroup.LEGS).daysSince)
+        assertEquals(41, byGroup.getValue(MuscleGroup.LEGS).daysSince)
         assertEquals(d(10, 30), byGroup.getValue(MuscleGroup.CARDIO).lastTrained)
-        assertEquals(6, byGroup.getValue(MuscleGroup.CARDIO).daysSince)
+        assertEquals(12, byGroup.getValue(MuscleGroup.CARDIO).daysSince)
         // Never trained, and a warm up does not count.
         for (group in listOf(MuscleGroup.BACK, MuscleGroup.SHOULDERS, MuscleGroup.CORE, MuscleGroup.ARMS)) {
             assertNull(byGroup.getValue(group).lastTrained)
@@ -361,41 +437,56 @@ class StatsRulesTest {
     fun `recency uses the latest date of the group`() {
         val log = Log()
         val chest = log.machine(MuscleGroup.CHEST)
-        log.lift(d(11, 5), chest, 50.0, 10)
-        log.lift(d(11, 1), chest, 50.0, 10)
+        log.lift(d(11, 10), chest, 50.0, 10)
+        log.lift(d(11, 6), chest, 50.0, 10)
 
         val chestRecency = report(log).recency.first { it.muscleGroup == MuscleGroup.CHEST }
 
-        assertEquals(d(11, 5), chestRecency.lastTrained)
-        assertEquals(0, chestRecency.daysSince)
+        assertEquals(d(11, 10), chestRecency.lastTrained)
+        assertEquals(1, chestRecency.daysSince)
     }
 
     // Consistency
 
+    /** Blocks of the four week period: 15 Oct, 22 Oct, 29 Oct and 5 Nov, with 3, 1, 2 and 1 training days. */
     private fun consistencyLog(): Log {
         val log = Log()
         val m = log.machine()
-        // Week of 12 Oct: 3 days, 19 Oct: 1 day, 26 Oct: 2 days, current week: 1 day. 7 sessions in all.
-        for (date in listOf(d(10, 12), d(10, 13), d(10, 14), d(10, 20), d(10, 27), d(10, 28), d(11, 3))) {
+        for (date in listOf(d(10, 15), d(10, 16), d(10, 17), d(10, 23), d(10, 29), d(10, 30), d(11, 9))) {
             log.lift(date, m, 50.0, 10)
         }
         return log
     }
 
     @Test
-    fun `the current week is not counted until it met the goal`() {
+    fun `every block counts and the last one counts only when it met the goal`() {
         val c = report(consistencyLog(), goal = 2).consistency
 
-        assertEquals(3, c.weeksCounted)
+        assertEquals(4, c.weeksCounted)
         assertEquals(2, c.weeksMetGoal)
         assertEquals(2, c.goal)
         assertEquals(7 / 4.0, c.sessionsPerWeek, 1e-9)
-        assertEquals(d(10, 12), c.bestWeekStart)
+        assertEquals(d(10, 15), c.bestWeekStart)
         assertEquals(3, c.bestWeekTrainingDays)
     }
 
     @Test
-    fun `the current week is counted once it met the goal`() {
+    fun `a goal met in the last block counts`() {
+        val log = Log()
+        val m = log.machine()
+        log.lift(d(11, 6), m, 50.0, 10)
+        log.lift(d(11, 9), m, 50.0, 10)
+        log.lift(d(11, 10), m, 50.0, 10)
+
+        val c = report(log, goal = 3).consistency
+
+        assertEquals(4, c.weeksCounted)
+        assertEquals(1, c.weeksMetGoal)
+        assertEquals(3, c.bestWeekTrainingDays)
+    }
+
+    @Test
+    fun `every block counts toward the goal when the goal is one`() {
         val c = report(consistencyLog(), goal = 1).consistency
 
         assertEquals(4, c.weeksCounted)
@@ -410,21 +501,21 @@ class StatsRulesTest {
         val high = report(consistencyLog(), goal = 10).consistency
         assertEquals(7, high.goal)
         assertEquals(0, high.weeksMetGoal)
-        assertEquals(3, high.weeksCounted)
+        assertEquals(4, high.weeksCounted)
     }
 
     @Test
     fun `the best week ties go to the latest week`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(10, 13), m, 50.0, 10)
-        log.lift(d(10, 14), m, 50.0, 10)
-        log.lift(d(10, 27), m, 50.0, 10)
-        log.lift(d(10, 28), m, 50.0, 10)
+        log.lift(d(10, 23), m, 50.0, 10)
+        log.lift(d(10, 24), m, 50.0, 10)
+        log.lift(d(11, 1), m, 50.0, 10)
+        log.lift(d(11, 2), m, 50.0, 10)
 
         val c = report(log).consistency
 
-        assertEquals(d(10, 26), c.bestWeekStart)
+        assertEquals(d(10, 29), c.bestWeekStart)
         assertEquals(2, c.bestWeekTrainingDays)
     }
 
@@ -432,7 +523,7 @@ class StatsRulesTest {
     fun `with no sessions consistency is empty`() {
         val c = report(Log(), goal = 3).consistency
 
-        assertEquals(3, c.weeksCounted)
+        assertEquals(4, c.weeksCounted)
         assertEquals(0, c.weeksMetGoal)
         assertEquals(0.0, c.sessionsPerWeek, 0.0)
         assertNull(c.bestWeekStart)
@@ -440,11 +531,11 @@ class StatsRulesTest {
     }
 
     @Test
-    fun `sessions per week divides by all weeks of the period`() {
+    fun `sessions per week divides by all blocks of the period`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(11, 3), m, 50.0, 10)
-        log.lift(d(11, 4), m, 50.0, 10)
+        log.lift(d(11, 9), m, 50.0, 10)
+        log.lift(d(11, 10), m, 50.0, 10)
 
         val c = report(log, StatsPeriod.THREE_MONTHS).consistency
 
@@ -454,7 +545,7 @@ class StatsRulesTest {
     // Strength
 
     @Test
-    fun `strength compares the first and last windows and sorts by change percent`() {
+    fun `strength compares the first and last two blocks and sorts by change percent`() {
         val log = Log()
         val a = log.machine()   // 1
         val b = log.machine()   // 2
@@ -463,23 +554,23 @@ class StatsRulesTest {
         val onlyFirst = log.machine()   // 5
         val tooManyReps = log.machine() // 6
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO) // 7
-        // Windows of a four week period: first = 12 and 19 Oct, last = 26 Oct and the current week.
-        val warmupDay = log.session(d(10, 13))
+        // Windows of a four week period: first = the blocks from 15 and 22 Oct, last = the blocks from 29 Oct and 5 Nov.
+        val warmupDay = log.session(d(10, 16))
         log.set(warmupDay, a, 60.0, 10, position = 0)                         // 80
         log.set(warmupDay, a, 200.0, 1, type = SetType.WARMUP, position = 1)  // no estimate
-        log.lift(d(10, 20), a, 50.0, 1)                                       // 50, lower
-        log.lift(d(10, 27), a, 75.0, 4)                                       // 85
-        log.lift(d(11, 3), a, 70.0, 1)                                        // 70
-        log.lift(d(10, 14), b, 100.0, 1)
-        log.lift(d(10, 28), b, 90.0, 1)
-        log.lift(d(10, 13), e, 40.0, 1)
-        log.lift(d(10, 27), e, 60.0, 1)
-        log.lift(d(10, 27), onlyLast, 80.0, 1)
-        log.lift(d(10, 13), onlyFirst, 80.0, 1)
-        log.lift(d(10, 13), tooManyReps, 50.0, 15)
-        log.lift(d(10, 27), tooManyReps, 50.0, 1)
-        log.cardio(d(10, 13), bike)
-        log.cardio(d(10, 27), bike)
+        log.lift(d(10, 23), a, 50.0, 1)                                       // 50, lower
+        log.lift(d(10, 31), a, 75.0, 4)                                       // 85
+        log.lift(d(11, 9), a, 70.0, 1)                                        // 70
+        log.lift(d(10, 17), b, 100.0, 1)
+        log.lift(d(11, 1), b, 90.0, 1)
+        log.lift(d(10, 16), e, 40.0, 1)
+        log.lift(d(10, 31), e, 60.0, 1)
+        log.lift(d(10, 31), onlyLast, 80.0, 1)
+        log.lift(d(10, 16), onlyFirst, 80.0, 1)
+        log.lift(d(10, 16), tooManyReps, 50.0, 15)
+        log.lift(d(10, 31), tooManyReps, 50.0, 1)
+        log.cardio(d(10, 16), bike)
+        log.cardio(d(10, 31), bike)
 
         val r = report(log)
 
@@ -504,8 +595,8 @@ class StatsRulesTest {
     fun `strength is empty and the overall change is null when no machine has both windows`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(10, 13), m, 80.0, 5) // first window only
-        log.lift(d(11, 3), log.machine(), 80.0, 5) // last window only
+        log.lift(d(10, 16), m, 80.0, 5)            // first window only
+        log.lift(d(11, 9), log.machine(), 80.0, 5) // last window only
 
         val r = report(log)
 
@@ -522,17 +613,19 @@ class StatsRulesTest {
     }
 
     @Test
-    fun `strength windows are four weeks when the period has eight weeks`() {
+    fun `strength windows are four blocks in an eight block period`() {
         val log = Log()
         val m = log.machine()
-        // ALL from 14 Sep: eight weeks, windows of four. The first window ends before Monday 12 Oct.
-        log.lift(d(9, 16), m, 100.0, 1)
+        // ALL from 17 Sep: eight blocks, windows of four. The first window ends on 14 Oct, the last starts on 15 Oct.
+        log.lift(d(9, 17), m, 100.0, 1)
         log.lift(d(10, 8), m, 110.0, 1)
         log.lift(d(10, 11), m, 120.0, 1) // still the first window
-        log.lift(d(10, 12), m, 130.0, 1) // the last window
+        log.lift(d(10, 15), m, 130.0, 1) // first day of the last window
 
         val r = report(log, StatsPeriod.ALL)
 
+        assertEquals(d(9, 17), r.from)
+        assertEquals(8, r.weeks.size)
         assertEquals(1, r.strength.size)
         assertEquals(120.0, r.strength.single().before, 1e-9)
         assertEquals(130.0, r.strength.single().after, 1e-9)
@@ -540,14 +633,14 @@ class StatsRulesTest {
     }
 
     @Test
-    fun `strength windows are four weeks in a 13 week period and the weeks between are in neither`() {
+    fun `strength windows are four blocks in a 13 block period and the blocks between are in neither`() {
         val log = Log()
         val m = log.machine()
-        // From 10 Aug: the first window is the weeks of 10, 17, 24 and 31 Aug; the last starts on Monday 12 Oct.
-        log.lift(d(8, 12), m, 100.0, 1)  // first window
-        log.lift(d(9, 9), m, 300.0, 1)   // week of 7 Sep: in neither
-        log.lift(d(10, 11), m, 400.0, 1) // Sunday before the last window: in neither
-        log.lift(d(10, 13), m, 110.0, 1) // last window
+        // THREE_MONTHS from 13 Aug: the first window runs to 9 Sep, the last one starts on 15 Oct.
+        log.lift(d(8, 13), m, 100.0, 1)  // first window
+        log.lift(d(9, 20), m, 300.0, 1)  // in neither
+        log.lift(d(10, 14), m, 400.0, 1) // the day before the last window
+        log.lift(d(10, 15), m, 110.0, 1) // first day of the last window
 
         val r = report(log, StatsPeriod.THREE_MONTHS)
 
@@ -564,17 +657,17 @@ class StatsRulesTest {
         val b = log.machine() // 2
         log.lift(d(9, 1), a, 100.0, 5)   // first time: no record
         log.lift(d(9, 15), a, 105.0, 5)  // record, but outside the period
-        log.lift(d(10, 14), a, 110.0, 5) // heaviest weight
+        log.lift(d(10, 16), a, 110.0, 5) // heaviest weight
         log.lift(d(10, 28), a, 110.0, 6) // most reps at 110
-        val last = log.session(d(11, 3))
+        val last = log.session(d(11, 9))
         log.set(last, a, 100.0, 5, position = 0)                        // matches, no record
         log.set(last, a, 200.0, 5, type = SetType.WARMUP, position = 1) // warm ups are never a record
-        log.lift(d(10, 6), b, 50.0, 10)
+        log.lift(d(10, 6), b, 50.0, 10)  // before the period
         log.lift(d(10, 20), b, 60.0, 10)
 
         val events = report(log).records
 
-        assertEquals(listOf(d(10, 28), d(10, 20), d(10, 14)), events.map { it.date })
+        assertEquals(listOf(d(10, 28), d(10, 20), d(10, 16)), events.map { it.date })
         assertEquals(listOf(1L, 2L, 1L), events.map { it.machine.id })
         assertEquals(Record.MostReps(110.0, 6), events[0].record)
         assertEquals(Record.HeaviestWeight(60.0), events[1].record)
@@ -586,7 +679,7 @@ class StatsRulesTest {
         val log = Log()
         val m = log.machine()
         log.lift(d(10, 20), m, 110.0, 5)
-        val s = log.session(d(11, 4))
+        val s = log.session(d(11, 9))
         // Added in reverse order; position decides.
         log.set(s, m, 125.0, 5, position = 1)
         log.set(s, m, 120.0, 5, position = 0)
@@ -595,14 +688,14 @@ class StatsRulesTest {
 
         assertEquals(2, events.size)
         assertEquals(setOf<Record>(Record.HeaviestWeight(120.0), Record.HeaviestWeight(125.0)), events.map { it.record }.toSet())
-        assertTrue(events.all { it.date == d(11, 4) })
+        assertTrue(events.all { it.date == d(11, 9) })
     }
 
     @Test
     fun `cardio sets are never records`() {
         val log = Log()
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
-        log.cardio(d(10, 14), bike, 600)
+        log.cardio(d(10, 16), bike, 600)
         log.cardio(d(10, 28), bike, 1200)
 
         assertTrue(report(log).records.isEmpty())
@@ -695,7 +788,7 @@ class StatsRulesTest {
     fun `the plateau looks at the whole history, not only the period`() {
         val (log, _) = plateauLog(listOf(100.0, 90.0, 90.0, 90.0, 90.0, 90.0))
 
-        // Only the last four of the six sessions fall inside four weeks.
+        // Only the last two of the six sessions fall inside four weeks (from 15 Oct).
         val r = report(log, StatsPeriod.FOUR_WEEKS)
 
         assertEquals(1, r.plateaus.size)
@@ -708,7 +801,7 @@ class StatsRulesTest {
         val log = Log()
         val m = log.machine()
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
-        val s = log.session(d(11, 3))
+        val s = log.session(d(11, 9))
         var pos = 0
         for (reps in listOf(1, 5, 6, 8, 9, 12, 13, 20)) log.set(s, m, 50.0, reps, position = pos++)
         log.set(s, m, 50.0, 0, position = pos++)                              // no reps: ignored
@@ -728,7 +821,7 @@ class StatsRulesTest {
     fun `rep range percentages sum to 100`() {
         val log = Log()
         val m = log.machine()
-        val s = log.session(d(11, 3))
+        val s = log.session(d(11, 9))
         var pos = 0
         for (reps in listOf(3, 4, 5, 6, 7, 8, 10)) log.set(s, m, 50.0, reps, position = pos++)
 
@@ -756,19 +849,19 @@ class StatsRulesTest {
     fun `times average closed sessions with an end after the start`() {
         val log = Log()
         val m = log.machine()
-        val one = log.session(d(11, 3), endedAfterSeconds = 60 * 60)
-        val two = log.session(d(11, 4), endedAfterSeconds = 45 * 60)
-        val three = log.session(d(11, 4), hour = 15, endedAfterSeconds = 46 * 60)
-        log.session(d(11, 4), hour = 18)                         // open: skipped
-        log.session(d(11, 4), hour = 20, endedAfterSeconds = 0)  // added by hand: skipped
-        log.session(d(10, 1), endedAfterSeconds = 120 * 60)      // before the period: skipped
-        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 3), 10, 0), position = 0)
-        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 3), 10, 10), position = 1)   // gap 10
-        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 3), 10, 40), position = 2)   // gap 30: too long
-        log.set(two, m, 50.0, 10, loggedAt = at(d(11, 4), 10, 0), position = 0)
-        log.set(two, m, 50.0, 10, loggedAt = at(d(11, 4), 10, 5), position = 1)    // gap 5
-        log.set(three, m, 50.0, 10, loggedAt = at(d(11, 4), 15, 0), position = 0)
-        log.set(three, m, 50.0, 10, loggedAt = at(d(11, 4), 15, 15), position = 1) // gap 15: counts
+        val one = log.session(d(11, 9), endedAfterSeconds = 60 * 60)
+        val two = log.session(d(11, 10), endedAfterSeconds = 45 * 60)
+        val three = log.session(d(11, 10), hour = 15, endedAfterSeconds = 46 * 60)
+        log.session(d(11, 10), hour = 18)                         // open: skipped
+        log.session(d(11, 10), hour = 20, endedAfterSeconds = 0)  // added by hand: skipped
+        log.session(d(10, 1), endedAfterSeconds = 120 * 60)       // before the period: skipped
+        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 9), 10, 0), position = 0)
+        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 9), 10, 10), position = 1)   // gap 10
+        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 9), 10, 40), position = 2)   // gap 30: too long
+        log.set(two, m, 50.0, 10, loggedAt = at(d(11, 10), 10, 0), position = 0)
+        log.set(two, m, 50.0, 10, loggedAt = at(d(11, 10), 10, 5), position = 1)   // gap 5
+        log.set(three, m, 50.0, 10, loggedAt = at(d(11, 10), 15, 0), position = 0)
+        log.set(three, m, 50.0, 10, loggedAt = at(d(11, 10), 15, 15), position = 1) // gap 15: counts
 
         val times = report(log).times
 
@@ -783,11 +876,11 @@ class StatsRulesTest {
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
         val m = log.machine()
         // A 60 min bike, logged when it ended at 11:00: the session starts and ends at 11:00.
-        val cardioEnd = at(d(11, 3), 11, 0)
+        val cardioEnd = at(d(11, 9), 11, 0)
         log.sessions += Session(1L, cardioEnd, cardioEnd, null, null)
         log.sets += WorkoutSet(1L, 1L, bike, 0, null, null, 3600, null, null, cardioEnd)
         // A 40 min weights session.
-        val weights = log.session(d(11, 4), endedAfterSeconds = 40 * 60)
+        val weights = log.session(d(11, 10), endedAfterSeconds = 40 * 60)
         log.set(weights, m, 50.0, 10)
 
         val times = report(log).times
@@ -801,8 +894,8 @@ class StatsRulesTest {
         val log = Log()
         log.machine()
         // 40 min 20 s and 41 min 10 s: mean 40 min 45 s = 40.75, rounded to 41.
-        log.session(d(11, 3), endedAfterSeconds = 40 * 60 + 20)
-        log.session(d(11, 4), endedAfterSeconds = 41 * 60 + 10)
+        log.session(d(11, 9), endedAfterSeconds = 40 * 60 + 20)
+        log.session(d(11, 10), endedAfterSeconds = 41 * 60 + 10)
 
         assertEquals(41, report(log).times.averageMinutes)
     }
@@ -811,11 +904,11 @@ class StatsRulesTest {
     fun `times between sets are null when every gap is too long or there is only one set`() {
         val log = Log()
         val m = log.machine()
-        val one = log.session(d(11, 3), endedAfterSeconds = 60 * 60)
-        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 3), 10, 0), position = 0)
-        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 3), 10, 16), position = 1)
-        val two = log.session(d(11, 4), endedAfterSeconds = 30 * 60)
-        log.set(two, m, 50.0, 10, loggedAt = at(d(11, 4), 10, 0), position = 0)
+        val one = log.session(d(11, 9), endedAfterSeconds = 60 * 60)
+        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 9), 10, 0), position = 0)
+        log.set(one, m, 50.0, 10, loggedAt = at(d(11, 9), 10, 16), position = 1)
+        val two = log.session(d(11, 10), endedAfterSeconds = 30 * 60)
+        log.set(two, m, 50.0, 10, loggedAt = at(d(11, 10), 10, 0), position = 0)
 
         val times = report(log).times
 
@@ -828,8 +921,8 @@ class StatsRulesTest {
     fun `times are empty when no session qualifies`() {
         val log = Log()
         log.machine()
-        log.session(d(11, 3)) // open
-        log.session(d(11, 4), endedAfterSeconds = 0)
+        log.session(d(11, 9)) // open
+        log.session(d(11, 10), endedAfterSeconds = 0)
 
         val times = report(log).times
 
@@ -844,9 +937,9 @@ class StatsRulesTest {
     fun `sets whose session or machine is unknown are ignored`() {
         val log = Log()
         val m = log.machine()
-        val s = log.session(d(11, 3))
-        log.sets += WorkoutSet(1, 99L, m, 0, 50.0, 10, null, null, null, at(d(11, 3)))  // unknown session
-        log.sets += WorkoutSet(2, s, 99L, 0, 50.0, 10, null, null, null, at(d(11, 3)))  // unknown machine
+        val s = log.session(d(11, 9))
+        log.sets += WorkoutSet(1, 99L, m, 0, 50.0, 10, null, null, null, at(d(11, 9)))  // unknown session
+        log.sets += WorkoutSet(2, s, 99L, 0, 50.0, 10, null, null, null, at(d(11, 9)))  // unknown machine
 
         val r = report(log)
 
@@ -861,12 +954,12 @@ class StatsRulesTest {
     fun `cardio counts for cardio recency but not for volume rep ranges or strength`() {
         val log = Log()
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
-        log.cardio(d(10, 13), bike)
-        log.cardio(d(11, 3), bike)
+        log.cardio(d(10, 16), bike)
+        log.cardio(d(11, 9), bike)
 
         val r = report(log)
 
-        assertEquals(d(11, 3), r.recency.first { it.muscleGroup == MuscleGroup.CARDIO }.lastTrained)
+        assertEquals(d(11, 9), r.recency.first { it.muscleGroup == MuscleGroup.CARDIO }.lastTrained)
         assertEquals(2, r.recency.first { it.muscleGroup == MuscleGroup.CARDIO }.daysSince)
         assertTrue(r.weeks.all { it.volumeKg == 0.0 && it.workingSets == 0 })
         assertEquals(2, r.weeks.sumOf { it.trainingDays })
@@ -880,8 +973,8 @@ class StatsRulesTest {
     fun `the zone decides which date a late evening session falls on`() {
         val log = Log()
         val m = log.machine()
-        // 02:30 UTC on Monday 2 November is 23:30 on Sunday 1 November in Sao Paulo (UTC-3).
-        val s = log.session(d(11, 2), hour = 2, minute = 30)
+        // 02:30 UTC on Thursday 5 November is 23:30 on Wednesday 4 November in Sao Paulo (UTC-3).
+        val s = log.session(d(11, 5), hour = 2, minute = 30)
         log.set(s, m, 50.0, 10)
 
         val inUtc = report(log, zone = ZoneOffset.UTC)
@@ -889,11 +982,11 @@ class StatsRulesTest {
 
         assertEquals(listOf(0, 0, 0, 1), inUtc.weeks.map { it.sessions })
         assertEquals(listOf(0, 0, 1, 0), inSaoPaulo.weeks.map { it.sessions })
-        assertEquals(d(11, 2), inUtc.recency.first { it.muscleGroup == MuscleGroup.CHEST }.lastTrained)
-        assertEquals(d(11, 1), inSaoPaulo.recency.first { it.muscleGroup == MuscleGroup.CHEST }.lastTrained)
+        assertEquals(d(11, 5), inUtc.recency.first { it.muscleGroup == MuscleGroup.CHEST }.lastTrained)
+        assertEquals(d(11, 4), inSaoPaulo.recency.first { it.muscleGroup == MuscleGroup.CHEST }.lastTrained)
     }
 
-    // Body insights: strength now, strength index, balance
+    // Body insights: strength now, strength index, balance, muscle load
 
     /** A weight machine with a library id (the Log helper has none). */
     private fun machineIn(
@@ -927,19 +1020,19 @@ class StatsRulesTest {
         library: Map<String, LibraryExercise> = emptyMap(),
     ): StatsReport = StatsRules.report(period, today, DayOfWeek.MONDAY, 3, log.machines, log.sessions, log.sets, utc, library)
 
-    /** Monday of week [i] of the 13 week period that ends this week (from 10 Aug 2026). */
-    private fun weekOf(i: Int): LocalDate = d(8, 10).plusWeeks(i.toLong())
+    /** Block [i] of the 13 blocks of THREE_MONTHS (from 13 Aug, the last one ends today). */
+    private fun weekOf(i: Int): LocalDate = d(8, 13).plusWeeks(i.toLong())
 
     @Test
     fun `strength now is the best estimate of each non-cardio machine in the last window, best first`() {
         val log = Log()
         val press = log.machine()
         val curl = log.machine()
-        // Four weeks: the last window is the two weeks from Monday 26 Oct.
-        log.lift(d(10, 27), press, 100.0, 1)   // 100 in the window: the best
-        log.lift(d(11, 3), press, 80.0, 4)     // 90.7 in the window, below it
+        // Four weeks: the last window is the two blocks from 29 Oct.
+        log.lift(d(10, 30), press, 100.0, 1)   // 100 in the window: the best
+        log.lift(d(11, 6), press, 80.0, 4)     // 90.7 in the window, below it
         log.lift(d(11, 2), curl, 20.0, 10)     // 26.7
-        log.lift(d(10, 13), curl, 200.0, 1)    // first window only: not counted
+        log.lift(d(10, 16), curl, 200.0, 1)    // first window only: not counted
 
         val now = report(log).strengthNow
 
@@ -953,8 +1046,8 @@ class StatsRulesTest {
         val log = Log()
         val rower = machineIn(log, null, MuscleGroup.CARDIO, MachineKind.CARDIO)
         val press = log.machine()
-        log.lift(d(11, 3), rower, 50.0, 10)
-        val timed = log.session(d(11, 3))
+        log.lift(d(11, 9), rower, 50.0, 10)
+        val timed = log.session(d(11, 9))
         log.set(timed, press, 60.0, 8, seconds = 600)
 
         assertTrue(report(log).strengthNow.isEmpty())
@@ -1002,13 +1095,13 @@ class StatsRulesTest {
 
         val index = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).strengthIndex
 
-        // Week 6: the press alone is at 110. Week 7: the row joins at its own first value; the index stays at 110.
+        // Block 6: the press alone is at 110. Block 7: the row joins at its own first value; the index stays at 110.
         assertEquals(110.0, index[6].percent, 1e-9)
         assertEquals(110.0, index[7].percent, 1e-9)
     }
 
     @Test
-    fun `weeks without a value for a machine are skipped in the index`() {
+    fun `blocks without a value for a machine are skipped in the index`() {
         val log = Log()
         val press = log.machine()
         log.lift(weekOf(0).plusDays(1), press, 100.0, 1)
@@ -1016,7 +1109,7 @@ class StatsRulesTest {
 
         val index = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).strengthIndex
 
-        // The trailing four weeks of the first set run out after week 3; the next value is week 9.
+        // The trailing four blocks of the first set run out after block 3; the next value is block 9.
         assertEquals(listOf(0, 1, 2, 3, 9, 10, 11, 12).map { weekOf(it) }, index.map { it.weekStart })
         assertEquals(120.0, index[4].percent, 1e-9)
     }
@@ -1025,9 +1118,9 @@ class StatsRulesTest {
     fun `strength index and strength now are empty without any estimate`() {
         val warmUpOnly = Log()
         val press = warmUpOnly.machine()
-        warmUpOnly.lift(d(11, 3), press, 20.0, 10, SetType.WARMUP)
+        warmUpOnly.lift(d(11, 9), press, 20.0, 10, SetType.WARMUP)
         val cardioOnly = Log()
-        cardioOnly.cardio(d(11, 3), cardioOnly.machine(MuscleGroup.CARDIO, MachineKind.CARDIO))
+        cardioOnly.cardio(d(11, 9), cardioOnly.machine(MuscleGroup.CARDIO, MachineKind.CARDIO))
 
         for (log in listOf(Log(), warmUpOnly, cardioOnly)) {
             val r = reportWithLibrary(log, StatsPeriod.THREE_MONTHS)
@@ -1046,13 +1139,13 @@ class StatsRulesTest {
         val legs = log.machine(MuscleGroup.LEGS)
         val arms = log.machine(MuscleGroup.ARMS)
         val core = log.machine(MuscleGroup.CORE)
-        repeat(2) { log.lift(d(11, 3), chest, 60.0, 8) }
-        log.lift(d(11, 3), shoulders, 20.0, 10)
-        repeat(2) { log.lift(d(11, 3), back, 50.0, 10) }
-        log.lift(d(11, 3), outsideLibrary, 50.0, 10)
-        repeat(4) { log.lift(d(11, 3), legs, 80.0, 10) }
-        repeat(2) { log.lift(d(11, 3), arms, 12.0, 10) }
-        repeat(5) { log.lift(d(11, 3), core, 10.0, 15) }
+        repeat(2) { log.lift(d(11, 9), chest, 60.0, 8) }
+        log.lift(d(11, 9), shoulders, 20.0, 10)
+        repeat(2) { log.lift(d(11, 9), back, 50.0, 10) }
+        log.lift(d(11, 9), outsideLibrary, 50.0, 10)
+        repeat(4) { log.lift(d(11, 9), legs, 80.0, 10) }
+        repeat(2) { log.lift(d(11, 9), arms, 12.0, 10) }
+        repeat(5) { log.lift(d(11, 9), core, 10.0, 15) }
 
         val balance = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).balance
 
@@ -1080,11 +1173,11 @@ class StatsRulesTest {
         val legExtension = machineIn(log, "leg-extension", MuscleGroup.LEGS)
         val legCurl = machineIn(log, "leg-curl", MuscleGroup.LEGS)
         val crunch = machineIn(log, "crunch", MuscleGroup.CORE)
-        repeat(2) { log.lift(d(11, 3), bench, 60.0, 8) }
-        repeat(3) { log.lift(d(11, 3), row, 50.0, 10) }
-        repeat(4) { log.lift(d(11, 3), legExtension, 40.0, 12) }
-        log.lift(d(11, 3), legCurl, 30.0, 10)
-        repeat(2) { log.lift(d(11, 3), crunch, 20.0, 15) }
+        repeat(2) { log.lift(d(11, 9), bench, 60.0, 8) }
+        repeat(3) { log.lift(d(11, 9), row, 50.0, 10) }
+        repeat(4) { log.lift(d(11, 9), legExtension, 40.0, 12) }
+        log.lift(d(11, 9), legCurl, 30.0, 10)
+        repeat(2) { log.lift(d(11, 9), crunch, 20.0, 15) }
 
         val balance = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS, library).balance
 
@@ -1098,13 +1191,13 @@ class StatsRulesTest {
     }
 
     @Test
-    fun `balance covers every week of the period, not only the last four`() {
+    fun `balance covers every block of the period, not only the last four`() {
         val log = Log()
         val chest = log.machine(MuscleGroup.CHEST)
-        log.lift(d(8, 3), chest, 60.0, 8)                      // the week before the 13 weeks: outside
-        log.lift(d(10, 11), chest, 60.0, 8)                    // week 8 of the 13: counts for the period
-        log.lift(d(10, 13), chest, 60.0, 8)                    // week 9
-        log.lift(d(11, 3), chest, 20.0, 10, SetType.WARMUP)    // warm ups never count
+        log.lift(d(8, 3), chest, 60.0, 8)                      // before the 13 blocks: outside
+        log.lift(d(10, 11), chest, 60.0, 8)                    // in the 13 blocks, before the last four
+        log.lift(d(10, 16), chest, 60.0, 8)                    // in the last four
+        log.lift(d(11, 9), chest, 20.0, 10, SetType.WARMUP)    // warm ups never count
 
         val longPeriod = reportWithLibrary(log, StatsPeriod.THREE_MONTHS).balance
         val shortPeriod = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).balance
@@ -1117,6 +1210,17 @@ class StatsRulesTest {
     @Test
     fun `balance is all zero with no sets`() {
         assertEquals(BalanceStats(0, 0, 0, 0, 0, 0, 0), reportWithLibrary(Log(), StatsPeriod.FOUR_WEEKS).balance)
+    }
+
+    @Test
+    fun `muscle load divides the sets by the blocks of the period`() {
+        val log = Log()
+        val chest = log.machine(MuscleGroup.CHEST)
+        val s = log.session(d(11, 9))
+        for (i in 0 until 12) log.set(s, chest, 50.0, 10, position = i)
+
+        assertEquals(3.0, BodyInsightRules.muscleLoad(report(log, StatsPeriod.FOUR_WEEKS)).getValue(MuscleGroup.CHEST), 1e-9)
+        assertEquals(12.0 / 13.0, BodyInsightRules.muscleLoad(report(log, StatsPeriod.THREE_MONTHS)).getValue(MuscleGroup.CHEST), 1e-9)
     }
 
     // Indirect work
@@ -1133,14 +1237,14 @@ class StatsRulesTest {
         )
         val log = Log()
         val row = machineIn(log, "row", MuscleGroup.BACK)
-        repeat(2) { log.lift(d(11, 3), row, 50.0, 10) }
+        repeat(2) { log.lift(d(11, 9), row, 50.0, 10) }
 
         val indirect = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS, library).indirectWeeks
 
         assertEquals(
             listOf(
-                IndirectWeek(d(11, 2), MuscleGroup.SHOULDERS, 2),   // shoulders and neck: one group per set
-                IndirectWeek(d(11, 2), MuscleGroup.ARMS, 2),        // biceps
+                IndirectWeek(d(11, 5), MuscleGroup.SHOULDERS, 2),   // shoulders and neck: one group per set
+                IndirectWeek(d(11, 5), MuscleGroup.ARMS, 2),        // biceps
             ),
             indirect,
         )
@@ -1151,7 +1255,7 @@ class StatsRulesTest {
         val library = mapOf("fly" to exercise("fly", "push", "chest"))
         val log = Log()
         val fly = machineIn(log, "fly", MuscleGroup.CHEST)
-        log.lift(d(11, 3), fly, 20.0, 12)
+        log.lift(d(11, 9), fly, 20.0, 12)
 
         assertTrue(reportWithLibrary(log, StatsPeriod.FOUR_WEEKS, library).indirectWeeks.isEmpty())
     }
@@ -1159,12 +1263,12 @@ class StatsRulesTest {
     @Test
     fun `without library data a machine adds the default groups of its own group`() {
         val log = Log()
-        log.lift(d(11, 3), log.machine(MuscleGroup.CHEST), 60.0, 8)
-        log.lift(d(11, 3), log.machine(MuscleGroup.BACK), 50.0, 10)
-        log.lift(d(11, 3), log.machine(MuscleGroup.SHOULDERS), 20.0, 10)
-        log.lift(d(11, 3), log.machine(MuscleGroup.ARMS), 12.0, 10)
-        log.lift(d(11, 3), log.machine(MuscleGroup.LEGS), 80.0, 10)
-        log.lift(d(11, 3), log.machine(MuscleGroup.CORE), 10.0, 15)
+        log.lift(d(11, 9), log.machine(MuscleGroup.CHEST), 60.0, 8)
+        log.lift(d(11, 9), log.machine(MuscleGroup.BACK), 50.0, 10)
+        log.lift(d(11, 9), log.machine(MuscleGroup.SHOULDERS), 20.0, 10)
+        log.lift(d(11, 9), log.machine(MuscleGroup.ARMS), 12.0, 10)
+        log.lift(d(11, 9), log.machine(MuscleGroup.LEGS), 80.0, 10)
+        log.lift(d(11, 9), log.machine(MuscleGroup.CORE), 10.0, 15)
 
         val indirect = reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks
 
@@ -1176,12 +1280,12 @@ class StatsRulesTest {
     fun `a library id that is not in the library falls back to the default groups`() {
         val log = Log()
         val back = machineIn(log, "not-in-library", MuscleGroup.BACK)
-        log.lift(d(11, 3), back, 50.0, 10)
+        log.lift(d(11, 9), back, 50.0, 10)
 
         assertEquals(
             listOf(
-                IndirectWeek(d(11, 2), MuscleGroup.SHOULDERS, 1),
-                IndirectWeek(d(11, 2), MuscleGroup.ARMS, 1),
+                IndirectWeek(d(11, 5), MuscleGroup.SHOULDERS, 1),
+                IndirectWeek(d(11, 5), MuscleGroup.ARMS, 1),
             ),
             reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks,
         )
@@ -1193,17 +1297,17 @@ class StatsRulesTest {
         val chest = log.machine(MuscleGroup.CHEST)
         val legs = log.machine(MuscleGroup.LEGS)
         val bike = log.machine(MuscleGroup.CARDIO, MachineKind.CARDIO)
-        log.lift(d(11, 3), chest, 20.0, 10, SetType.WARMUP)
-        log.lift(d(11, 3), legs, 20.0, 10, SetType.WARMUP)
-        log.cardio(d(11, 3), bike)
-        val timed = log.session(d(11, 3))
+        log.lift(d(11, 9), chest, 20.0, 10, SetType.WARMUP)
+        log.lift(d(11, 9), legs, 20.0, 10, SetType.WARMUP)
+        log.cardio(d(11, 9), bike)
+        val timed = log.session(d(11, 9))
         log.set(timed, legs, null, null, seconds = 300)
-        log.lift(d(11, 3), chest, 60.0, 8)                      // the one working set
+        log.lift(d(11, 9), chest, 60.0, 8)                      // the one working set
 
         assertEquals(
             listOf(
-                IndirectWeek(d(11, 2), MuscleGroup.SHOULDERS, 1),
-                IndirectWeek(d(11, 2), MuscleGroup.ARMS, 1),
+                IndirectWeek(d(11, 5), MuscleGroup.SHOULDERS, 1),
+                IndirectWeek(d(11, 5), MuscleGroup.ARMS, 1),
             ),
             reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks,
         )
@@ -1212,67 +1316,59 @@ class StatsRulesTest {
     @Test
     fun `indirect work is empty when no set works another group, and only sets of the period count`() {
         val log = Log()
-        log.lift(d(11, 3), log.machine(MuscleGroup.ARMS), 12.0, 10)   // arms have no default indirect group
+        log.lift(d(11, 9), log.machine(MuscleGroup.ARMS), 12.0, 10)   // arms have no default indirect group
         log.lift(d(9, 1), log.machine(MuscleGroup.CHEST), 60.0, 8)    // before the four weeks
 
         assertTrue(reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks.isEmpty())
         assertEquals(
             listOf(
-                IndirectWeek(d(8, 31), MuscleGroup.SHOULDERS, 1),   // the week of 1 Sep
-                IndirectWeek(d(8, 31), MuscleGroup.ARMS, 1),
+                IndirectWeek(d(8, 27), MuscleGroup.SHOULDERS, 1),   // the block of 27 Aug to 2 Sep
+                IndirectWeek(d(8, 27), MuscleGroup.ARMS, 1),
             ),
             reportWithLibrary(log, StatsPeriod.THREE_MONTHS).indirectWeeks,
         )
     }
 
     @Test
-    fun `indirect weeks are counted per week and sorted by week then group`() {
+    fun `indirect weeks are counted per block and sorted by block then group`() {
         val log = Log()
         val legs = log.machine(MuscleGroup.LEGS)     // default: core
         val chest = log.machine(MuscleGroup.CHEST)   // default: shoulders and arms
-        log.lift(d(10, 14), legs, 80.0, 10)          // week of 12 Oct
-        log.lift(d(10, 28), chest, 60.0, 8)          // week of 26 Oct
-        log.lift(d(11, 3), legs, 80.0, 10)           // week of 2 Nov
+        log.lift(d(10, 16), legs, 80.0, 10)          // block of 15 Oct
+        log.lift(d(10, 28), chest, 60.0, 8)          // block of 22 Oct
+        log.lift(d(11, 9), legs, 80.0, 10)           // block of 5 Nov
 
         assertEquals(
             listOf(
-                IndirectWeek(d(10, 12), MuscleGroup.CORE, 1),
-                IndirectWeek(d(10, 26), MuscleGroup.SHOULDERS, 1),
-                IndirectWeek(d(10, 26), MuscleGroup.ARMS, 1),
-                IndirectWeek(d(11, 2), MuscleGroup.CORE, 1),
+                IndirectWeek(d(10, 15), MuscleGroup.CORE, 1),
+                IndirectWeek(d(10, 22), MuscleGroup.SHOULDERS, 1),
+                IndirectWeek(d(10, 22), MuscleGroup.ARMS, 1),
+                IndirectWeek(d(11, 5), MuscleGroup.CORE, 1),
             ),
             reportWithLibrary(log, StatsPeriod.FOUR_WEEKS).indirectWeeks,
         )
     }
 
-    // One week: this week so far
+    // One week: the last seven days
 
     @Test
-    fun `one week is the current week so far as a single bucket`() {
+    fun `one week is the last seven days as a single block`() {
         val r = report(Log(), StatsPeriod.ONE_WEEK)
 
         assertEquals(StatsPeriod.ONE_WEEK, r.period)
-        assertEquals(d(11, 2), r.from)
+        assertEquals(d(11, 5), r.from)
         assertEquals(today, r.to)
-        assertEquals(listOf(d(11, 2)), r.weeks.map { it.weekStart })
+        assertEquals(listOf(d(11, 5)), r.weeks.map { it.weekStart })
     }
 
     @Test
-    fun `one week starts on the first day of the week`() {
-        val r = report(Log(), StatsPeriod.ONE_WEEK, first = DayOfWeek.SUNDAY)
-
-        assertEquals(d(11, 1), r.from)
-        assertEquals(listOf(d(11, 1)), r.weeks.map { it.weekStart })
-    }
-
-    @Test
-    fun `one week counts only the sets and sessions of this week up to today`() {
+    fun `one week counts only the sets and sessions of the block up to today`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(10, 30), m, 50.0, 10) // last week
-        log.lift(d(11, 2), m, 60.0, 5)   // Monday of this week
-        log.lift(d(11, 4), m, 40.0, 10)  // Wednesday
-        log.lift(d(11, 6), m, 99.0, 9)   // after today
+        log.lift(d(10, 30), m, 50.0, 10) // before the block
+        log.lift(d(11, 5), m, 60.0, 5)   // first day of the block
+        log.lift(d(11, 9), m, 40.0, 10)  // Monday of the block
+        log.lift(d(11, 12), m, 99.0, 9)  // after today
 
         val week = report(log, StatsPeriod.ONE_WEEK).weeks.single()
 
@@ -1286,8 +1382,8 @@ class StatsRulesTest {
     fun `one week has no strength trend or index but still gives the best estimates`() {
         val log = Log()
         val press = log.machine()
-        log.lift(d(11, 2), press, 80.0, 5)   // about 93 kg
-        log.lift(d(11, 4), press, 100.0, 1)  // 100 kg
+        log.lift(d(11, 6), press, 80.0, 5)   // about 93 kg
+        log.lift(d(11, 9), press, 100.0, 1)  // 100 kg
 
         val r = report(log, StatsPeriod.ONE_WEEK)
 
@@ -1299,26 +1395,26 @@ class StatsRulesTest {
     }
 
     @Test
-    fun `one week lists only the records set this week`() {
+    fun `one week lists only the records set in the block`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(10, 27), m, 100.0, 1) // last week: a record, but outside the period
-        log.lift(d(11, 3), m, 105.0, 1)  // this week: a new best
+        log.lift(d(10, 27), m, 100.0, 1) // before the block: a record, but outside the period
+        log.lift(d(11, 6), m, 105.0, 1)  // in the block: a new best
 
         val records = report(log, StatsPeriod.ONE_WEEK).records
 
         assertEquals(1, records.size)
-        assertEquals(d(11, 3), records.single().date)
+        assertEquals(d(11, 6), records.single().date)
         assertEquals(m, records.single().machine.id)
     }
 
     @Test
-    fun `one week keeps the rep ranges, session times and muscle weeks of this week`() {
+    fun `one week keeps the rep ranges, session times and muscle weeks of the block`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(10, 27), m, 50.0, 10) // last week, 9 to 12 reps
-        val s = log.session(d(11, 2), endedAfterSeconds = 3600)
-        log.set(s, m, 60.0, 5)           // this week, 1 to 5 reps
+        log.lift(d(10, 27), m, 50.0, 10) // before the block, 9 to 12 reps
+        val s = log.session(d(11, 6), endedAfterSeconds = 3600)
+        log.set(s, m, 60.0, 5)           // in the block, 1 to 5 reps
 
         val r = report(log, StatsPeriod.ONE_WEEK)
 
@@ -1326,7 +1422,7 @@ class StatsRulesTest {
         assertEquals(0, r.repRanges.first { it.range == RepRange.R9_12 }.sets)
         assertEquals(1, r.times.sessionsCounted)
         assertEquals(60, r.times.averageMinutes)
-        assertEquals(listOf(d(11, 2)), r.muscleWeeks.map { it.weekStart })
+        assertEquals(listOf(d(11, 5)), r.muscleWeeks.map { it.weekStart })
         assertEquals(1, r.muscleWeeks.single().workingSets)
     }
 
@@ -1338,32 +1434,32 @@ class StatsRulesTest {
     }
 
     @Test
-    fun `one week is counted once this week has met the goal`() {
+    fun `one week is counted once the block has met the goal`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(11, 2), m, 50.0, 10)
-        log.lift(d(11, 3), m, 50.0, 10)
-        log.lift(d(11, 4), m, 50.0, 10)
+        log.lift(d(11, 5), m, 50.0, 10)
+        log.lift(d(11, 6), m, 50.0, 10)
+        log.lift(d(11, 7), m, 50.0, 10)
 
         val c = report(log, StatsPeriod.ONE_WEEK, goal = 3).consistency
 
         assertEquals(1, c.weeksCounted)
         assertEquals(1, c.weeksMetGoal)
         assertEquals(3.0, c.sessionsPerWeek, 1e-9)
-        assertEquals(d(11, 2), c.bestWeekStart)
+        assertEquals(d(11, 5), c.bestWeekStart)
         assertEquals(3, c.bestWeekTrainingDays)
     }
 
     @Test
-    fun `one week is not counted while this week is short of the goal`() {
+    fun `one week is not met while the block is short of the goal`() {
         val log = Log()
         val m = log.machine()
-        log.lift(d(11, 2), m, 50.0, 10)
-        log.lift(d(11, 3), m, 50.0, 10)
+        log.lift(d(11, 5), m, 50.0, 10)
+        log.lift(d(11, 6), m, 50.0, 10)
 
         val c = report(log, StatsPeriod.ONE_WEEK, goal = 3).consistency
 
-        assertEquals(0, c.weeksCounted)
+        assertEquals(1, c.weeksCounted)
         assertEquals(0, c.weeksMetGoal)
         assertEquals(2, c.bestWeekTrainingDays)
     }
@@ -1374,7 +1470,8 @@ class StatsRulesTest {
 
         assertEquals(1, r.weeks.size)
         assertEquals(0, r.weeks.single().workingSets)
-        assertEquals(0, r.consistency.weeksCounted)
+        assertEquals(1, r.consistency.weeksCounted)
+        assertEquals(0, r.consistency.weeksMetGoal)
         assertEquals(0.0, r.consistency.sessionsPerWeek, 0.0)
         assertNull(r.consistency.bestWeekStart)
         assertTrue(r.strength.isEmpty())

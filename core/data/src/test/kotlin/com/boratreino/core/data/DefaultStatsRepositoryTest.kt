@@ -151,9 +151,22 @@ class DefaultStatsRepositoryTest {
         val report = repo.observeStats(StatsPeriod.FOUR_WEEKS, 3).first()
 
         assertEquals(LocalDate.of(2026, 11, 5), report.to)
-        // The last week is the one that holds today, whatever day the locale starts its week on.
-        val last = report.weeks.last().weekStart
-        assertTrue(!last.isAfter(report.to) && report.to.isBefore(last.plusDays(7)))
+        // The period is rolling: the last 7-day block ends today, whatever day the locale starts its week on.
+        assertEquals(report.to, report.weeks.last().weekStart.plusDays(6))
+    }
+
+    @Test
+    fun `the last block is the six days up to today and the block before starts seven days back`() = runTest {
+        val bench = machine("Bench press")
+        set(session(Instant.parse("2026-10-29T10:00:00Z")), bench, 50.0, 10, Instant.parse("2026-10-29T10:05:00Z"))
+        set(session(Instant.parse("2026-10-30T10:00:00Z")), bench, 50.0, 10, Instant.parse("2026-10-30T10:05:00Z"))
+
+        val report = repo.observeStats(StatsPeriod.FOUR_WEEKS, 3).first()
+
+        // Four blocks from 9 Oct: 9, 16, 23 and 30 Oct (the last one to 5 Nov).
+        assertEquals(LocalDate.of(2026, 10, 9), report.from)
+        assertEquals(listOf(0, 0, 1, 1), report.weeks.map { it.workingSets })
+        assertEquals(LocalDate.of(2026, 10, 30), report.weeks.last().weekStart)
     }
 
     @Test

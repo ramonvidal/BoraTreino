@@ -11,7 +11,7 @@ import com.boratreino.core.model.StatsReport
 import com.boratreino.core.model.WeightEntry
 import java.time.LocalDate
 
-/** Fixtures for the body cards, on top of [StatsSamples.full]: a 13 week period from Monday 10 Aug 2026. */
+/** Fixtures for the body cards, on top of [StatsSamples.full]: 13 seven-day blocks from 4 Aug 2026, the last ending 2 Nov. */
 internal object BodyInsightSamples {
     private val full = StatsSamples.full
 
