@@ -450,16 +450,19 @@ object StatsRules {
         today: LocalDate,
         sets: List<WorkoutSet>,
     ): SessionTimes {
+        val setsBySession = sets.groupBy { it.sessionId }
         val counted = sessions.filter {
             val date = dateOf.getValue(it.id)
             val end = it.endedAt
-            end != null && end > it.startedAt && !date.isBefore(from) && !date.isAfter(today)
+            end != null && end > SessionTimeRules.effectiveStart(it, setsBySession[it.id].orEmpty()) && !date.isBefore(from) && !date.isAfter(today)
         }
         if (counted.isEmpty()) return SessionTimes(0, null, null)
         val averageMinutes = counted
-            .map { Duration.between(it.startedAt, it.endedAt!!).toMillis() / 60_000.0 }
+            .map {
+                val start = SessionTimeRules.effectiveStart(it, setsBySession[it.id].orEmpty())
+                Duration.between(start, it.endedAt!!).toMillis() / 60_000.0
+            }
             .average().roundToInt()
-        val setsBySession = sets.groupBy { it.sessionId }
         val gaps = counted.flatMap { session ->
             setsBySession[session.id].orEmpty().map { it.loggedAt }.sorted().zipWithNext { a, b ->
                 Duration.between(a, b).toMillis() / 60_000.0

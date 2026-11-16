@@ -52,7 +52,7 @@ object HealthExportRules {
     ): HealthExport? {
         val endedAt = session.endedAt ?: return null
         if (sets.isEmpty()) return null
-        val start = session.startedAt
+        val start = SessionTimeRules.effectiveStart(session, sets)
         val end = maxOf(endedAt, start.plus(Duration.ofMinutes(1)))
         val cardio = sets.filter { CardioRules.isCardio(it) }
         val strength = sets.filterNot { CardioRules.isCardio(it) }.working()

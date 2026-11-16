@@ -37,14 +37,14 @@ object EnergyRules {
 
     /**
      * Burn of the day's sessions: logged cardio calories, plus STRENGTH_MET * kg * hours when the
-     * session has working non-cardio sets. Hours = ended - started, capped at 3 h; a closed session
+     * session has working non-cardio sets. Hours = ended - effective start (SessionTimeRules, so cardio minutes count), capped at 3 h; a closed session
      * with zero duration counts 20 min; an open session counts up to [now].
      */
     fun trainingBurnKcal(profile: BodyProfile, sessions: List<SessionSets>, now: Instant): Double =
         sessions.sumOf { (session, sets) ->
             val cardio = sets.filter { CardioRules.isCardio(it) }.sumOf { it.calories ?: 0 }.toDouble()
             val hasStrength = sets.filterNot { CardioRules.isCardio(it) }.working().isNotEmpty()
-            cardio + if (hasStrength) STRENGTH_MET * profile.weightKg * hours(session, now) else 0.0
+            cardio + if (hasStrength) STRENGTH_MET * profile.weightKg * hours(session, sets, now) else 0.0
         }
 
     fun day(
@@ -72,10 +72,11 @@ object EnergyRules {
 
     private fun goalFactor(profile: BodyProfile): Double = 1.0 + profile.coerced().goalAdjustmentPercent / 100.0
 
-    private fun hours(session: Session, now: Instant): Double {
+    private fun hours(session: Session, sets: List<WorkoutSet>, now: Instant): Double {
         val max = Duration.ofHours(MAX_SESSION_HOURS.toLong())
         val end = session.endedAt
-        val duration = if (end != null) Duration.between(session.startedAt, end) else Duration.between(session.startedAt, now)
+        val start = SessionTimeRules.effectiveStart(session, sets)
+        val duration = if (end != null) Duration.between(start, end) else Duration.between(start, now)
         val shown = when {
             end != null && duration.isZero -> Duration.ofMinutes(MIN_SESSION_MINUTES.toLong())
             duration.isNegative -> Duration.ZERO

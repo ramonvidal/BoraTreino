@@ -29,7 +29,7 @@ internal data class SummaryTexts(
     val title: String,
     val routineName: String,
     val date: String,
-    /** Duration, Sets, Volume, Machines, in this order. */
+    /** In this order, each only when it has something to say: Duration, Sets, Volume, Cardio, Exercises (2 to 5). */
     val stats: List<SummaryStat>,
     val recordsTitle: String,
     /** All the records of the training; the sheet shows up to 5, the picture up to 3. */
@@ -76,7 +76,7 @@ internal fun summaryTexts(resources: Resources, summary: TrainingSummary, locale
                     },
                 )
             }
-            add(
+            if (summary.workingSets > 0 || previous.workingSets > 0) add(
                 when {
                     previous.setsChange > 0 -> resources.getString(R.string.summary_compare_sets_up, previous.setsChange)
                     previous.setsChange < 0 -> resources.getString(R.string.summary_compare_sets_down, abs(previous.setsChange))
@@ -85,20 +85,23 @@ internal fun summaryTexts(resources: Resources, summary: TrainingSummary, locale
             )
         }
     }
+    val stats = buildList {
+        if (minutes != null) {
+            add(SummaryStat(resources.getString(R.string.summary_minutes_value, minutes), resources.getString(R.string.summary_duration)))
+        }
+        if (summary.workingSets > 0) add(SummaryStat(summary.workingSets.toString(), resources.getString(R.string.summary_sets)))
+        if (volume > 0.0) add(SummaryStat(volumeText, resources.getString(R.string.summary_volume)))
+        if (summary.cardioMinutes > 0) {
+            add(SummaryStat(resources.getString(R.string.summary_minutes_value, summary.cardioMinutes), resources.getString(R.string.summary_cardio)))
+        }
+        add(SummaryStat(summary.machineCount.toString(), resources.getString(R.string.summary_machines)))
+    }
     return SummaryTexts(
         appName = resources.getString(R.string.today_app_name),
         title = resources.getString(R.string.summary_title),
         routineName = summary.routineName ?: resources.getString(R.string.summary_free_training),
         date = summary.date.format(DateTimeFormatter.ofPattern(pattern, locale)),
-        stats = listOf(
-            SummaryStat(
-                if (minutes != null) resources.getString(R.string.summary_minutes_value, minutes) else resources.getString(R.string.summary_no_value),
-                resources.getString(R.string.summary_duration),
-            ),
-            SummaryStat(summary.workingSets.toString(), resources.getString(R.string.summary_sets)),
-            SummaryStat(volumeText, resources.getString(R.string.summary_volume)),
-            SummaryStat(summary.machineCount.toString(), resources.getString(R.string.summary_machines)),
-        ),
+        stats = stats,
         recordsTitle = resources.getString(R.string.summary_records_title),
         records = records,
         compareTitle = resources.getString(R.string.summary_compare_title),
@@ -143,11 +146,12 @@ internal fun renderSummaryPng(context: Context, summary: SummaryUi, texts: Summa
     text(texts.date, left, 225f, paint(40f, GREY))
     text(texts.routineName, left, 340f, paint(84f, INK, bold = true))
 
-    // The four numbers in a 2 x 2 grid, so long values like "62 min" and "12.4 t" always fit.
+    // The numbers in a 2-column grid (up to 5, so up to 3 rows), so long values like "62 min" and "12.4 t" always fit.
     val columnWidth = innerWidth / 2
-    texts.stats.take(4).forEachIndexed { index, stat ->
+    val rowHeight = if (texts.stats.size > 4) 190f else 230f
+    texts.stats.take(5).forEachIndexed { index, stat ->
         val x = left + (index % 2) * columnWidth
-        val y = 520f + (index / 2) * 230f
+        val y = 520f + (index / 2) * rowHeight
         text(stat.value, x, y, paint(100f, INK, bold = true), columnWidth - 20f)
         text(stat.label, x, y + 56f, paint(38f, GREY), columnWidth - 20f)
     }

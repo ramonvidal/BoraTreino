@@ -687,6 +687,7 @@ feature/today,summary_title,,Training complete,Treino concluído
 feature/today,summary_free_training,,No routine,Sem ficha
 feature/today,summary_duration,,Duration,Duração
 feature/today,summary_sets,,Sets,Séries
+feature/today,summary_cardio,,Cardio,
 feature/today,summary_volume,,Volume,Volume
 feature/today,summary_machines,,Exercises,Exercícios
 feature/today,summary_minutes_value,,%1$d min,%1$d min

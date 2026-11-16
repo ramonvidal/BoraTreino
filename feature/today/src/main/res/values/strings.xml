@@ -138,6 +138,7 @@
     <string name="summary_free_training">No routine</string>
     <string name="summary_duration">Duration</string>
     <string name="summary_sets">Sets</string>
+    <string name="summary_cardio">Cardio</string>
     <string name="summary_volume">Volume</string>
     <string name="summary_machines">Exercises</string>
     <string name="summary_minutes_value">%1$d min</string>

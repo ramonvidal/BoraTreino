@@ -100,7 +100,11 @@ internal fun TrainingSummaryContent(
             }
             Column(Modifier.fillMaxWidth().padding(vertical = 16.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // At large font sizes two rows of two, so the values wrap instead of overlapping.
-                if (large) texts.stats.chunked(2).forEach { cells(it) } else cells(texts.stats)
+                when {
+                    large -> texts.stats.chunked(2).forEach { cells(it) }
+                    texts.stats.size > 4 -> texts.stats.chunked(3).forEach { cells(it) }
+                    else -> cells(texts.stats)
+                }
             }
         }
 

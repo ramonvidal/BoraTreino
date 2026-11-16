@@ -1,6 +1,5 @@
 package com.boratreino.core.model
 
-import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -18,6 +17,8 @@ data class TrainingSummary(
     val records: List<RecordEvent>,
     /** The last earlier closed session of the same routine; null for a free session or when there is none. */
     val previous: PreviousComparison?,
+    /** Total cardio minutes of the session; 0 = no cardio. Cardio sets are not counted in [workingSets]. */
+    val cardioMinutes: Int = 0,
 )
 
 /** This session against the previous one of the same routine. */
@@ -30,8 +31,6 @@ data class PreviousComparison(
 )
 
 object TrainingSummaryRules {
-    private const val MAX_DURATION_MINUTES = 360
-
     /**
      * [sets] are the session's sets; [earlierSetsByMachine] the sets of the machines used that were logged
      * before the session started (for records). [previous] is the last earlier closed session of the same
@@ -46,20 +45,20 @@ object TrainingSummaryRules {
         previous: Pair<Session, List<WorkoutSet>>?,
         zone: ZoneId,
     ): TrainingSummary {
-        val working = sets.working()
+        val working = sets.working().filterNot { CardioRules.isCardio(it) }
         val volume = volumeOf(working)
         val byId = machines.associateBy { it.id }
         return TrainingSummary(
             sessionId = session.id,
             routineName = routineName,
             date = session.startedAt.atZone(zone).toLocalDate(),
-            durationMinutes = durationMinutes(session),
+            durationMinutes = SessionTimeRules.durationMinutes(session, sets),
             workingSets = working.size,
             volumeKg = volume,
-            machineCount = working.map { it.machineId }.distinct().size,
+            machineCount = sets.working().map { it.machineId }.distinct().size,
             records = records(session, sets, byId, earlierSetsByMachine, zone),
             previous = previous?.let { (_, prevSets) ->
-                val prevWorking = prevSets.working()
+                val prevWorking = prevSets.working().filterNot { CardioRules.isCardio(it) }
                 val prevVolume = volumeOf(prevWorking)
                 PreviousComparison(
                     volumeKg = prevVolume,
@@ -68,18 +67,12 @@ object TrainingSummaryRules {
                     setsChange = working.size - prevWorking.size,
                 )
             },
+            cardioMinutes = SessionTimeRules.cardioMinutes(sets),
         )
     }
 
     private fun volumeOf(working: List<WorkoutSet>): Double =
         working.filterNot { CardioRules.isCardio(it) }.sumOf { (it.weightKg ?: 0.0) * (it.reps ?: 0) }
-
-    private fun durationMinutes(session: Session): Int? {
-        val end = session.endedAt ?: return null
-        if (end <= session.startedAt) return null
-        val seconds = Duration.between(session.startedAt, end).seconds
-        return ((seconds + 30L) / 60L).toInt().coerceIn(1, MAX_DURATION_MINUTES)
-    }
 
     /** Replays the session's sets in order over the earlier history; newest record first. */
     private fun records(

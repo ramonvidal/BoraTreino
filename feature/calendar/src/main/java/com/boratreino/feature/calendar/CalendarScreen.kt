@@ -52,6 +52,7 @@ import com.boratreino.core.model.CalendarRules
 import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.SessionDetail
+import com.boratreino.core.model.SessionTimeRules
 import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.WeekGoalRules
 import com.boratreino.core.model.working
@@ -644,11 +645,13 @@ private fun SessionCard(detail: SessionDetail, state: CalendarUiState, actions: 
     val machineCount = detail.machines.count { it.sets.working().isNotEmpty() }
     val routineName = detail.routine?.name ?: stringResource(R.string.calendar_free_training)
     val counts = stringResource(R.string.calendar_session_counts, resources.machinesText(machineCount), resources.setsText(setCount))
-    val start = timeFormat.format(session.startedAt)
+    // A cardio set is logged when the cardio ends, so the card starts where the cardio began.
+    val effectiveStart = SessionTimeRules.effectiveStart(session, detail.machines.flatMap { it.sets })
+    val start = timeFormat.format(effectiveStart)
     val end = session.endedAt
     val time = when {
         end == null -> stringResource(R.string.calendar_time_open, start)
-        end == session.startedAt -> start
+        end <= effectiveStart -> start
         else -> stringResource(R.string.calendar_time_range, start, timeFormat.format(end))
     }
     val shortName = detail.routine?.shortName.orEmpty()
