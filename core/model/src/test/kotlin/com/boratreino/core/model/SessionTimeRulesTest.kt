@@ -72,7 +72,7 @@ class SessionTimeRulesTest {
             cardio(3, loggedAt = t.plus(minutes(100)), seconds = 600), // began at t + 90
         )
 
-        assertEquals(t.plus(minutes(10)), SessionTimeRules.effectiveStart(session(startedAt = t.plus(minutes(30))), sets))
+        assertEquals(t.plus(minutes(10)), SessionTimeRules.effectiveStart(session(startedAt = t.plus(minutes(30)), endedAt = t.plus(minutes(120))), sets))
     }
 
     @Test
