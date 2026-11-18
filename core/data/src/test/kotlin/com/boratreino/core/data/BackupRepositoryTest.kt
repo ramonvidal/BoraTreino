@@ -314,9 +314,44 @@ class BackupRepositoryTest {
 
     @Test
     fun `a newer backup previews as too new`() {
-        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":8,\"machines\":\"odd\"}")
+        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":9,\"machines\":\"odd\"}")
 
-        assertEquals(BackupPreview.TooNew(8), preview)
+        assertEquals(BackupPreview.TooNew(9), preview)
+    }
+
+    @Test
+    fun `an extra session survives an export and an import`() = runTest {
+        val extra = seed.copy(sessions = listOf(seed.sessions[0], seed.sessions[1].copy(isExtra = true)))
+        store.replaceAll(extra)
+        val exported = repo.export()
+        store.replaceAll(other)
+
+        val preview = repo.preview(exported)
+        assertTrue(preview is BackupPreview.Ready)
+        repo.import((preview as BackupPreview.Ready).data)
+
+        assertEquals(listOf(false, true), store.exportAll().sessions.map { it.isExtra })
+    }
+
+    @Test
+    fun `a version 7 backup imports with its sessions not extra`() = runTest {
+        store.replaceAll(seed)
+        val v7 = """
+            {"app":"boratreino","version":7,"machines":[],
+             "plans":[{"id":1,"scheduleMode":"IN_TURN","trainingDays":[]}],
+             "routines":[{"id":1,"planId":1,"name":"Routine A","shortName":"A","position":0,"weekdays":[]}],
+             "items":[],
+             "sessions":[{"id":4,"startedAt":"2026-11-02T10:00:00Z","endedAt":"2026-11-02T10:45:00Z","routineId":1,"note":null}],
+             "sets":[],"plannedWorkouts":[],"measurements":[]}
+        """.trimIndent()
+
+        val preview = repo.preview(v7)
+        assertTrue(preview is BackupPreview.Ready)
+        repo.import((preview as BackupPreview.Ready).data)
+
+        val session = store.exportAll().sessions.single()
+        assertEquals(1L, session.routineId)
+        assertEquals(false, session.isExtra)
     }
 
     @Test

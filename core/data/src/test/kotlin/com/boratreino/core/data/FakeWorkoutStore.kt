@@ -209,6 +209,14 @@ internal class FakeWorkoutStore : WorkoutStore {
         }
     }
 
+    override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) {
+        val index = sessions.indexOfFirst { it.id == sessionId }
+        if (index >= 0) {
+            sessions[index] = sessions[index].copy(isExtra = extra)
+            changed()
+        }
+    }
+
     /** Only finished sessions count, most recent first. */
     private fun lastRoutineIdOrNull(): Long? =
         sessions

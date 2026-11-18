@@ -522,6 +522,38 @@ class NextRoutineRulesTest {
     }
 
     @Test
+    fun `last rotation routine, an extra session after A leaves A as the last`() {
+        val extraB = session(4L, b.id, "2026-11-06T08:00:00Z", "2026-11-06T09:00:00Z").copy(isExtra = true)
+        val withExtra = listOf(session(1L, a.id, "2026-11-02T08:00:00Z", "2026-11-02T09:00:00Z"), extraB)
+
+        assertEquals(a.id, NextRoutineRules.lastRotationRoutineId(withExtra, mixed))
+    }
+
+    @Test
+    fun `last rotation routine, only extra sessions gives null`() {
+        val extras = history.map { it.copy(isExtra = true) }
+
+        assertNull(NextRoutineRules.lastRotationRoutineId(extras, mixed))
+    }
+
+    @Test
+    fun `last rotation routine, an open extra session is ignored too`() {
+        val withOpenExtra = history + session(4L, a.id, "2026-11-06T08:00:00Z", endedAt = null).copy(isExtra = true)
+
+        assertEquals(b.id, NextRoutineRules.lastRotationRoutineId(withOpenExtra, mixed))
+    }
+
+    @Test
+    fun `last rotation routine, the rotation continues from A after an extra B`() {
+        val last = NextRoutineRules.lastRotationRoutineId(
+            listOf(session(1L, a.id, "2026-11-02T08:00:00Z", "2026-11-02T09:00:00Z"), history[1].copy(isExtra = true)),
+            mixed,
+        )
+
+        assertEquals(b, nextRoutine(mixed, lastRoutineId = last, today = DayOfWeek.MONDAY, trainingDays = trainingDays))
+    }
+
+    @Test
     fun `last rotation routine feeds next so the rotation continues after it`() {
         val last = NextRoutineRules.lastRotationRoutineId(history, mixed)
 

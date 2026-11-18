@@ -104,7 +104,7 @@ class BackupCodecTest {
 
     @Test
     fun `the file names the app, the version, the export time and the weekdays by name`() {
-        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":7"))
+        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":8"))
         assertTrue(text.contains("\"exportedAt\":\"2026-11-02T20:15:30.250Z\""))
         assertTrue(text.contains("\"weekdays\":[\"MONDAY\",\"WEDNESDAY\"]"))
         assertTrue(text.contains("\"trainingDays\":[\"MONDAY\",\"FRIDAY\"]"))
@@ -210,27 +210,27 @@ class BackupCodecTest {
 
     @Test
     fun `version 0 is invalid`() {
-        assertInvalid(text.replace("\"version\":7", "\"version\":0"))
+        assertInvalid(text.replace("\"version\":8", "\"version\":0"))
     }
 
     @Test
     fun `a negative version is invalid`() {
-        assertInvalid(text.replace("\"version\":7", "\"version\":-1"))
+        assertInvalid(text.replace("\"version\":8", "\"version\":-1"))
     }
 
     @Test
     fun `a missing, text or fractional version is invalid`() {
-        assertInvalid(text.replace("\"version\":7,", ""))
-        assertInvalid(text.replace("\"version\":7", "\"version\":\"1\""))
-        assertInvalid(text.replace("\"version\":7", "\"version\":1.0"))
+        assertInvalid(text.replace("\"version\":8,", ""))
+        assertInvalid(text.replace("\"version\":8", "\"version\":\"1\""))
+        assertInvalid(text.replace("\"version\":8", "\"version\":1.0"))
     }
 
     @Test
     fun `a newer version is too new, even when its fields are odd`() {
-        assertEquals(BackupDecodeResult.TooNew(8), decoded(text.replace("\"version\":7", "\"version\":8")))
+        assertEquals(BackupDecodeResult.TooNew(9), decoded(text.replace("\"version\":8", "\"version\":9")))
         assertEquals(
-            BackupDecodeResult.TooNew(8),
-            decoded("{\"app\":\"boratreino\",\"version\":8,\"machines\":\"odd\",\"sets\":42}"),
+            BackupDecodeResult.TooNew(9),
+            decoded("{\"app\":\"boratreino\",\"version\":9,\"machines\":\"odd\",\"sets\":42}"),
         )
         assertEquals(BackupDecodeResult.TooNew(99), decoded("{\"app\":\"boratreino\",\"version\":99}"))
     }
@@ -321,8 +321,55 @@ class BackupCodecTest {
     // Set types
 
     @Test
-    fun `the format version is 7`() {
-        assertEquals(7, BackupCodec.FORMAT_VERSION)
+    fun `the format version is 8`() {
+        assertEquals(8, BackupCodec.FORMAT_VERSION)
+    }
+
+    // Extra workouts (format version 8)
+
+    @Test
+    fun `an extra session comes back extra and a normal one does not`() {
+        val extra = data.copy(sessions = listOf(data.sessions[0], data.sessions[1].copy(isExtra = true)))
+
+        assertEquals(BackupDecodeResult.Ok(extra, exportedAt), decoded(BackupCodec.encode(extra, exportedAt)))
+    }
+
+    @Test
+    fun `each session writes its extra flag`() {
+        val extra = data.copy(sessions = listOf(data.sessions[0], data.sessions[1].copy(isExtra = true)))
+        val json = BackupCodec.encode(extra, exportedAt)
+
+        assertEquals(2, Regex("\"isExtra\":").findAll(json).count())
+        assertTrue(json.contains("\"isExtra\":true"))
+        assertTrue(json.contains("\"isExtra\":false"))
+    }
+
+    @Test
+    fun `a session without the extra flag reads as not extra`() {
+        val withoutFlag = text.replace(",\"isExtra\":false", "")
+        assertTrue(!withoutFlag.contains("\"isExtra\""))
+
+        assertEquals(BackupDecodeResult.Ok(data, exportedAt), decoded(withoutFlag))
+        assertTrue(assertOk(withoutFlag).data.sessions.none { it.isExtra })
+    }
+
+    @Test
+    fun `an extra flag that is not true or false is invalid`() {
+        assertInvalid(text.replace("\"isExtra\":false", "\"isExtra\":\"no\""))
+        assertInvalid(text.replace("\"isExtra\":false", "\"isExtra\":0"))
+        assertInvalid(text.replace("\"isExtra\":false", "\"isExtra\":\"true\""))
+    }
+
+    @Test
+    fun `a version 7 file imports and its sessions are not extra`() {
+        val v7 = text
+            .replaceFirst("\"version\":8", "\"version\":7")
+            .replace(",\"isExtra\":false", "")
+
+        val ok = assertOk(v7)
+
+        assertEquals(data.sessions, ok.data.sessions)
+        assertTrue(ok.data.sessions.none { it.isExtra })
     }
 
     @Test
@@ -414,8 +461,8 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `a version 8 file is too new`() {
-        assertEquals(BackupDecodeResult.TooNew(8), decoded(versionOneFile().replace("\"version\":1", "\"version\":8")))
+    fun `a version 9 file is too new`() {
+        assertEquals(BackupDecodeResult.TooNew(9), decoded(versionOneFile().replace("\"version\":1", "\"version\":9")))
     }
 
     @Test

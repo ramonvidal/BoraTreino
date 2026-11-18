@@ -3,6 +3,7 @@ package com.boratreino.core.data
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.Session
@@ -280,6 +281,64 @@ class HistoryRepositoryTest {
         history.addSession(LocalDate.of(2026, 10, 20), null)
 
         assertNull(training.observeOpenSession().first())
+    }
+
+    @Test
+    fun `a session added as extra is flagged extra and keeps its routine`() = runTest {
+        val b = routine("B")
+
+        val id = history.addSession(LocalDate.of(2026, 10, 20), b.id, isExtra = true)
+
+        val stored = requireNotNull(store.session(id))
+        assertTrue(stored.isExtra)
+        assertEquals(b.id, stored.routineId)
+    }
+
+    @Test
+    fun `a session added without the extra flag is not extra`() = runTest {
+        val b = routine("B")
+
+        val id = history.addSession(LocalDate.of(2026, 10, 20), b.id)
+
+        assertFalse(requireNotNull(store.session(id)).isExtra)
+    }
+
+    // setSessionExtra
+
+    @Test
+    fun `setSessionExtra flags a session and unflags it again`() = runTest {
+        val a = routine("A")
+        val id = session(at("2026-11-02", "18:00"), routineId = a.id)
+
+        history.setSessionExtra(id, true)
+        assertTrue(requireNotNull(store.session(id)).isExtra)
+
+        history.setSessionExtra(id, false)
+        assertFalse(requireNotNull(store.session(id)).isExtra)
+    }
+
+    @Test
+    fun `setSessionExtra leaves the routine and the times of the session alone`() = runTest {
+        val a = routine("A")
+        val start = at("2026-11-02", "18:00")
+        val id = session(start, routineId = a.id)
+
+        history.setSessionExtra(id, true)
+
+        val stored = requireNotNull(store.session(id))
+        assertEquals(a.id, stored.routineId)
+        assertEquals(start, stored.startedAt)
+        assertEquals(start, stored.endedAt)
+    }
+
+    @Test
+    fun `an extra session of a past day stays out of the rotation`() = runTest {
+        val a = routine("A")
+        val id = history.addSession(LocalDate.of(2026, 10, 20), a.id)
+
+        history.setSessionExtra(id, true)
+
+        assertNull(NextRoutineRules.lastRotationRoutineId(store.allSessions(), listOf(a)))
     }
 
     // setSessionRoutine

@@ -59,8 +59,9 @@ internal class FakeHistory : HistoryRepository {
     override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = emptyFlow()
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = emptyFlow()
     override fun observeTrainingDates(): Flow<Set<LocalDate>> = emptyFlow()
-    override suspend fun addSession(date: LocalDate, routineId: Long?): Long = 0L
+    override suspend fun addSession(date: LocalDate, routineId: Long?, isExtra: Boolean): Long = 0L
     override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit
+    override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) = Unit
     override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
     override suspend fun addCardioSet(sessionId: Long, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
     override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> = emptyList()

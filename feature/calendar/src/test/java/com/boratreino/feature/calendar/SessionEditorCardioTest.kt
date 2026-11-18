@@ -102,8 +102,9 @@ class SessionEditorCardioTest {
         override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = emptyFlow()
         override fun observeDay(date: LocalDate): Flow<List<SessionDetail>> = emptyFlow()
         override fun observeTrainingDates(): Flow<Set<LocalDate>> = emptyFlow()
-        override suspend fun addSession(date: LocalDate, routineId: Long?): Long = 0L
+        override suspend fun addSession(date: LocalDate, routineId: Long?, isExtra: Boolean): Long = 0L
         override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit
+        override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) = Unit
         override fun observeClosedSessionExports(sinceDays: Int): Flow<List<HealthExport>> = emptyFlow()
         override fun observeSessionIds(): Flow<Set<Long>> = emptyFlow()
         override suspend fun deleteSession(sessionId: Long): SessionDetail? = null

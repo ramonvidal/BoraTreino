@@ -44,7 +44,6 @@ class CalendarScheduleCardTest {
     private fun state(
         days: Set<DayOfWeek> = emptySet(),
         routines: List<RoutineChoiceUi> = emptyList(),
-        weekPreview: List<UpcomingUi> = emptyList(),
         mode: ScheduleMode = ScheduleMode.IN_TURN,
     ) = CalendarUiState(
         loaded = true,
@@ -55,7 +54,6 @@ class CalendarScheduleCardTest {
         scheduleMode = mode,
         trainingDays = days,
         routines = routines,
-        weekPreview = weekPreview,
     )
 
     private fun show(

@@ -92,6 +92,19 @@ class RoomWorkoutStoreRoundTripTest {
     }
 
     @Test
+    fun `a session flagged as extra comes back extra and can be unflagged`() = runTest {
+        val start = Instant.ofEpochMilli(1_790_000_000_123L)
+        val id = store.insertSession(Session(0, start, null, null, null))
+        assertEquals(false, store.observeOpenSession().first()?.isExtra)
+
+        store.setSessionExtra(id, true)
+        assertEquals(Session(id, start, null, null, null, isExtra = true), store.observeOpenSession().first())
+
+        store.setSessionExtra(id, false)
+        assertEquals(Session(id, start, null, null, null, isExtra = false), store.observeOpenSession().first())
+    }
+
+    @Test
     fun `a set with weight and reps comes back with every field`() = runTest {
         val machineId = store.saveMachine(Machine(0, "Leg press", MuscleGroup.LEGS, MachineKind.WEIGHT_REPS, 5.0, null, null, false))
         val sessionId = store.insertSession(Session(0, Instant.ofEpochMilli(1_790_000_000_000L), null, null, null))
