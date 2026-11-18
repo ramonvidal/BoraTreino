@@ -3,7 +3,6 @@
     <string name="calendar_week_progress">This week: %1$d of %2$d</string>
     <string name="calendar_week_title">This week</string>
     <string name="calendar_week_goal">%1$d of %2$d</string>
-    <string name="calendar_week_preview">This week: %1$s</string>
     <string name="calendar_legend_trained">Trained</string>
     <string name="calendar_legend_planned">Planned</string>
     <string name="calendar_legend_rotation">Rotation</string>

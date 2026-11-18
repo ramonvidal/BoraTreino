@@ -15,6 +15,9 @@
     <string name="today_hero_finish">Concluir treino</string>
     <string name="today_hero_free">Sem ficha</string>
     <string name="today_switcher_next">%1$s · próxima no rodízio</string>
+    <string name="today_switcher_extra">%1$s · extra</string>
+    <string name="today_extra">Treino extra</string>
+    <string name="today_extra_hint">Não muda o rodízio: a próxima ficha continua a mesma.</string>
     <string name="today_switcher_title">Escolher a ficha</string>
     <string name="today_exercises_title">Exercícios</string>
     <string name="today_repeat_menu">Repetir a última vez</string>

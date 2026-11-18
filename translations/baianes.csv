@@ -90,9 +90,9 @@ core/ui,set_type_failure,,Failure,Falha
 feature/calendar,calendar_week_progress,,This week: %1$d of %2$d,Semana: %1$d de %2$d
 feature/calendar,calendar_week_title,,This week,Esta semana
 feature/calendar,calendar_week_goal,,%1$d of %2$d,%1$d de %2$d
-feature/calendar,calendar_week_preview,,This week: %1$s,Esta semana: %1$s
 feature/calendar,calendar_legend_trained,,Trained,Treinado
 feature/calendar,calendar_legend_planned,,Planned,Agendado
+feature/calendar,calendar_legend_rotation,,Rotation,Rodízio
 feature/calendar,calendar_streak,one,Streak: %d week,Sequência: %d semana
 feature/calendar,calendar_streak,other,Streak: %d weeks,Sequência: %d semanas
 feature/calendar,calendar_streak_start,one,Train %d day this week to start a streak,Treine %d dia nesta semana pra começar uma sequência
@@ -106,6 +106,10 @@ feature/calendar,calendar_rotation_hint,,"Routines in rotation are trained on th
 feature/calendar,calendar_in_rotation,,In rotation,Em rodízio
 feature/calendar,calendar_rotation_pointer,,Change a routine's days in its editor (Routines tab).,Troque os dias de uma ficha no editor dela (aba Fichas).
 feature/calendar,calendar_free_training,,No routine,Sem ficha
+feature/calendar,calendar_extra,,Extra,Extra
+feature/calendar,calendar_extra_workout,,Extra workout,Treino extra
+feature/calendar,calendar_extra_hint,,Does not change the rotation.,Não muda o rodízio.
+feature/calendar,calendar_from_rotation,,From your rotation,Do seu rodízio
 feature/calendar,calendar_session_counts,,%1$s · %2$s,%1$s · %2$s
 feature/calendar,calendar_session_summary,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
 feature/calendar,calendar_time_range,,%1$s–%2$s,%1$s–%2$s
@@ -596,6 +600,9 @@ feature/today,today_hero_continue,,Continue: %1$s,Continuar: %1$s
 feature/today,today_hero_finish,,Finish training,Concluir treino
 feature/today,today_hero_free,,No routine,Sem ficha
 feature/today,today_switcher_next,,%1$s · next in rotation,%1$s · próxima no rodízio
+feature/today,today_switcher_extra,,%1$s · extra,%1$s · extra
+feature/today,today_extra,,Extra workout,Treino extra
+feature/today,today_extra_hint,,Does not change the rotation: the next routine stays the same.,Não muda o rodízio: a próxima ficha continua a mesma.
 feature/today,today_switcher_title,,Choose a routine,Escolher a ficha
 feature/today,today_exercises_title,,Exercises,Exercícios
 feature/today,today_repeat_menu,,Repeat last time,Repetir a última vez
