@@ -5,9 +5,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.ui.theme.BoraTreinoTheme
@@ -39,6 +40,7 @@ class TodayExtraScreenshotTest {
         }
         // The first clickable thing that names Routine B is the switcher pill; its exact label depends on the chips.
         compose.onAllNodes(hasClickAction() and hasText("Routine B", substring = true)).onFirst().performClick()
-        compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-routine-sheet-extra.png")
+        // The open sheet is a second window, so onRoot() would find two roots: shoot the last one, the sheet.
+        compose.onAllNodes(isRoot()).onLast().captureRoboImage("build/outputs/roborazzi/today-routine-sheet-extra.png")
     }
 }
