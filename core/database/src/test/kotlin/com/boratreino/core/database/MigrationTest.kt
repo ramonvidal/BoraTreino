@@ -596,6 +596,7 @@ class MigrationTest {
     fun `migrating 8 to 9 keeps sessions and marks them as not extra`() {
         helper.createDatabase(name, 8).apply {
             insertV3Data()
+            execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note) VALUES (1, 1000, 2000, 1, NULL)")
             close()
         }
 
