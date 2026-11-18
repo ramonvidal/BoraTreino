@@ -22,7 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The "Rotation days" card at the bottom of the Agenda: the training day chips, each routine's schedule and the week preview. */
+/** The "Rotation days" card at the bottom of the Agenda: the training day chips and each routine's schedule. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "w411dp-h2400dp")
 class CalendarScheduleCardTest {
@@ -161,21 +161,8 @@ class CalendarScheduleCardTest {
     }
 
     @Test
-    fun `the preview line lists the rest of this week's suggested trainings`() {
-        val preview = listOf(
-            UpcomingUi(LocalDate.of(2026, 11, 6), "A"),
-            UpcomingUi(LocalDate.of(2026, 11, 7), "B"),
-        )
-        show(state(weekPreview = preview))
-
-        compose.onNodeWithText(
-            "This week: ${dayLabel(DayOfWeek.FRIDAY)} A, ${dayLabel(DayOfWeek.SATURDAY)} B",
-        ).assertIsDisplayed()
-    }
-
-    @Test
-    fun `the preview line is hidden when no training is left this week`() {
-        show(state(weekPreview = emptyList()))
+    fun `the card has no This week line, the grid shows the rotation instead`() {
+        show(state(routines = listOf(inRotationRoutine, fixedRoutine)))
 
         compose.onNodeWithText("This week:", substring = true).assertDoesNotExist()
     }

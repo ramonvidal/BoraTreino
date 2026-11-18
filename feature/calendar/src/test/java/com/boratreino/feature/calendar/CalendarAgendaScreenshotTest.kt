@@ -7,9 +7,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.Routine
-import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import com.github.takahirom.roborazzi.captureRoboImage
+import java.time.DayOfWeek
 import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
@@ -77,15 +77,14 @@ class CalendarAgendaScreenshotTest {
     fun `calendar past day with a session`() = shoot("calendar-agenda-past-day", CalendarSamples.monthWithTraining)
 
     @Test
-    fun `calendar schedule card with this week's preview`() = shoot(
+    fun `calendar schedule card with the training days and each routine's schedule`() = shoot(
         "calendar-agenda-schedule-card",
         CalendarSamples.monthWithTraining.copy(
-            scheduleMode = ScheduleMode.IN_TURN,
-            weekPreview = listOf(
-                UpcomingUi(LocalDate.of(2026, 11, 5), "A"),
-                UpcomingUi(LocalDate.of(2026, 11, 6), "B"),
-                UpcomingUi(LocalDate.of(2026, 11, 7), "C"),
-                UpcomingUi(LocalDate.of(2026, 11, 8), "A"),
+            trainingDays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+            routines = listOf(
+                choice(CalendarSamples.routineA),
+                choice(CalendarSamples.routineB),
+                choice(CalendarSamples.routineC),
             ),
         ),
     )
