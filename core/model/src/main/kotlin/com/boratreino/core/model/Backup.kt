@@ -50,7 +50,7 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 7
+    const val FORMAT_VERSION = 8
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {
@@ -105,6 +105,7 @@ object BackupCodec {
                     "endedAt" to it.endedAt?.toString(),
                     "routineId" to it.routineId,
                     "note" to it.note,
+                    "isExtra" to it.isExtra,
                 )
             },
             "sets" to data.sets.map {
@@ -237,6 +238,7 @@ object BackupCodec {
                 endedAt = optString(it, "endedAt")?.let { s -> instantOf(s, "endedAt") },
                 routineId = optLong(it, "routineId"),
                 note = optString(it, "note"),
+                isExtra = if (it["isExtra"] == null) false else boolOf(it, "isExtra"),
             )
         }
         val sets = objects(root, "sets").map {

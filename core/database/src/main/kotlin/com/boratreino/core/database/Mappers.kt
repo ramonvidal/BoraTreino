@@ -47,6 +47,7 @@ internal fun SessionEntity.toModel() = Session(
     endedAt = endedAt?.let(Instant::ofEpochMilli),
     routineId = routineId,
     note = note,
+    isExtra = isExtra,
 )
 
 internal fun Session.toEntity() = SessionEntity(
@@ -55,6 +56,7 @@ internal fun Session.toEntity() = SessionEntity(
     endedAt = endedAt?.toEpochMilli(),
     routineId = routineId,
     note = note,
+    isExtra = isExtra,
 )
 
 internal fun WorkoutSetEntity.toModel() = WorkoutSet(

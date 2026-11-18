@@ -589,4 +589,41 @@ class MigrationTest {
             assertEquals(35.0, c.getDouble(3), 0.0)
         }
     }
+
+    // 8 -> 9: sessions.isExtra (the 9.json schema is written by CI).
+
+    @Test
+    fun `migrating 8 to 9 keeps sessions and marks them as not extra`() {
+        helper.createDatabase(name, 8).apply {
+            insertV3Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 9, true, MIGRATION_8_9)
+
+        db.query("SELECT id, startedAt, isExtra FROM sessions").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            assertEquals(1000L, c.getLong(1))
+            assertEquals(0, c.getInt(2))
+        }
+    }
+
+    @Test
+    fun `after 8 to 9 a new session defaults to not extra and the flag can be set`() {
+        helper.createDatabase(name, 8).close()
+        val db = helper.runMigrationsAndValidate(name, 9, true, MIGRATION_8_9)
+
+        db.execSQL("INSERT INTO sessions (startedAt, endedAt, routineId, note) VALUES (2000, 3000, NULL, NULL)")
+        db.execSQL("INSERT INTO sessions (startedAt, endedAt, routineId, note, isExtra) VALUES (4000, 5000, NULL, NULL, 1)")
+
+        db.query("SELECT isExtra FROM sessions ORDER BY startedAt").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+            c.moveToNext()
+            assertEquals(1, c.getInt(0))
+        }
+    }
 }

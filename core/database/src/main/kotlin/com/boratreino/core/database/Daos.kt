@@ -85,11 +85,14 @@ internal interface SessionDao {
     @Query("UPDATE sessions SET routineId = :routineId WHERE id = :id")
     suspend fun setRoutineId(id: Long, routineId: Long?)
 
+    @Query("UPDATE sessions SET isExtra = :extra WHERE id = :id")
+    suspend fun setExtra(id: Long, extra: Boolean)
+
     /** Routine of the most recent finished session that had one. */
-    @Query("SELECT routineId FROM sessions WHERE routineId IS NOT NULL AND endedAt IS NOT NULL ORDER BY startedAt DESC, id DESC LIMIT 1")
+    @Query("SELECT routineId FROM sessions WHERE routineId IS NOT NULL AND endedAt IS NOT NULL AND isExtra = 0 ORDER BY startedAt DESC, id DESC LIMIT 1")
     fun observeLastRoutineId(): Flow<Long?>
 
-    @Query("SELECT routineId FROM sessions WHERE routineId IS NOT NULL AND endedAt IS NOT NULL ORDER BY startedAt DESC, id DESC LIMIT 1")
+    @Query("SELECT routineId FROM sessions WHERE routineId IS NOT NULL AND endedAt IS NOT NULL AND isExtra = 0 ORDER BY startedAt DESC, id DESC LIMIT 1")
     suspend fun lastRoutineId(): Long?
 }
 

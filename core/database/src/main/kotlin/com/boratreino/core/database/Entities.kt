@@ -130,6 +130,7 @@ internal data class SessionEntity(
     val endedAt: Long?,
     val routineId: Long?,
     val note: String?,
+    @ColumnInfo(defaultValue = "0") val isExtra: Boolean = false,
 )
 
 @Entity(

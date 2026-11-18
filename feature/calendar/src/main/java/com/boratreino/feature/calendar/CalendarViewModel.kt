@@ -8,9 +8,9 @@ import com.boratreino.core.model.CalendarRules
 import com.boratreino.core.model.BodyProfile
 import com.boratreino.core.model.DayKind
 import com.boratreino.core.model.EnergyRules
-import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
+import com.boratreino.core.model.RotationProjection
 import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.SessionSets
 import com.boratreino.core.settings.BodySettings
@@ -51,8 +51,8 @@ internal data class DayEnergyUi(val kcal: Int, val kind: DayKind)
 /** A routine planned for a day: its id and the texts shown (name on the card, short name in the grid). */
 internal data class PlannedUi(val routineId: Long, val name: String, val shortName: String)
 
-/** A training day of this week still to come and the letter of the routine suggested for it ("Mon A"). */
-internal data class UpcomingUi(val date: LocalDate, val shortName: String)
+/** A routine the rotation puts on a coming day (not a manual plan): its id and the texts shown. */
+internal data class ProjectedUi(val routineId: Long, val shortName: String, val name: String)
 
 /** A routine the owner can plan: its letter ([shortName], as in the rotation), its name and its [weekdays] (empty = in rotation). */
 internal data class RoutineChoiceUi(
@@ -69,10 +69,8 @@ private data class PlanningData(
     val routines: List<RoutineChoiceUi>,
     val scheduleMode: ScheduleMode = ScheduleMode.IN_TURN,
     val trainingDays: Set<DayOfWeek> = emptySet(),
-    /** What the "This week" preview needs: the routines, the plans from today on and the last trained routine. */
-    val allRoutines: List<Routine> = emptyList(),
-    val plannedFromToday: List<PlannedWorkout> = emptyList(),
-    val lastRoutineId: Long? = null,
+    /** What the rotation puts on today and the 7 days after it, by date. */
+    val projected: Map<LocalDate, ProjectedUi> = emptyMap(),
 )
 
 /**
@@ -95,8 +93,8 @@ internal data class CalendarUiState(
     val dayRoutineIds: Map<LocalDate, Long> = emptyMap(),
     /** The days with a finished or open session (any month): the week strip marks the ones of this week. */
     val trainedDates: Set<LocalDate> = emptySet(),
-    /** The rest of this week's suggested trainings, for the schedule card's "This week: Mon A, Wed B" line. */
-    val weekPreview: List<UpcomingUi> = emptyList(),
+    /** The routines the rotation puts on today and the next 7 days (not on days with a manual plan). */
+    val projected: Map<LocalDate, ProjectedUi> = emptyMap(),
     val sessions: List<SessionDetail> = emptyList(),
     /** Null for future days, without a profile, or when the owner switched the estimate off. */
     val energy: DayEnergyUi? = null,
@@ -130,7 +128,6 @@ private data class Browsing(val month: YearMonth, val selected: LocalDate)
 private const val MIDNIGHT_MARGIN_MS = 1_000L
 private const val RECHECK_MS = 60_000L
 private const val MAX_UNCHANGED_WAKES = 2
-private const val DAYS_IN_WEEK = 7L
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
@@ -181,7 +178,8 @@ class CalendarViewModel @Inject constructor(
         routineRepository.observePlan(),
         routineRepository.observeLastRoutineId(),
         currentDate,
-    ) { plannedList: List<PlannedWorkout>, plan, lastRoutineId: Long?, today ->
+        currentDate.flatMapLatest { history.observeDay(it) },
+    ) { plannedList: List<PlannedWorkout>, plan, lastRoutineId: Long?, today, todaySessions ->
         val routines: List<Routine> = plan.routines.map { it.routine }
         val byId = routines.associateBy { it.id }
         val plannedFromToday = plannedList.filter { !it.date.isBefore(today) }
@@ -193,31 +191,16 @@ class CalendarViewModel @Inject constructor(
             routines = routines.map { RoutineChoiceUi(it.id, it.name, it.shortName, it.weekdays) },
             scheduleMode = plan.plan.scheduleMode,
             trainingDays = plan.plan.trainingDays,
-            allRoutines = routines,
-            plannedFromToday = plannedFromToday,
-            lastRoutineId = lastRoutineId,
+            projected = RotationProjection.project(
+                today = today,
+                routines = routines,
+                lastRoutineId = lastRoutineId,
+                trainingDays = plan.plan.trainingDays,
+                planned = plannedFromToday,
+                // A finished session today: the open one does not count, it is the workout in progress.
+                trainedToday = todaySessions.any { it.session.endedAt != null },
+            ).associate { it.date to ProjectedUi(it.routine.id, it.routine.shortName, it.routine.name) },
         )
-    }
-
-    /**
-     * The trainings suggested for the rest of this week, day by day. Each rotation routine moves the rotation on by
-     * one, as training it would; a routine on specific days does not. Today counts while it is not trained yet (the last routine then still is the one before).
-     */
-    private fun weekPreview(plan: PlanningData, today: LocalDate, trainedDates: Set<LocalDate>): List<UpcomingUi> {
-        val weekEnd = WeekGoalRules.weekStart(today, firstDayOfWeek).plusDays(DAYS_IN_WEEK - 1)
-        val result = mutableListOf<UpcomingUi>()
-        var after = if (today in trainedDates) today else today.minusDays(1)
-        var lastId = plan.lastRoutineId
-        while (after.isBefore(weekEnd)) {
-            val next = NextRoutineRules.upcoming(
-                plan.scheduleMode, plan.allRoutines, lastId, plan.trainingDays, after, plan.plannedFromToday,
-            ) ?: break
-            if (next.date.isAfter(weekEnd)) break
-            result += UpcomingUi(next.date, next.routine.shortName)
-            if (next.routine.weekdays.isEmpty()) lastId = next.routine.id
-            after = next.date
-        }
-        return result
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -247,7 +230,7 @@ class CalendarViewModel @Inject constructor(
                     sessions.sortedBy { it.session.startedAt }.firstNotNullOfOrNull { it.routine?.id }?.let { date to it }
                 }.toMap(),
                 trainedDates = dates,
-                weekPreview = weekPreview(plan, today, dates),
+                projected = plan.projected,
                 sessions = day,
                 energy = dayEnergy(profile, view.selected, today, day),
                 planned = plan.planned,

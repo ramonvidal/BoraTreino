@@ -198,11 +198,10 @@ private fun Hairline() {
     Box(Modifier.fillMaxWidth().height(1.dp).background(Sunny.Line))
 }
 
-/** "Rotation days": the days the rotation routines are trained, each routine's schedule and the week preview. */
+/** "Rotation days": the days the rotation routines are trained, each routine's schedule. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ScheduleCard(state: CalendarUiState, actions: CalendarActions) {
-    val preview = state.weekPreview.map { "${it.date.dayOfWeek.shortLabel()} ${it.shortName}".trim() }
     val rotationText = stringResource(R.string.calendar_in_rotation)
     BoraCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -233,13 +232,6 @@ private fun ScheduleCard(state: CalendarUiState, actions: CalendarActions) {
                 Text(
                     "${routine.name} · $schedule",
                     style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-            if (preview.isNotEmpty()) {
-                Text(
-                    stringResource(R.string.calendar_week_preview, preview.joinToString(", ")),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Text(
@@ -312,12 +304,18 @@ private fun WeekCell(date: LocalDate, state: CalendarUiState, onClick: () -> Uni
     val label = state.dayLabels[date]
     val planned = state.planned[date].orEmpty()
     val trained = date in state.trainedDates || label != null
+    val projected = state.projected[date]
     val kind = when {
         trained -> DayMarkKind.Trained
         planned.isNotEmpty() -> DayMarkKind.Planned
+        projected != null -> DayMarkKind.Projected
         else -> DayMarkKind.Rest
     }
-    val letter = if (trained) letterOf(label) else planned.firstOrNull()?.shortName?.takeIf { it.isNotBlank() }
+    val letter = when {
+        trained -> letterOf(label)
+        planned.isNotEmpty() -> planned.first().shortName.takeIf { it.isNotBlank() }
+        else -> projected?.shortName?.takeIf { it.isNotBlank() }
+    }
     val selected = date == state.selected
     Column(
         modifier
@@ -408,6 +406,7 @@ private fun MonthCard(state: CalendarUiState, actions: CalendarActions) {
                                 date = date,
                                 label = state.dayLabels[date],
                                 planned = state.planned[date].orEmpty(),
+                                projected = state.projected[date],
                                 isToday = date == state.today,
                                 isSelected = date == state.selected,
                                 onClick = { actions.onSelectDay(date) },
@@ -422,7 +421,7 @@ private fun MonthCard(state: CalendarUiState, actions: CalendarActions) {
     }
 }
 
-/** One line under the grid: what the filled dot and the dashed ring mean. */
+/** One line under the grid: what the filled dot and the two dashed rings mean. */
 @Composable
 private fun Legend() {
     Row(
@@ -440,6 +439,13 @@ private fun Legend() {
         DayMark(DayMarkKind.Planned, 12.dp) {}
         Text(
             stringResource(R.string.calendar_legend_planned),
+            modifier = Modifier.padding(start = 6.dp, end = 16.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        DayMark(DayMarkKind.Projected, 12.dp) {}
+        Text(
+            stringResource(R.string.calendar_legend_rotation),
             modifier = Modifier.padding(start = 6.dp),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -449,13 +455,14 @@ private fun Legend() {
 
 /**
  * One day of the grid, 44 dp tall: a round mark with the day number (and the routine letter under it when the day
- * is trained or planned). Trained = filled green, planned = dashed outline, today = ink ring, selected = yellow.
+ * is trained or planned). Trained = filled green, planned = dashed outline, rotation = lighter dashed outline, today = ink ring, selected = yellow.
  */
 @Composable
 private fun DayCell(
     date: LocalDate,
     label: String?,
     planned: List<PlannedUi>,
+    projected: ProjectedUi?,
     isToday: Boolean,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -463,9 +470,14 @@ private fun DayCell(
     val kind = when {
         label != null -> DayMarkKind.Trained
         planned.isNotEmpty() -> DayMarkKind.Planned
+        projected != null -> DayMarkKind.Projected
         else -> DayMarkKind.Rest
     }
-    val letter = if (label != null) letterOf(label) else planned.firstOrNull()?.shortName?.takeIf { it.isNotBlank() }
+    val letter = when {
+        label != null -> letterOf(label)
+        planned.isNotEmpty() -> planned.first().shortName.takeIf { it.isNotBlank() }
+        else -> projected?.shortName?.takeIf { it.isNotBlank() }
+    }
     Box(
         Modifier.fillMaxWidth().height(44.dp).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -516,6 +528,8 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
     if (state.loaded && !isPast) {
         PlanSection(
             planned = state.planned[state.selected].orEmpty(),
+            // Only a day without a manual plan and nothing logged shows what the rotation puts on it.
+            projected = state.projected[state.selected].takeIf { state.sessions.isEmpty() },
             routines = state.routines,
             hasSessions = state.sessions.isNotEmpty(),
             offerAdd = isToday && state.sessions.isEmpty(),
@@ -535,12 +549,13 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
 }
 
 /**
- * Today or later: the planned routines as rows (letter, name, move, remove), then "Plan a workout" while routines
+ * Today or later: the planned routines as rows (letter, name, move, remove), or the rotation's muted suggestion, then "Plan a workout" while routines
  * are left (filled when nothing is logged yet, tonal otherwise). Today with nothing logged also offers "Add a workout".
  */
 @Composable
 private fun PlanSection(
     planned: List<PlannedUi>,
+    projected: ProjectedUi?,
     routines: List<RoutineChoiceUi>,
     hasSessions: Boolean,
     offerAdd: Boolean,
@@ -566,6 +581,27 @@ private fun PlanSection(
                     IconButton(onClick = { actions.onUnplan(item.routineId) }, modifier = Modifier.size(48.dp)) {
                         Icon(painterResource(CoreUiR.drawable.ic_close), stringResource(R.string.calendar_plan_remove))
                     }
+                }
+            }
+        }
+    }
+    if (projected != null && planned.isEmpty()) {
+        BoraCard(modifier = Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (projected.shortName.isNotBlank()) {
+                    RoutineBadge(projected.shortName, selected = false, modifier = Modifier.padding(end = 12.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        projected.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(R.string.calendar_from_rotation),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -662,7 +698,10 @@ private fun SessionCard(detail: SessionDetail, state: CalendarUiState, actions: 
                     RoutineBadge(shortName, selected = true, modifier = Modifier.padding(end = 12.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(routineName, style = MaterialTheme.typography.titleMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(routineName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+                        if (session.isExtra) ExtraPill()
+                    }
                     Text(counts, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -697,6 +736,21 @@ private fun SessionCard(detail: SessionDetail, state: CalendarUiState, actions: 
             }
         }
     }
+}
+
+/** A small "Extra" pill next to the routine name of an extra workout. */
+@Composable
+private fun ExtraPill() {
+    Text(
+        stringResource(R.string.calendar_extra),
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+    )
 }
 
 /** The weekly goal: a stepper (1 to 7) and Save. */

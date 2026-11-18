@@ -6,6 +6,7 @@
     <string name="calendar_week_preview">This week: %1$s</string>
     <string name="calendar_legend_trained">Trained</string>
     <string name="calendar_legend_planned">Planned</string>
+    <string name="calendar_legend_rotation">Rotation</string>
     <plurals name="calendar_streak">
         <item quantity="one">Streak: %d week</item>
         <item quantity="other">Streak: %d weeks</item>
@@ -27,6 +28,10 @@
 
     <!-- Day detail -->
     <string name="calendar_free_training">No routine</string>
+    <string name="calendar_extra">Extra</string>
+    <string name="calendar_extra_workout">Extra workout</string>
+    <string name="calendar_extra_hint">Does not change the rotation.</string>
+    <string name="calendar_from_rotation">From your rotation</string>
     <string name="calendar_session_counts">%1$s · %2$s</string>
     <string name="calendar_session_summary">%1$s · %2$s · %3$s</string>
     <string name="calendar_time_range">%1$s–%2$s</string>

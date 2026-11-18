@@ -93,7 +93,7 @@ internal class DefaultHistoryRepository @Inject constructor(
             .map { starts -> starts.mapTo(HashSet()) { it.atZone(zone).toLocalDate() } as Set<LocalDate> }
             .distinctUntilChanged()
 
-    override suspend fun addSession(date: LocalDate, routineId: Long?): Long {
+    override suspend fun addSession(date: LocalDate, routineId: Long?, isExtra: Boolean): Long {
         val now = ZonedDateTime.now(clock)
         return store.inTransaction {
             if (date == now.toLocalDate()) {
@@ -101,13 +101,17 @@ internal class DefaultHistoryRepository @Inject constructor(
             }
             val start = CalendarRules.addedSessionStart(date, now)
             store.insertSession(
-                Session(id = 0, startedAt = start, endedAt = start, routineId = routineId, note = null),
+                Session(id = 0, startedAt = start, endedAt = start, routineId = routineId, note = null, isExtra = isExtra),
             )
         }
     }
 
     override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) {
         store.setSessionRoutine(sessionId, routineId)
+    }
+
+    override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) {
+        store.setSessionExtra(sessionId, extra)
     }
 
     override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet =

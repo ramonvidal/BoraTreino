@@ -68,3 +68,10 @@ internal val MIGRATION_7_8: Migration = object : Migration(7, 8) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_body_measurements_type_date` ON `body_measurements` (`type`, `date`)")
     }
 }
+
+/** Version 9: sessions can be flagged as extra workouts, which do not advance the rotation. */
+internal val MIGRATION_8_9: Migration = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE sessions ADD COLUMN isExtra INTEGER NOT NULL DEFAULT 0")
+    }
+}

@@ -109,6 +109,10 @@ internal class RoomWorkoutStore(private val db: BoraTreinoDatabase) : WorkoutSto
         sessionDao.setRoutineId(sessionId, routineId)
     }
 
+    override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) {
+        sessionDao.setExtra(sessionId, extra)
+    }
+
     override fun observeLastRoutineId(): Flow<Long?> = sessionDao.observeLastRoutineId()
 
     override suspend fun lastRoutineId(): Long? = sessionDao.lastRoutineId()

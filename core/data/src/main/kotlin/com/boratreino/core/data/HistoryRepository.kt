@@ -23,8 +23,11 @@ interface HistoryRepository {
      * Creates a closed session on that day (CalendarRules.addedSessionStart, endedAt = start) and
      * returns its id. Today with a session open: returns the open one's id instead.
      */
-    suspend fun addSession(date: LocalDate, routineId: Long?): Long
+    suspend fun addSession(date: LocalDate, routineId: Long?, isExtra: Boolean = false): Long
     suspend fun setSessionRoutine(sessionId: Long, routineId: Long?)
+
+    /** Flags the session as an extra workout (it does not advance the rotation) or not. */
+    suspend fun setSessionExtra(sessionId: Long, extra: Boolean)
     /**
      * Adds a set to any session: position = the machine's sets in it; loggedAt = the session's last
      * set + 1 minute, or its start. A closed session stays closed (endedAt moves to the new loggedAt if later).

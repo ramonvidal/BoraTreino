@@ -206,8 +206,12 @@ internal class DefaultTrainingRepository @Inject constructor(
         store.inTransaction {
             val open = store.openSession() ?: return@inTransaction
             store.setSessionRoutine(open.id, routineIdFor(choice))
+            store.setSessionExtra(open.id, isExtraFor(choice))
         }
     }
+
+    /** Whether a session started from [choice] is an extra workout (never for Suggested or Free). */
+    private fun isExtraFor(choice: RoutineChoice): Boolean = (choice as? RoutineChoice.Chosen)?.extra == true
 
     /** The routine id a session gets for [choice]; null for Free, no routines or a routine that is gone. */
     private suspend fun routineIdFor(choice: RoutineChoice): Long? {
@@ -351,7 +355,7 @@ internal class DefaultTrainingRepository @Inject constructor(
             val planned = RepeatSessionRules.plan(items, store.sessionSets(previous.id), doneToday, mode, suggestions)
             if (planned.isEmpty()) return@inTransaction null
             val sessionId = current?.id
-                ?: store.insertSession(Session(id = 0, startedAt = now, endedAt = null, routineId = routineId, note = null))
+                ?: store.insertSession(Session(id = 0, startedAt = now, endedAt = null, routineId = routineId, note = null, isExtra = isExtraFor(choice.value)))
             val counts = HashMap<Long, Int>()
             val ids = planned.mapIndexed { index, p ->
                 val position = counts[p.machineId] ?: store.setCount(sessionId, p.machineId)
@@ -369,7 +373,7 @@ internal class DefaultTrainingRepository @Inject constructor(
             val open = store.openSession()?.id
             val sessionId = open
                 ?: store.insertSession(
-                    Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null),
+                    Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null, isExtra = isExtraFor(choice.value)),
                 )
             val first = store.setCount(sessionId, machineId)
             val ids = sets.mapIndexed { index, draft ->
@@ -412,7 +416,7 @@ internal class DefaultTrainingRepository @Inject constructor(
             closeIfStale(now)
             val sessionId = store.openSession()?.id
                 ?: store.insertSession(
-                    Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null),
+                    Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null, isExtra = isExtraFor(choice.value)),
                 )
             val set = WorkoutSet(
                 id = 0,
@@ -439,7 +443,7 @@ internal class DefaultTrainingRepository @Inject constructor(
             closeIfStale(now)
             val sessionId = store.openSession()?.id
                 ?: store.insertSession(
-                    Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null),
+                    Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null, isExtra = isExtraFor(choice.value)),
                 )
             val set = CardioRules.toSet(
                 id = 0,

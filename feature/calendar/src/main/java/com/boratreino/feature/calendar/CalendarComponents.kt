@@ -56,8 +56,14 @@ internal fun Modifier.dashedCircle(color: Color, width: Dp = 1.5.dp): Modifier =
 private const val DASH_ON = 2.5f
 private const val DASH_OFF = 2f
 
-/** How a day is marked: [Trained] filled green, [Planned] a dashed outline, [Rest] a light fill (or nothing). */
-internal enum class DayMarkKind { Trained, Planned, Rest }
+/**
+ * How a day is marked: [Trained] filled green, [Planned] a dashed outline, [Projected] a lighter dashed outline
+ * (the rotation's suggestion, not a plan), [Rest] a light fill (or nothing).
+ */
+internal enum class DayMarkKind { Trained, Planned, Projected, Rest }
+
+/** How much lighter a projected day's ring and letter are than a planned day's. */
+private const val PROJECTED_ALPHA = 0.55f
 
 /**
  * The round mark shared by the week strip and the month grid: [Trained] = filled success green with white [content],
@@ -83,6 +89,7 @@ internal fun DayMark(
     }
     var mark = modifier.size(size).background(fill, CircleShape)
     if (kind == DayMarkKind.Planned) mark = mark.dashedCircle(Sunny.Outline)
+    if (kind == DayMarkKind.Projected) mark = mark.dashedCircle(Sunny.Outline.copy(alpha = PROJECTED_ALPHA))
     if (selected && kind == DayMarkKind.Trained) mark = mark.drawBehind {
         drawCircle(color = scheme.primaryContainer, style = Stroke(width = 3.dp.toPx()))
     }
@@ -92,10 +99,15 @@ internal fun DayMark(
     Box(mark, contentAlignment = Alignment.Center) { content() }
 }
 
-/** The text of a trained mark is white, of the others ink. */
+/** The text of a trained mark is white, of a projected one muted, of the others ink. */
 @Composable
-internal fun markContentColor(kind: DayMarkKind): Color =
-    if (kind == DayMarkKind.Trained) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurface
+internal fun markContentColor(kind: DayMarkKind): Color = when (kind) {
+    DayMarkKind.Trained -> MaterialTheme.colorScheme.onSecondary
+    DayMarkKind.Projected -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PROJECTED_TEXT_ALPHA)
+    else -> MaterialTheme.colorScheme.onSurface
+}
+
+private const val PROJECTED_TEXT_ALPHA = 0.8f
 
 /** A tick for a trained day without a routine letter. */
 @Composable

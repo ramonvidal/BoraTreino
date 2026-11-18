@@ -66,6 +66,10 @@ interface WorkoutStore {
 
     /** Sets the session's routine (null = none). */
     suspend fun setSessionRoutine(sessionId: Long, routineId: Long?)
+
+    /** Flags the session as an extra workout (does not advance the rotation) or not. */
+    suspend fun setSessionExtra(sessionId: Long, extra: Boolean)
+
     /** Routine of the most recent finished session that had one, or null. */
     fun observeLastRoutineId(): Flow<Long?>
     suspend fun lastRoutineId(): Long?

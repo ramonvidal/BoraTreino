@@ -267,7 +267,7 @@ private fun ExtraSwitchRow(extra: Boolean, onChange: (Boolean) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.calendar_extra), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.calendar_extra_workout), style = MaterialTheme.typography.bodyLarge)
             Text(
                 stringResource(R.string.calendar_extra_hint),
                 style = MaterialTheme.typography.bodySmall,

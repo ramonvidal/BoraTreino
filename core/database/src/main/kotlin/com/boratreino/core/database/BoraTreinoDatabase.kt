@@ -15,7 +15,7 @@ import androidx.room.RoomDatabase
         PlannedWorkoutEntity::class,
         BodyMeasurementEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 internal abstract class BoraTreinoDatabase : RoomDatabase() {
