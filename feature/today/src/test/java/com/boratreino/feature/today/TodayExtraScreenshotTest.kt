@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -36,7 +37,8 @@ class TodayExtraScreenshotTest {
                 }
             }
         }
-        compose.onNode(hasClickAction() and hasText("Routine B · extra")).performClick()
+        // The first clickable thing that names Routine B is the switcher pill; its exact label depends on the chips.
+        compose.onAllNodes(hasClickAction() and hasText("Routine B", substring = true)).onFirst().performClick()
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/today-routine-sheet-extra.png")
     }
 }
