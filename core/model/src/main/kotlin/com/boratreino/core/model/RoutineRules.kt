@@ -17,7 +17,8 @@ sealed interface RoutineChoice {
     /** No routine. */
     data object Free : RoutineChoice
 
-    data class Chosen(val routineId: Long) : RoutineChoice
+    /** [extra]: the workout is flagged as an extra one and does not advance the rotation. */
+    data class Chosen(val routineId: Long, val extra: Boolean = false) : RoutineChoice
 }
 
 /** What Today shows about routines. */
@@ -81,12 +82,12 @@ object NextRoutineRules {
 
     /**
      * The routine of the latest finished session (by start, then id) whose routine is in [routines] and in
-     * rotation (empty weekdays); null when there is none. This is the `lastRoutineId` for [next].
+     * rotation (empty weekdays) and not an extra workout ([Session.isExtra]); null when there is none. This is the `lastRoutineId` for [next].
      */
     fun lastRotationRoutineId(sessions: List<Session>, routines: List<Routine>): Long? {
         val rotation = routines.filter { it.weekdays.isEmpty() }.map { it.id }.toSet()
         return sessions
-            .filter { it.endedAt != null && it.routineId != null && it.routineId in rotation }
+            .filter { it.endedAt != null && it.routineId != null && it.routineId in rotation && !it.isExtra }
             .maxWithOrNull(compareBy({ it.startedAt }, { it.id }))
             ?.routineId
     }

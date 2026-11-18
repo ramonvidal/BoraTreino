@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
@@ -34,6 +35,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -64,6 +66,7 @@ import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraButtonStyle
 import com.boratreino.core.ui.BoraCard
+import com.boratreino.core.ui.BoraSwitchColors
 import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.Mascot
 import com.boratreino.core.ui.MoveButtons
@@ -97,6 +100,8 @@ internal data class TodayActions(
     /** Opens the full editor of the active ficha (Edit sets and reps). */
     val onEditRoutine: () -> Unit = {},
     val onChooseRoutine: (RoutineChoice) -> Unit = {},
+    /** The routine sheet's "Extra workout" switch: the active routine, flagged (or not) as not moving the rotation. */
+    val onExtra: (Boolean) -> Unit = {},
     val onSkipMachine: (machineId: Long) -> Unit = {},
     val onSkipToday: () -> Unit = {},
     /** The row menu: opens the machine editor like the pencil. */
@@ -184,6 +189,7 @@ internal fun TodayScreen(
                 }
             },
             onChooseRoutine = viewModel::choose,
+            onExtra = viewModel::setExtra,
             onSkipMachine = viewModel::askSkip,
             onSkipToday = viewModel::skipToday,
             onEditMachine = onEditMachine,
@@ -296,14 +302,15 @@ private fun HeroCard(
 /** The small pill in the hero that names the routine and opens the routine sheet. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun RoutineSwitcher(routines: RoutineUi, onChoose: (RoutineChoice) -> Unit) {
+private fun RoutineSwitcher(routines: RoutineUi, onChoose: (RoutineChoice) -> Unit, onExtra: (Boolean) -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
     val name = routines.activeName
-    val label = when {
+    val base = when {
         name == null -> stringResource(R.string.today_free)
-        routines.chips.any { it.selected && it.suggested } -> stringResource(R.string.today_switcher_next, name)
+        routines.chips.any { it.selected && it.suggested } && !routines.extra -> stringResource(R.string.today_switcher_next, name)
         else -> name
     }
+    val label = if (name != null && routines.extra) stringResource(R.string.today_switcher_extra, base) else base
     Row(
         Modifier.heightIn(min = 40.dp)
             .clip(CircleShape)
@@ -354,6 +361,26 @@ private fun RoutineSwitcher(routines: RoutineUi, onChoose: (RoutineChoice) -> Un
                         onClick = { open = false; onChoose(RoutineChoice.Free) },
                         large = true,
                     )
+                }
+                if (routines.activeName != null) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .toggleable(value = routines.extra, role = Role.Switch, onValueChange = onExtra),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.today_extra), style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                stringResource(R.string.today_extra_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(checked = routines.extra, onCheckedChange = null, colors = BoraSwitchColors())
+                    }
                 }
             }
         }
@@ -435,7 +462,7 @@ private fun LazyListScope.freeSession(
             subtitle = session?.let { resources.machinesAndSets(it.machineCount, it.setCount) },
             ringFraction = null,
         ) {
-            if (routines != null) RoutineSwitcher(routines, actions.onChooseRoutine)
+            if (routines != null) RoutineSwitcher(routines, actions.onChooseRoutine, actions.onExtra)
             BoraButton(
                 text = stringResource(R.string.today_add_machine),
                 onClick = actions.onAddMachine,
@@ -595,7 +622,7 @@ private fun RoutineHero(state: TodayUiState, routines: RoutineUi, actions: Today
         subtitle = if (total > 0) resources.getQuantityString(R.plurals.today_machines_progress, total, doneCount, total) else null,
         ringFraction = if (total > 0) doneCount.toFloat() / total else null,
     ) {
-        RoutineSwitcher(routines, actions.onChooseRoutine)
+        RoutineSwitcher(routines, actions.onChooseRoutine, actions.onExtra)
         if (editing) {
             Text(
                 stringResource(R.string.today_edit_hint),

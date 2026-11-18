@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +28,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -39,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,6 +58,7 @@ import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraButtonStyle
 import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.BoraChip
+import com.boratreino.core.ui.BoraSwitchColors
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.SetTypeChips
 import com.boratreino.core.ui.setTypeLabel
@@ -69,6 +73,7 @@ internal data class SessionEditorActions(
     val onBack: () -> Unit = {},
     /** Null = Free. */
     val onChooseRoutine: (routineId: Long?) -> Unit = {},
+    val onExtraChange: (Boolean) -> Unit = {},
     val onAddSet: (machineId: Long) -> Unit = {},
     val onRepeatSame: () -> Unit = {},
     val onRepeatSuggested: () -> Unit = {},
@@ -122,6 +127,7 @@ internal fun SessionEditorScreen(
         actions = SessionEditorActions(
             onBack = onBack,
             onChooseRoutine = viewModel::chooseRoutine,
+            onExtraChange = viewModel::setExtra,
             onAddSet = viewModel::addSet,
             onRepeatSame = { viewModel.repeatLast(RepeatMode.SAME) },
             onRepeatSuggested = { viewModel.repeatLast(RepeatMode.SUGGESTED) },
@@ -183,6 +189,9 @@ internal fun SessionEditorContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 RoutineChips(state, actions.onChooseRoutine)
+                if (detail.session.routineId != null) {
+                    ExtraSwitchRow(detail.session.isExtra, actions.onExtraChange)
+                }
                 if (detail.machines.isEmpty()) {
                     if (detail.session.routineId != null) RepeatButtons(actions)
                     Text(
@@ -243,6 +252,29 @@ private fun RoutineChips(state: SessionEditorUiState, onChoose: (routineId: Long
             selected = current == null,
             onClick = { onChoose(null) },
         )
+    }
+}
+
+/** "Extra workout" with a switch and a hint: an extra workout does not change which routine is next. */
+@Composable
+private fun ExtraSwitchRow(extra: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .toggleable(value = extra, role = Role.Switch, onValueChange = onChange),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.calendar_extra), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                stringResource(R.string.calendar_extra_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(checked = extra, onCheckedChange = null, colors = BoraSwitchColors())
     }
 }
 

@@ -94,6 +94,8 @@ internal data class RoutineUi(
     val activeId: Long? = null,
     val machines: List<RoutineMachineUi> = emptyList(),
     val alsoThisSession: List<SessionMachineUi> = emptyList(),
+    /** The active choice is flagged as an extra workout: it does not move the rotation. */
+    val extra: Boolean = false,
 )
 
 /** The next training on a rest day: [date], the [routineName] and whether the date is [tomorrow]. */
@@ -308,6 +310,7 @@ class TodayViewModel @Inject constructor(
                 alsoThisSession = open?.machines.orEmpty()
                     .filter { it.machine.id !in itemIds }
                     .map { SessionMachineUi(it.machine, SetSummary.of(it.sets)) },
+                extra = active != null && (plan.choice as? RoutineChoice.Chosen)?.extra == true,
             )
         }
         TodayUiState(
@@ -466,6 +469,12 @@ class TodayViewModel @Inject constructor(
                 eventChannel.send(TodayEvent.Failed)
             }
         }
+    }
+
+    /** Flags the active routine as an extra workout (or not); the repository retargets an open session too. */
+    internal fun setExtra(extra: Boolean) {
+        val id = state.value.routines?.activeId ?: return
+        choose(RoutineChoice.Chosen(id, extra))
     }
 
     internal fun finish() {

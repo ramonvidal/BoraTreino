@@ -17,6 +17,9 @@
     <string name="today_hero_finish">Finish training</string>
     <string name="today_hero_free">No routine</string>
     <string name="today_switcher_next">%1$s · next in rotation</string>
+    <string name="today_switcher_extra">%1$s · extra</string>
+    <string name="today_extra">Extra workout</string>
+    <string name="today_extra_hint">Does not change the rotation: the next routine stays the same.</string>
     <string name="today_switcher_title">Choose a routine</string>
     <string name="today_exercises_title">Exercises</string>
     <string name="today_repeat_menu">Repeat last time</string>

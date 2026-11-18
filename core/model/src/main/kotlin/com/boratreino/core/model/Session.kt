@@ -9,6 +9,8 @@ data class Session(
     val endedAt: Instant?,
     val routineId: Long?,
     val note: String?,
+    /** An extra workout: it does not advance the routine rotation. */
+    val isExtra: Boolean = false,
 ) {
     init {
         require(endedAt == null || endedAt >= startedAt) { "endedAt must not be before startedAt" }

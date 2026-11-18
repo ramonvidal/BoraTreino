@@ -134,7 +134,17 @@ class SessionEditorViewModel @Inject constructor(
 
     /** Null = Free. */
     internal fun chooseRoutine(routineId: Long?) {
-        write { history.setSessionRoutine(sessionId, routineId) }
+        val wasExtra = state.value.detail?.session?.isExtra == true
+        write {
+            history.setSessionRoutine(sessionId, routineId)
+            // A workout without a routine cannot be an extra one: the switch is hidden, so it is cleared too.
+            if (routineId == null && wasExtra) history.setSessionExtra(sessionId, false)
+        }
+    }
+
+    /** An extra workout does not move the rotation on. */
+    internal fun setExtra(extra: Boolean) {
+        write { history.setSessionExtra(sessionId, extra) }
     }
 
     /** A copy of the machine's last set in this session. */
