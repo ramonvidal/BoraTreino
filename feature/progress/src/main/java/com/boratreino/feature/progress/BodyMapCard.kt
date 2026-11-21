@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -156,6 +157,8 @@ private fun BodyFigure(
     val ink = Sunny.Ink
     val neutralFill = MaterialTheme.colorScheme.surfaceContainerHigh
     val shapes = if (front) BodyMapShapes.front else BodyMapShapes.back
+    // The tap gesture below is keyed on the shapes only, so it must read the latest onTap (it knows which muscle is selected).
+    val currentOnTap by rememberUpdatedState(onTap)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Canvas(
             Modifier
@@ -163,7 +166,7 @@ private fun BodyFigure(
                 .aspectRatio(BodyMapShapes.WIDTH / BodyMapShapes.HEIGHT)
                 .pointerInput(shapes) {
                     detectTapGestures { offset ->
-                        onTap(muscleAt(offset.x, offset.y, shapes, size.width / BodyMapShapes.WIDTH))
+                        currentOnTap(muscleAt(offset.x, offset.y, shapes, size.width / BodyMapShapes.WIDTH))
                     }
                 },
         ) {

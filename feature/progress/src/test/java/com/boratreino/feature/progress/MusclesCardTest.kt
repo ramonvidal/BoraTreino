@@ -35,7 +35,7 @@ class MusclesCardTest {
         }
     }
 
-    private fun yOf(text: String): Float = compose.onNodeWithText(text).fetchSemanticsNode().positionInRoot.y
+    private fun yOf(text: String): Float = compose.onNodeWithText(text, useUnmergedTree = true).fetchSemanticsNode().positionInRoot.y
 
     @Test
     fun `the card is titled Muscles and says the sets are averages per week`() {
@@ -70,11 +70,11 @@ class MusclesCardTest {
     fun `the rows say the average with one decimal`() {
         showCard(report)
 
-        compose.onNodeWithText("8.0").assertIsDisplayed()
-        compose.onAllNodesWithText("2.0").assertCountEquals(5)
-        compose.onAllNodesWithText("0.3").assertCountEquals(3)
-        compose.onNodeWithText("0.2").assertIsDisplayed()
-        compose.onAllNodesWithText("0.0").assertCountEquals(4)
+        compose.onNodeWithText("8.0", useUnmergedTree = true).assertIsDisplayed()
+        compose.onAllNodesWithText("2.0", useUnmergedTree = true).assertCountEquals(5)
+        compose.onAllNodesWithText("0.3", useUnmergedTree = true).assertCountEquals(3)
+        compose.onNodeWithText("0.2", useUnmergedTree = true).assertIsDisplayed()
+        compose.onAllNodesWithText("0.0", useUnmergedTree = true).assertCountEquals(4)
     }
 
     @Test
