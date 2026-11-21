@@ -109,6 +109,11 @@ data class StatsReport(
     val balance: BalanceStats = BalanceStats(0, 0, 0, 0, 0, 0, 0),
     /** Only (week, group) pairs with sets > 0, by week then group; indirect work of the period's working sets. */
     val indirectWeeks: List<IndirectWeek> = emptyList(),
+    /**
+     * Only (block, muscle) pairs with direct or indirect sets > 0, by block then [Muscle] order. Direct sets of a
+     * machine without library data are spread equally over the muscles of its group (an approximation).
+     */
+    val detailWeeks: List<MuscleDetailWeek> = emptyList(),
 )
 
 /** Statistics over the sets, sessions and machines already logged. Working sets only; pure functions. */
@@ -129,6 +134,14 @@ object StatsRules {
         MuscleGroup.BACK to listOf(MuscleGroup.SHOULDERS, MuscleGroup.ARMS),
         MuscleGroup.SHOULDERS to listOf(MuscleGroup.ARMS),
         MuscleGroup.LEGS to listOf(MuscleGroup.CORE),
+    )
+
+    /** Secondary muscles of a machine without library data, by its own group. */
+    private val DEFAULT_INDIRECT_MUSCLES: Map<MuscleGroup, List<Muscle>> = mapOf(
+        MuscleGroup.CHEST to listOf(Muscle.SHOULDERS, Muscle.TRICEPS),
+        MuscleGroup.BACK to listOf(Muscle.SHOULDERS, Muscle.BICEPS),
+        MuscleGroup.SHOULDERS to listOf(Muscle.TRICEPS),
+        MuscleGroup.LEGS to listOf(Muscle.ABS),
     )
 
     /** A set with the date of its session and its machine. */
@@ -184,6 +197,7 @@ object StatsRules {
             strengthIndex = strengthIndex(inPeriod, from, weekCount),
             balance = balance(inPeriod, library),
             indirectWeeks = indirectWeeks(inPeriod, library, from),
+            detailWeeks = detailWeeks(inPeriod, library, from),
         )
     }
 
@@ -259,6 +273,42 @@ object StatsRules {
         }
         return counts.map { (key, n) -> IndirectWeek(key.first, key.second, n) }
             .sortedWith(compareBy({ it.weekStart }, { it.muscleGroup }))
+    }
+
+    /** Muscles a set of [machine] works directly: the library's distinct primary muscles, else all of its group's. */
+    private fun directMuscles(machine: Machine, library: Map<String, LibraryExercise>): List<Muscle> {
+        val fromLibrary = machine.libraryId?.let { library[it] }
+            ?.primaryMuscles?.mapNotNull(::libraryMuscle)?.distinct().orEmpty()
+        return fromLibrary.ifEmpty { Muscle.ofGroup(machine.muscleGroup) }
+    }
+
+    private fun indirectMuscles(machine: Machine, library: Map<String, LibraryExercise>, direct: List<Muscle>): Set<Muscle> {
+        val exercise = machine.libraryId?.let { library[it] }
+        val muscles = if (exercise != null) {
+            exercise.secondaryMuscles.mapNotNull(::libraryMuscle)
+        } else {
+            DEFAULT_INDIRECT_MUSCLES[machine.muscleGroup].orEmpty()
+        }
+        return muscles.filter { it !in direct }.toSet()
+    }
+
+    private fun detailWeeks(
+        inPeriod: List<Entry>,
+        library: Map<String, LibraryExercise>,
+        from: LocalDate,
+    ): List<MuscleDetailWeek> {
+        val direct = HashMap<Pair<LocalDate, Muscle>, Double>()
+        val indirect = HashMap<Pair<LocalDate, Muscle>, Int>()
+        for (e in inPeriod) {
+            if (!isStrengthSet(e) || e.machine.kind == MachineKind.CARDIO || e.machine.muscleGroup == MuscleGroup.CARDIO) continue
+            val week = blockStart(e.date, from)
+            val directMuscles = directMuscles(e.machine, library)
+            for (muscle in directMuscles) direct.merge(week to muscle, 1.0 / directMuscles.size, Double::plus)
+            for (muscle in indirectMuscles(e.machine, library, directMuscles)) indirect.merge(week to muscle, 1, Int::plus)
+        }
+        return (direct.keys + indirect.keys).distinct()
+            .map { MuscleDetailWeek(it.first, it.second, direct[it] ?: 0.0, (indirect[it] ?: 0).toDouble()) }
+            .sortedWith(compareBy({ it.weekStart }, { it.muscle }))
     }
 
     private fun recency(all: List<Entry>, today: LocalDate): List<MuscleRecency> {

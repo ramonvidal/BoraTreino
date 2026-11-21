@@ -138,9 +138,11 @@
     <string name="stats_body_front">Front</string>
     <string name="stats_body_back">Back</string>
     <string name="stats_body_legend_0">No sets</string>
-    <string name="stats_body_legend_1">Under 5 a week</string>
-    <string name="stats_body_legend_2">5 to 9 a week</string>
-    <string name="stats_body_legend_3">10 or more a week</string>
+    <string name="stats_body_legend_1">Under 3 a week</string>
+    <string name="stats_body_legend_2">3 to 5 a week</string>
+    <string name="stats_body_legend_3">6 or more a week</string>
+    <string name="stats_body_muscle_detail">%1$s: %2$s sets a week (%3$s direct)</string>
+    <string name="stats_muscles_title">Muscles</string>
     <string name="stats_body_extremes">Most trained: %1$s (%2$s a week); least: %3$s (%4$s a week)</string>
     <string name="stats_relative_title">Strength per body weight</string>
     <string name="stats_relative_hint">Log your weight in Settings to see strength per body weight.</string>

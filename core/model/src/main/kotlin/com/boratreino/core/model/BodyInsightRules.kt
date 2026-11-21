@@ -77,6 +77,39 @@ object BodyInsightRules {
         }
     }
 
+    /** Average sets per week at which a specific muscle's shade steps up (a muscle gets less work than a group). */
+    const val MUSCLE_SHADE_2_FROM = 3.0
+    const val MUSCLE_SHADE_3_FROM = 6.0
+
+    /**
+     * Average effective sets per block over all blocks of [report] for each of the 14 [Muscle]s:
+     * (direct + [StatsRules.INDIRECT_WEIGHT] x indirect) / blocks. 0.0 when the report has no weeks.
+     */
+    fun muscleDetailLoad(report: StatsReport): Map<Muscle, Double> = detailLoad(report, StatsRules.INDIRECT_WEIGHT)
+
+    /** Same as [muscleDetailLoad] but direct sets only. */
+    fun directDetailLoad(report: StatsReport): Map<Muscle, Double> = detailLoad(report, 0.0)
+
+    private fun detailLoad(report: StatsReport, indirectWeight: Double): Map<Muscle, Double> {
+        val weekCount = report.weeks.size
+        val byMuscle = report.detailWeeks.groupBy { it.muscle }
+        return Muscle.entries.associateWith { muscle ->
+            if (weekCount == 0) {
+                0.0
+            } else {
+                byMuscle[muscle].orEmpty().sumOf { it.directSets + indirectWeight * it.indirectSets } / weekCount
+            }
+        }
+    }
+
+    /** 0 for none, 1 under 3 sets a week, 2 for 3 up to 6, 3 for 6 or more. */
+    fun shadeMuscle(setsPerWeek: Double): Int = when {
+        setsPerWeek <= 0.0 -> 0
+        setsPerWeek < MUSCLE_SHADE_2_FROM -> 1
+        setsPerWeek < MUSCLE_SHADE_3_FROM -> 2
+        else -> 3
+    }
+
     /** 0 for none, 1 under 5 sets a week, 2 for 5 up to 10, 3 for 10 or more. */
     fun shade(setsPerWeek: Double): Int = when {
         setsPerWeek <= 0.0 -> 0
