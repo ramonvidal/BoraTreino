@@ -2,6 +2,7 @@ package com.boratreino.core.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import com.boratreino.core.model.Muscle
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.SetSummary
 import java.text.NumberFormat
