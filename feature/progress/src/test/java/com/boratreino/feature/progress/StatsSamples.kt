@@ -3,6 +3,8 @@ package com.boratreino.feature.progress
 import com.boratreino.core.model.Consistency
 import com.boratreino.core.model.MachineEstimate
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.Muscle
+import com.boratreino.core.model.MuscleDetailWeek
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.MuscleRecency
 import com.boratreino.core.model.MuscleWeek
@@ -44,6 +46,16 @@ internal object StatsSamples {
 
     /** First day of block [i] (7 days each). */
     private fun weekStart(i: Int): LocalDate = from.plusWeeks(i.toLong())
+
+    /**
+     * The specific-muscle detail of [muscleWeeks] as the rules give it when no machine has library data: each group's
+     * working sets are split equally over its muscles, direct only (no indirect sets in these samples).
+     */
+    fun detailOf(muscleWeeks: List<MuscleWeek>): List<MuscleDetailWeek> =
+        muscleWeeks.flatMap { week ->
+            val muscles = Muscle.ofGroup(week.muscleGroup)
+            muscles.map { MuscleDetailWeek(week.weekStart, it, week.workingSets.toDouble() / muscles.size, 0.0) }
+        }.sortedWith(compareBy({ it.weekStart }, { it.muscle }))
 
     private val fullMuscleWeeks: List<MuscleWeek> = (0 until 13).flatMap { i ->
         buildList {
@@ -117,6 +129,7 @@ internal object StatsSamples {
         to = today,
         weeks = fullWeeks,
         muscleWeeks = fullMuscleWeeks,
+        detailWeeks = detailOf(fullMuscleWeeks),
         recency = recency,
         consistency = consistency,
         strength = strength,
@@ -171,6 +184,11 @@ internal object StatsSamples {
     /** The one block of the last seven days: 27 Oct to 2 Nov. */
     private val oneWeekFrom: LocalDate = today.minusDays(6)
 
+    private val oneWeekMuscleWeeks = listOf(
+        MuscleWeek(oneWeekFrom, MuscleGroup.LEGS, 5, 4_800.0),
+        MuscleWeek(oneWeekFrom, MuscleGroup.CHEST, 6, 3_000.0),
+    )
+
     /**
      * The last seven days: the one block starts six days before today. Four sessions on four days, this block's
      * estimates and records only, no strength trend and no strength index. The plateau is the whole history's.
@@ -180,10 +198,8 @@ internal object StatsSamples {
         from = oneWeekFrom,
         to = today,
         weeks = listOf(WeekStats(oneWeekFrom, sessions = 4, trainingDays = 4, workingSets = 11, volumeKg = 7_800.0)),
-        muscleWeeks = listOf(
-            MuscleWeek(oneWeekFrom, MuscleGroup.LEGS, 5, 4_800.0),
-            MuscleWeek(oneWeekFrom, MuscleGroup.CHEST, 6, 3_000.0),
-        ),
+        muscleWeeks = oneWeekMuscleWeeks,
+        detailWeeks = detailOf(oneWeekMuscleWeeks),
         recency = recency,
         consistency = Consistency(
             weeksCounted = 1,

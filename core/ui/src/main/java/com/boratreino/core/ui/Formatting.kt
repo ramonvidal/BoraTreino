@@ -60,3 +60,24 @@ fun MuscleGroup.label(): String = stringResource(
         MuscleGroup.CARDIO -> R.string.muscle_group_cardio
     },
 )
+
+/** The name of one specific muscle, as the body map and the Muscles card show it. */
+@Composable
+fun Muscle.label(): String = stringResource(
+    when (this) {
+        Muscle.CHEST -> R.string.muscle_chest
+        Muscle.SHOULDERS -> R.string.muscle_shoulders
+        Muscle.BICEPS -> R.string.muscle_biceps
+        Muscle.TRICEPS -> R.string.muscle_triceps
+        Muscle.FOREARMS -> R.string.muscle_forearms
+        Muscle.ABS -> R.string.muscle_abs
+        Muscle.QUADRICEPS -> R.string.muscle_quadriceps
+        Muscle.HAMSTRINGS -> R.string.muscle_hamstrings
+        Muscle.GLUTES -> R.string.muscle_glutes
+        Muscle.CALVES -> R.string.muscle_calves
+        Muscle.HIPS -> R.string.muscle_hips
+        Muscle.UPPER_BACK -> R.string.muscle_upper_back
+        Muscle.TRAPS -> R.string.muscle_traps
+        Muscle.LOWER_BACK -> R.string.muscle_lower_back
+    },
+)

@@ -230,6 +230,7 @@ class BodyInsightRulesTest {
         weekCount: Int,
         muscleWeeks: List<MuscleWeek> = emptyList(),
         indirectWeeks: List<IndirectWeek> = emptyList(),
+        detailWeeks: List<MuscleDetailWeek> = emptyList(),
     ): StatsReport = StatsReport(
         period = StatsPeriod.THREE_MONTHS,
         from = d(8, 13),
@@ -247,6 +248,7 @@ class BodyInsightRulesTest {
         repRanges = emptyList(),
         times = SessionTimes(0, null, null),
         indirectWeeks = indirectWeeks,
+        detailWeeks = detailWeeks,
     )
 
     private fun indirectWeek(week: LocalDate, group: MuscleGroup, sets: Int) = IndirectWeek(week, group, sets)
@@ -321,5 +323,81 @@ class BodyInsightRulesTest {
 
         assertEquals(0.0, BodyInsightRules.muscleLoad(report).getValue(MuscleGroup.CARDIO), 0.0)
         assertEquals(0.0, BodyInsightRules.directLoad(report).getValue(MuscleGroup.CARDIO), 0.0)
+    }
+
+    // Muscle detail load: average effective sets per block for each specific muscle
+
+    private fun detailWeek(week: LocalDate, muscle: Muscle, direct: Double, indirect: Double = 0.0) =
+        MuscleDetailWeek(week, muscle, direct, indirect)
+
+    @Test
+    fun `muscle detail load averages direct sets over every block, indirect ones at half weight`() {
+        val report = reportOf(
+            weekCount = 4,
+            detailWeeks = listOf(
+                detailWeek(weekOf(1), Muscle.BICEPS, direct = 4.0),
+                detailWeek(weekOf(2), Muscle.BICEPS, direct = 0.0, indirect = 6.0),
+            ),
+        )
+
+        // (4 direct + 0.5 x 6 indirect) / 4 blocks
+        assertEquals(1.75, BodyInsightRules.muscleDetailLoad(report).getValue(Muscle.BICEPS), 1e-9)
+        // 4 direct / 4 blocks
+        assertEquals(1.0, BodyInsightRules.directDetailLoad(report).getValue(Muscle.BICEPS), 1e-9)
+    }
+
+    @Test
+    fun `a muscle worked only indirectly has a detail load but no direct detail load`() {
+        val report = reportOf(
+            weekCount = 1,
+            detailWeeks = listOf(detailWeek(weekOf(0), Muscle.ABS, direct = 0.0, indirect = 3.0)),
+        )
+
+        assertEquals(1.5, BodyInsightRules.muscleDetailLoad(report).getValue(Muscle.ABS), 1e-9)
+        assertEquals(0.0, BodyInsightRules.directDetailLoad(report).getValue(Muscle.ABS), 0.0)
+    }
+
+    @Test
+    fun `muscle detail load has all fourteen muscles`() {
+        val report = reportOf(
+            weekCount = 2,
+            detailWeeks = listOf(detailWeek(weekOf(0), Muscle.CHEST, direct = 2.0)),
+        )
+
+        assertEquals(Muscle.entries.toSet(), BodyInsightRules.muscleDetailLoad(report).keys)
+        assertEquals(Muscle.entries.toSet(), BodyInsightRules.directDetailLoad(report).keys)
+        assertEquals(14, BodyInsightRules.muscleDetailLoad(report).size)
+        assertEquals(1.0, BodyInsightRules.muscleDetailLoad(report).getValue(Muscle.CHEST), 1e-9)
+        assertEquals(0.0, BodyInsightRules.muscleDetailLoad(report).getValue(Muscle.HIPS), 0.0)
+    }
+
+    @Test
+    fun `muscle detail load is 0 for every muscle when the report has no weeks`() {
+        val empty = reportOf(
+            weekCount = 0,
+            detailWeeks = listOf(detailWeek(weekOf(0), Muscle.CHEST, direct = 9.0)),
+        )
+
+        assertEquals(Muscle.entries.toSet(), BodyInsightRules.muscleDetailLoad(empty).keys)
+        assertTrue(BodyInsightRules.muscleDetailLoad(empty).values.all { it == 0.0 })
+        assertTrue(BodyInsightRules.directDetailLoad(empty).values.all { it == 0.0 })
+    }
+
+    @Test
+    fun `shade for a muscle is 0 for no sets, 1 under 3 a week, 2 from 3 to under 6 and 3 from 6 a week`() {
+        assertEquals(0, BodyInsightRules.shadeMuscle(0.0))
+        assertEquals(0, BodyInsightRules.shadeMuscle(-1.0))
+        assertEquals(1, BodyInsightRules.shadeMuscle(0.1))
+        assertEquals(1, BodyInsightRules.shadeMuscle(2.99))
+        assertEquals(2, BodyInsightRules.shadeMuscle(3.0))
+        assertEquals(2, BodyInsightRules.shadeMuscle(5.99))
+        assertEquals(3, BodyInsightRules.shadeMuscle(6.0))
+        assertEquals(3, BodyInsightRules.shadeMuscle(12.0))
+    }
+
+    @Test
+    fun `the muscle shade thresholds are three and six sets a week`() {
+        assertEquals(3.0, BodyInsightRules.MUSCLE_SHADE_2_FROM, 0.0)
+        assertEquals(6.0, BodyInsightRules.MUSCLE_SHADE_3_FROM, 0.0)
     }
 }

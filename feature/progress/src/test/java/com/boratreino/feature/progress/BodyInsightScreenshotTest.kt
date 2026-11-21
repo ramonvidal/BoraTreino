@@ -17,13 +17,38 @@ class BodyInsightScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun card(name: String, content: @Composable () -> Unit) {
-        compose.setContent { StatsCardHost { content() } }
+    private fun card(name: String, dark: Boolean = false, fontScale: Float = 1f, content: @Composable () -> Unit) {
+        compose.setContent { StatsCardHost(dark = dark, fontScale = fontScale) { content() } }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
     @Test
     fun `stats body map`() = card("stats-body-map") { BodyMapCard(BodyInsightSamples.bodyMapReport) }
+
+    @Test
+    fun `stats body map with every shade`() = card("stats-body-map-shades") { BodyMapCard(BodyInsightSamples.shadeReport) }
+
+    @Test
+    fun `stats body map with a muscle selected`() {
+        compose.setContent { StatsCardHost { BodyMapCard(BodyInsightSamples.bodyMapReport) } }
+        // The middle of the front chest: its number shows below the figures.
+        compose.tapBodyMap(BodyInsightSamples.BODY_MAP_FIGURES, front = true, gridX = 60.2f, gridY = 49.85f)
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/stats-body-map-selected.png")
+    }
+
+    @Test
+    fun `stats body map dark`() =
+        card("stats-body-map-dark", dark = true) { BodyMapCard(BodyInsightSamples.bodyMapReport) }
+
+    @Test
+    fun `stats body map large font`() =
+        card("stats-body-map-large-font", fontScale = 1.6f) { BodyMapCard(BodyInsightSamples.bodyMapReport) }
+
+    @Test
+    fun `stats muscles`() = card("stats-muscles") { MusclesCard(BodyInsightSamples.bodyMapReport) }
+
+    @Test
+    fun `stats muscles dark`() = card("stats-muscles-dark", dark = true) { MusclesCard(BodyInsightSamples.bodyMapReport) }
 
     @Test
     fun `stats relative strength`() = card("stats-relative-strength") {

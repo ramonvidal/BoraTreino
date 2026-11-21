@@ -5,6 +5,8 @@ import com.boratreino.core.model.IndexPoint
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineEstimate
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.Muscle
+import com.boratreino.core.model.MuscleDetailWeek
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.MuscleWeek
 import com.boratreino.core.model.StatsReport
@@ -32,8 +34,44 @@ internal object BodyInsightSamples {
         add(sets(11, MuscleGroup.ARMS, 1))
     }
 
-    /** The full report with [muscleWeeks]: the body map reads legs 10.0, chest 8.0, back 0.9, shoulders 0.2, arms 0.1, core 0.0. */
-    val bodyMapReport: StatsReport = full.copy(muscleWeeks = muscleWeeks)
+    /**
+     * The same sets per specific muscle: each leg group muscle 2.0 a week (10 split over five), chest 8.0, back 4 a week
+     * in week 6 split over three (0.3), shoulders 3 in week 9 (0.2), each arm muscle 1 in week 11 split over three (0.0).
+     */
+    private val muscleDetail = StatsSamples.detailOf(muscleWeeks)
+
+    /**
+     * The full report with [muscleWeeks]: the body map reads chest 8.0, quadriceps, hamstrings, glutes, calves and hips
+     * 2.0 each, upper back, traps and lower back 0.3 each, shoulders 0.2, biceps, triceps and forearms 0.0, abs 0.0.
+     */
+    val bodyMapReport: StatsReport = full.copy(muscleWeeks = muscleWeeks, detailWeeks = muscleDetail)
+
+    /** The body map figures' description for [bodyMapReport], muscles in display order. */
+    const val BODY_MAP_FIGURES =
+        "Chest: 8.0 sets a week (8.0 direct), Shoulders: 0.2 sets a week (0.2 direct), " +
+            "Biceps: 0.0 sets a week (0.0 direct), Triceps: 0.0 sets a week (0.0 direct), " +
+            "Forearms: 0.0 sets a week (0.0 direct), Abs: 0.0 sets a week (0.0 direct), " +
+            "Quadriceps: 2.0 sets a week (2.0 direct), Hamstrings: 2.0 sets a week (2.0 direct), " +
+            "Glutes: 2.0 sets a week (2.0 direct), Calves: 2.0 sets a week (2.0 direct), " +
+            "Hips: 2.0 sets a week (2.0 direct), Upper back: 0.3 sets a week (0.3 direct), " +
+            "Traps and neck: 0.3 sets a week (0.3 direct), Lower back: 0.3 sets a week (0.3 direct)"
+
+    /** Averages per block that reach every shade of the map: 6 or more, 3 to 5, under 3, and none (abs). */
+    private val shadeSets: Map<Muscle, Double> = mapOf(
+        Muscle.CHEST to 8.0,
+        Muscle.BICEPS to 6.0,
+        Muscle.SHOULDERS to 4.0,
+        Muscle.TRICEPS to 3.0,
+        Muscle.QUADRICEPS to 1.0,
+    )
+
+    /** Thirteen blocks of the same sets per muscle, so each muscle's average is the number above. Abs has none. */
+    val shadeReport: StatsReport = full.copy(
+        muscleWeeks = emptyList(),
+        detailWeeks = (0 until 13).flatMap { i ->
+            shadeSets.map { (muscle, sets) -> MuscleDetailWeek(weekStart(i), muscle, sets, 0.0) }
+        }.sortedWith(compareBy({ it.weekStart }, { it.muscle })),
+    )
 
     private fun machine(id: Long, name: String, group: MuscleGroup = MuscleGroup.LEGS, kind: MachineKind = MachineKind.WEIGHT_REPS) =
         Machine(id, name, group, kind, 2.5, null, null, false)

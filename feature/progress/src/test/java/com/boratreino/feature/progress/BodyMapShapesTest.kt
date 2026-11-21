@@ -1,5 +1,6 @@
 package com.boratreino.feature.progress
 
+import com.boratreino.core.model.Muscle
 import com.boratreino.core.model.MuscleGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -9,7 +10,9 @@ import org.junit.Test
 class BodyMapShapesTest {
     private val sides = mapOf("front" to BodyMapShapes.front, "back" to BodyMapShapes.back)
 
-    private fun groupsOf(shapes: List<BodyShape>): Set<MuscleGroup?> = shapes.map { it.group }.toSet()
+    private fun musclesOf(shapes: List<BodyShape>): Set<Muscle> = shapes.mapNotNull { it.muscle }.toSet()
+
+    private fun groupsOf(shapes: List<BodyShape>): Set<MuscleGroup> = musclesOf(shapes).map { it.group }.toSet()
 
     @Test
     fun `the grid is 100 wide and 220 high`() {
@@ -46,30 +49,44 @@ class BodyMapShapesTest {
     }
 
     @Test
-    fun `every muscle group except cardio is drawn on the front or the back`() {
-        val drawn = groupsOf(BodyMapShapes.front) + groupsOf(BodyMapShapes.back)
-        MuscleGroup.entries.filter { it != MuscleGroup.CARDIO }.forEach { group ->
-            assertTrue("$group has no shape", group in drawn)
+    fun `every specific muscle is drawn on the front or the back`() {
+        val drawn = musclesOf(BodyMapShapes.front) + musclesOf(BodyMapShapes.back)
+
+        Muscle.entries.forEach { muscle ->
+            assertTrue("$muscle has no shape", muscle in drawn)
         }
     }
 
     @Test
-    fun `cardio is never drawn on the body map`() {
+    fun `pieces without a muscle are drawn on both sides, for the head, knees, hands and feet`() {
         sides.forEach { (side, shapes) ->
-            assertTrue("$side draws cardio", shapes.none { it.group == MuscleGroup.CARDIO })
+            assertTrue("$side has no piece without a muscle", shapes.any { it.muscle == null })
         }
     }
 
     @Test
-    fun `the front has chest and core shapes`() {
-        val groups = groupsOf(BodyMapShapes.front)
-        assertTrue(MuscleGroup.CHEST in groups)
-        assertTrue(MuscleGroup.CORE in groups)
+    fun `the front has chest, abs and quadriceps`() {
+        val muscles = musclesOf(BodyMapShapes.front)
+        assertTrue(Muscle.CHEST in muscles)
+        assertTrue(Muscle.ABS in muscles)
+        assertTrue(Muscle.QUADRICEPS in muscles)
     }
 
     @Test
-    fun `the back has back shapes`() {
-        assertTrue(MuscleGroup.BACK in groupsOf(BodyMapShapes.back))
+    fun `the back has upper back, traps, lower back, glutes and hamstrings`() {
+        val muscles = musclesOf(BodyMapShapes.back)
+        assertTrue(Muscle.UPPER_BACK in muscles)
+        assertTrue(Muscle.TRAPS in muscles)
+        assertTrue(Muscle.LOWER_BACK in muscles)
+        assertTrue(Muscle.GLUTES in muscles)
+        assertTrue(Muscle.HAMSTRINGS in muscles)
+    }
+
+    @Test
+    fun `biceps are on the front and triceps are on both sides`() {
+        assertTrue(Muscle.BICEPS in musclesOf(BodyMapShapes.front))
+        assertTrue(Muscle.TRICEPS in musclesOf(BodyMapShapes.front))
+        assertTrue(Muscle.TRICEPS in musclesOf(BodyMapShapes.back))
     }
 
     @Test

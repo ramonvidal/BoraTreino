@@ -63,6 +63,7 @@ class StatsContentTest {
     private fun withoutHighlights(report: StatsReport = full): StatsReport = report.copy(
         strength = report.strength.filter { it.changePercent <= 0.0 },
         muscleWeeks = emptyList(),
+        detailWeeks = emptyList(),
         recency = MuscleGroup.entries.map { MuscleRecency(it, null, null) },
         consistency = report.consistency.copy(weeksMetGoal = 0),
     )
@@ -92,6 +93,14 @@ class StatsContentTest {
         showPage()
 
         assertTrue(yOf("Muscle groups") < yOf("Body map"))
+    }
+
+    @Test
+    fun `the muscles card comes right after the body map`() {
+        showPage()
+
+        shown("Muscles")
+        assertTrue(yOf("Body map") < yOf("Muscles"))
     }
 
     @Test
