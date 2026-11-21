@@ -59,6 +59,20 @@ core/ui,muscle_group_shoulders,,Shoulders,Ombros
 core/ui,muscle_group_arms,,Arms,Braços
 core/ui,muscle_group_core,,Core,Abdômen
 core/ui,muscle_group_cardio,,Cardio,Cardio
+core/ui,muscle_chest,,Chest,Peito
+core/ui,muscle_shoulders,,Shoulders,Ombros
+core/ui,muscle_biceps,,Biceps,Bíceps
+core/ui,muscle_triceps,,Triceps,Tríceps
+core/ui,muscle_forearms,,Forearms,Antebraços
+core/ui,muscle_abs,,Abs,Abdômen
+core/ui,muscle_quadriceps,,Quadriceps,Quadríceps
+core/ui,muscle_hamstrings,,Hamstrings,Posteriores
+core/ui,muscle_glutes,,Glutes,Glúteos
+core/ui,muscle_calves,,Calves,Panturrilhas
+core/ui,muscle_hips,,Hips,Quadril
+core/ui,muscle_upper_back,,Upper back,Costas altas
+core/ui,muscle_traps,,Traps and neck,Trapézio e pescoço
+core/ui,muscle_lower_back,,Lower back,Lombar
 core/ui,suggestion_try,,Try %1$s kg,Tente %1$s kg
 core/ui,record_heaviest,,New record: %1$s kg,Recorde novo: %1$s kg
 core/ui,record_most_reps,,New record: %1$d reps at %2$s kg,Recorde novo: %1$d reps com %2$s kg
@@ -268,9 +282,11 @@ feature/progress,stats_body_note,,Average sets per week in this period (indirect
 feature/progress,stats_body_front,,Front,Frente
 feature/progress,stats_body_back,,Back,Costas
 feature/progress,stats_body_legend_0,,No sets,Sem séries
-feature/progress,stats_body_legend_1,,Under 5 a week,Menos de 5 por semana
-feature/progress,stats_body_legend_2,,5 to 9 a week,5 a 9 por semana
-feature/progress,stats_body_legend_3,,10 or more a week,10 ou mais por semana
+feature/progress,stats_body_legend_1,,Under 3 a week,Menos de 3 por semana
+feature/progress,stats_body_legend_2,,3 to 5 a week,3 a 5 por semana
+feature/progress,stats_body_legend_3,,6 or more a week,6 ou mais por semana
+feature/progress,stats_body_muscle_detail,,%1$s: %2$s sets a week (%3$s direct),%1$s: %2$s séries por semana (%3$s diretas)
+feature/progress,stats_muscles_title,,Muscles,Músculos
 feature/progress,stats_body_extremes,,Most trained: %1$s (%2$s a week); least: %3$s (%4$s a week),Mais treinado: %1$s (%2$s por semana); menos: %3$s (%4$s por semana)
 feature/progress,stats_relative_title,,Strength per body weight,Força por peso corporal
 feature/progress,stats_relative_hint,,Log your weight in Settings to see strength per body weight.,Registre seu peso nas Configurações pra ver a força por peso corporal.

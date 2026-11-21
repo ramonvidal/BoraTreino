@@ -99,9 +99,11 @@
     <string name="stats_body_front">Frente</string>
     <string name="stats_body_back">Costas</string>
     <string name="stats_body_legend_0">Sem séries</string>
-    <string name="stats_body_legend_1">Menos de 5 por semana</string>
-    <string name="stats_body_legend_2">5 a 9 por semana</string>
-    <string name="stats_body_legend_3">10 ou mais por semana</string>
+    <string name="stats_body_legend_1">Menos de 3 por semana</string>
+    <string name="stats_body_legend_2">3 a 5 por semana</string>
+    <string name="stats_body_legend_3">6 ou mais por semana</string>
+    <string name="stats_body_muscle_detail">%1$s: %2$s séries por semana (%3$s diretas)</string>
+    <string name="stats_muscles_title">Músculos</string>
     <string name="stats_body_extremes">Mais treinado: %1$s (%2$s por semana); menos: %3$s (%4$s por semana)</string>
     <string name="stats_relative_title">Força por peso corporal</string>
     <string name="stats_relative_hint">Registre seu peso nas Configurações pra ver a força por peso corporal.</string>
