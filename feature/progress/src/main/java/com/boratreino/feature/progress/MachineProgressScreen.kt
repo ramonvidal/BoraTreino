@@ -1,5 +1,6 @@
 package com.boratreino.feature.progress
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +53,7 @@ internal data class MachineProgressActions(
     val onSelectPoint: (index: Int?) -> Unit = {},
     val onShowAll: () -> Unit = {},
     val onShowOneRm: (Boolean) -> Unit = {},
+    val onCardioMetric: (ProgressMetric) -> Unit = {},
 )
 
 @Composable
@@ -67,6 +70,7 @@ internal fun MachineProgressScreen(
             onSelectPoint = viewModel::selectPoint,
             onShowAll = viewModel::showAllSessions,
             onShowOneRm = viewModel::setShowOneRm,
+            onCardioMetric = viewModel::setCardioMetric,
         ),
     )
 }
@@ -117,11 +121,17 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
         if (state.oneRmAvailable) {
             item(key = "view") { ViewChips(state.showOneRm, actions.onShowOneRm) }
         }
+        if (state.cardioMetrics.size > 1) {
+            item(key = "cardio-metrics") { CardioMetricChips(state.cardioMetrics, state.metric, actions.onCardioMetric) }
+        }
         item(key = "chart") { ChartCard(state, actions.onSelectPoint) }
+        if (state.cardioRecords.isNotEmpty()) {
+            item(key = "cardio-records") { CardioRecordsCard(state.cardioRecords) }
+        }
         if (state.oneRmAvailable && state.oneRmBest != null) {
             item(key = "one-rm-best") { OneRmBestCard(state.oneRmBest, state.today) }
         }
-        if (state.metric == ProgressMetric.MINUTES && state.weeks.isNotEmpty()) {
+        if (state.weeks.isNotEmpty()) {
             item(key = "weeks") { WeeksCard(state.weeks, state.today) }
         }
         if (state.points.isNotEmpty()) {
@@ -216,6 +226,54 @@ private fun ViewChips(showOneRm: Boolean, onShowOneRm: (Boolean) -> Unit) {
     }
 }
 
+/** Speed | Intensity | Distance | Time: which cardio measure the chart and the sessions follow. */
+@Composable
+private fun CardioMetricChips(metrics: List<ProgressMetric>, selected: ProgressMetric, onSelect: (ProgressMetric) -> Unit) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (metric in metrics) {
+            BoraChip(
+                label = cardioMetricName(metric),
+                selected = metric == selected,
+                onClick = { onSelect(metric) },
+            )
+        }
+    }
+}
+
+/** "Speed", "Intensity", "Distance" or "Time". */
+@Composable
+internal fun cardioMetricName(metric: ProgressMetric): String = stringResource(
+    when (metric) {
+        ProgressMetric.SPEED -> R.string.progress_metric_speed
+        ProgressMetric.INTENSITY -> R.string.progress_metric_intensity
+        ProgressMetric.DISTANCE -> R.string.progress_metric_distance
+        else -> R.string.progress_metric_time
+    },
+)
+
+/** The all-time bests of a cardio exercise, one neutral line each: best speed, highest intensity, longest distance, longest time. */
+@Composable
+private fun CardioRecordsCard(records: List<CardioRecord>) {
+    BoraCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.stats_records_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            for (record in records) {
+                val value = valueText(record.metric, record.point.value)
+                val label = stringResource(
+                    when (record.metric) {
+                        ProgressMetric.SPEED -> R.string.progress_record_speed
+                        ProgressMetric.INTENSITY -> R.string.progress_record_intensity
+                        ProgressMetric.DISTANCE -> R.string.progress_record_distance
+                        else -> R.string.progress_record_time
+                    },
+                    value,
+                )
+                Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.heightIn(min = 28.dp))
+            }
+        }
+    }
+}
+
 /** "Best estimated 1RM": the value, its date and the set it came from. */
 @Composable
 private fun OneRmBestCard(best: SessionPoint, today: LocalDate) {
@@ -244,6 +302,9 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
         ProgressMetric.REPS -> stringResource(R.string.progress_chart_title_reps)
         ProgressMetric.MINUTES -> stringResource(R.string.progress_chart_title_minutes)
         ProgressMetric.ONE_RM -> stringResource(R.string.progress_chart_title_one_rm)
+        ProgressMetric.SPEED -> stringResource(R.string.progress_chart_title_speed)
+        ProgressMetric.INTENSITY -> stringResource(R.string.progress_chart_title_intensity)
+        ProgressMetric.DISTANCE -> stringResource(R.string.progress_chart_title_distance)
     }
     BoraCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -290,8 +351,10 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
 }
 
 /** Plain number formatting for chart labels: estimates keep one decimal, other values up to two. */
-private fun valueFormatter(metric: ProgressMetric): (Double) -> String =
-    if (metric == ProgressMetric.ONE_RM) ::formatEstimate1 else ::formatKg1
+private fun valueFormatter(metric: ProgressMetric): (Double) -> String = when (metric) {
+    ProgressMetric.ONE_RM, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE -> ::formatEstimate1
+    else -> ::formatKg1
+}
 
 private fun formatEstimate1(value: Double): String = formatEstimate(value)
 
@@ -306,6 +369,27 @@ private fun chartDescription(state: MachineProgressUiState): String {
     val best = points.maxOf { it.value }
     val metric = state.metric
     val number = valueFormatter(metric)
+    if (metric == ProgressMetric.SPEED || metric == ProgressMetric.INTENSITY || metric == ProgressMetric.DISTANCE) {
+        val name = cardioMetricName(metric)
+        return if (points.size < 2) {
+            stringResource(
+                R.string.progress_chart_description_one_cardio,
+                name,
+                valueText(metric, last.value),
+                formatShortDate(last.date, state.today),
+            )
+        } else {
+            stringResource(
+                R.string.progress_chart_description_cardio,
+                name,
+                valueText(metric, first.value),
+                formatShortDate(first.date, state.today),
+                valueText(metric, last.value),
+                formatShortDate(last.date, state.today),
+                valueText(metric, best),
+            )
+        }
+    }
     return if (points.size < 2) {
         stringResource(
             when (metric) {
@@ -313,6 +397,7 @@ private fun chartDescription(state: MachineProgressUiState): String {
                 ProgressMetric.REPS -> R.string.progress_chart_description_one_reps
                 ProgressMetric.MINUTES -> R.string.progress_chart_description_one_minutes
                 ProgressMetric.ONE_RM -> R.string.progress_chart_description_one_one_rm
+                else -> R.string.progress_chart_description_one_minutes
             },
             number(last.value),
             formatShortDate(last.date, state.today),
@@ -324,6 +409,7 @@ private fun chartDescription(state: MachineProgressUiState): String {
                 ProgressMetric.REPS -> R.string.progress_chart_description_reps
                 ProgressMetric.MINUTES -> R.string.progress_chart_description_minutes
                 ProgressMetric.ONE_RM -> R.string.progress_chart_description_one_rm
+                else -> R.string.progress_chart_description_minutes
             },
             number(first.value),
             formatShortDate(first.date, state.today),
