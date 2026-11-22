@@ -83,15 +83,15 @@ class MachineCardioIntensityTest {
     fun `the intensity stepper shows a dash until an intensity is logged`() {
         show(state(CardioDraft(15, 100, 0, intensity = null)))
 
-        compose.onAllNodesWithText("-").assertCountEquals(1)
+        compose.onAllNodesWithText("-", useUnmergedTree = true).assertCountEquals(1)
     }
 
     @Test
     fun `the intensity stepper shows its number once it is set`() {
         show(state(CardioDraft(15, 100, 0, intensity = 12)))
 
-        compose.onNodeWithText("12").assertExists()
-        compose.onAllNodesWithText("-").assertCountEquals(0)
+        compose.onNodeWithText("12", useUnmergedTree = true).assertExists()
+        compose.onAllNodesWithText("-", useUnmergedTree = true).assertCountEquals(0)
     }
 
     @Test
