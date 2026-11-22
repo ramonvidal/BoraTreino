@@ -45,11 +45,13 @@ internal data class SetEdit(
     val minutes: Int = 0,
     val calories: Int = 0,
     val distanceM: Int = 0,
+    /** Cardio: the bike's intensity, null = not logged. */
+    val intensity: Int? = null,
     val type: SetType = SetType.NORMAL,
 ) {
     val isCardio: Boolean get() = machine.kind == MachineKind.CARDIO
 
-    val cardioDraft: CardioDraft get() = CardioDraft(minutes, calories, distanceM)
+    val cardioDraft: CardioDraft get() = CardioDraft(minutes, calories, distanceM, intensity)
 
     /** A cardio set with nothing logged is not a set; Save waits until there is something. */
     val canSave: Boolean get() = !isCardio || CardioRules.canLog(cardioDraft)
@@ -217,6 +219,7 @@ class SessionEditorViewModel @Inject constructor(
             minutes = cardio.minutes,
             calories = cardio.calories,
             distanceM = cardio.distanceM,
+            intensity = cardio.intensity,
             type = if (entry.machine.kind == MachineKind.CARDIO) SetType.NORMAL else set.type,
         )
     }
@@ -250,6 +253,10 @@ class SessionEditorViewModel @Inject constructor(
 
     internal fun stepEditorDistance(up: Boolean) {
         editor.value = editor.value?.let { it.copy(distanceM = CardioRules.stepDistance(it.distanceM, up)) }
+    }
+
+    internal fun stepEditorIntensity(up: Boolean) {
+        editor.value = editor.value?.let { it.copy(intensity = CardioRules.stepIntensity(it.intensity, up)) }
     }
 
     internal fun saveEditor() {

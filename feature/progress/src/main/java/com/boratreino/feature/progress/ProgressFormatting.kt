@@ -49,6 +49,9 @@ internal fun valueText(metric: ProgressMetric, value: Double): String = when (me
     ProgressMetric.REPS -> value.roundToInt().let { pluralStringResource(CoreUiR.plurals.reps_only, it, it) }
     ProgressMetric.MINUTES -> cardioText(value.roundToInt(), 0, 0)
     ProgressMetric.ONE_RM -> stringResource(CoreUiR.string.weight_kg, formatEstimate(value))
+    ProgressMetric.SPEED -> stringResource(R.string.progress_value_speed, formatSpeed(value))
+    ProgressMetric.INTENSITY -> formatIntensity(value)
+    ProgressMetric.DISTANCE -> stringResource(CoreUiR.string.cardio_km, formatKm(value))
 }
 
 /** "+10 kg", "-5 kg" or "+3 reps". */
@@ -58,6 +61,9 @@ internal fun deltaText(metric: ProgressMetric, delta: Double): String = when (me
     ProgressMetric.REPS -> pluralStringResource(R.plurals.progress_delta_reps, abs(delta).roundToInt(), signed(delta))
     ProgressMetric.MINUTES -> stringResource(R.string.progress_delta_minutes, signed(delta))
     ProgressMetric.ONE_RM -> stringResource(CoreUiR.string.weight_kg, signedEstimate(delta))
+    ProgressMetric.SPEED -> stringResource(R.string.progress_value_speed, signedEstimate(delta))
+    ProgressMetric.INTENSITY -> signedEstimate(delta)
+    ProgressMetric.DISTANCE -> stringResource(CoreUiR.string.cardio_km, signedEstimate(delta))
 }
 
 /** "101.3 kg est. (80 kg × 8)" for an estimated 1RM point: the estimate and the set it came from. */
@@ -82,7 +88,8 @@ internal fun topText(metric: ProgressMetric, point: SessionPoint): String = when
         if (reps == null) stringResource(CoreUiR.string.weight_kg, weight) else stringResource(CoreUiR.string.set_text, weight, reps)
     }
     ProgressMetric.ONE_RM -> oneRmText(point)
-    ProgressMetric.REPS, ProgressMetric.MINUTES -> valueText(metric, point.value)
+    ProgressMetric.REPS, ProgressMetric.MINUTES, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE ->
+        valueText(metric, point.value)
 }
 
 /** "3 sets". */
@@ -109,5 +116,36 @@ internal fun signedPercent(percent: Double): String {
         rounded > 0 -> "+$rounded %"
         rounded < 0 -> "$rounded %"
         else -> "0"
+    }
+}
+
+/** Km with one decimal: 18.4 -> "18.4", 20.0 -> "20.0". */
+internal fun formatKm(km: Double, locale: Locale = Locale.getDefault()): String = formatOneDecimal(km, locale)
+
+/** [distanceM] metres as km with one decimal: 18_432 -> "18.4". */
+internal fun formatKmFromMetres(distanceM: Int, locale: Locale = Locale.getDefault()): String =
+    formatKm(distanceM / 1000.0, locale)
+
+/** A speed in km/h with one decimal: 24.46 -> "24.5". */
+internal fun formatSpeed(kmh: Double, locale: Locale = Locale.getDefault()): String = formatOneDecimal(kmh, locale)
+
+/** An intensity as the bike shows it (a whole number); an average keeps one decimal when it has one: 12.0 -> "12", 12.4 -> "12.4". */
+internal fun formatIntensity(value: Double, locale: Locale = Locale.getDefault()): String = formatDecimal(value, 1, locale)
+
+/** Whole hours of [minutes]: 375 -> 6. */
+internal fun hoursOf(minutes: Int): Int = minutes.coerceAtLeast(0) / 60
+
+/** The minutes left after the whole hours: 375 -> 15. */
+internal fun minutesPartOf(minutes: Int): Int = minutes.coerceAtLeast(0) % 60
+
+/** "45 min" below an hour, "6 h 15 min" from an hour on, "2 h" on the hour. */
+@Composable
+internal fun durationText(minutes: Int): String {
+    val hours = hoursOf(minutes)
+    val rest = minutesPartOf(minutes)
+    return when {
+        hours == 0 -> stringResource(CoreUiR.string.cardio_minutes, rest)
+        rest == 0 -> stringResource(R.string.stats_cardio_hours, hours)
+        else -> stringResource(R.string.stats_cardio_hours_minutes, hours, rest)
     }
 }

@@ -76,5 +76,7 @@
     <string name="calendar_minutes">Minutes</string>
     <string name="calendar_calories">Calories</string>
     <string name="calendar_distance_km">Distance (km)</string>
+    <string name="calendar_intensity">Intensity</string>
+    <string name="calendar_intensity_short">int. %1$d</string>
     <string name="calendar_dash">-</string>
 </resources>

@@ -1,6 +1,5 @@
 package com.boratreino.feature.today
 
-import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.weightLabel
 import com.boratreino.core.ui.summaryLabel
@@ -148,6 +147,7 @@ internal data class MachineActions(
     val onStepMinutes: (up: Boolean) -> Unit = {},
     val onStepCalories: (up: Boolean) -> Unit = {},
     val onStepDistance: (up: Boolean) -> Unit = {},
+    val onStepIntensity: (up: Boolean) -> Unit = {},
     val onShowDistance: () -> Unit = {},
     val onLogCardio: () -> Unit = {},
     val onCardioSameAgain: () -> Unit = {},
@@ -155,6 +155,7 @@ internal data class MachineActions(
     val onStepEditorMinutes: (up: Boolean) -> Unit = {},
     val onStepEditorCalories: (up: Boolean) -> Unit = {},
     val onStepEditorDistance: (up: Boolean) -> Unit = {},
+    val onStepEditorIntensity: (up: Boolean) -> Unit = {},
     val onSaveCardioEditor: () -> Unit = {},
     val onDeleteCardioEditor: () -> Unit = {},
     val onDismissCardioEditor: () -> Unit = {},
@@ -247,6 +248,7 @@ internal fun MachineScreen(
             onStepMinutes = viewModel::stepMinutes,
             onStepCalories = viewModel::stepCalories,
             onStepDistance = viewModel::stepDistance,
+            onStepIntensity = viewModel::stepIntensity,
             onShowDistance = viewModel::showDistance,
             onLogCardio = viewModel::logCardio,
             onCardioSameAgain = viewModel::logCardioSameAgain,
@@ -254,6 +256,7 @@ internal fun MachineScreen(
             onStepEditorMinutes = viewModel::stepEditorMinutes,
             onStepEditorCalories = viewModel::stepEditorCalories,
             onStepEditorDistance = viewModel::stepEditorDistance,
+            onStepEditorIntensity = viewModel::stepEditorIntensity,
             onSaveCardioEditor = viewModel::saveCardioEditor,
             onDeleteCardioEditor = viewModel::deleteCardioEditor,
             onDismissCardioEditor = viewModel::closeCardioEditor,
@@ -470,7 +473,7 @@ private fun InfoChip(text: String, muted: Boolean = false) {
 private fun setValueText(machine: Machine, set: WorkoutSet): String =
     if (machine.kind == MachineKind.CARDIO) {
         val d = CardioRules.toDraft(set)
-        cardioText(d.minutes, d.calories, d.distanceM)
+        cardioRowText(d)
     } else {
         draftText(machine, set.weightKg ?: 0.0, set.reps ?: 0)
     }
@@ -495,7 +498,7 @@ private fun SetTable(
     val previousTexts = (0..sets.size).map { i -> previous.getOrNull(i)?.let { setValueText(machine, it) } ?: none }
     val todayTexts = sets.map { setValueText(machine, it) }
     val nextText = if (isCardio) {
-        cardioText(state.cardio.minutes, state.cardio.calories, state.cardio.distanceM)
+        cardioRowText(state.cardio)
     } else {
         draftText(machine, state.weightKg, state.reps)
     }
@@ -848,7 +851,37 @@ private fun cardioValue(value: Int, format: (Int) -> String = { it.toString() })
 
 private fun kmValue(distanceM: Int): String = cardioValue(distanceM) { formatKg(it / 1000.0) }
 
-/** The minutes, calories and (when [showDistance]) distance steppers. Shared by the log panel and the editor. */
+/** A cardio stepper value that may be unset: "-" when null. */
+private fun intensityValue(intensity: Int?): String = intensity?.toString() ?: "-"
+
+/** "45 min · 18.4 km · intensity 12 · 520 kcal": the non-empty parts, in the order the Log button names them. */
+@Composable
+private fun cardioLogText(d: CardioDraft): String {
+    val parts = buildList {
+        if (d.minutes > 0) add(stringResource(CoreUiR.string.cardio_minutes, d.minutes))
+        if (d.distanceM > 0) add(stringResource(CoreUiR.string.cardio_km, formatKg(d.distanceM / 1000.0)))
+        d.intensity?.let { add(stringResource(R.string.machine_cardio_intensity_part, it)) }
+        if (d.calories > 0) add(stringResource(CoreUiR.string.cardio_calories, d.calories))
+    }
+    return if (parts.isEmpty()) "-" else parts.joinToString(" · ")
+}
+
+/** "45 min · 520 kcal · 18.4 km · int. 12": a set row's text; unset parts are left out, nothing reads "-". */
+@Composable
+private fun cardioRowText(d: CardioDraft): String {
+    val parts = buildList {
+        if (d.minutes > 0) add(stringResource(CoreUiR.string.cardio_minutes, d.minutes))
+        if (d.calories > 0) add(stringResource(CoreUiR.string.cardio_calories, d.calories))
+        if (d.distanceM > 0) add(stringResource(CoreUiR.string.cardio_km, formatKg(d.distanceM / 1000.0)))
+        d.intensity?.let { add(stringResource(R.string.machine_cardio_intensity_short, it)) }
+    }
+    return if (parts.isEmpty()) "-" else parts.joinToString(" · ")
+}
+
+/**
+ * Minutes and distance, then intensity and calories, as a 2 x 2 grid. While [showDistance] is
+ * false the distance slot holds the "Add distance" button. Shared by the log panel and the editor.
+ */
 @Composable
 private fun CardioSteppers(
     draft: CardioDraft,
@@ -857,40 +890,55 @@ private fun CardioSteppers(
     onMinutes: (up: Boolean) -> Unit,
     onCalories: (up: Boolean) -> Unit,
     onDistance: (up: Boolean) -> Unit,
+    onIntensity: (up: Boolean) -> Unit,
 ) {
-    Stepper(
-        label = stringResource(R.string.today_minutes),
-        value = cardioValue(draft.minutes),
-        onMinus = { onMinutes(false) },
-        onPlus = { onMinutes(true) },
-        onValueClick = {},
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Stepper(
-        label = stringResource(R.string.today_calories),
-        value = cardioValue(draft.calories),
-        onMinus = { onCalories(false) },
-        onPlus = { onCalories(true) },
-        onValueClick = {},
-        modifier = Modifier.fillMaxWidth(),
-    )
-    if (showDistance) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Stepper(
-            label = stringResource(R.string.today_distance),
-            value = kmValue(draft.distanceM),
-            onMinus = { onDistance(false) },
-            onPlus = { onDistance(true) },
+            label = stringResource(R.string.today_minutes),
+            value = cardioValue(draft.minutes),
+            onMinus = { onMinutes(false) },
+            onPlus = { onMinutes(true) },
             onValueClick = {},
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
         )
-    } else {
-        TextButton(onClick = onShowDistance, modifier = Modifier.heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.today_add_distance))
+        if (showDistance) {
+            Stepper(
+                label = stringResource(R.string.today_distance),
+                value = kmValue(draft.distanceM),
+                onMinus = { onDistance(false) },
+                onPlus = { onDistance(true) },
+                onValueClick = {},
+                modifier = Modifier.weight(1f),
+            )
+        } else {
+            Box(Modifier.weight(1f).heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
+                TextButton(onClick = onShowDistance, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text(stringResource(R.string.today_add_distance))
+                }
+            }
         }
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Stepper(
+            label = stringResource(R.string.machine_cardio_intensity),
+            value = intensityValue(draft.intensity),
+            onMinus = { onIntensity(false) },
+            onPlus = { onIntensity(true) },
+            onValueClick = {},
+            modifier = Modifier.weight(1f),
+        )
+        Stepper(
+            label = stringResource(R.string.today_calories),
+            value = cardioValue(draft.calories),
+            onMinus = { onCalories(false) },
+            onPlus = { onCalories(true) },
+            onValueClick = {},
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
-/** The cardio bottom half: minutes / calories / distance steppers, then ONE Log button. No rest timer. */
+/** The cardio bottom half: minutes / distance / intensity / calories steppers, then ONE Log button. No rest timer. */
 @Composable
 private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
     Surface(
@@ -910,9 +958,10 @@ private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
                 onMinutes = actions.onStepMinutes,
                 onCalories = actions.onStepCalories,
                 onDistance = actions.onStepDistance,
+                onIntensity = actions.onStepIntensity,
             )
             BoraButton(
-                text = stringResource(R.string.machine_log_cardio, cardioText(state.cardio.minutes, state.cardio.calories, state.cardio.distanceM)),
+                text = stringResource(R.string.machine_log_cardio, cardioLogText(state.cardio)),
                 onClick = actions.onLogCardio,
                 enabled = CardioRules.canLog(state.cardio),
                 modifier = Modifier.fillMaxWidth(),
@@ -942,6 +991,7 @@ private fun EditCardioSheet(editor: CardioEditor, actions: MachineActions) {
                 onMinutes = actions.onStepEditorMinutes,
                 onCalories = actions.onStepEditorCalories,
                 onDistance = actions.onStepEditorDistance,
+                onIntensity = actions.onStepEditorIntensity,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(

@@ -71,6 +71,7 @@ internal fun WorkoutSetEntity.toModel() = WorkoutSet(
     distanceM = distanceM,
     loggedAt = Instant.ofEpochMilli(loggedAt),
     type = runCatching { SetType.valueOf(type) }.getOrDefault(SetType.NORMAL),
+    intensity = intensity,
 )
 
 internal fun WorkoutSet.toEntity() = WorkoutSetEntity(
@@ -85,6 +86,7 @@ internal fun WorkoutSet.toEntity() = WorkoutSetEntity(
     distanceM = distanceM,
     loggedAt = loggedAt.toEpochMilli(),
     type = type.name,
+    intensity = intensity,
 )
 
 internal fun RoutinePlanEntity.toModel() = RoutinePlan(

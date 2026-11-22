@@ -3,8 +3,11 @@ package com.boratreino.core.model
 import java.time.LocalDate
 import java.time.YearMonth
 
-/** What a machine's progress chart measures. [ONE_RM] is for chart values only (see [ProgressRules.oneRmPoints]). */
-enum class ProgressMetric { WEIGHT, REPS, MINUTES, ONE_RM }
+/**
+ * What a machine's progress chart measures. [ONE_RM] is for chart values only (see [ProgressRules.oneRmPoints]).
+ * [SPEED] (km/h), [INTENSITY] and [DISTANCE] (km) are for cardio machines; for cardio, [MINUTES] is the time.
+ */
+enum class ProgressMetric { WEIGHT, REPS, MINUTES, ONE_RM, SPEED, INTENSITY, DISTANCE }
 
 /** One point per session for one machine; [topSet] is the set that gave [value]. */
 data class SessionPoint(
@@ -35,6 +38,11 @@ data class MachineProgress(
     val weeks: List<CardioWeek> = emptyList(),
     /** Estimated 1RM per session (raw, unrounded); empty for cardio and when no set is eligible. */
     val oneRmPoints: List<SessionPoint> = emptyList(),
+    /**
+     * Cardio machines only: points per cardio metric (SPEED, INTENSITY, DISTANCE, MINUTES), ascending; a metric
+     * without data maps to an empty list. [points] holds the default one ([metric], see [ProgressRules.defaultCardioMetric]).
+     */
+    val cardioPoints: Map<ProgressMetric, List<SessionPoint>> = emptyMap(),
 )
 
 data class ProgressOverview(
@@ -47,9 +55,26 @@ data class ProgressOverview(
 )
 
 object ProgressRules {
-    /** CARDIO machine -> MINUTES; BODYWEIGHT_REPS machine with no set whose weight > 0 -> REPS; else WEIGHT. */
+    /** The cardio metrics a machine can chart, in the order the detail screen offers them. */
+    val CARDIO_METRICS: List<ProgressMetric> =
+        listOf(ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE, ProgressMetric.MINUTES)
+
+    /**
+     * The cardio metric to show by default: SPEED when any working set has distance and time, else INTENSITY when
+     * any has an intensity and time, else MINUTES.
+     */
+    fun defaultCardioMetric(sets: List<WorkoutSet>): ProgressMetric {
+        val working = sets.working()
+        return when {
+            working.any { CardioRules.speedKmh(it.distanceM, it.seconds) != null } -> ProgressMetric.SPEED
+            working.any { it.intensity != null && (it.seconds ?: 0) > 0 } -> ProgressMetric.INTENSITY
+            else -> ProgressMetric.MINUTES
+        }
+    }
+
+    /** CARDIO machine -> [defaultCardioMetric]; BODYWEIGHT_REPS machine with no set whose weight > 0 -> REPS; else WEIGHT. */
     fun metricFor(machine: Machine, sets: List<WorkoutSet>): ProgressMetric = when {
-        machine.kind == MachineKind.CARDIO -> ProgressMetric.MINUTES
+        machine.kind == MachineKind.CARDIO -> defaultCardioMetric(sets)
         machine.kind == MachineKind.BODYWEIGHT_REPS && sets.working().none { (it.weightKg ?: 0.0) > 0.0 } -> ProgressMetric.REPS
         else -> ProgressMetric.WEIGHT
     }
@@ -60,6 +85,10 @@ object ProgressRules {
      * WEIGHT: topSet = heaviest weight (null counts 0), ties -> more reps, then later position. REPS: topSet = most
      * reps, ties -> heavier, then later position. value = that set's weight or reps. MINUTES: value = total minutes
      * of the session's sets; topSet = the longest set, ties -> later position.
+     * Cardio metrics (sessions without the data have no point): SPEED = the session's total distance / total time
+     * (km/h) over its sets with both; INTENSITY = time-weighted average intensity over its sets with intensity and
+     * time; DISTANCE = total distance in km (sessions with 0 are skipped). For these topSet = the longest
+     * contributing set, ties -> later position; setCount = the session's sets of the machine.
      */
     fun points(
         sets: List<WorkoutSet>,
@@ -71,6 +100,8 @@ object ProgressRules {
             ProgressMetric.REPS -> compareBy<WorkoutSet>({ it.reps ?: 0 }, { it.weightKg ?: 0.0 }, { it.position })
             ProgressMetric.MINUTES -> compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.position })
             ProgressMetric.ONE_RM -> return oneRmPoints(sets, sessionDates)
+            ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE ->
+                return cardioPoints(sets, sessionDates, metric)
         }
         return sets
             .filter { it.isWorking && it.sessionId in sessionDates }
@@ -81,12 +112,38 @@ object ProgressRules {
                     ProgressMetric.WEIGHT -> top.weightKg ?: 0.0
                     ProgressMetric.REPS -> (top.reps ?: 0).toDouble()
                     ProgressMetric.MINUTES -> CardioRules.minutesOf(group.sumOf { it.seconds ?: 0 }).toDouble()
-                    ProgressMetric.ONE_RM -> top.weightKg ?: 0.0
+                    ProgressMetric.ONE_RM, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE ->
+                        top.weightKg ?: 0.0
                 }
                 SessionPoint(sessionId, sessionDates.getValue(sessionId), value, top, group.size)
             }
             .sortedWith(compareBy({ it.date }, { it.sessionId }))
     }
+
+    private fun cardioPoints(
+        sets: List<WorkoutSet>,
+        sessionDates: Map<Long, LocalDate>,
+        metric: ProgressMetric,
+    ): List<SessionPoint> =
+        sets
+            .filter { it.isWorking && it.sessionId in sessionDates }
+            .groupBy { it.sessionId }
+            .mapNotNull { (sessionId, group) ->
+                val used = when (metric) {
+                    ProgressMetric.SPEED -> group.filter { CardioRules.speedKmh(it.distanceM, it.seconds) != null }
+                    ProgressMetric.INTENSITY -> group.filter { it.intensity != null && (it.seconds ?: 0) > 0 }
+                    else -> group.filter { (it.distanceM ?: 0) > 0 }
+                }
+                if (used.isEmpty()) return@mapNotNull null
+                val value = when (metric) {
+                    ProgressMetric.SPEED -> CardioRules.averageSpeedKmh(used)
+                    ProgressMetric.INTENSITY -> CardioRules.intensityAverage(used)
+                    else -> used.sumOf { it.distanceM ?: 0 } / 1000.0
+                } ?: return@mapNotNull null
+                val top = used.maxWith(compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.position }))
+                SessionPoint(sessionId, sessionDates.getValue(sessionId), value, top, group.size)
+            }
+            .sortedWith(compareBy({ it.date }, { it.sessionId }))
 
     /**
      * One point per session that has an eligible set (see [OneRepMaxRules]), ascending by date then session id.

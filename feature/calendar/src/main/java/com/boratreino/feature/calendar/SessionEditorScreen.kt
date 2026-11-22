@@ -1,6 +1,5 @@
 package com.boratreino.feature.calendar
 
-import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.weightLabel
 import com.boratreino.core.ui.draftText
@@ -46,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
@@ -86,6 +86,7 @@ internal data class SessionEditorActions(
     val onStepEditorMinutes: (up: Boolean) -> Unit = {},
     val onStepEditorCalories: (up: Boolean) -> Unit = {},
     val onStepEditorDistance: (up: Boolean) -> Unit = {},
+    val onStepEditorIntensity: (up: Boolean) -> Unit = {},
     val onOpenPad: (PadTarget) -> Unit = {},
     val onConfirmPad: (String) -> Unit = {},
     val onDismissPad: () -> Unit = {},
@@ -140,6 +141,7 @@ internal fun SessionEditorScreen(
             onStepEditorMinutes = viewModel::stepEditorMinutes,
             onStepEditorCalories = viewModel::stepEditorCalories,
             onStepEditorDistance = viewModel::stepEditorDistance,
+            onStepEditorIntensity = viewModel::stepEditorIntensity,
             onOpenPad = viewModel::openPad,
             onConfirmPad = viewModel::confirmPad,
             onDismissPad = viewModel::dismissPad,
@@ -320,8 +322,7 @@ private fun MachineCard(entry: SessionMachine, actions: SessionEditorActions) {
                 )
                 Text(
                     if (entry.machine.kind == MachineKind.CARDIO) {
-                        val draft = CardioRules.toDraft(set)
-                        cardioText(draft.minutes, draft.calories, draft.distanceM)
+                        cardioRowText(CardioRules.toDraft(set))
                     } else {
                         draftText(entry.machine, set.weightKg ?: 0.0, set.reps ?: 0)
                     },
@@ -398,6 +399,18 @@ private fun MachinePicker(machines: List<Machine>, actions: SessionEditorActions
     }
 }
 
+/** "45 min · 520 kcal · 18.4 km · int. 12": a cardio set's line; unset parts are left out, nothing reads "-". */
+@Composable
+private fun cardioRowText(d: CardioDraft): String {
+    val parts = buildList {
+        if (d.minutes > 0) add(stringResource(CoreUiR.string.cardio_minutes, d.minutes))
+        if (d.calories > 0) add(stringResource(CoreUiR.string.cardio_calories, d.calories))
+        if (d.distanceM > 0) add(stringResource(CoreUiR.string.cardio_km, formatKg(d.distanceM / 1000.0)))
+        d.intensity?.let { add(stringResource(R.string.calendar_intensity_short, it)) }
+    }
+    return if (parts.isEmpty()) "-" else parts.joinToString(" · ")
+}
+
 /** Fix or delete a set: the two steppers, Delete and Save. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -413,30 +426,42 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
         ) {
             Text(stringResource(R.string.calendar_set_number, editor.number), style = MaterialTheme.typography.titleLarge)
             if (editor.isCardio) {
-                Stepper(
-                    label = stringResource(R.string.calendar_minutes),
-                    value = if (editor.minutes > 0) editor.minutes.toString() else dash,
-                    onMinus = { actions.onStepEditorMinutes(false) },
-                    onPlus = { actions.onStepEditorMinutes(true) },
-                    onValueClick = {},
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Stepper(
-                    label = stringResource(R.string.calendar_calories),
-                    value = if (editor.calories > 0) editor.calories.toString() else dash,
-                    onMinus = { actions.onStepEditorCalories(false) },
-                    onPlus = { actions.onStepEditorCalories(true) },
-                    onValueClick = {},
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Stepper(
-                    label = stringResource(R.string.calendar_distance_km),
-                    value = if (editor.distanceM > 0) formatKg(editor.distanceM / 1000.0) else dash,
-                    onMinus = { actions.onStepEditorDistance(false) },
-                    onPlus = { actions.onStepEditorDistance(true) },
-                    onValueClick = {},
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Stepper(
+                        label = stringResource(R.string.calendar_minutes),
+                        value = if (editor.minutes > 0) editor.minutes.toString() else dash,
+                        onMinus = { actions.onStepEditorMinutes(false) },
+                        onPlus = { actions.onStepEditorMinutes(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                    Stepper(
+                        label = stringResource(R.string.calendar_distance_km),
+                        value = if (editor.distanceM > 0) formatKg(editor.distanceM / 1000.0) else dash,
+                        onMinus = { actions.onStepEditorDistance(false) },
+                        onPlus = { actions.onStepEditorDistance(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Stepper(
+                        label = stringResource(R.string.calendar_intensity),
+                        value = editor.intensity?.toString() ?: dash,
+                        onMinus = { actions.onStepEditorIntensity(false) },
+                        onPlus = { actions.onStepEditorIntensity(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                    Stepper(
+                        label = stringResource(R.string.calendar_calories),
+                        value = if (editor.calories > 0) editor.calories.toString() else dash,
+                        onMinus = { actions.onStepEditorCalories(false) },
+                        onPlus = { actions.onStepEditorCalories(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             } else {
                 Stepper(
                     label = weightLabel(editor.machine),

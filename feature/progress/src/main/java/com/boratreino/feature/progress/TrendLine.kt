@@ -27,6 +27,9 @@ internal fun trendDescription(metric: ProgressMetric, values: List<Double>): Str
         ProgressMetric.REPS -> stringResource(R.string.progress_trend_reps, from, to)
         ProgressMetric.MINUTES -> stringResource(R.string.progress_trend_minutes, from, to)
         ProgressMetric.ONE_RM -> stringResource(R.string.progress_trend_one_rm, formatEstimate(values.first()), formatEstimate(values.last()))
+        ProgressMetric.SPEED -> stringResource(R.string.progress_trend_speed, formatSpeed(values.first()), formatSpeed(values.last()))
+        ProgressMetric.INTENSITY -> stringResource(R.string.progress_trend_intensity, formatIntensity(values.first()), formatIntensity(values.last()))
+        ProgressMetric.DISTANCE -> stringResource(R.string.progress_trend_distance, formatKm(values.first()), formatKm(values.last()))
     }
 }
 

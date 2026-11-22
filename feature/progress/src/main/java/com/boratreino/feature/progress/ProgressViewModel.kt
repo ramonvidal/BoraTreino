@@ -6,6 +6,7 @@ import com.boratreino.core.data.ProgressRepository
 import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.Improvement
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineProgress
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.ProgressOverview
 import com.boratreino.core.model.ProgressRules
@@ -53,7 +54,8 @@ internal const val MOST_IMPROVED_COUNT = 5
 
 /** Machines that improved in the last 30 days: biggest percent first, then larger delta, then name; top five. */
 internal fun buildProgressState(overview: ProgressOverview, today: LocalDate): ProgressUiState {
-    val improved = overview.machines
+    val shown = overview.machines.map { it.forExercisesList() }
+    val improved = shown
         .mapNotNull { progress ->
             ProgressRules.improvement(progress.points, today)?.let { ImprovedRow(progress.machine, progress.metric, it, trendOf(progress.points.map { p -> p.value })) }
         }
@@ -63,7 +65,7 @@ internal fun buildProgressState(overview: ProgressOverview, today: LocalDate): P
                 .thenBy { it.machine.name },
         )
         .take(MOST_IMPROVED_COUNT)
-    val machines = overview.machines
+    val machines = shown
         .filter { it.points.isNotEmpty() }
         .map { progress ->
             MachineRow(
@@ -79,8 +81,8 @@ internal fun buildProgressState(overview: ProgressOverview, today: LocalDate): P
         today = today,
         trainingsThisMonth = overview.trainingsThisMonth,
         recordsThisMonth = overview.recordsThisMonth,
-        setsThisMonth = overview.machines
-            .filter { it.metric != ProgressMetric.MINUTES }
+        setsThisMonth = shown
+            .filter { !it.machine.isCardio() }
             .sumOf { progress ->
                 progress.points
                     .filter { it.date.year == today.year && it.date.month == today.month }
@@ -90,6 +92,13 @@ internal fun buildProgressState(overview: ProgressOverview, today: LocalDate): P
         machines = machines,
         cardioThisWeek = overview.cardioThisWeek?.takeIf { it.minutes > 0 || it.calories > 0 },
     )
+}
+
+/** A cardio machine shows its default metric (speed, else intensity, else minutes); other machines are unchanged. */
+private fun MachineProgress.forExercisesList(): MachineProgress {
+    if (!machine.isCardio()) return this
+    val chosen = defaultCardioMetricOf(availableCardioMetrics(this))
+    return copy(metric = chosen, points = pointsFor(chosen))
 }
 
 private fun trendOf(values: List<Double>): List<Double> = recentValues(values)

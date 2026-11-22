@@ -24,6 +24,8 @@ data class WorkoutSet(
     val distanceM: Int?,
     val loggedAt: Instant,
     val type: SetType = SetType.NORMAL,
+    /** Cardio only: the bike console's intensity (a level or a percentage; no unit), null = not logged. */
+    val intensity: Int? = null,
 ) {
     init {
         require(weightKg == null || weightKg >= 0) { "weightKg must not be negative" }
@@ -31,5 +33,8 @@ data class WorkoutSet(
         require(seconds == null || seconds >= 0) { "seconds must not be negative" }
         require(calories == null || calories >= 0) { "calories must not be negative" }
         require(distanceM == null || distanceM >= 0) { "distanceM must not be negative" }
+        require(intensity == null || intensity in 0..CardioRules.MAX_INTENSITY) {
+            "intensity must be in 0..${CardioRules.MAX_INTENSITY}"
+        }
     }
 }

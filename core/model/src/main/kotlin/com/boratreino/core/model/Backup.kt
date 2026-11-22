@@ -50,7 +50,7 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 8
+    const val FORMAT_VERSION = 9
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {
@@ -121,6 +121,7 @@ object BackupCodec {
                     "distanceM" to it.distanceM,
                     "loggedAt" to it.loggedAt.toString(),
                     "type" to it.type.name,
+                    "intensity" to it.intensity,
                 )
             },
             "plannedWorkouts" to data.plannedWorkouts.sortedWith(compareBy({ it.date }, { it.position }, { it.routineId })).map {
@@ -256,6 +257,7 @@ object BackupCodec {
                 type = optString(it, "type")
                     ?.let { name -> SetType.entries.firstOrNull { t -> t.name == name } }
                     ?: SetType.NORMAL,
+                intensity = optInt(it, "intensity"),
             )
         }
 

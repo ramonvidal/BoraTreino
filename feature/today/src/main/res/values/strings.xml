@@ -183,5 +183,8 @@
         <item quantity="other">Log %d reps</item>
     </plurals>
     <string name="machine_log_cardio">Log %1$s</string>
+    <string name="machine_cardio_intensity">Intensity</string>
+    <string name="machine_cardio_intensity_part">intensity %1$d</string>
+    <string name="machine_cardio_intensity_short">int. %1$d</string>
     <string name="machine_set_type">Set type: %1$s</string>
 </resources>

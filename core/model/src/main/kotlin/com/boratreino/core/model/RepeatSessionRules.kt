@@ -11,6 +11,7 @@ data class PlannedSet(
     val seconds: Int?,
     val calories: Int?,
     val distanceM: Int?,
+    val intensity: Int? = null,
 )
 
 object RepeatSessionRules {
@@ -44,7 +45,7 @@ object RepeatSessionRules {
                     if (suggestion != null) {
                         PlannedSet(machineId, suggestion.weightKg, suggestion.reps, null, null, null)
                     } else {
-                        PlannedSet(machineId, set.weightKg, set.reps, set.seconds, set.calories, set.distanceM)
+                        PlannedSet(machineId, set.weightKg, set.reps, set.seconds, set.calories, set.distanceM, set.intensity)
                     }
                 }
             }

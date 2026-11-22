@@ -75,3 +75,10 @@ internal val MIGRATION_8_9: Migration = object : Migration(8, 9) {
         db.execSQL("ALTER TABLE sessions ADD COLUMN isExtra INTEGER NOT NULL DEFAULT 0")
     }
 }
+
+/** Version 10: cardio sets can carry an intensity (the console's number); null for every earlier set. */
+internal val MIGRATION_9_10: Migration = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE workout_sets ADD COLUMN intensity INTEGER")
+    }
+}

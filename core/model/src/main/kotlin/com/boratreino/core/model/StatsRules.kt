@@ -114,6 +114,8 @@ data class StatsReport(
      * machine without library data are spread equally over the muscles of its group (an approximation).
      */
     val detailWeeks: List<MuscleDetailWeek> = emptyList(),
+    /** One per 7-day block of the period that has cardio sets, oldest first (see [CardioBlock]). */
+    val cardioBlocks: List<CardioBlock> = emptyList(),
 )
 
 /** Statistics over the sets, sessions and machines already logged. Working sets only; pure functions. */
@@ -198,6 +200,7 @@ object StatsRules {
             balance = balance(inPeriod, library),
             indirectWeeks = indirectWeeks(inPeriod, library, from),
             detailWeeks = detailWeeks(inPeriod, library, from),
+            cardioBlocks = CardioRules.blocks(inPeriod.map { it.date to it.set }, from),
         )
     }
 

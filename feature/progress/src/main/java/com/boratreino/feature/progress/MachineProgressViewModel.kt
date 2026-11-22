@@ -16,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -50,7 +51,14 @@ internal data class MachineProgressUiState(
     val showOneRm: Boolean = false,
     /** The best estimated 1RM, all-time like [best]; null without eligible sets. */
     val oneRmBest: SessionPoint? = null,
+    /** Cardio metrics that have data, in chip order; empty for other machines. Chips show only with two or more. */
+    val cardioMetrics: List<ProgressMetric> = emptyList(),
+    /** The all-time best session per cardio metric in [cardioMetrics] (speed, intensity, distance, time), same order. */
+    val cardioRecords: List<CardioRecord> = emptyList(),
 )
+
+/** The best session of one cardio [metric], all-time. */
+internal data class CardioRecord(val metric: ProgressMetric, val point: SessionPoint)
 
 /** The detail state for [progress] (null = machine missing) in [range] as of [today]. */
 internal fun buildMachineState(
@@ -60,11 +68,25 @@ internal fun buildMachineState(
     selected: Int?,
     showAll: Boolean,
     showOneRm: Boolean = false,
+    /** The saved chip choice as an enum name (cardio machines only); unknown, missing or without data falls back to the default. */
+    cardioMetric: String? = null,
 ): MachineProgressUiState {
     if (progress == null) return MachineProgressUiState(loaded = true, found = false, range = range, today = today)
     val oneRmAvailable = progress.oneRmPoints.isNotEmpty()
     val useOneRm = showOneRm && oneRmAvailable
-    val allPoints = if (useOneRm) progress.oneRmPoints else progress.points
+    val cardio = progress.machine.isCardio()
+    val cardioMetrics = if (cardio) availableCardioMetrics(progress) else emptyList()
+    val chosenCardio = if (cardio) {
+        cardioMetrics.firstOrNull { it.name == cardioMetric } ?: defaultCardioMetricOf(cardioMetrics)
+    } else {
+        null
+    }
+    val shownMetric = chosenCardio ?: progress.metric
+    val allPoints = when {
+        useOneRm -> progress.oneRmPoints
+        chosenCardio != null -> progress.pointsFor(chosenCardio)
+        else -> progress.points
+    }
     val inRange = ProgressRules.inRange(allPoints, range, today)
     val (start, end) = axisWindow(range, today, inRange.firstOrNull()?.date)
     val scale = if (inRange.isEmpty()) {
@@ -76,7 +98,7 @@ internal fun buildMachineState(
         loaded = true,
         found = true,
         name = progress.machine.name,
-        metric = if (useOneRm) ProgressMetric.ONE_RM else progress.metric,
+        metric = if (useOneRm) ProgressMetric.ONE_RM else shownMetric,
         range = range,
         today = today,
         best = ProgressRules.best(allPoints),
@@ -91,6 +113,10 @@ internal fun buildMachineState(
         oneRmAvailable = oneRmAvailable,
         showOneRm = useOneRm,
         oneRmBest = ProgressRules.best(progress.oneRmPoints),
+        cardioMetrics = cardioMetrics,
+        cardioRecords = cardioMetrics.mapNotNull { metric ->
+            ProgressRules.best(progress.pointsFor(metric))?.let { CardioRecord(metric, it) }
+        },
     )
 }
 
@@ -111,14 +137,20 @@ class MachineProgressViewModel @Inject constructor(
     // because this view model (and its handle) belongs to one machine's route.
     private val showOneRm: StateFlow<Boolean> = savedStateHandle.getStateFlow(SHOW_ONE_RM_KEY, false)
 
+    // The cardio metric chip, saved as the enum name; null until the user picks one.
+    private val cardioMetric: StateFlow<String?> = savedStateHandle.getStateFlow<String?>(CARDIO_METRIC_KEY, null)
+
+    // The two saved choices travel together so the main combine stays within five flows.
+    private val choices: Flow<Pair<Boolean, String?>> = combine(showOneRm, cardioMetric) { oneRm, metric -> oneRm to metric }
+
     internal val state: StateFlow<MachineProgressUiState> = combine(
         repository.observeMachineProgress(machineId),
         range,
         selected,
         showAll,
-        showOneRm,
-    ) { progress, range, selected, showAll, showOneRm ->
-        buildMachineState(progress, range, LocalDate.now(clock), selected, showAll, showOneRm)
+        choices,
+    ) { progress, range, selected, showAll, (showOneRm, cardioMetric) ->
+        buildMachineState(progress, range, LocalDate.now(clock), selected, showAll, showOneRm, cardioMetric)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MachineProgressUiState())
 
     internal fun selectRange(newRange: ProgressRange) {
@@ -137,9 +169,16 @@ class MachineProgressViewModel @Inject constructor(
         savedStateHandle[SHOW_ONE_RM_KEY] = show
     }
 
+    /** Picks the cardio chart's metric chip; remembered while the screen is open (and across rotation). */
+    internal fun setCardioMetric(metric: ProgressMetric) {
+        selected.value = null
+        savedStateHandle[CARDIO_METRIC_KEY] = metric.name
+    }
+
     internal fun showAllSessions() {
         showAll.value = true
     }
 }
 
 private const val SHOW_ONE_RM_KEY = "showOneRm"
+private const val CARDIO_METRIC_KEY = "cardioMetric"

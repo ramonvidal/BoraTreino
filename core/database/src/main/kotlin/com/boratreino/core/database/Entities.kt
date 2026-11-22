@@ -164,4 +164,6 @@ internal data class WorkoutSetEntity(
     val loggedAt: Long,
     /** SetType name; NORMAL for sets logged before set types existed. */
     @ColumnInfo(defaultValue = "'NORMAL'") val type: String = "NORMAL",
+    /** Cardio intensity as the console shows it; null = not logged (and for every set logged before version 10). */
+    val intensity: Int? = null,
 )

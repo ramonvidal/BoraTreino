@@ -88,7 +88,7 @@ internal data class MachineUiState(
     val suggestion: Suggestion? = null,
     /** The record just set, shown for a few seconds. */
     val record: Record? = null,
-    /** Cardio machines: the steppers' current values (minutes, calories, distance). */
+    /** Cardio machines: the steppers' current values (minutes, calories, distance, intensity). */
     val cardio: CardioDraft = CardioDraft(CardioRules.DEFAULT_MINUTES, 0, 0),
     /** Cardio: last time's matching set, or null (no button). */
     val cardioSameAgain: CardioDraft? = null,
@@ -459,6 +459,11 @@ class MachineViewModel @Inject constructor(
         cardioOverride.value = d.copy(distanceM = CardioRules.stepDistance(d.distanceM, up))
     }
 
+    internal fun stepIntensity(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(intensity = CardioRules.stepIntensity(d.intensity, up))
+    }
+
     internal fun showDistance() {
         distanceRevealed.value = true
     }
@@ -477,6 +482,8 @@ class MachineViewModel @Inject constructor(
     internal fun stepEditorCalories(up: Boolean) = editCardio { it.copy(calories = CardioRules.stepCalories(it.calories, up)) }
 
     internal fun stepEditorDistance(up: Boolean) = editCardio { it.copy(distanceM = CardioRules.stepDistance(it.distanceM, up)) }
+
+    internal fun stepEditorIntensity(up: Boolean) = editCardio { it.copy(intensity = CardioRules.stepIntensity(it.intensity, up)) }
 
     private fun editCardio(change: (CardioDraft) -> CardioDraft) {
         cardioEditor.value = cardioEditor.value?.let { it.copy(draft = change(it.draft)) }
