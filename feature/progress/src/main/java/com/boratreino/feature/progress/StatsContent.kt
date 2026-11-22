@@ -171,6 +171,9 @@ private fun LazyListScope.habitItems(report: StatsReport) {
     if (report.muscleWeeks.any { it.volumeKg > 0 }) {
         item(key = "volume") { WeeklyVolumeCard(report) }
     }
+    if (report.cardioBlocks.isNotEmpty()) {
+        item(key = "cardio") { CardioCard(report) }
+    }
     item(key = "recency") { RecencyCard(report) }
     if (report.times.averageMinutes != null || report.times.averageMinutesBetweenSets != null) {
         item(key = "times") { SessionLengthCard(report) }

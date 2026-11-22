@@ -208,4 +208,40 @@
         <item quantity="one">%d day ago</item>
         <item quantity="other">%d days ago</item>
     </plurals>
+    <string name="progress_best_speed">Best %1$s km/h</string>
+    <string name="progress_best_intensity">Best intensity %1$s</string>
+    <string name="progress_best_distance">Best %1$s km</string>
+    <string name="progress_from_to_speed">%1$s → %2$s km/h</string>
+    <string name="progress_from_to_intensity">%1$s → %2$s intensity</string>
+    <string name="progress_from_to_distance">%1$s → %2$s km</string>
+    <string name="progress_value_speed">%1$s km/h</string>
+    <string name="progress_trend_speed">Trend: %1$s to %2$s km/h</string>
+    <string name="progress_trend_intensity">Trend: intensity %1$s to %2$s</string>
+    <string name="progress_trend_distance">Trend: %1$s to %2$s km</string>
+    <string name="progress_metric_speed">Speed</string>
+    <string name="progress_metric_intensity">Intensity</string>
+    <string name="progress_metric_distance">Distance</string>
+    <string name="progress_metric_time">Time</string>
+    <string name="progress_chart_title_speed">Average speed (km/h)</string>
+    <string name="progress_chart_title_intensity">Average intensity</string>
+    <string name="progress_chart_title_distance">Distance (km)</string>
+    <string name="progress_chart_description_cardio">%1$s from %2$s on %3$s to %4$s on %5$s; best %6$s</string>
+    <string name="progress_chart_description_one_cardio">%1$s %2$s on %3$s</string>
+    <string name="progress_record_speed">Best speed: %1$s</string>
+    <string name="progress_record_intensity">Highest intensity: %1$s</string>
+    <string name="progress_record_distance">Longest distance: %1$s</string>
+    <string name="progress_record_time">Longest time: %1$s</string>
+    <string name="stats_cardio_title">Cardio</string>
+    <string name="stats_cardio_note">Per 7-day block in this period</string>
+    <string name="stats_cardio_time">Time</string>
+    <string name="stats_cardio_distance">Distance</string>
+    <string name="stats_cardio_intensity">Intensity</string>
+    <string name="stats_cardio_hours">%1$d h</string>
+    <string name="stats_cardio_hours_minutes">%1$d h %2$d min</string>
+    <string name="stats_cardio_average_speed">Average speed %1$s km/h</string>
+    <string name="stats_cardio_average_intensity">Average intensity %1$s</string>
+    <plurals name="stats_cardio_chart_description">
+        <item quantity="one">Cardio over %1$d block: %2$s in total, longest block %3$s</item>
+        <item quantity="other">Cardio over %1$d blocks: %2$s in total, longest block %3$s</item>
+    </plurals>
 </resources>

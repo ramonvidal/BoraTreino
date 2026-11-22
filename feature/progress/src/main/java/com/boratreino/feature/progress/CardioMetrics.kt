@@ -1,5 +1,7 @@
 package com.boratreino.feature.progress
 
+import com.boratreino.core.model.CardioBlock
+import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineProgress
@@ -35,3 +37,34 @@ internal fun defaultCardioMetricOf(available: List<ProgressMetric>): ProgressMet
     ProgressMetric.INTENSITY in available -> ProgressMetric.INTENSITY
     else -> ProgressMetric.MINUTES
 }
+
+/** The whole period's cardio in four numbers; [intensityAvg] and [speedKmh] are null when no block has them. */
+internal data class CardioTotals(
+    val minutes: Int,
+    val distanceM: Int,
+    val sessions: Int,
+    val intensityAvg: Double?,
+    val speedKmh: Double?,
+)
+
+/**
+ * Sums [blocks]; the averages weigh each block by its minutes (a block's own average already weighs its sets by time),
+ * counting only blocks that have that average.
+ */
+internal fun cardioTotals(blocks: List<CardioBlock>): CardioTotals = CardioTotals(
+    minutes = blocks.sumOf { it.minutes },
+    distanceM = blocks.sumOf { it.distanceM },
+    sessions = blocks.sumOf { it.sessions },
+    intensityAvg = weightedByMinutes(blocks) { it.intensityAvg },
+    speedKmh = weightedByMinutes(blocks) { it.speedKmh },
+)
+
+private fun weightedByMinutes(blocks: List<CardioBlock>, value: (CardioBlock) -> Double?): Double? {
+    val withValue = blocks.mapNotNull { block -> value(block)?.let { block to it } }
+    if (withValue.isEmpty()) return null
+    val weight = withValue.sumOf { it.first.minutes }
+    return if (weight > 0) withValue.sumOf { it.second * it.first.minutes } / weight else withValue.map { it.second }.average()
+}
+
+/** A [CardioBlock] as the weekly bars helper draws it (minutes only matter). */
+internal fun CardioBlock.asBar(): CardioWeek = CardioWeek(weekStart, minutes, 0, distanceM, sessions)
