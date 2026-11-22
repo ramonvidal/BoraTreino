@@ -104,7 +104,7 @@ class MachineCardioScreenshotTest {
         compose.onNodeWithText("Calories").assertExists()
         compose.onNodeWithText("Distance (km)").assertExists()
         compose.onNodeWithText("Add distance").assertDoesNotExist()
-        compose.onNodeWithText("Log 15 min · 120 kcal · 1.6 km").assertExists()
+        compose.onNodeWithText("Log 15 min · 1.6 km · 120 kcal").assertExists()
     }
 
     @Test
