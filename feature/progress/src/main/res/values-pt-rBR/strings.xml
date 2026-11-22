@@ -153,6 +153,38 @@
     <string name="stats_highlight_kind_gain">Força</string>
     <string name="stats_highlight_kind_streak">Hábito</string>
     <string name="progress_today">hoje</string>
+    <string name="progress_best_speed">Melhor: %1$s km/h</string>
+    <string name="progress_best_intensity">Melhor intensidade: %1$s</string>
+    <string name="progress_best_distance">Melhor: %1$s km</string>
+    <string name="progress_from_to_speed">%1$s → %2$s km/h</string>
+    <string name="progress_from_to_intensity">%1$s → %2$s de intensidade</string>
+    <string name="progress_from_to_distance">%1$s → %2$s km</string>
+    <string name="progress_value_speed">%1$s km/h</string>
+    <string name="progress_trend_speed">Tendência: %1$s a %2$s km/h</string>
+    <string name="progress_trend_intensity">Tendência: intensidade %1$s a %2$s</string>
+    <string name="progress_trend_distance">Tendência: %1$s a %2$s km</string>
+    <string name="progress_metric_speed">Velocidade</string>
+    <string name="progress_metric_intensity">Intensidade</string>
+    <string name="progress_metric_distance">Distância</string>
+    <string name="progress_metric_time">Tempo</string>
+    <string name="progress_chart_title_speed">Velocidade média (km/h)</string>
+    <string name="progress_chart_title_intensity">Intensidade média</string>
+    <string name="progress_chart_title_distance">Distância (km)</string>
+    <string name="progress_chart_description_cardio">%1$s de %2$s em %3$s até %4$s em %5$s; melhor %6$s</string>
+    <string name="progress_chart_description_one_cardio">%1$s %2$s em %3$s</string>
+    <string name="progress_record_speed">Melhor velocidade: %1$s</string>
+    <string name="progress_record_intensity">Maior intensidade: %1$s</string>
+    <string name="progress_record_distance">Maior distância: %1$s</string>
+    <string name="progress_record_time">Maior tempo: %1$s</string>
+    <string name="stats_cardio_title">Cardio</string>
+    <string name="stats_cardio_note">Por bloco de 7 dias neste período</string>
+    <string name="stats_cardio_time">Tempo</string>
+    <string name="stats_cardio_distance">Distância</string>
+    <string name="stats_cardio_intensity">Intensidade</string>
+    <string name="stats_cardio_hours">%1$d h</string>
+    <string name="stats_cardio_hours_minutes">%1$d h %2$d min</string>
+    <string name="stats_cardio_average_speed">Velocidade média %1$s km/h</string>
+    <string name="stats_cardio_average_intensity">Intensidade média %1$s</string>
     <plurals name="progress_trainings">
         <item quantity="one">%d treino</item>
         <item quantity="other">%d treinos</item>
@@ -208,5 +240,9 @@
     <plurals name="progress_days_ago">
         <item quantity="one">há %d dia</item>
         <item quantity="other">há %d dias</item>
+    </plurals>
+    <plurals name="stats_cardio_chart_description">
+        <item quantity="one">Cardio em %1$d bloco: %2$s no total, maior bloco %3$s</item>
+        <item quantity="other">Cardio em %1$d blocos: %2$s no total, maior bloco %3$s</item>
     </plurals>
 </resources>

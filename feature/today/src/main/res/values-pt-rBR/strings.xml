@@ -135,6 +135,9 @@
     <string name="machine_last_on">Última: %1$s, %2$s</string>
     <string name="machine_log_value">Registrar %1$s × %2$d</string>
     <string name="machine_log_cardio">Registrar %1$s</string>
+    <string name="machine_cardio_intensity">Intensidade</string>
+    <string name="machine_cardio_intensity_part">intensidade %1$d</string>
+    <string name="machine_cardio_intensity_short">int. %1$d</string>
     <string name="machine_set_type">Tipo de série: %1$s</string>
     <plurals name="today_machines">
         <item quantity="one">%d exercício</item>

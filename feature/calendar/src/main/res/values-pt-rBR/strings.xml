@@ -55,6 +55,8 @@
     <string name="calendar_minutes">Minutos</string>
     <string name="calendar_calories">Calorias</string>
     <string name="calendar_distance_km">Distância (km)</string>
+    <string name="calendar_intensity">Intensidade</string>
+    <string name="calendar_intensity_short">int. %1$d</string>
     <string name="calendar_dash">-</string>
     <plurals name="calendar_streak">
         <item quantity="one">Sequência: %d semana</item>

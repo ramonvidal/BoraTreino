@@ -163,6 +163,8 @@ feature/calendar,calendar_reps,,Reps,Repetições
 feature/calendar,calendar_minutes,,Minutes,Minutos
 feature/calendar,calendar_calories,,Calories,Calorias
 feature/calendar,calendar_distance_km,,Distance (km),Distância (km)
+feature/calendar,calendar_intensity,,Intensity,Intensidade
+feature/calendar,calendar_intensity_short,,int. %1$d,int. %1$d
 feature/calendar,calendar_dash,,-,-
 feature/progress,progress_title,,Progress,Evolução
 feature/progress,progress_empty,,Log a training to see your progress.,Registre um treino pra ver sua evolução. Bora!
@@ -344,6 +346,40 @@ feature/progress,stats_highlight_kind_streak,,Habit,Hábito
 feature/progress,progress_today,,today,hoje
 feature/progress,progress_days_ago,one,%d day ago,há %d dia
 feature/progress,progress_days_ago,other,%d days ago,há %d dias
+feature/progress,progress_best_speed,,Best %1$s km/h,Melhor: %1$s km/h
+feature/progress,progress_best_intensity,,Best intensity %1$s,Melhor intensidade: %1$s
+feature/progress,progress_best_distance,,Best %1$s km,Melhor: %1$s km
+feature/progress,progress_from_to_speed,,%1$s → %2$s km/h,%1$s → %2$s km/h
+feature/progress,progress_from_to_intensity,,%1$s → %2$s intensity,%1$s → %2$s de intensidade
+feature/progress,progress_from_to_distance,,%1$s → %2$s km,%1$s → %2$s km
+feature/progress,progress_value_speed,,%1$s km/h,%1$s km/h
+feature/progress,progress_trend_speed,,Trend: %1$s to %2$s km/h,Tendência: %1$s a %2$s km/h
+feature/progress,progress_trend_intensity,,Trend: intensity %1$s to %2$s,Tendência: intensidade %1$s a %2$s
+feature/progress,progress_trend_distance,,Trend: %1$s to %2$s km,Tendência: %1$s a %2$s km
+feature/progress,progress_metric_speed,,Speed,Velocidade
+feature/progress,progress_metric_intensity,,Intensity,Intensidade
+feature/progress,progress_metric_distance,,Distance,Distância
+feature/progress,progress_metric_time,,Time,Tempo
+feature/progress,progress_chart_title_speed,,Average speed (km/h),Velocidade média (km/h)
+feature/progress,progress_chart_title_intensity,,Average intensity,Intensidade média
+feature/progress,progress_chart_title_distance,,Distance (km),Distância (km)
+feature/progress,progress_chart_description_cardio,,%1$s from %2$s on %3$s to %4$s on %5$s; best %6$s,%1$s de %2$s em %3$s até %4$s em %5$s; melhor %6$s
+feature/progress,progress_chart_description_one_cardio,,%1$s %2$s on %3$s,%1$s %2$s em %3$s
+feature/progress,progress_record_speed,,Best speed: %1$s,Melhor velocidade: %1$s
+feature/progress,progress_record_intensity,,Highest intensity: %1$s,Maior intensidade: %1$s
+feature/progress,progress_record_distance,,Longest distance: %1$s,Maior distância: %1$s
+feature/progress,progress_record_time,,Longest time: %1$s,Maior tempo: %1$s
+feature/progress,stats_cardio_title,,Cardio,Cardio
+feature/progress,stats_cardio_note,,Per 7-day block in this period,Por bloco de 7 dias neste período
+feature/progress,stats_cardio_time,,Time,Tempo
+feature/progress,stats_cardio_distance,,Distance,Distância
+feature/progress,stats_cardio_intensity,,Intensity,Intensidade
+feature/progress,stats_cardio_hours,,%1$d h,%1$d h
+feature/progress,stats_cardio_hours_minutes,,%1$d h %2$d min,%1$d h %2$d min
+feature/progress,stats_cardio_average_speed,,Average speed %1$s km/h,Velocidade média %1$s km/h
+feature/progress,stats_cardio_average_intensity,,Average intensity %1$s,Intensidade média %1$s
+feature/progress,stats_cardio_chart_description,one,"Cardio over %1$d block: %2$s in total, longest block %3$s","Cardio em %1$d bloco: %2$s no total, maior bloco %3$s"
+feature/progress,stats_cardio_chart_description,other,"Cardio over %1$d blocks: %2$s in total, longest block %3$s","Cardio em %1$d blocos: %2$s no total, maior bloco %3$s"
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha
@@ -750,6 +786,9 @@ feature/today,machine_log_value,,Log %1$s x %2$d,Registrar %1$s × %2$d
 feature/today,machine_log_reps,one,Log %d rep,Registrar %d repetição
 feature/today,machine_log_reps,other,Log %d reps,Registrar %d repetições
 feature/today,machine_log_cardio,,Log %1$s,Registrar %1$s
+feature/today,machine_cardio_intensity,,Intensity,Intensidade
+feature/today,machine_cardio_intensity_part,,intensity %1$d,intensidade %1$d
+feature/today,machine_cardio_intensity_short,,int. %1$d,int. %1$d
 feature/today,machine_set_type,,Set type: %1$s,Tipo de série: %1$s
 feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível
 feature/update,update_install,,Install,Instalar
