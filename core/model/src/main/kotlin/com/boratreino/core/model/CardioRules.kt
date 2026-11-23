@@ -6,28 +6,20 @@ import java.time.LocalDate
 
 /**
  * Minutes, calories and distance the cardio steppers hold before a set is logged; 0 = not logged.
- * [intensity] is the console's whole number; [watts], [heartRate] (averages), [wattsPerKg], [tss] and
- * [intensityFactor] are the bike console's summary values, as shown (null = not logged for all of them).
+ * [intensity] is the console's intensity with up to 2 decimals (e.g. 0.79); null = not logged.
  */
 data class CardioDraft(
     val minutes: Int,
     val calories: Int,
     val distanceM: Int,
-    val intensity: Int? = null,
-    val watts: Int? = null,
-    val heartRate: Int? = null,
-    val wattsPerKg: Double? = null,
-    val tss: Int? = null,
-    val intensityFactor: Double? = null,
+    val intensity: Double? = null,
 )
 
 /**
  * Cardio totals for one 7-day block of a stats period. [minutes] = sum of cardio seconds / 60, rounded;
  * [distanceM] = sum; [sessions] = distinct sessions with cardio; [intensityAvg] = time-weighted average over
  * the sets that have an intensity and seconds > 0 (null when none); [speedKmh] = total distance / total time
- * over the sets that have both (null when none). [powerAvg], [heartRateAvg] and [intensityFactorAvg] are
- * time-weighted averages over the sets that have the value and seconds > 0 (null when none); [tssTotal] is the
- * sum of the sets' TSS (null when no set has one).
+ * over the sets that have both (null when none).
  */
 data class CardioBlock(
     val weekStart: LocalDate,
@@ -36,10 +28,6 @@ data class CardioBlock(
     val sessions: Int,
     val intensityAvg: Double?,
     val speedKmh: Double?,
-    val powerAvg: Double? = null,
-    val heartRateAvg: Double? = null,
-    val tssTotal: Int? = null,
-    val intensityFactorAvg: Double? = null,
 )
 
 /** Cardio totals for the week starting on [weekStart]; [sessions] counts distinct days with cardio. */
@@ -56,23 +44,13 @@ object CardioRules {
     const val DEFAULT_MINUTES = 20
     const val MAX_MINUTES = 600
     const val MAX_CALORIES = 5000
-    const val MAX_INTENSITY = 999
-    const val MAX_WATTS = 2000
-    const val MIN_HEART_RATE = 30
-    const val MAX_HEART_RATE = 250
-    const val MAX_WATTS_PER_KG = 10.0
-    const val MAX_TSS = 999
-    const val MAX_INTENSITY_FACTOR = 2.0
-
-    /** First value a stepper shows when its value is null and "up" is pressed. */
-    const val START_WATTS = 100
-    const val START_HEART_RATE = 120
-    const val START_WATTS_PER_KG = 1.0
-    const val START_TSS = 30
-    const val START_INTENSITY_FACTOR = 0.70
+    const val MAX_INTENSITY = 100.0
     const val MAX_DISTANCE_M = 200_000
     const val CALORIE_STEP = 10
     const val DISTANCE_STEP_M = 100
+
+    /** First intensity the stepper shows when it is null and "up" is pressed. */
+    const val START_INTENSITY = 0.70
 
     /** Steppers' starting values: this session's last cardio set; else last time's first set; else 20 min. */
     fun prefill(lastTime: List<WorkoutSet>, thisSession: List<WorkoutSet>): CardioDraft {
@@ -95,41 +73,20 @@ object CardioRules {
     /** +/-100 m; an off-grid value first snaps to the next multiple of 100 in that direction. Clamped to 0..MAX_DISTANCE_M. */
     fun stepDistance(distanceM: Int, up: Boolean): Int = stepOnGrid(distanceM, DISTANCE_STEP_M, up, MAX_DISTANCE_M)
 
-    /** +/-1, clamped to 0..MAX_INTENSITY; null + up -> 1; null + down -> null (still not logged). */
-    fun stepIntensity(intensity: Int?, up: Boolean): Int? = when {
-        intensity == null -> if (up) 1 else null
-        else -> (if (up) intensity + 1 else intensity - 1).coerceIn(0, MAX_INTENSITY)
+    /**
+     * Intensity: +/-0.01 (two decimals, worked on whole hundredths so there is no float drift), clamped to
+     * 0.0..MAX_INTENSITY; null + up -> [START_INTENSITY]; null + down -> null (still not logged).
+     */
+    fun stepIntensity(intensity: Double?, up: Boolean): Double? {
+        if (intensity == null) return if (up) START_INTENSITY else null
+        val units = Math.round(intensity * 100) + if (up) 1 else -1
+        return (units.toDouble() / 100).coerceIn(0.0, MAX_INTENSITY)
     }
 
-    /** Watts: +/-5, clamped to 0..MAX_WATTS; null + up -> [START_WATTS]; null + down -> null (still not logged). */
-    fun stepWatts(watts: Int?, up: Boolean): Int? = stepOptional(watts, up, START_WATTS, 5, 0, MAX_WATTS)
-
-    /** Heart rate: +/-1, clamped to MIN_HEART_RATE..MAX_HEART_RATE; null + up -> [START_HEART_RATE]; null + down -> null. */
-    fun stepHeartRate(heartRate: Int?, up: Boolean): Int? =
-        stepOptional(heartRate, up, START_HEART_RATE, 1, MIN_HEART_RATE, MAX_HEART_RATE)
-
-    /** TSS: +/-1, clamped to 0..MAX_TSS; null + up -> [START_TSS]; null + down -> null. */
-    fun stepTss(tss: Int?, up: Boolean): Int? = stepOptional(tss, up, START_TSS, 1, 0, MAX_TSS)
-
-    /** Watts per kg: +/-0.1 (one decimal), clamped to 0.0..MAX_WATTS_PER_KG; null + up -> [START_WATTS_PER_KG]; null + down -> null. */
-    fun stepWattsPerKg(wattsPerKg: Double?, up: Boolean): Double? =
-        stepOptionalDecimal(wattsPerKg, up, START_WATTS_PER_KG, 10, MAX_WATTS_PER_KG)
-
-    /** Intensity factor: +/-0.01 (two decimals), clamped to 0.0..MAX_INTENSITY_FACTOR; null + up -> [START_INTENSITY_FACTOR]; null + down -> null. */
-    fun stepIntensityFactor(intensityFactor: Double?, up: Boolean): Double? =
-        stepOptionalDecimal(intensityFactor, up, START_INTENSITY_FACTOR, 100, MAX_INTENSITY_FACTOR)
-
-    private fun stepOptional(value: Int?, up: Boolean, start: Int, step: Int, min: Int, max: Int): Int? = when {
-        value == null -> if (up) start else null
-        else -> (if (up) value + step else value - step).coerceIn(min, max)
-    }
-
-    /** [scale] = 10 for one decimal, 100 for two: works on whole steps so 0.7 + 0.01 is 0.71, not 0.7100000001. */
-    private fun stepOptionalDecimal(value: Double?, up: Boolean, start: Double, scale: Int, max: Double): Double? {
-        if (value == null) return if (up) start else null
-        val units = Math.round(value * scale) + if (up) 1 else -1
-        return (units.toDouble() / scale).coerceIn(0.0, max)
-    }
+    /** [value] rounded half-up to 2 decimals and clamped to 0.0..MAX_INTENSITY. */
+    fun roundIntensity(value: Double): Double =
+        java.math.BigDecimal.valueOf(value).setScale(2, java.math.RoundingMode.HALF_UP).toDouble()
+            .coerceIn(0.0, MAX_INTENSITY)
 
     /** Average speed in km/h = distance / time; null unless both [distanceM] and [seconds] are > 0. */
     fun speedKmh(distanceM: Int?, seconds: Int?): Double? =
@@ -149,70 +106,41 @@ object CardioRules {
         return target.coerceIn(0, max)
     }
 
-    /**
-     * [draft] with every non-null value of [reading] filled in (clamped to the steppers' ranges); values the
-     * reading doesn't have are kept.
-     */
-    fun applyReading(draft: CardioDraft, reading: BikeReading): CardioDraft = draft.copy(
-        minutes = reading.minutes?.coerceIn(0, MAX_MINUTES) ?: draft.minutes,
-        calories = reading.calories?.coerceIn(0, MAX_CALORIES) ?: draft.calories,
-        distanceM = reading.distanceM?.coerceIn(0, MAX_DISTANCE_M) ?: draft.distanceM,
-        watts = reading.watts?.coerceIn(0, MAX_WATTS) ?: draft.watts,
-        heartRate = reading.heartRate?.coerceIn(MIN_HEART_RATE, MAX_HEART_RATE) ?: draft.heartRate,
-        wattsPerKg = reading.wattsPerKg?.let { (Math.round(it * 10) / 10.0).coerceIn(0.0, MAX_WATTS_PER_KG) }
-            ?: draft.wattsPerKg,
-        tss = reading.tss?.coerceIn(0, MAX_TSS) ?: draft.tss,
-        intensityFactor = reading.intensityFactor
-            ?.let { (Math.round(it * 100) / 100.0).coerceIn(0.0, MAX_INTENSITY_FACTOR) } ?: draft.intensityFactor,
-    )
-
-    /** True for the fields typed with a decimal separator: distance (km), watts per kg and intensity factor. */
+    /** True for the fields typed with a decimal separator: distance (km) and intensity. */
     fun allowsDecimal(field: CardioField): Boolean = when (field) {
-        CardioField.DISTANCE_KM, CardioField.WATTS_PER_KG, CardioField.INTENSITY_FACTOR -> true
+        CardioField.DISTANCE_KM, CardioField.INTENSITY -> true
         else -> false
     }
 
     /**
      * The number pad's starting text for [field]: "" when the value is not set or zero; distance as plain
-     * kilometres without trailing zeros ("17.3"), watts per kg and IF likewise ("1.5", "0.7").
+     * kilometres without trailing zeros ("17.3"), intensity likewise ("0.79", "12", "0.7").
      */
     fun fieldText(draft: CardioDraft, field: CardioField): String = when (field) {
         CardioField.MINUTES -> intText(draft.minutes)
         CardioField.CALORIES -> intText(draft.calories)
-        CardioField.INTENSITY -> intText(draft.intensity ?: 0)
-        CardioField.WATTS -> intText(draft.watts ?: 0)
-        CardioField.HEART_RATE -> intText(draft.heartRate ?: 0)
-        CardioField.TSS -> intText(draft.tss ?: 0)
+        CardioField.INTENSITY -> decimalText(draft.intensity, 2)
         CardioField.DISTANCE_KM ->
             if (draft.distanceM <= 0) "" else java.math.BigDecimal(draft.distanceM).movePointLeft(3).plainText()
-        CardioField.WATTS_PER_KG -> decimalText(draft.wattsPerKg, 1)
-        CardioField.INTENSITY_FACTOR -> decimalText(draft.intensityFactor, 2)
     }
 
     /**
      * [draft] with [field] set from the pad's [text] (comma or point decimals, surrounding spaces ignored).
-     * Blank text clears the field (minutes, calories and distance go to 0, the optional ones to null); text that
-     * is not a plain non-negative number returns null (the caller ignores it). Values are rounded to the field's
-     * precision and clamped to the same ranges [toSet] uses. Never throws.
+     * Blank text clears the field (minutes, calories and distance go to 0, intensity to null; "0" keeps an
+     * intensity of 0.0); text that is not a plain non-negative number returns null (the caller ignores it).
+     * Values are rounded half-up to the field's precision (intensity: 2 decimals) and clamped to the same
+     * ranges [toSet] uses. Never throws.
      */
     fun withField(draft: CardioDraft, field: CardioField, text: String): CardioDraft? {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return clearField(draft, field)
         val value = parseNumber(trimmed) ?: return null
-        if (field == CardioField.HEART_RATE && value.signum() == 0) return clearField(draft, field)
         return when (field) {
             CardioField.MINUTES -> draft.copy(minutes = value.toClampedInt(0, MAX_MINUTES))
             CardioField.CALORIES -> draft.copy(calories = value.toClampedInt(0, MAX_CALORIES))
             CardioField.DISTANCE_KM ->
                 draft.copy(distanceM = value.movePointRight(3).toClampedInt(0, MAX_DISTANCE_M))
-            CardioField.INTENSITY -> draft.copy(intensity = value.toClampedInt(0, MAX_INTENSITY))
-            CardioField.WATTS -> draft.copy(watts = value.toClampedInt(0, MAX_WATTS))
-            CardioField.HEART_RATE -> draft.copy(heartRate = value.toClampedInt(MIN_HEART_RATE, MAX_HEART_RATE))
-            CardioField.TSS -> draft.copy(tss = value.toClampedInt(0, MAX_TSS))
-            CardioField.WATTS_PER_KG ->
-                draft.copy(wattsPerKg = value.toClampedDecimal(1, MAX_WATTS_PER_KG))
-            CardioField.INTENSITY_FACTOR ->
-                draft.copy(intensityFactor = value.toClampedDecimal(2, MAX_INTENSITY_FACTOR))
+            CardioField.INTENSITY -> draft.copy(intensity = value.toClampedDecimal(2, MAX_INTENSITY))
         }
     }
 
@@ -221,11 +149,6 @@ object CardioRules {
         CardioField.CALORIES -> draft.copy(calories = 0)
         CardioField.DISTANCE_KM -> draft.copy(distanceM = 0)
         CardioField.INTENSITY -> draft.copy(intensity = null)
-        CardioField.WATTS -> draft.copy(watts = null)
-        CardioField.HEART_RATE -> draft.copy(heartRate = null)
-        CardioField.TSS -> draft.copy(tss = null)
-        CardioField.WATTS_PER_KG -> draft.copy(wattsPerKg = null)
-        CardioField.INTENSITY_FACTOR -> draft.copy(intensityFactor = null)
     }
 
     private val NUMBER = Regex("""\d+(?:[.,]\d*)?|[.,]\d+""")
@@ -241,14 +164,16 @@ object CardioRules {
         return if (rounded > java.math.BigDecimal(max)) max else rounded.toInt().coerceAtLeast(min)
     }
 
-    private fun java.math.BigDecimal.toClampedDecimal(scale: Int, max: Double): Double =
-        setScale(scale, java.math.RoundingMode.HALF_UP).toDouble().coerceIn(0.0, max)
+    private fun java.math.BigDecimal.toClampedDecimal(scale: Int, max: Double): Double {
+        val rounded = setScale(scale, java.math.RoundingMode.HALF_UP)
+        return if (rounded > java.math.BigDecimal.valueOf(max)) max else rounded.toDouble().coerceAtLeast(0.0)
+    }
 
     private fun intText(value: Int): String = if (value <= 0) "" else value.toString()
 
     private fun decimalText(value: Double?, scale: Int): String {
         if (value == null || value <= 0.0) return ""
-        return java.math.BigDecimal(value).setScale(scale, java.math.RoundingMode.HALF_UP).plainText()
+        return java.math.BigDecimal.valueOf(value).setScale(scale, java.math.RoundingMode.HALF_UP).plainText()
     }
 
     private fun java.math.BigDecimal.plainText(): String =
@@ -276,26 +201,16 @@ object CardioRules {
         calories = draft.calories.takeIf { it > 0 },
         distanceM = draft.distanceM.takeIf { it > 0 },
         loggedAt = loggedAt,
-        intensity = draft.intensity?.coerceIn(0, MAX_INTENSITY),
-        watts = draft.watts?.coerceIn(0, MAX_WATTS),
-        heartRate = draft.heartRate?.coerceIn(MIN_HEART_RATE, MAX_HEART_RATE),
-        wattsPerKg = draft.wattsPerKg?.let { (Math.round(it * 10) / 10.0).coerceIn(0.0, MAX_WATTS_PER_KG) },
-        tss = draft.tss?.coerceIn(0, MAX_TSS),
-        intensityFactor = draft.intensityFactor?.let { (Math.round(it * 100) / 100.0).coerceIn(0.0, MAX_INTENSITY_FACTOR) },
+        intensity = draft.intensity?.let { roundIntensity(it) },
     )
 
     /** Inverse of [toSet]; minutes are seconds / 60, rounded. */
     fun toDraft(set: WorkoutSet): CardioDraft =
-        CardioDraft(
-            minutesOf(set.seconds ?: 0), set.calories ?: 0, set.distanceM ?: 0, set.intensity,
-            set.watts, set.heartRate, set.wattsPerKg, set.tss, set.intensityFactor,
-        )
+        CardioDraft(minutesOf(set.seconds ?: 0), set.calories ?: 0, set.distanceM ?: 0, set.intensity)
 
-    /** True when the set carries seconds, calories, distance, intensity, watts, heart rate, watts/kg, TSS or IF. */
+    /** True when the set carries seconds, calories, distance or intensity. */
     fun isCardio(set: WorkoutSet): Boolean =
-        set.seconds != null || set.calories != null || set.distanceM != null || set.intensity != null ||
-            set.watts != null || set.heartRate != null || set.wattsPerKg != null || set.tss != null ||
-            set.intensityFactor != null
+        set.seconds != null || set.calories != null || set.distanceM != null || set.intensity != null
 
     /** Whole minutes in [seconds], rounded to the nearest minute. */
     internal fun minutesOf(seconds: Int): Int = ((seconds.toLong() + 30L) / 60L).toInt()
@@ -330,23 +245,7 @@ object CardioRules {
     }
 
     /** Time-weighted average intensity of [sets] (those with an intensity and seconds > 0); null when none. */
-    fun intensityAverage(sets: List<WorkoutSet>): Double? = timeWeighted(sets) { it.intensity?.toDouble() }
-
-    /** Time-weighted average watts of [sets] (those with watts and seconds > 0); null when none. */
-    fun powerAverage(sets: List<WorkoutSet>): Double? = timeWeighted(sets) { it.watts?.toDouble() }
-
-    /** Time-weighted average heart rate of [sets] (those with a heart rate and seconds > 0); null when none. */
-    fun heartRateAverage(sets: List<WorkoutSet>): Double? = timeWeighted(sets) { it.heartRate?.toDouble() }
-
-    /** Time-weighted average watts per kg of [sets] (those with the value and seconds > 0); null when none. */
-    fun wattsPerKgAverage(sets: List<WorkoutSet>): Double? = timeWeighted(sets) { it.wattsPerKg }
-
-    /** Time-weighted average intensity factor of [sets] (those with the value and seconds > 0); null when none. */
-    fun intensityFactorAverage(sets: List<WorkoutSet>): Double? = timeWeighted(sets) { it.intensityFactor }
-
-    /** Sum of the TSS of [sets]; null when no set has one. */
-    fun tssTotal(sets: List<WorkoutSet>): Int? =
-        sets.mapNotNull { it.tss }.takeIf { it.isNotEmpty() }?.sum()
+    fun intensityAverage(sets: List<WorkoutSet>): Double? = timeWeighted(sets) { it.intensity }
 
     private fun timeWeighted(sets: List<WorkoutSet>, value: (WorkoutSet) -> Double?): Double? {
         val used = sets.filter { value(it) != null && (it.seconds ?: 0) > 0 }
@@ -379,10 +278,6 @@ object CardioRules {
                     sessions = groupSets.map { it.sessionId }.toSet().size,
                     intensityAvg = intensityAverage(groupSets),
                     speedKmh = averageSpeedKmh(groupSets),
-                    powerAvg = powerAverage(groupSets),
-                    heartRateAvg = heartRateAverage(groupSets),
-                    tssTotal = tssTotal(groupSets),
-                    intensityFactorAvg = intensityFactorAverage(groupSets),
                 )
             }
 

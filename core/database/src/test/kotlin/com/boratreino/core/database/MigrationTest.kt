@@ -14,8 +14,10 @@ import org.robolectric.annotation.Config
 /**
  * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays; migration
  * 3 -> 4 adds planned_workouts; 4 -> 5 makes its key (date, routineId); 5 -> 6 adds machines.libraryId; 6 -> 7 adds
- * planned_workouts.position; 7 -> 8 adds body_measurements. Needs schemas/.../2.json to 8.json, which Room writes on the first
- * build with those versions (8.json is written by CI, so the 7 -> 8 tests fail until it is committed).
+ * planned_workouts.position; 7 -> 8 adds body_measurements; 8 -> 9 adds sessions.isExtra; 9 -> 10 and 10 -> 11 add cardio
+ * columns to workout_sets; 11 -> 12 rebuilds workout_sets without the console values and with a REAL intensity. Needs
+ * schemas/.../2.json to 12.json, which Room writes on the first build with those versions (12.json is written by CI, so
+ * the 11 -> 12 tests fail until it is committed).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -742,6 +744,196 @@ class MigrationTest {
             assertEquals(0.79, c.getDouble(4), 0.0001)
             c.moveToNext()
             for (column in 0..4) assertEquals(true, c.isNull(column))
+        }
+    }
+
+    // 11 -> 12: workout_sets rebuilt without the console values; intensity becomes REAL (the 12.json schema is written by CI).
+
+    private fun SupportSQLiteDatabase.insertV11Data() {
+        execSQL(
+            "INSERT INTO machines (id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived, libraryId) " +
+                "VALUES (1, 'Bike', 'CARDIO', 'CARDIO', 5.0, NULL, NULL, 0, NULL)",
+        )
+        execSQL(
+            "INSERT INTO machines (id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived, libraryId) " +
+                "VALUES (2, 'Leg press', 'LEGS', 'WEIGHT_REPS', 5.0, 'seat 4', 90, 0, 'leg_press')",
+        )
+        execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note, isExtra) VALUES (1, 1000, 2000, NULL, NULL, 0)")
+        execSQL(
+            "INSERT INTO workout_sets (id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, " +
+                "loggedAt, type, intensity, watts, heartRate, wattsPerKg, tss, intensityFactor) " +
+                "VALUES (8, 1, 1, 1, NULL, NULL, 2700, 520, 18400, 123999, 'NORMAL', 12, 160, 142, 2.3, 48, 0.79)",
+        )
+        execSQL(
+            "INSERT INTO workout_sets (id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, " +
+                "loggedAt, type, intensity) VALUES (9, 1, 1, 2, NULL, NULL, 600, NULL, NULL, 124999, 'NORMAL', 250)",
+        )
+        execSQL(
+            "INSERT INTO workout_sets (id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, " +
+                "loggedAt, type) VALUES (10, 1, 2, 1, 120.5, 12, NULL, NULL, NULL, 125999, 'WARMUP')",
+        )
+    }
+
+    @Test
+    fun `migrating 11 to 12 keeps every set and carries intensity over as a decimal`() {
+        helper.createDatabase(name, 11).apply {
+            insertV11Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 12, true, MIGRATION_11_12)
+
+        db.query(
+            "SELECT id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, loggedAt, type, " +
+                "intensity, typeof(intensity) FROM workout_sets ORDER BY id",
+        ).use { c ->
+            assertEquals(3, c.count)
+            c.moveToFirst()
+            assertEquals(8L, c.getLong(0))
+            assertEquals(1L, c.getLong(1))
+            assertEquals(1L, c.getLong(2))
+            assertEquals(1, c.getInt(3))
+            assertEquals(true, c.isNull(4))
+            assertEquals(true, c.isNull(5))
+            assertEquals(2700, c.getInt(6))
+            assertEquals(520, c.getInt(7))
+            assertEquals(18400, c.getInt(8))
+            assertEquals(123999L, c.getLong(9))
+            assertEquals("NORMAL", c.getString(10))
+            assertEquals(12.0, c.getDouble(11), 0.0)
+            assertEquals("real", c.getString(12))
+
+            c.moveToNext()
+            assertEquals(9L, c.getLong(0))
+            assertEquals(600, c.getInt(6))
+            assertEquals(true, c.isNull(7))
+            assertEquals(true, c.isNull(11)) // 250 is above the new maximum of 100
+
+            c.moveToNext()
+            assertEquals(10L, c.getLong(0))
+            assertEquals(2L, c.getLong(2))
+            assertEquals(120.5, c.getDouble(4), 0.0)
+            assertEquals(12, c.getInt(5))
+            assertEquals(true, c.isNull(6))
+            assertEquals(125999L, c.getLong(9))
+            assertEquals("WARMUP", c.getString(10))
+            assertEquals(true, c.isNull(11))
+        }
+    }
+
+    @Test
+    fun `after 11 to 12 the console columns are gone and intensity is REAL`() {
+        helper.createDatabase(name, 11).apply {
+            insertV11Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 12, true, MIGRATION_11_12)
+
+        val columns = LinkedHashMap<String, String>()
+        db.query("PRAGMA table_info(`workout_sets`)").use { c ->
+            val nameIndex = c.getColumnIndexOrThrow("name")
+            val typeIndex = c.getColumnIndexOrThrow("type")
+            while (c.moveToNext()) columns[c.getString(nameIndex)] = c.getString(typeIndex)
+        }
+        assertEquals(
+            listOf(
+                "id", "sessionId", "machineId", "position", "weightKg", "reps", "seconds", "calories", "distanceM",
+                "loggedAt", "type", "intensity",
+            ),
+            columns.keys.toList(),
+        )
+        assertEquals("REAL", columns["intensity"])
+        db.query("SELECT name FROM sqlite_master WHERE name = 'workout_sets_new'").use { c -> assertEquals(0, c.count) }
+    }
+
+    @Test
+    fun `after 11 to 12 the indices and foreign keys of workout_sets are intact`() {
+        helper.createDatabase(name, 11).apply {
+            insertV11Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 12, true, MIGRATION_11_12)
+
+        val indices = mutableSetOf<String>()
+        db.query("PRAGMA index_list(`workout_sets`)").use { c ->
+            val nameIndex = c.getColumnIndexOrThrow("name")
+            while (c.moveToNext()) indices += c.getString(nameIndex)
+        }
+        assertEquals(true, "index_workout_sets_sessionId" in indices)
+        assertEquals(true, "index_workout_sets_machineId" in indices)
+
+        val keys = mutableMapOf<String, Triple<String, String, String>>()
+        db.query("PRAGMA foreign_key_list(`workout_sets`)").use { c ->
+            val table = c.getColumnIndexOrThrow("table")
+            val from = c.getColumnIndexOrThrow("from")
+            val to = c.getColumnIndexOrThrow("to")
+            val onDelete = c.getColumnIndexOrThrow("on_delete")
+            while (c.moveToNext()) keys[c.getString(table)] = Triple(c.getString(from), c.getString(to), c.getString(onDelete))
+        }
+        assertEquals(Triple("sessionId", "id", "CASCADE"), keys["sessions"])
+        assertEquals(Triple("machineId", "id", "RESTRICT"), keys["machines"])
+
+        db.query("PRAGMA foreign_key_check(`workout_sets`)").use { c -> assertEquals(0, c.count) }
+
+        // Deleting the session removes its sets (cascade still works on the rebuilt table).
+        db.execSQL("PRAGMA foreign_keys = ON")
+        db.execSQL("DELETE FROM sessions WHERE id = 1")
+        db.query("SELECT COUNT(*) FROM workout_sets").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `after 11 to 12 a new set stores a decimal intensity and ids keep counting up`() {
+        helper.createDatabase(name, 11).apply {
+            insertV11Data()
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 12, true, MIGRATION_11_12)
+
+        db.execSQL("INSERT INTO workout_sets (sessionId, machineId, position, loggedAt, seconds, intensity) VALUES (1, 1, 3, 7, 1200, 0.79)")
+        db.execSQL("INSERT INTO workout_sets (sessionId, machineId, position, loggedAt, seconds) VALUES (1, 1, 4, 8, 600)")
+
+        db.query("SELECT id, intensity, type FROM workout_sets WHERE position >= 3 AND machineId = 1 ORDER BY position").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(11L, c.getLong(0))
+            assertEquals(0.79, c.getDouble(1), 0.0)
+            assertEquals("NORMAL", c.getString(2))
+            c.moveToNext()
+            assertEquals(12L, c.getLong(0))
+            assertEquals(true, c.isNull(1))
+        }
+    }
+
+    @Test
+    fun `migrating 1 to 12 through every step keeps the sets`() {
+        helper.createDatabase(name, 1).apply {
+            insertV1Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            name, 12, true,
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
+        )
+
+        db.query("SELECT id, weightKg, reps, seconds, calories, distanceM, type, intensity FROM workout_sets ORDER BY id").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(7L, c.getLong(0))
+            assertEquals(120.5, c.getDouble(1), 0.0)
+            assertEquals(12, c.getInt(2))
+            assertEquals("NORMAL", c.getString(6))
+            assertEquals(true, c.isNull(7))
+            c.moveToNext()
+            assertEquals(8L, c.getLong(0))
+            assertEquals(600, c.getInt(3))
+            assertEquals(80, c.getInt(4))
+            assertEquals(2500, c.getInt(5))
+            assertEquals(true, c.isNull(7))
         }
     }
 }

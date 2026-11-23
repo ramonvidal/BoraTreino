@@ -93,3 +93,35 @@ internal val MIGRATION_10_11: Migration = object : Migration(10, 11) {
         db.execSQL("ALTER TABLE workout_sets ADD COLUMN intensityFactor REAL")
     }
 }
+
+/**
+ * Version 12: cardio is back to distance, time, calories and intensity. `workout_sets` is rebuilt without the
+ * bike console's watts, heartRate, wattsPerKg, tss and intensityFactor, and `intensity` becomes REAL (the
+ * console shows decimals such as 0.79). Every other column and row is kept; whole intensities carry over as
+ * REAL (12 -> 12.0), values above 100 (the new maximum) become NULL. Indices and foreign keys are recreated
+ * exactly as Room generates them.
+ */
+internal val MIGRATION_11_12: Migration = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `workout_sets_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`sessionId` INTEGER NOT NULL, `machineId` INTEGER NOT NULL, `position` INTEGER NOT NULL, " +
+                "`weightKg` REAL, `reps` INTEGER, `seconds` INTEGER, `calories` INTEGER, `distanceM` INTEGER, " +
+                "`loggedAt` INTEGER NOT NULL, `type` TEXT NOT NULL DEFAULT 'NORMAL', `intensity` REAL, " +
+                "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , " +
+                "FOREIGN KEY(`machineId`) REFERENCES `machines`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        )
+        db.execSQL(
+            "INSERT INTO `workout_sets_new` (`id`, `sessionId`, `machineId`, `position`, `weightKg`, `reps`, " +
+                "`seconds`, `calories`, `distanceM`, `loggedAt`, `type`, `intensity`) " +
+                "SELECT `id`, `sessionId`, `machineId`, `position`, `weightKg`, `reps`, `seconds`, `calories`, " +
+                "`distanceM`, `loggedAt`, `type`, " +
+                "CASE WHEN `intensity` IS NULL OR `intensity` < 0 OR `intensity` > 100 THEN NULL " +
+                "ELSE CAST(`intensity` AS REAL) END FROM `workout_sets`",
+        )
+        db.execSQL("DROP TABLE `workout_sets`")
+        db.execSQL("ALTER TABLE `workout_sets_new` RENAME TO `workout_sets`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_workout_sets_sessionId` ON `workout_sets` (`sessionId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_workout_sets_machineId` ON `workout_sets` (`machineId`)")
+    }
+}

@@ -50,7 +50,7 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 10
+    const val FORMAT_VERSION = 11
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {
@@ -122,11 +122,6 @@ object BackupCodec {
                     "loggedAt" to it.loggedAt.toString(),
                     "type" to it.type.name,
                     "intensity" to it.intensity,
-                    "watts" to it.watts,
-                    "heartRate" to it.heartRate,
-                    "wattsPerKg" to it.wattsPerKg,
-                    "tss" to it.tss,
-                    "intensityFactor" to it.intensityFactor,
                 )
             },
             "plannedWorkouts" to data.plannedWorkouts.sortedWith(compareBy({ it.date }, { it.position }, { it.routineId })).map {
@@ -262,12 +257,11 @@ object BackupCodec {
                 type = optString(it, "type")
                     ?.let { name -> SetType.entries.firstOrNull { t -> t.name == name } }
                     ?: SetType.NORMAL,
-                intensity = optInt(it, "intensity"),
-                watts = optInt(it, "watts"),
-                heartRate = optInt(it, "heartRate"),
-                wattsPerKg = optDouble(it, "wattsPerKg"),
-                tss = optInt(it, "tss"),
-                intensityFactor = optDouble(it, "intensityFactor"),
+                // Whole numbers (version 10 and older) and decimals (11+) both read; rounded half-up to 2 decimals,
+                // out of range -> Invalid. Version 10's watts, heartRate, wattsPerKg, tss and intensityFactor are ignored.
+                intensity = optDouble(it, "intensity")?.let { v ->
+                    java.math.BigDecimal.valueOf(v).setScale(2, java.math.RoundingMode.HALF_UP).toDouble()
+                },
             )
         }
 

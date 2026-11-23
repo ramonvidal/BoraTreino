@@ -72,11 +72,6 @@ internal fun WorkoutSetEntity.toModel() = WorkoutSet(
     loggedAt = Instant.ofEpochMilli(loggedAt),
     type = runCatching { SetType.valueOf(type) }.getOrDefault(SetType.NORMAL),
     intensity = intensity,
-    watts = watts,
-    heartRate = heartRate,
-    wattsPerKg = wattsPerKg,
-    tss = tss,
-    intensityFactor = intensityFactor,
 )
 
 internal fun WorkoutSet.toEntity() = WorkoutSetEntity(
@@ -92,11 +87,6 @@ internal fun WorkoutSet.toEntity() = WorkoutSetEntity(
     loggedAt = loggedAt.toEpochMilli(),
     type = type.name,
     intensity = intensity,
-    watts = watts,
-    heartRate = heartRate,
-    wattsPerKg = wattsPerKg,
-    tss = tss,
-    intensityFactor = intensityFactor,
 )
 
 internal fun RoutinePlanEntity.toModel() = RoutinePlan(
