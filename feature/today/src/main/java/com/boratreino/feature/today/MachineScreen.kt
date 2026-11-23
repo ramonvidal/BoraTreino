@@ -113,6 +113,12 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.platform.LocalConfiguration
+import com.boratreino.core.scan.ScanCapture
 import com.boratreino.core.ui.R as CoreUiR
 
 /** What the machine screen can ask for. */
@@ -169,6 +175,8 @@ internal data class MachineActions(
     val onSaveCardioEditor: () -> Unit = {},
     val onDeleteCardioEditor: () -> Unit = {},
     val onDismissCardioEditor: () -> Unit = {},
+    val onScan: (android.net.Uri) -> Unit = {},
+    val onScanMessageShown: () -> Unit = {},
 )
 
 @Composable
@@ -186,6 +194,14 @@ internal fun MachineScreen(
     val undoLabel = stringResource(CoreUiR.string.undo)
     val failedText = stringResource(CoreUiR.string.error_generic)
     val resources = LocalContext.current.resources
+    val scanFailedText = stringResource(R.string.machine_scan_failed)
+
+    LaunchedEffect(state.scanFailed) {
+        if (state.scanFailed) {
+            snackbar.showSnackbar(scanFailedText)
+            viewModel.scanMessageShown()
+        }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.restFinished.collect {
@@ -280,6 +296,8 @@ internal fun MachineScreen(
             onSaveCardioEditor = viewModel::saveCardioEditor,
             onDeleteCardioEditor = viewModel::deleteCardioEditor,
             onDismissCardioEditor = viewModel::closeCardioEditor,
+            onScan = viewModel::scan,
+            onScanMessageShown = viewModel::scanMessageShown,
         ),
         snackbarHostState = snackbar,
     )
@@ -995,6 +1013,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
     val any = hasBikeValues(draft)
     LaunchedEffect(any) { if (any) expanded = true }
     val title = stringResource(R.string.machine_cardio_bike_values)
+    val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = title) { expanded = !expanded },
@@ -1035,7 +1054,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Stepper(
                         label = stringResource(R.string.machine_cardio_watts_per_kg),
-                        value = draft.wattsPerKg?.let { String.format(Locale.US, "%.1f", it) } ?: "-",
+                        value = draft.wattsPerKg?.let { String.format(locale, "%.1f", it) } ?: "-",
                         onMinus = { bike.onWattsPerKg(false) },
                         onPlus = { bike.onWattsPerKg(true) },
                         onValueClick = {},
@@ -1053,7 +1072,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Stepper(
                         label = stringResource(R.string.machine_cardio_if),
-                        value = draft.intensityFactor?.let { String.format(Locale.US, "%.2f", it) } ?: "-",
+                        value = draft.intensityFactor?.let { String.format(locale, "%.2f", it) } ?: "-",
                         onMinus = { bike.onIntensityFactor(false) },
                         onPlus = { bike.onIntensityFactor(true) },
                         onValueClick = {},
@@ -1062,6 +1081,52 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                     Spacer(Modifier.weight(1f))
                 }
             }
+        }
+    }
+}
+
+/**
+ * "Scan bike screen": an optional extra that only fills the steppers, never logs. Tap opens a small
+ * menu (Take photo / Choose photo); the photo is read in memory and not kept.
+ */
+@Composable
+private fun ScanBikeScreenButton(scanning: Boolean, onScan: (android.net.Uri) -> Unit) {
+    val context = LocalContext.current
+    var menu by remember { mutableStateOf(false) }
+    var pending by remember { mutableStateOf<android.net.Uri?>(null) }
+    val take = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
+        val uri = pending
+        pending = null
+        if (saved && uri != null) onScan(uri)
+    }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) onScan(uri)
+    }
+    Box {
+        TextButton(onClick = { menu = true }, enabled = !scanning, modifier = Modifier.heightIn(min = 48.dp)) {
+            if (scanning) {
+                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(stringResource(R.string.machine_scan_bike_screen))
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.machine_scan_take_photo)) },
+                onClick = {
+                    menu = false
+                    val uri = ScanCapture.newPhotoUri(context)
+                    pending = uri
+                    take.launch(uri)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.machine_scan_choose_photo)) },
+                onClick = {
+                    menu = false
+                    pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+            )
         }
     }
 }
@@ -1089,6 +1154,7 @@ private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
                 onIntensity = actions.onStepIntensity,
                 bike = actions.bikeSteps(),
             )
+            ScanBikeScreenButton(scanning = state.scanning, onScan = actions.onScan)
             BoraButton(
                 text = stringResource(R.string.machine_log_cardio, cardioLogText(state.cardio)),
                 onClick = actions.onLogCardio,

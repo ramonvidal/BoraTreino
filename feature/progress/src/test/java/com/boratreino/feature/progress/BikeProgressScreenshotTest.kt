@@ -41,7 +41,7 @@ class BikeProgressScreenshotTest {
         shoot("progress-bike-all-chips", state)
 
         compose.onNodeWithText("Best power: 160 W").assertExists()
-        compose.onNodeWithText("Best TSS: 48 TSS").assertExists()
+        compose.onNodeWithText("Best TSS: 48").assertExists()
     }
 
     @Test

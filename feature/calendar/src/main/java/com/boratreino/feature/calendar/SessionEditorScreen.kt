@@ -477,7 +477,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Stepper(
                         label = stringResource(R.string.calendar_watts_per_kg),
-                        value = editor.wattsPerKg?.let { String.format(Locale.US, "%.1f", it) } ?: dash,
+                        value = editor.wattsPerKg?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: dash,
                         onMinus = { actions.onStepEditorWattsPerKg(false) },
                         onPlus = { actions.onStepEditorWattsPerKg(true) },
                         onValueClick = {},
@@ -495,7 +495,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Stepper(
                         label = stringResource(R.string.calendar_if),
-                        value = editor.intensityFactor?.let { String.format(Locale.US, "%.2f", it) } ?: dash,
+                        value = editor.intensityFactor?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: dash,
                         onMinus = { actions.onStepEditorIntensityFactor(false) },
                         onPlus = { actions.onStepEditorIntensityFactor(true) },
                         onValueClick = {},

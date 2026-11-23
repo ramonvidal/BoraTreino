@@ -119,7 +119,7 @@ class CardioMetricChipsBikeTest {
         show(state(BikeProgressSamples.allChips))
 
         compose.onNodeWithText("Best power: 160 W").assertExists()
-        compose.onNodeWithText("Best IF: IF 0.79").assertExists()
-        compose.onNodeWithText("Best TSS: 48 TSS").assertExists()
+        compose.onNodeWithText("Best IF: 0.79").assertExists()
+        compose.onNodeWithText("Best TSS: 48").assertExists()
     }
 }

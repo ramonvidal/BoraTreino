@@ -263,7 +263,12 @@ private fun CardioRecordsCard(records: List<CardioRecord>) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.stats_records_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             for (record in records) {
-                val value = valueText(record.metric, record.point.value)
+                // The record label already names the measure ("Best IF: "), so the value is bare.
+                val value = when (record.metric) {
+                    ProgressMetric.INTENSITY_FACTOR -> formatIntensityFactor(record.point.value)
+                    ProgressMetric.TSS -> formatTss(record.point.value)
+                    else -> valueText(record.metric, record.point.value)
+                }
                 val label = stringResource(
                     when (record.metric) {
                         ProgressMetric.SPEED -> R.string.progress_record_speed

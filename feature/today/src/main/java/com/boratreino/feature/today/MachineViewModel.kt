@@ -13,7 +13,10 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.Record
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.notify.RestTimer
+import com.boratreino.core.scan.BikeScreenScanner
 import com.boratreino.core.settings.TrainingSettings
+import android.net.Uri
+import com.boratreino.core.model.BikeReading
 import java.time.Clock
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.Suggestion
@@ -107,6 +110,10 @@ internal data class MachineUiState(
     val nextExercises: List<NextExerciseUi> = emptyList(),
     /** "Add an extra set" was tapped on this visit: the Log panel is back although the exercise is complete. */
     val extraSet: Boolean = false,
+    /** Cardio: a bike-screen photo is being read (the Scan button shows progress). */
+    val scanning: Boolean = false,
+    /** Cardio: the last scan could not be read; the screen shows a message, then calls onScanMessageShown. */
+    val scanFailed: Boolean = false,
 ) {
     /** The exercise is in the routine and has all its programmed working sets. */
     val exerciseComplete: Boolean get() = programmedSets != null && doneSets >= programmedSets
@@ -143,6 +150,7 @@ class MachineViewModel @Inject constructor(
     private val restTimer: RestTimer,
     private val settings: TrainingSettings,
     private val clock: Clock,
+    private val scanner: BikeScreenScanner,
 ) : ViewModel() {
 
     private val machineId: Long = checkNotNull(savedStateHandle.get<Long>(MACHINE_ID_ARG)) { "machineId missing" }
@@ -155,6 +163,8 @@ class MachineViewModel @Inject constructor(
     private val editor = MutableStateFlow<SetEditor?>(null)
     private val cardioOverride = MutableStateFlow<CardioDraft?>(null)
     private val distanceRevealed = MutableStateFlow(false)
+    private val scanning = MutableStateFlow(false)
+    private val scanFailed = MutableStateFlow(false)
     private val cardioEditor = MutableStateFlow<CardioEditor?>(null)
     private val pad = MutableStateFlow<NumberPad?>(null)
     private val record = MutableStateFlow<Record?>(null)
@@ -292,8 +302,8 @@ class MachineViewModel @Inject constructor(
         )
     }
 
-    internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds) { ui, rest ->
-        ui.copy(restSeconds = rest?.first, restTotalSeconds = rest?.second ?: 0)
+    internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds, scanning, scanFailed) { ui, rest, scan, failed ->
+        ui.copy(restSeconds = rest?.first, restTotalSeconds = rest?.second ?: 0, scanning = scan, scanFailed = failed)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MachineUiState())
 
     // Logging: the write finishes first, then the event (haptic) and the fresh prefill.
@@ -487,6 +497,37 @@ class MachineViewModel @Inject constructor(
     internal fun stepIntensityFactor(up: Boolean) {
         val d = state.value.cardio
         cardioOverride.value = d.copy(intensityFactor = CardioRules.stepIntensityFactor(d.intensityFactor, up))
+    }
+
+    /** Reads the bike console photo at [image] and fills the draft. Optional; it never logs. */
+    internal fun scan(image: Uri) {
+        if (scanning.value) return
+        scanning.value = true
+        viewModelScope.launch {
+            val reading = try {
+                scanner.read(image)
+            } catch (e: CancellationException) {
+                scanning.value = false
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+            if (reading == null || reading.isEmpty) {
+                scanFailed.value = true
+            } else {
+                applyReading(reading)
+            }
+            scanning.value = false
+        }
+    }
+
+    /** Fills the cardio draft with what the console showed; values not read stay as they were. */
+    internal fun applyReading(reading: BikeReading) {
+        cardioOverride.value = CardioRules.applyReading(state.value.cardio, reading)
+    }
+
+    internal fun scanMessageShown() {
+        scanFailed.value = false
     }
 
     internal fun showDistance() {
