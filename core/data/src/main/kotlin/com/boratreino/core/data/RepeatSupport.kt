@@ -25,6 +25,11 @@ internal fun PlannedSet.toWorkoutSet(sessionId: Long, position: Int, loggedAt: I
     distanceM = distanceM,
     loggedAt = loggedAt,
     intensity = intensity,
+    watts = watts,
+    heartRate = heartRate,
+    wattsPerKg = wattsPerKg,
+    tss = tss,
+    intensityFactor = intensityFactor,
 )
 
 /** Progression suggestion per weight machine of [items], from the machine's sessions other than [excludeSessionId]. */

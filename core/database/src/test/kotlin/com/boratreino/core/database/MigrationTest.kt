@@ -682,4 +682,66 @@ class MigrationTest {
             assertEquals(true, c.isNull(0))
         }
     }
+
+    // 10 -> 11: workout_sets.watts / heartRate / wattsPerKg / tss / intensityFactor (the 11.json schema is written by CI).
+
+    @Test
+    fun `migrating 10 to 11 keeps sets and leaves the console values empty`() {
+        helper.createDatabase(name, 10).apply {
+            execSQL(
+                "INSERT INTO machines (id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived, libraryId) " +
+                    "VALUES (1, 'Bike', 'CARDIO', 'CARDIO', 5.0, NULL, NULL, 0, NULL)",
+            )
+            execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note, isExtra) VALUES (1, 1000, NULL, NULL, NULL, 0)")
+            execSQL(
+                "INSERT INTO workout_sets (id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, loggedAt, type, intensity) " +
+                    "VALUES (8, 1, 1, 4, NULL, NULL, 2700, 520, 18400, 123999, 'NORMAL', 12)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 11, true, MIGRATION_10_11)
+
+        db.query("SELECT id, seconds, calories, distanceM, intensity, watts, heartRate, wattsPerKg, tss, intensityFactor FROM workout_sets").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals(8L, c.getLong(0))
+            assertEquals(2700, c.getInt(1))
+            assertEquals(520, c.getInt(2))
+            assertEquals(18400, c.getInt(3))
+            assertEquals(12, c.getInt(4))
+            for (column in 5..9) assertEquals(true, c.isNull(column))
+        }
+    }
+
+    @Test
+    fun `after 10 to 11 a new set can store the console values or none`() {
+        helper.createDatabase(name, 10).apply {
+            execSQL(
+                "INSERT INTO machines (id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived, libraryId) " +
+                    "VALUES (1, 'Bike', 'CARDIO', 'CARDIO', 5.0, NULL, NULL, 0, NULL)",
+            )
+            execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note, isExtra) VALUES (1, 1000, NULL, NULL, NULL, 0)")
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(name, 11, true, MIGRATION_10_11)
+
+        db.execSQL(
+            "INSERT INTO workout_sets (sessionId, machineId, position, loggedAt, watts, heartRate, wattsPerKg, tss, intensityFactor) " +
+                "VALUES (1, 1, 1, 5, 160, 142, 2.3, 48, 0.79)",
+        )
+        db.execSQL("INSERT INTO workout_sets (sessionId, machineId, position, loggedAt) VALUES (1, 1, 2, 6)")
+
+        db.query("SELECT watts, heartRate, wattsPerKg, tss, intensityFactor FROM workout_sets ORDER BY position").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(160, c.getInt(0))
+            assertEquals(142, c.getInt(1))
+            assertEquals(2.3, c.getDouble(2), 0.0001)
+            assertEquals(48, c.getInt(3))
+            assertEquals(0.79, c.getDouble(4), 0.0001)
+            c.moveToNext()
+            for (column in 0..4) assertEquals(true, c.isNull(column))
+        }
+    }
 }

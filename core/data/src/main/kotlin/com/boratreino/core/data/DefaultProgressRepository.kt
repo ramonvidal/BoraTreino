@@ -73,7 +73,15 @@ internal class DefaultProgressRepository @Inject constructor(
         } else {
             emptyList()
         }
-        return MachineProgress(machine, metric, ProgressRules.points(own, dates, metric), weeks = weeks, oneRmPoints = oneRm)
+        val cardioPoints = if (machine.kind == MachineKind.CARDIO) {
+            ProgressRules.CARDIO_METRICS.associateWith { ProgressRules.points(own, dates, it) }
+        } else {
+            emptyMap()
+        }
+        return MachineProgress(
+            machine, metric, ProgressRules.points(own, dates, metric),
+            weeks = weeks, oneRmPoints = oneRm, cardioPoints = cardioPoints,
+        )
     }
 
     /** Cardio sets paired with the date of their session. */
