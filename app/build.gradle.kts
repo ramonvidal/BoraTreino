@@ -59,6 +59,12 @@ android {
             dimension = "distribution"
             applicationId = "com.boratreino"
             signingConfig = sideloadSigning
+            // The GitHub APK is one file for every phone, and the on-device text recognition model
+            // (:core:scan) is large per ABI. 64-bit ARM covers current Android phones; the Play bundle
+            // below is split per device by Play, so it keeps every ABI.
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
         }
         create("play") {
             dimension = "distribution"
