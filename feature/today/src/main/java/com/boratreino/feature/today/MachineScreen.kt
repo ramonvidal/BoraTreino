@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.CardioDraft
+import com.boratreino.core.model.CardioField
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
@@ -128,6 +129,8 @@ internal data class MachineActions(
     val onStepWeight: (up: Boolean) -> Unit = {},
     val onStepReps: (up: Boolean) -> Unit = {},
     val onOpenPad: (PadTarget) -> Unit = {},
+    val onOpenCardioPad: (CardioField) -> Unit = {},
+    val onOpenEditorCardioPad: (CardioField) -> Unit = {},
     val onConfirmPad: (String) -> Unit = {},
     val onDismissPad: () -> Unit = {},
     val onLogSet: () -> Unit = {},
@@ -249,6 +252,8 @@ internal fun MachineScreen(
             onStepWeight = viewModel::stepWeight,
             onStepReps = viewModel::stepReps,
             onOpenPad = viewModel::openPad,
+            onOpenCardioPad = { viewModel.openCardioPad(it) },
+            onOpenEditorCardioPad = { viewModel.openCardioPad(it, inEditor = true) },
             onConfirmPad = viewModel::confirmPad,
             onDismissPad = viewModel::dismissPad,
             onLogSet = viewModel::logSet,
@@ -368,14 +373,20 @@ internal fun MachineContent(
     }
     val pad = state.pad
     if (machine != null && pad != null) {
-        val title = when (pad.target) {
+        val field = pad.field
+        val title = if (field != null) cardioFieldLabel(field) else when (pad.target) {
             PadTarget.WEIGHT, PadTarget.EDIT_WEIGHT -> weightLabel(machine)
             PadTarget.REPS, PadTarget.EDIT_REPS -> stringResource(R.string.today_reps)
+            PadTarget.CARDIO, PadTarget.EDIT_CARDIO -> ""
         }
         NumberPadDialog(
             title = title,
             initial = pad.initial,
-            allowDecimal = pad.target == PadTarget.WEIGHT || pad.target == PadTarget.EDIT_WEIGHT,
+            allowDecimal = if (field != null) {
+                CardioRules.allowsDecimal(field)
+            } else {
+                pad.target == PadTarget.WEIGHT || pad.target == PadTarget.EDIT_WEIGHT
+            },
             onConfirm = actions.onConfirmPad,
             onDismiss = actions.onDismissPad,
         )
@@ -935,6 +946,7 @@ private fun CardioSteppers(
     onDistance: (up: Boolean) -> Unit,
     onIntensity: (up: Boolean) -> Unit,
     bike: BikeStepActions,
+    onOpenPad: (CardioField) -> Unit,
 ) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Stepper(
@@ -942,7 +954,7 @@ private fun CardioSteppers(
             value = cardioValue(draft.minutes),
             onMinus = { onMinutes(false) },
             onPlus = { onMinutes(true) },
-            onValueClick = {},
+            onValueClick = { onOpenPad(CardioField.MINUTES) },
             compact = true,
             modifier = Modifier.weight(1f),
         )
@@ -952,7 +964,7 @@ private fun CardioSteppers(
                 value = kmValue(draft.distanceM),
                 onMinus = { onDistance(false) },
                 onPlus = { onDistance(true) },
-                onValueClick = {},
+                onValueClick = { onOpenPad(CardioField.DISTANCE_KM) },
                 compact = true,
                 modifier = Modifier.weight(1f),
             )
@@ -970,7 +982,7 @@ private fun CardioSteppers(
             value = intensityValue(draft.intensity),
             onMinus = { onIntensity(false) },
             onPlus = { onIntensity(true) },
-            onValueClick = {},
+            onValueClick = { onOpenPad(CardioField.INTENSITY) },
             compact = true,
             modifier = Modifier.weight(1f),
         )
@@ -979,12 +991,12 @@ private fun CardioSteppers(
             value = cardioValue(draft.calories),
             onMinus = { onCalories(false) },
             onPlus = { onCalories(true) },
-            onValueClick = {},
+            onValueClick = { onOpenPad(CardioField.CALORIES) },
             compact = true,
             modifier = Modifier.weight(1f),
         )
     }
-    BikeValues(draft, bike)
+    BikeValues(draft, bike, onOpenPad)
 }
 
 /** The five bike-console steppers' callbacks. */
@@ -1004,6 +1016,21 @@ private fun MachineActions.bikeEditorSteps() = BikeStepActions(
     onStepEditorWatts, onStepEditorHeartRate, onStepEditorWattsPerKg, onStepEditorTss, onStepEditorIntensityFactor,
 )
 
+@Composable
+private fun cardioFieldLabel(field: CardioField): String = stringResource(
+    when (field) {
+        CardioField.MINUTES -> R.string.today_minutes
+        CardioField.DISTANCE_KM -> R.string.today_distance
+        CardioField.CALORIES -> R.string.today_calories
+        CardioField.INTENSITY -> R.string.machine_cardio_intensity
+        CardioField.WATTS -> R.string.machine_cardio_watts
+        CardioField.HEART_RATE -> R.string.machine_cardio_heart_rate
+        CardioField.WATTS_PER_KG -> R.string.machine_cardio_watts_per_kg
+        CardioField.TSS -> R.string.machine_cardio_tss
+        CardioField.INTENSITY_FACTOR -> R.string.machine_cardio_if
+    },
+)
+
 private fun hasBikeValues(d: CardioDraft): Boolean =
     d.watts != null || d.heartRate != null || d.wattsPerKg != null || d.tss != null || d.intensityFactor != null
 
@@ -1012,10 +1039,10 @@ private fun hasBikeValues(d: CardioDraft): Boolean =
  * steppers (Watts, Heart rate, Watts/kg, TSS, IF). Starts open when the draft already has one.
  */
 @Composable
-private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
+private fun BikeValues(draft: CardioDraft, bike: BikeStepActions, onOpenPad: (CardioField) -> Unit) {
     var expanded by remember { mutableStateOf(hasBikeValues(draft)) }
     val any = hasBikeValues(draft)
-    LaunchedEffect(any) { if (any) expanded = true }
+    LaunchedEffect(draft.watts, draft.heartRate, draft.wattsPerKg, draft.tss, draft.intensityFactor) { if (any) expanded = true }
     val title = stringResource(R.string.machine_cardio_bike_values)
     val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
     Column(Modifier.fillMaxWidth()) {
@@ -1043,7 +1070,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         value = draft.watts?.toString() ?: "-",
                         onMinus = { bike.onWatts(false) },
                         onPlus = { bike.onWatts(true) },
-                        onValueClick = {},
+                        onValueClick = { onOpenPad(CardioField.WATTS) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -1052,7 +1079,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         value = draft.heartRate?.toString() ?: "-",
                         onMinus = { bike.onHeartRate(false) },
                         onPlus = { bike.onHeartRate(true) },
-                        onValueClick = {},
+                        onValueClick = { onOpenPad(CardioField.HEART_RATE) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -1063,7 +1090,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         value = draft.wattsPerKg?.let { String.format(locale, "%.1f", it) } ?: "-",
                         onMinus = { bike.onWattsPerKg(false) },
                         onPlus = { bike.onWattsPerKg(true) },
-                        onValueClick = {},
+                        onValueClick = { onOpenPad(CardioField.WATTS_PER_KG) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -1072,7 +1099,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         value = draft.tss?.toString() ?: "-",
                         onMinus = { bike.onTss(false) },
                         onPlus = { bike.onTss(true) },
-                        onValueClick = {},
+                        onValueClick = { onOpenPad(CardioField.TSS) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -1083,7 +1110,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         value = draft.intensityFactor?.let { String.format(locale, "%.2f", it) } ?: "-",
                         onMinus = { bike.onIntensityFactor(false) },
                         onPlus = { bike.onIntensityFactor(true) },
-                        onValueClick = {},
+                        onValueClick = { onOpenPad(CardioField.INTENSITY_FACTOR) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -1162,6 +1189,7 @@ private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
                 onDistance = actions.onStepDistance,
                 onIntensity = actions.onStepIntensity,
                 bike = actions.bikeSteps(),
+                onOpenPad = actions.onOpenCardioPad,
             )
             ScanBikeScreenButton(scanning = state.scanning, onScan = actions.onScan)
             BoraButton(
@@ -1188,6 +1216,7 @@ private fun EditCardioSheet(editor: CardioEditor, actions: MachineActions) {
         ) {
             Text(stringResource(R.string.today_set_number, editor.number), style = MaterialTheme.typography.titleLarge)
             var distanceShown by remember { mutableStateOf(editor.draft.distanceM > 0) }
+            LaunchedEffect(editor.draft.distanceM > 0) { if (editor.draft.distanceM > 0) distanceShown = true }
             CardioSteppers(
                 draft = editor.draft,
                 showDistance = distanceShown,
@@ -1197,6 +1226,7 @@ private fun EditCardioSheet(editor: CardioEditor, actions: MachineActions) {
                 onDistance = actions.onStepEditorDistance,
                 onIntensity = actions.onStepEditorIntensity,
                 bike = actions.bikeEditorSteps(),
+                onOpenPad = actions.onOpenEditorCardioPad,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(

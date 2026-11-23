@@ -166,6 +166,93 @@ object CardioRules {
             ?.let { (Math.round(it * 100) / 100.0).coerceIn(0.0, MAX_INTENSITY_FACTOR) } ?: draft.intensityFactor,
     )
 
+    /** True for the fields typed with a decimal separator: distance (km), watts per kg and intensity factor. */
+    fun allowsDecimal(field: CardioField): Boolean = when (field) {
+        CardioField.DISTANCE_KM, CardioField.WATTS_PER_KG, CardioField.INTENSITY_FACTOR -> true
+        else -> false
+    }
+
+    /**
+     * The number pad's starting text for [field]: "" when the value is not set or zero; distance as plain
+     * kilometres without trailing zeros ("17.3"), watts per kg and IF likewise ("1.5", "0.7").
+     */
+    fun fieldText(draft: CardioDraft, field: CardioField): String = when (field) {
+        CardioField.MINUTES -> intText(draft.minutes)
+        CardioField.CALORIES -> intText(draft.calories)
+        CardioField.INTENSITY -> intText(draft.intensity ?: 0)
+        CardioField.WATTS -> intText(draft.watts ?: 0)
+        CardioField.HEART_RATE -> intText(draft.heartRate ?: 0)
+        CardioField.TSS -> intText(draft.tss ?: 0)
+        CardioField.DISTANCE_KM ->
+            if (draft.distanceM <= 0) "" else java.math.BigDecimal(draft.distanceM).movePointLeft(3).plainText()
+        CardioField.WATTS_PER_KG -> decimalText(draft.wattsPerKg, 1)
+        CardioField.INTENSITY_FACTOR -> decimalText(draft.intensityFactor, 2)
+    }
+
+    /**
+     * [draft] with [field] set from the pad's [text] (comma or point decimals, surrounding spaces ignored).
+     * Blank text clears the field (minutes, calories and distance go to 0, the optional ones to null); text that
+     * is not a plain non-negative number returns null (the caller ignores it). Values are rounded to the field's
+     * precision and clamped to the same ranges [toSet] uses. Never throws.
+     */
+    fun withField(draft: CardioDraft, field: CardioField, text: String): CardioDraft? {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return clearField(draft, field)
+        val value = parseNumber(trimmed) ?: return null
+        return when (field) {
+            CardioField.MINUTES -> draft.copy(minutes = value.toClampedInt(0, MAX_MINUTES))
+            CardioField.CALORIES -> draft.copy(calories = value.toClampedInt(0, MAX_CALORIES))
+            CardioField.DISTANCE_KM ->
+                draft.copy(distanceM = value.movePointRight(3).toClampedInt(0, MAX_DISTANCE_M))
+            CardioField.INTENSITY -> draft.copy(intensity = value.toClampedInt(0, MAX_INTENSITY))
+            CardioField.WATTS -> draft.copy(watts = value.toClampedInt(0, MAX_WATTS))
+            CardioField.HEART_RATE -> draft.copy(heartRate = value.toClampedInt(MIN_HEART_RATE, MAX_HEART_RATE))
+            CardioField.TSS -> draft.copy(tss = value.toClampedInt(0, MAX_TSS))
+            CardioField.WATTS_PER_KG ->
+                draft.copy(wattsPerKg = value.toClampedDecimal(1, MAX_WATTS_PER_KG))
+            CardioField.INTENSITY_FACTOR ->
+                draft.copy(intensityFactor = value.toClampedDecimal(2, MAX_INTENSITY_FACTOR))
+        }
+    }
+
+    private fun clearField(draft: CardioDraft, field: CardioField): CardioDraft = when (field) {
+        CardioField.MINUTES -> draft.copy(minutes = 0)
+        CardioField.CALORIES -> draft.copy(calories = 0)
+        CardioField.DISTANCE_KM -> draft.copy(distanceM = 0)
+        CardioField.INTENSITY -> draft.copy(intensity = null)
+        CardioField.WATTS -> draft.copy(watts = null)
+        CardioField.HEART_RATE -> draft.copy(heartRate = null)
+        CardioField.TSS -> draft.copy(tss = null)
+        CardioField.WATTS_PER_KG -> draft.copy(wattsPerKg = null)
+        CardioField.INTENSITY_FACTOR -> draft.copy(intensityFactor = null)
+    }
+
+    private val NUMBER = Regex("""\d+(?:[.,]\d*)?|[.,]\d+""")
+
+    /** Digits with at most one comma or point; no sign, exponent or letters. Null otherwise. */
+    private fun parseNumber(text: String): java.math.BigDecimal? {
+        if (!NUMBER.matches(text)) return null
+        return java.math.BigDecimal(text.replace(',', '.').let { if (it.startsWith(".")) "0$it" else it.trimEnd('.') })
+    }
+
+    private fun java.math.BigDecimal.toClampedInt(min: Int, max: Int): Int {
+        val rounded = setScale(0, java.math.RoundingMode.HALF_UP)
+        return if (rounded > java.math.BigDecimal(max)) max else rounded.toInt().coerceAtLeast(min)
+    }
+
+    private fun java.math.BigDecimal.toClampedDecimal(scale: Int, max: Double): Double =
+        setScale(scale, java.math.RoundingMode.HALF_UP).toDouble().coerceIn(0.0, max)
+
+    private fun intText(value: Int): String = if (value <= 0) "" else value.toString()
+
+    private fun decimalText(value: Double?, scale: Int): String {
+        if (value == null || value <= 0.0) return ""
+        return java.math.BigDecimal(value).setScale(scale, java.math.RoundingMode.HALF_UP).plainText()
+    }
+
+    private fun java.math.BigDecimal.plainText(): String =
+        if (signum() == 0) "" else stripTrailingZeros().toPlainString()
+
     /** A cardio set can be logged when it has minutes or calories. */
     fun canLog(draft: CardioDraft): Boolean = draft.minutes > 0 || draft.calories > 0
 

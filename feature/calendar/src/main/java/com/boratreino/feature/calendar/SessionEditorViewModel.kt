@@ -8,6 +8,7 @@ import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
+import com.boratreino.core.model.CardioField
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.Machine
@@ -64,7 +65,19 @@ internal data class SetEdit(
 }
 
 /** Which value the number pad is editing. */
-internal enum class PadTarget { EDIT_WEIGHT, EDIT_REPS }
+internal enum class PadTarget(val cardioField: CardioField? = null) {
+    EDIT_WEIGHT,
+    EDIT_REPS,
+    EDIT_MINUTES(CardioField.MINUTES),
+    EDIT_DISTANCE_KM(CardioField.DISTANCE_KM),
+    EDIT_INTENSITY(CardioField.INTENSITY),
+    EDIT_CALORIES(CardioField.CALORIES),
+    EDIT_WATTS(CardioField.WATTS),
+    EDIT_HEART_RATE(CardioField.HEART_RATE),
+    EDIT_WATTS_PER_KG(CardioField.WATTS_PER_KG),
+    EDIT_TSS(CardioField.TSS),
+    EDIT_INTENSITY_FACTOR(CardioField.INTENSITY_FACTOR),
+}
 
 /** The number pad dialog: what it edits and the text it starts with. */
 internal data class NumberPad(val target: PadTarget, val initial: String)
@@ -325,6 +338,7 @@ class SessionEditorViewModel @Inject constructor(
             when (target) {
                 PadTarget.EDIT_WEIGHT -> e.weightKg.toBigDecimal().stripTrailingZeros().toPlainString()
                 PadTarget.EDIT_REPS -> e.reps.toString()
+                else -> target.cardioField?.let { CardioRules.fieldText(e.cardioDraft, it) }.orEmpty()
             },
         )
     }
@@ -339,7 +353,25 @@ class SessionEditorViewModel @Inject constructor(
         when (target) {
             PadTarget.EDIT_WEIGHT -> parseWeight(text)?.let { w -> editor.value = editor.value?.copy(weightKg = w) }
             PadTarget.EDIT_REPS -> parseReps(text)?.let { r -> editor.value = editor.value?.copy(reps = r) }
+            else -> target.cardioField?.let { field -> applyCardioField(field, text) }
         }
+    }
+
+    /** Typed cardio value: ignored when it is not a number, clamped by the rules otherwise. */
+    private fun applyCardioField(field: CardioField, text: String) {
+        val e = editor.value ?: return
+        val d = CardioRules.withField(e.cardioDraft, field, text) ?: return
+        editor.value = e.copy(
+            minutes = d.minutes,
+            calories = d.calories,
+            distanceM = d.distanceM,
+            intensity = d.intensity,
+            watts = d.watts,
+            heartRate = d.heartRate,
+            wattsPerKg = d.wattsPerKg,
+            tss = d.tss,
+            intensityFactor = d.intensityFactor,
+        )
     }
 
     private fun parseWeight(text: String): Double? =

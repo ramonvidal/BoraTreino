@@ -7,6 +7,7 @@ import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RepeatOutcome
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
+import com.boratreino.core.model.CardioField
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
@@ -54,10 +55,10 @@ internal data class SetEditor(val set: WorkoutSet, val number: Int, val weightKg
 internal data class CardioEditor(val set: WorkoutSet, val number: Int, val draft: CardioDraft)
 
 /** Which value the number pad is editing. */
-internal enum class PadTarget { WEIGHT, REPS, EDIT_WEIGHT, EDIT_REPS }
+internal enum class PadTarget { WEIGHT, REPS, EDIT_WEIGHT, EDIT_REPS, CARDIO, EDIT_CARDIO }
 
 /** The number pad dialog: what it edits and the text it starts with. */
-internal data class NumberPad(val target: PadTarget, val initial: String)
+internal data class NumberPad(val target: PadTarget, val initial: String, val field: CardioField? = null)
 
 /**
  * Everything the machine screen shows. [weightKg] and [reps] are the steppers' current values.
@@ -265,6 +266,7 @@ class MachineViewModel @Inject constructor(
                 cardioSameAgain = CardioRules.sameAgain(log.lastTime, log.thisSession),
                 cardioDistanceShown = cardio.revealed || prefill.distanceM > 0,
                 cardioEditor = cardio.editor,
+                pad = padding,
             )
         } else {
             val draft = override ?: LoggingRules.prefill(log.lastTime, log.thisSession, log.suggestion)
@@ -606,7 +608,18 @@ class MachineViewModel @Inject constructor(
             when (target) {
                 PadTarget.WEIGHT, PadTarget.EDIT_WEIGHT -> weight.toBigDecimal().stripTrailingZeros().toPlainString()
                 PadTarget.REPS, PadTarget.EDIT_REPS -> reps.toString()
+                PadTarget.CARDIO, PadTarget.EDIT_CARDIO -> ""
             },
+        )
+    }
+
+    /** Opens the pad on a cardio stepper value; [inEditor] is true for the logged-set sheet's draft. */
+    internal fun openCardioPad(field: CardioField, inEditor: Boolean = false) {
+        val draft = (if (inEditor) cardioEditor.value?.draft else state.value.cardio) ?: return
+        pad.value = NumberPad(
+            if (inEditor) PadTarget.EDIT_CARDIO else PadTarget.CARDIO,
+            CardioRules.fieldText(draft, field),
+            field,
         )
     }
 
@@ -615,10 +628,20 @@ class MachineViewModel @Inject constructor(
     }
 
     internal fun confirmPad(text: String) {
-        val target = pad.value?.target ?: return
+        val open = pad.value ?: return
+        val target = open.target
         pad.value = null
         val s = state.value
         when (target) {
+            PadTarget.CARDIO -> open.field?.let { field ->
+                CardioRules.withField(s.cardio, field, text)?.let {
+                    cardioOverride.value = it
+                    if (field == CardioField.DISTANCE_KM && it.distanceM > 0) distanceRevealed.value = true
+                }
+            }
+            PadTarget.EDIT_CARDIO -> open.field?.let { field ->
+                editCardio { d -> CardioRules.withField(d, field, text) ?: d }
+            }
             PadTarget.WEIGHT -> parseWeight(text)?.let { draftOverride.value = SetDraft(it, s.reps) }
             PadTarget.REPS -> parseReps(text)?.let { draftOverride.value = SetDraft(s.weightKg, it) }
             PadTarget.EDIT_WEIGHT -> parseWeight(text)?.let { w -> editor.value = editor.value?.copy(weightKg = w) }

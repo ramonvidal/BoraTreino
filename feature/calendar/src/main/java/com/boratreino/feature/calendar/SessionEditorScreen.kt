@@ -237,11 +237,24 @@ internal fun SessionEditorContent(
     }
     val pad = state.pad
     if (editor != null && pad != null) {
-        val isWeight = pad.target == PadTarget.EDIT_WEIGHT
+        val cardioField = pad.target.cardioField
+        val title = when (pad.target) {
+            PadTarget.EDIT_WEIGHT -> weightLabel(editor.machine)
+            PadTarget.EDIT_REPS -> stringResource(R.string.calendar_reps)
+            PadTarget.EDIT_MINUTES -> stringResource(R.string.calendar_minutes)
+            PadTarget.EDIT_DISTANCE_KM -> stringResource(R.string.calendar_distance_km)
+            PadTarget.EDIT_INTENSITY -> stringResource(R.string.calendar_intensity)
+            PadTarget.EDIT_CALORIES -> stringResource(R.string.calendar_calories)
+            PadTarget.EDIT_WATTS -> stringResource(R.string.calendar_watts)
+            PadTarget.EDIT_HEART_RATE -> stringResource(R.string.calendar_heart_rate)
+            PadTarget.EDIT_WATTS_PER_KG -> stringResource(R.string.calendar_watts_per_kg)
+            PadTarget.EDIT_TSS -> stringResource(R.string.calendar_tss)
+            PadTarget.EDIT_INTENSITY_FACTOR -> stringResource(R.string.calendar_if)
+        }
         NumberPadDialog(
-            title = if (isWeight) weightLabel(editor.machine) else stringResource(R.string.calendar_reps),
+            title = title,
             initial = pad.initial,
-            allowDecimal = isWeight,
+            allowDecimal = if (cardioField != null) CardioRules.allowsDecimal(cardioField) else pad.target == PadTarget.EDIT_WEIGHT,
             onConfirm = actions.onConfirmPad,
             onDismiss = actions.onDismissPad,
         )
@@ -436,6 +449,9 @@ private fun hasBikeValues(e: SetEdit): Boolean =
 @Composable
 private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, dash: String) {
     var expanded by remember { mutableStateOf(hasBikeValues(editor)) }
+    // A typed value landing in this section opens it.
+    val hasValues = hasBikeValues(editor)
+    LaunchedEffect(hasValues) { if (hasValues) expanded = true }
     val title = stringResource(R.string.calendar_bike_values)
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -462,7 +478,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         value = editor.watts?.toString() ?: dash,
                         onMinus = { actions.onStepEditorWatts(false) },
                         onPlus = { actions.onStepEditorWatts(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_WATTS) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -471,7 +487,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         value = editor.heartRate?.toString() ?: dash,
                         onMinus = { actions.onStepEditorHeartRate(false) },
                         onPlus = { actions.onStepEditorHeartRate(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_HEART_RATE) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -482,7 +498,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         value = editor.wattsPerKg?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: dash,
                         onMinus = { actions.onStepEditorWattsPerKg(false) },
                         onPlus = { actions.onStepEditorWattsPerKg(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_WATTS_PER_KG) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -491,7 +507,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         value = editor.tss?.toString() ?: dash,
                         onMinus = { actions.onStepEditorTss(false) },
                         onPlus = { actions.onStepEditorTss(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_TSS) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -502,7 +518,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         value = editor.intensityFactor?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: dash,
                         onMinus = { actions.onStepEditorIntensityFactor(false) },
                         onPlus = { actions.onStepEditorIntensityFactor(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_INTENSITY_FACTOR) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -534,7 +550,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         value = if (editor.minutes > 0) editor.minutes.toString() else dash,
                         onMinus = { actions.onStepEditorMinutes(false) },
                         onPlus = { actions.onStepEditorMinutes(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_MINUTES) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -543,7 +559,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         value = if (editor.distanceM > 0) formatKg(editor.distanceM / 1000.0) else dash,
                         onMinus = { actions.onStepEditorDistance(false) },
                         onPlus = { actions.onStepEditorDistance(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_DISTANCE_KM) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -554,7 +570,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         value = editor.intensity?.toString() ?: dash,
                         onMinus = { actions.onStepEditorIntensity(false) },
                         onPlus = { actions.onStepEditorIntensity(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_INTENSITY) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -563,7 +579,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         value = if (editor.calories > 0) editor.calories.toString() else dash,
                         onMinus = { actions.onStepEditorCalories(false) },
                         onPlus = { actions.onStepEditorCalories(true) },
-                        onValueClick = {},
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_CALORIES) },
                         compact = true,
                         modifier = Modifier.weight(1f),
                     )
