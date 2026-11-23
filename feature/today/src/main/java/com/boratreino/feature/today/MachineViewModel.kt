@@ -14,6 +14,7 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.Record
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.notify.RestTimer
+import com.boratreino.core.scan.BikeScanResult
 import com.boratreino.core.scan.BikeScreenScanner
 import com.boratreino.core.settings.TrainingSettings
 import android.net.Uri
@@ -115,6 +116,8 @@ internal data class MachineUiState(
     val scanning: Boolean = false,
     /** Cardio: the last scan could not be read; the screen shows a message, then calls onScanMessageShown. */
     val scanFailed: Boolean = false,
+    /** Diagnostics of the last failed scan (no personal data), for the "Copy details" action. */
+    val scanDetails: String = "",
 ) {
     /** The exercise is in the routine and has all its programmed working sets. */
     val exerciseComplete: Boolean get() = programmedSets != null && doneSets >= programmedSets
@@ -166,6 +169,7 @@ class MachineViewModel @Inject constructor(
     private val distanceRevealed = MutableStateFlow(false)
     private val scanning = MutableStateFlow(false)
     private val scanFailed = MutableStateFlow(false)
+    private val scanDetails = MutableStateFlow("")
     private val cardioEditor = MutableStateFlow<CardioEditor?>(null)
     private val pad = MutableStateFlow<NumberPad?>(null)
     private val record = MutableStateFlow<Record?>(null)
@@ -304,8 +308,8 @@ class MachineViewModel @Inject constructor(
         )
     }
 
-    internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds, scanning, scanFailed) { ui, rest, scan, failed ->
-        ui.copy(restSeconds = rest?.first, restTotalSeconds = rest?.second ?: 0, scanning = scan, scanFailed = failed)
+    internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds, scanning, scanFailed, scanDetails) { ui, rest, scan, failed, details ->
+        ui.copy(restSeconds = rest?.first, restTotalSeconds = rest?.second ?: 0, scanning = scan, scanFailed = failed, scanDetails = details)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MachineUiState())
 
     // Logging: the write finishes first, then the event (haptic) and the fresh prefill.
@@ -506,15 +510,17 @@ class MachineViewModel @Inject constructor(
         if (scanning.value) return
         scanning.value = true
         viewModelScope.launch {
-            val reading = try {
-                scanner.read(image)
+            val result = try {
+                scanner.scan(image)
             } catch (e: CancellationException) {
                 scanning.value = false
                 throw e
             } catch (e: Exception) {
-                null
+                BikeScanResult(null, emptyList(), "${e.javaClass.name}: ${e.message}")
             }
+            val reading = result.reading
             if (reading == null || reading.isEmpty) {
+                scanDetails.value = scanDetailsText(result)
                 scanFailed.value = true
             } else {
                 applyReading(reading)
@@ -530,6 +536,7 @@ class MachineViewModel @Inject constructor(
 
     internal fun scanMessageShown() {
         scanFailed.value = false
+        scanDetails.value = ""
     }
 
     internal fun showDistance() {
@@ -718,3 +725,19 @@ class MachineViewModel @Inject constructor(
         }
     }
 }
+
+/** What a failed scan returned, as plain text: parsed values and recognised lines with their boxes. No photo, no personal data. */
+internal fun scanDetailsText(result: BikeScanResult): String = buildList {
+    add("bike-scan v1")
+    result.error?.let { add("error: $it") }
+    val r = result.reading
+    add(
+        if (r == null) {
+            "reading: null"
+        } else {
+            "reading: minutes=${r.minutes} calories=${r.calories} distanceM=${r.distanceM} watts=${r.watts} " +
+                "heartRate=${r.heartRate} wattsPerKg=${r.wattsPerKg} tss=${r.tss} intensityFactor=${r.intensityFactor}"
+        },
+    )
+    result.lines.forEach { add("${it.text} | ${it.left},${it.top},${it.right},${it.bottom}") }
+}.joinToString("\n")

@@ -189,6 +189,7 @@
     <string name="machine_scan_bike_screen">Scan bike screen</string>
     <string name="machine_scan_take_photo">Take photo</string>
     <string name="machine_scan_choose_photo">Choose photo</string>
+    <string name="machine_scan_copy_details">Copy details</string>
     <string name="machine_scan_failed">Couldn\'t read the screen, try again closer</string>
     <string name="machine_cardio_bike_values">Bike values</string>
     <string name="machine_cardio_watts">Watts</string>

@@ -55,6 +55,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
@@ -199,9 +202,17 @@ internal fun MachineScreen(
     val resources = LocalContext.current.resources
     val scanFailedText = stringResource(R.string.machine_scan_failed)
 
+    val copyDetailsLabel = stringResource(R.string.machine_scan_copy_details)
+    val clipboard = LocalClipboardManager.current
+
     LaunchedEffect(state.scanFailed) {
         if (state.scanFailed) {
-            snackbar.showSnackbar(scanFailedText)
+            val details = state.scanDetails
+            val result = snackbar.showSnackbar(
+                scanFailedText,
+                actionLabel = if (details.isNotEmpty()) copyDetailsLabel else null,
+            )
+            if (result == SnackbarResult.ActionPerformed) clipboard.setText(AnnotatedString(details))
             viewModel.scanMessageShown()
         }
     }

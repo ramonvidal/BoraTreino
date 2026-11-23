@@ -36,19 +36,22 @@ internal class MlKitBikeScreenScanner @Inject constructor(
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
 
-    override suspend fun read(image: Uri): BikeReading? {
+    override suspend fun read(image: Uri): BikeReading? = scan(image).reading
+
+    override suspend fun scan(image: Uri): BikeScanResult {
         val lines = try {
-            val input = withContext(Dispatchers.IO) { loadImage(image) } ?: return null
+            val input = withContext(Dispatchers.IO) { loadImage(image) }
+                ?: return BikeScanResult(null, emptyList(), "image could not be opened")
             recognize(input).toOcrLines()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             // Unreadable file, revoked permission, out of memory on decode, recognition failure.
-            return null
+            return BikeScanResult(null, emptyList(), "${e.javaClass.name}: ${e.message}")
         } catch (e: OutOfMemoryError) {
-            return null
+            return BikeScanResult(null, emptyList(), "${e.javaClass.name}: ${e.message}")
         }
-        return BikeScreenParser.parse(lines)
+        return BikeScanResult(BikeScreenParser.parse(lines), lines, null)
     }
 
     /**
