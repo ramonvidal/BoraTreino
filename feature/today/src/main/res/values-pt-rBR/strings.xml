@@ -138,6 +138,10 @@
     <string name="machine_cardio_intensity">Intensidade</string>
     <string name="machine_cardio_intensity_part">intensidade %1$d</string>
     <string name="machine_cardio_intensity_short">int. %1$d</string>
+    <string name="machine_scan_bike_screen">Escanear a tela da bike</string>
+    <string name="machine_scan_take_photo">Tirar foto</string>
+    <string name="machine_scan_choose_photo">Escolher foto</string>
+    <string name="machine_scan_failed">Não deu pra ler a tela. Chegue mais perto e tente de novo.</string>
     <string name="machine_cardio_bike_values">Valores da bike</string>
     <string name="machine_cardio_watts">Watts</string>
     <string name="machine_cardio_heart_rate">Frequência cardíaca</string>
