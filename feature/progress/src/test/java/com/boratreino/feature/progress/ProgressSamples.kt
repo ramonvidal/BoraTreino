@@ -93,7 +93,9 @@ internal object ProgressSamples {
                 distanceM = null,
                 loggedAt = Instant.parse("2026-01-01T10:00:00Z"),
             )
-            ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE -> WorkoutSet(
+            ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE,
+            ProgressMetric.POWER, ProgressMetric.HEART_RATE, ProgressMetric.WATTS_PER_KG,
+            ProgressMetric.TSS, ProgressMetric.INTENSITY_FACTOR -> WorkoutSet(
                 id = sessionId,
                 sessionId = sessionId,
                 machineId = 0,

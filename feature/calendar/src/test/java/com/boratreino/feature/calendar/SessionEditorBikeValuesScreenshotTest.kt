@@ -5,7 +5,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
