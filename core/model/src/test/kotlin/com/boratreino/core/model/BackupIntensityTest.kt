@@ -30,9 +30,9 @@ class BackupIntensityTest {
         json.replace(Regex(",\"intensity\":(null|-?\\d+)"), "")
 
     @Test
-    fun `the format is version 9`() {
-        assertEquals(9, BackupCodec.FORMAT_VERSION)
-        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":9,"))
+    fun `the format is version 10`() {
+        assertEquals(10, BackupCodec.FORMAT_VERSION)
+        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":10,"))
     }
 
     @Test
@@ -42,9 +42,9 @@ class BackupIntensityTest {
 
     @Test
     fun `each set writes its intensity, or null when none is logged`() {
-        assertTrue(text.contains("\"intensity\":12}"))
-        assertTrue(text.contains("\"intensity\":null}"))
-        assertTrue(text.contains("\"intensity\":999}"))
+        assertTrue(text.contains("\"intensity\":12,"))
+        assertTrue(text.contains("\"intensity\":null,"))
+        assertTrue(text.contains("\"intensity\":999,"))
     }
 
     @Test
@@ -59,7 +59,7 @@ class BackupIntensityTest {
 
     @Test
     fun `a version 8 file without intensities imports`() {
-        val v8 = withoutIntensity(text).replace("\"version\":9", "\"version\":8")
+        val v8 = withoutIntensity(text).replace("\"version\":10", "\"version\":8")
 
         val ok = BackupCodec.decode(v8) as BackupDecodeResult.Ok
 
@@ -70,7 +70,7 @@ class BackupIntensityTest {
     @Test
     fun `an intensity that is not a number is invalid`() {
         for (value in listOf("\"lots\"", "true", "[1]", "{}", "12.5")) {
-            val json = text.replace("\"intensity\":12}", "\"intensity\":$value}")
+            val json = text.replace("\"intensity\":12,", "\"intensity\":$value,")
 
             assertTrue("intensity $value", BackupCodec.decode(json) is BackupDecodeResult.Invalid)
         }
@@ -79,7 +79,7 @@ class BackupIntensityTest {
     @Test
     fun `an intensity outside 0 to 999 is invalid`() {
         for (value in listOf("1000", "-1")) {
-            val json = text.replace("\"intensity\":12}", "\"intensity\":$value}")
+            val json = text.replace("\"intensity\":12,", "\"intensity\":$value,")
 
             assertTrue("intensity $value", BackupCodec.decode(json) is BackupDecodeResult.Invalid)
         }
@@ -87,6 +87,6 @@ class BackupIntensityTest {
 
     @Test
     fun `a newer file is too new`() {
-        assertEquals(BackupDecodeResult.TooNew(10), BackupCodec.decode(text.replace("\"version\":9", "\"version\":10")))
+        assertEquals(BackupDecodeResult.TooNew(11), BackupCodec.decode(text.replace("\"version\":10", "\"version\":11")))
     }
 }

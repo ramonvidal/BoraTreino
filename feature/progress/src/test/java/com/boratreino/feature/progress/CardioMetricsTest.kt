@@ -46,9 +46,19 @@ class CardioMetricsTest {
     // The metrics a cardio exercise offers
 
     @Test
-    fun `the cardio measures are speed, intensity, distance and time in that order`() {
+    fun `the cardio measures are speed, the bike values, intensity, distance and time in that order`() {
         assertEquals(
-            listOf(ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE, ProgressMetric.MINUTES),
+            listOf(
+                ProgressMetric.SPEED,
+                ProgressMetric.POWER,
+                ProgressMetric.INTENSITY_FACTOR,
+                ProgressMetric.WATTS_PER_KG,
+                ProgressMetric.TSS,
+                ProgressMetric.HEART_RATE,
+                ProgressMetric.INTENSITY,
+                ProgressMetric.DISTANCE,
+                ProgressMetric.MINUTES,
+            ),
             CARDIO_METRICS,
         )
     }

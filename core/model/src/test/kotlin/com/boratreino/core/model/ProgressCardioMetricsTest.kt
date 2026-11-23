@@ -41,17 +41,33 @@ class ProgressCardioMetricsTest {
     // Metric list
 
     @Test
-    fun `the three new metrics are the last entries of the enum`() {
+    fun `the five bike console metrics are the last entries of the enum`() {
         assertEquals(
-            listOf(ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE),
-            ProgressMetric.values().toList().takeLast(3),
+            listOf(
+                ProgressMetric.POWER,
+                ProgressMetric.HEART_RATE,
+                ProgressMetric.WATTS_PER_KG,
+                ProgressMetric.TSS,
+                ProgressMetric.INTENSITY_FACTOR,
+            ),
+            ProgressMetric.values().toList().takeLast(5),
         )
     }
 
     @Test
-    fun `the cardio detail offers speed, intensity, distance and time in that order`() {
+    fun `the cardio detail offers the metrics in the phase 42 order`() {
         assertEquals(
-            listOf(ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE, ProgressMetric.MINUTES),
+            listOf(
+                ProgressMetric.SPEED,
+                ProgressMetric.POWER,
+                ProgressMetric.INTENSITY_FACTOR,
+                ProgressMetric.WATTS_PER_KG,
+                ProgressMetric.TSS,
+                ProgressMetric.HEART_RATE,
+                ProgressMetric.INTENSITY,
+                ProgressMetric.DISTANCE,
+                ProgressMetric.MINUTES,
+            ),
             ProgressRules.CARDIO_METRICS,
         )
     }
