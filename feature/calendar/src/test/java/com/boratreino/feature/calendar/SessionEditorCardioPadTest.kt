@@ -9,7 +9,6 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -136,7 +135,7 @@ class SessionEditorCardioPadTest {
     }
 
     @Test
-    fun `the distance pad is titled Distance (km), starts at 3.2 and has a decimal key`() {
+    fun `the distance pad is titled Distance (km), starts at 3 2 and has a decimal key`() {
         setContent(padEditing(NumberPad(PadTarget.EDIT_DISTANCE_KM, "3.2")))
 
         assertPadShows("Distance (km)", decimalKey = true)
@@ -172,7 +171,7 @@ class SessionEditorCardioPadTest {
     }
 
     @Test
-    fun `the watts per kg pad is titled Watts/kg and has a decimal key`() {
+    fun `the watts per kg pad is titled Watts per kg and has a decimal key`() {
         setContent(padEditing(NumberPad(PadTarget.EDIT_WATTS_PER_KG, "2.4")))
 
         assertPadShows("Watts/kg", decimalKey = true)

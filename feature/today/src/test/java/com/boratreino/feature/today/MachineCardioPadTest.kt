@@ -194,7 +194,7 @@ class MachineCardioPadTest {
     }
 
     @Test
-    fun `tapping Watts per kg opens the pad titled Watts/kg, with a decimal key`() {
+    fun `tapping Watts per kg opens the pad titled Watts per kg, with a decimal key`() {
         showWithPad()
 
         stepperValue("2.4").performClick()
