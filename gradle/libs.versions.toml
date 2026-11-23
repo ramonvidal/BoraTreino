@@ -20,7 +20,6 @@ room = "2.7.2"
 datastore = "1.1.7"
 appcompat = "1.7.1"
 healthConnect = "1.1.0"
-mlkitTextRecognition = "16.0.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -45,7 +44,6 @@ androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "androi
 androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "androidxHilt" }
 androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 androidx-health-connect = { module = "androidx.health.connect:connect-client", version.ref = "healthConnect" }
-mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitTextRecognition" }
 androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "work" }
 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }

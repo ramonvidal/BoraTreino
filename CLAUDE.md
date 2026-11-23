@@ -28,7 +28,6 @@ in the way and what you propose, before writing the code.
 | `:core:notify` | Rest timer notification, training-day reminders | `:core:model`, `:core:data`, `:core:settings` |
 | `:core:ui` | Theme, shared composables, strings used by more than one feature, icons | `:core:model` |
 | `:core:update` | Updating the app itself from the GitHub release page | `:core:model` |
-| `:core:scan` | Reading the bike console photo on the device (ML Kit text recognition) and handing it to the parser in `:core:model` | `:core:model` |
 | `:feature:<name>` | One tab or screen: `today`, `calendar`, `progress`, `routines`, `settings`, `update` | `:core:*` only |
 | `:app` | Wires features together: activity, root screen, navigation | anything; nothing depends on it |
 

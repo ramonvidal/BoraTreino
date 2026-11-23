@@ -59,12 +59,6 @@ android {
             dimension = "distribution"
             applicationId = "com.boratreino"
             signingConfig = sideloadSigning
-            // The GitHub APK is one file for every phone, and the on-device text recognition model
-            // (:core:scan) is large per ABI. 64-bit ARM covers current Android phones; the Play bundle
-            // below is split per device by Play, so it keeps every ABI.
-            ndk {
-                abiFilters += "arm64-v8a"
-            }
         }
         create("play") {
             dimension = "distribution"
@@ -110,8 +104,6 @@ dependencies {
     implementation(projects.core.data)
     implementation(projects.core.database)
     implementation(projects.core.settings)
-    // Hilt finds the bike console scanner binding here (MachineViewModel in :feature:today uses it).
-    implementation(projects.core.scan)
     implementation(projects.feature.today)
     implementation(projects.feature.calendar)
     implementation(projects.feature.progress)

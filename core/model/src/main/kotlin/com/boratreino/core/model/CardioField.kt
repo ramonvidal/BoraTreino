@@ -6,9 +6,4 @@ enum class CardioField {
     DISTANCE_KM,
     CALORIES,
     INTENSITY,
-    WATTS,
-    HEART_RATE,
-    WATTS_PER_KG,
-    TSS,
-    INTENSITY_FACTOR,
 }

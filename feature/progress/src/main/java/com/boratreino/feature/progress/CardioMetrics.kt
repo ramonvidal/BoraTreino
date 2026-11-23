@@ -8,7 +8,6 @@ import com.boratreino.core.model.MachineProgress
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.ProgressRules
 import com.boratreino.core.model.SessionPoint
-import kotlin.math.roundToInt
 
 /** The metrics a cardio exercise can chart, in the order the chips show them (the data layer's own order). */
 internal val CARDIO_METRICS: List<ProgressMetric> = ProgressRules.CARDIO_METRICS
@@ -38,18 +37,15 @@ internal fun hasCardioData(metric: ProgressMetric, points: List<SessionPoint>): 
 internal fun availableCardioMetrics(progress: MachineProgress): List<ProgressMetric> =
     CARDIO_METRICS.filter { hasCardioData(it, progress.pointsFor(it)) }
 
-/** SPEED when there is distance data, else POWER, else INTENSITY_FACTOR, else INTENSITY, else MINUTES. */
+/** SPEED when there is distance data, else INTENSITY, else MINUTES. */
 internal fun defaultCardioMetricOf(available: List<ProgressMetric>): ProgressMetric = when {
     ProgressMetric.SPEED in available -> ProgressMetric.SPEED
-    ProgressMetric.POWER in available -> ProgressMetric.POWER
-    ProgressMetric.INTENSITY_FACTOR in available -> ProgressMetric.INTENSITY_FACTOR
     ProgressMetric.INTENSITY in available -> ProgressMetric.INTENSITY
     else -> ProgressMetric.MINUTES
 }
 
 /**
- * The whole period's cardio in a few numbers; [intensityAvg], [speedKmh], [powerAvg] and [tssTotal] are null when no
- * block has them.
+ * The whole period's cardio in a few numbers; [intensityAvg] and [speedKmh] are null when no block has them.
  */
 internal data class CardioTotals(
     val minutes: Int,
@@ -57,8 +53,6 @@ internal data class CardioTotals(
     val sessions: Int,
     val intensityAvg: Double?,
     val speedKmh: Double?,
-    val powerAvg: Double? = null,
-    val tssTotal: Int? = null,
 )
 
 /**
@@ -71,8 +65,6 @@ internal fun cardioTotals(blocks: List<CardioBlock>): CardioTotals = CardioTotal
     sessions = blocks.sumOf { it.sessions },
     intensityAvg = weightedByMinutes(blocks) { it.intensityAvg },
     speedKmh = weightedByMinutes(blocks) { it.speedKmh },
-    powerAvg = weightedByMinutes(blocks) { it.powerAvg?.toDouble() },
-    tssTotal = blocks.mapNotNull { it.tssTotal?.toDouble() }.takeIf { it.isNotEmpty() }?.sum()?.roundToInt(),
 )
 
 private fun weightedByMinutes(blocks: List<CardioBlock>, value: (CardioBlock) -> Double?): Double? {

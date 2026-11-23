@@ -14,11 +14,7 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.Record
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.notify.RestTimer
-import com.boratreino.core.scan.BikeScanResult
-import com.boratreino.core.scan.BikeScreenScanner
 import com.boratreino.core.settings.TrainingSettings
-import android.net.Uri
-import com.boratreino.core.model.BikeReading
 import java.time.Clock
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.Suggestion
@@ -112,12 +108,6 @@ internal data class MachineUiState(
     val nextExercises: List<NextExerciseUi> = emptyList(),
     /** "Add an extra set" was tapped on this visit: the Log panel is back although the exercise is complete. */
     val extraSet: Boolean = false,
-    /** Cardio: a bike-screen photo is being read (the Scan button shows progress). */
-    val scanning: Boolean = false,
-    /** Cardio: the last scan could not be read; the screen shows a message, then calls onScanMessageShown. */
-    val scanFailed: Boolean = false,
-    /** Diagnostics of the last failed scan (no personal data), for the "Copy details" action. */
-    val scanDetails: String = "",
 ) {
     /** The exercise is in the routine and has all its programmed working sets. */
     val exerciseComplete: Boolean get() = programmedSets != null && doneSets >= programmedSets
@@ -154,7 +144,6 @@ class MachineViewModel @Inject constructor(
     private val restTimer: RestTimer,
     private val settings: TrainingSettings,
     private val clock: Clock,
-    private val scanner: BikeScreenScanner,
 ) : ViewModel() {
 
     private val machineId: Long = checkNotNull(savedStateHandle.get<Long>(MACHINE_ID_ARG)) { "machineId missing" }
@@ -167,9 +156,6 @@ class MachineViewModel @Inject constructor(
     private val editor = MutableStateFlow<SetEditor?>(null)
     private val cardioOverride = MutableStateFlow<CardioDraft?>(null)
     private val distanceRevealed = MutableStateFlow(false)
-    private val scanning = MutableStateFlow(false)
-    private val scanFailed = MutableStateFlow(false)
-    private val scanDetails = MutableStateFlow("")
     private val cardioEditor = MutableStateFlow<CardioEditor?>(null)
     private val pad = MutableStateFlow<NumberPad?>(null)
     private val record = MutableStateFlow<Record?>(null)
@@ -308,8 +294,8 @@ class MachineViewModel @Inject constructor(
         )
     }
 
-    internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds, scanning, scanFailed, scanDetails) { ui, rest, scan, failed, details ->
-        ui.copy(restSeconds = rest?.first, restTotalSeconds = rest?.second ?: 0, scanning = scan, scanFailed = failed, scanDetails = details)
+    internal val state: StateFlow<MachineUiState> = combine(logState, restSeconds) { ui, rest ->
+        ui.copy(restSeconds = rest?.first, restTotalSeconds = rest?.second ?: 0)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MachineUiState())
 
     // Logging: the write finishes first, then the event (haptic) and the fresh prefill.
@@ -480,65 +466,6 @@ class MachineViewModel @Inject constructor(
         cardioOverride.value = d.copy(intensity = CardioRules.stepIntensity(d.intensity, up))
     }
 
-    internal fun stepWatts(up: Boolean) {
-        val d = state.value.cardio
-        cardioOverride.value = d.copy(watts = CardioRules.stepWatts(d.watts, up))
-    }
-
-    internal fun stepHeartRate(up: Boolean) {
-        val d = state.value.cardio
-        cardioOverride.value = d.copy(heartRate = CardioRules.stepHeartRate(d.heartRate, up))
-    }
-
-    internal fun stepWattsPerKg(up: Boolean) {
-        val d = state.value.cardio
-        cardioOverride.value = d.copy(wattsPerKg = CardioRules.stepWattsPerKg(d.wattsPerKg, up))
-    }
-
-    internal fun stepTss(up: Boolean) {
-        val d = state.value.cardio
-        cardioOverride.value = d.copy(tss = CardioRules.stepTss(d.tss, up))
-    }
-
-    internal fun stepIntensityFactor(up: Boolean) {
-        val d = state.value.cardio
-        cardioOverride.value = d.copy(intensityFactor = CardioRules.stepIntensityFactor(d.intensityFactor, up))
-    }
-
-    /** Reads the bike console photo at [image] and fills the draft. Optional; it never logs. */
-    internal fun scan(image: Uri) {
-        if (scanning.value) return
-        scanning.value = true
-        viewModelScope.launch {
-            val result = try {
-                scanner.scan(image)
-            } catch (e: CancellationException) {
-                scanning.value = false
-                throw e
-            } catch (e: Exception) {
-                BikeScanResult(null, emptyList(), "${e.javaClass.name}: ${e.message}")
-            }
-            val reading = result.reading
-            if (reading == null || reading.isEmpty) {
-                scanDetails.value = scanDetailsText(result)
-                scanFailed.value = true
-            } else {
-                applyReading(reading)
-            }
-            scanning.value = false
-        }
-    }
-
-    /** Fills the cardio draft with what the console showed; values not read stay as they were. */
-    internal fun applyReading(reading: BikeReading) {
-        cardioOverride.value = CardioRules.applyReading(state.value.cardio, reading)
-    }
-
-    internal fun scanMessageShown() {
-        scanFailed.value = false
-        scanDetails.value = ""
-    }
-
     internal fun showDistance() {
         distanceRevealed.value = true
     }
@@ -559,16 +486,6 @@ class MachineViewModel @Inject constructor(
     internal fun stepEditorDistance(up: Boolean) = editCardio { it.copy(distanceM = CardioRules.stepDistance(it.distanceM, up)) }
 
     internal fun stepEditorIntensity(up: Boolean) = editCardio { it.copy(intensity = CardioRules.stepIntensity(it.intensity, up)) }
-
-    internal fun stepEditorWatts(up: Boolean) = editCardio { it.copy(watts = CardioRules.stepWatts(it.watts, up)) }
-
-    internal fun stepEditorHeartRate(up: Boolean) = editCardio { it.copy(heartRate = CardioRules.stepHeartRate(it.heartRate, up)) }
-
-    internal fun stepEditorWattsPerKg(up: Boolean) = editCardio { it.copy(wattsPerKg = CardioRules.stepWattsPerKg(it.wattsPerKg, up)) }
-
-    internal fun stepEditorTss(up: Boolean) = editCardio { it.copy(tss = CardioRules.stepTss(it.tss, up)) }
-
-    internal fun stepEditorIntensityFactor(up: Boolean) = editCardio { it.copy(intensityFactor = CardioRules.stepIntensityFactor(it.intensityFactor, up)) }
 
     private fun editCardio(change: (CardioDraft) -> CardioDraft) {
         cardioEditor.value = cardioEditor.value?.let { it.copy(draft = change(it.draft)) }
@@ -725,19 +642,3 @@ class MachineViewModel @Inject constructor(
         }
     }
 }
-
-/** What a failed scan returned, as plain text: parsed values and recognised lines with their boxes. No photo, no personal data. */
-internal fun scanDetailsText(result: BikeScanResult): String = buildList {
-    add("bike-scan v1")
-    result.error?.let { add("error: $it") }
-    val r = result.reading
-    add(
-        if (r == null) {
-            "reading: null"
-        } else {
-            "reading: minutes=${r.minutes} calories=${r.calories} distanceM=${r.distanceM} watts=${r.watts} " +
-                "heartRate=${r.heartRate} wattsPerKg=${r.wattsPerKg} tss=${r.tss} intensityFactor=${r.intensityFactor}"
-        },
-    )
-    result.lines.forEach { add("${it.text} | ${it.left},${it.top},${it.right},${it.bottom}") }
-}.joinToString("\n")

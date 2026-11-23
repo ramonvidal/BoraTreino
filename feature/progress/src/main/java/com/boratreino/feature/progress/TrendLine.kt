@@ -30,9 +30,6 @@ internal fun trendDescription(metric: ProgressMetric, values: List<Double>): Str
         ProgressMetric.SPEED -> stringResource(R.string.progress_trend_speed, formatSpeed(values.first()), formatSpeed(values.last()))
         ProgressMetric.INTENSITY -> stringResource(R.string.progress_trend_intensity, formatIntensity(values.first()), formatIntensity(values.last()))
         ProgressMetric.DISTANCE -> stringResource(R.string.progress_trend_distance, formatKm(values.first()), formatKm(values.last()))
-        ProgressMetric.POWER, ProgressMetric.HEART_RATE, ProgressMetric.WATTS_PER_KG, ProgressMetric.TSS,
-        ProgressMetric.INTENSITY_FACTOR,
-        -> stringResource(R.string.progress_trend_generic, valueText(metric, values.first()), valueText(metric, values.last()))
     }
 }
 

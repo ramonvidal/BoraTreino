@@ -184,21 +184,7 @@
     </plurals>
     <string name="machine_log_cardio">Log %1$s</string>
     <string name="machine_cardio_intensity">Intensity</string>
-    <string name="machine_cardio_intensity_part">intensity %1$d</string>
-    <string name="machine_cardio_intensity_short">int. %1$d</string>
-    <string name="machine_scan_bike_screen">Scan bike screen</string>
-    <string name="machine_scan_take_photo">Take photo</string>
-    <string name="machine_scan_choose_photo">Choose photo</string>
-    <string name="machine_scan_copy_details">Copy details</string>
-    <string name="machine_scan_failed">Couldn\'t read the screen, try again closer</string>
-    <string name="machine_cardio_bike_values">Bike values</string>
-    <string name="machine_cardio_watts">Watts</string>
-    <string name="machine_cardio_heart_rate">Heart rate</string>
-    <string name="machine_cardio_watts_per_kg">Watts/kg</string>
-    <string name="machine_cardio_tss">TSS</string>
-    <string name="machine_cardio_if">IF</string>
-    <string name="machine_cardio_watts_part">%1$d W</string>
-    <string name="machine_cardio_bpm_part">%1$d bpm</string>
-    <string name="machine_cardio_if_part">IF %1$.2f</string>
+    <string name="machine_cardio_intensity_part">intensity %1$s</string>
+    <string name="machine_cardio_intensity_short">int. %1$s</string>
     <string name="machine_set_type">Set type: %1$s</string>
 </resources>

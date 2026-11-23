@@ -94,7 +94,7 @@ internal fun buildProgressState(overview: ProgressOverview, today: LocalDate): P
     )
 }
 
-/** A cardio machine shows its default metric (speed, else power, else IF, else intensity, else minutes); other machines are unchanged. */
+/** A cardio machine shows its default metric (speed, else intensity, else minutes); other machines are unchanged. */
 private fun MachineProgress.forExercisesList(): MachineProgress {
     if (!machine.isCardio()) return this
     val chosen = defaultCardioMetricOf(availableCardioMetrics(this))
