@@ -148,6 +148,11 @@ internal data class MachineActions(
     val onStepCalories: (up: Boolean) -> Unit = {},
     val onStepDistance: (up: Boolean) -> Unit = {},
     val onStepIntensity: (up: Boolean) -> Unit = {},
+    val onStepWatts: (up: Boolean) -> Unit = {},
+    val onStepHeartRate: (up: Boolean) -> Unit = {},
+    val onStepWattsPerKg: (up: Boolean) -> Unit = {},
+    val onStepTss: (up: Boolean) -> Unit = {},
+    val onStepIntensityFactor: (up: Boolean) -> Unit = {},
     val onShowDistance: () -> Unit = {},
     val onLogCardio: () -> Unit = {},
     val onCardioSameAgain: () -> Unit = {},
@@ -156,6 +161,11 @@ internal data class MachineActions(
     val onStepEditorCalories: (up: Boolean) -> Unit = {},
     val onStepEditorDistance: (up: Boolean) -> Unit = {},
     val onStepEditorIntensity: (up: Boolean) -> Unit = {},
+    val onStepEditorWatts: (up: Boolean) -> Unit = {},
+    val onStepEditorHeartRate: (up: Boolean) -> Unit = {},
+    val onStepEditorWattsPerKg: (up: Boolean) -> Unit = {},
+    val onStepEditorTss: (up: Boolean) -> Unit = {},
+    val onStepEditorIntensityFactor: (up: Boolean) -> Unit = {},
     val onSaveCardioEditor: () -> Unit = {},
     val onDeleteCardioEditor: () -> Unit = {},
     val onDismissCardioEditor: () -> Unit = {},
@@ -249,6 +259,11 @@ internal fun MachineScreen(
             onStepCalories = viewModel::stepCalories,
             onStepDistance = viewModel::stepDistance,
             onStepIntensity = viewModel::stepIntensity,
+            onStepWatts = viewModel::stepWatts,
+            onStepHeartRate = viewModel::stepHeartRate,
+            onStepWattsPerKg = viewModel::stepWattsPerKg,
+            onStepTss = viewModel::stepTss,
+            onStepIntensityFactor = viewModel::stepIntensityFactor,
             onShowDistance = viewModel::showDistance,
             onLogCardio = viewModel::logCardio,
             onCardioSameAgain = viewModel::logCardioSameAgain,
@@ -257,6 +272,11 @@ internal fun MachineScreen(
             onStepEditorCalories = viewModel::stepEditorCalories,
             onStepEditorDistance = viewModel::stepEditorDistance,
             onStepEditorIntensity = viewModel::stepEditorIntensity,
+            onStepEditorWatts = viewModel::stepEditorWatts,
+            onStepEditorHeartRate = viewModel::stepEditorHeartRate,
+            onStepEditorWattsPerKg = viewModel::stepEditorWattsPerKg,
+            onStepEditorTss = viewModel::stepEditorTss,
+            onStepEditorIntensityFactor = viewModel::stepEditorIntensityFactor,
             onSaveCardioEditor = viewModel::saveCardioEditor,
             onDeleteCardioEditor = viewModel::deleteCardioEditor,
             onDismissCardioEditor = viewModel::closeCardioEditor,
@@ -854,7 +874,7 @@ private fun kmValue(distanceM: Int): String = cardioValue(distanceM) { formatKg(
 /** A cardio stepper value that may be unset: "-" when null. */
 private fun intensityValue(intensity: Int?): String = intensity?.toString() ?: "-"
 
-/** "45 min · 18.4 km · intensity 12 · 520 kcal": the non-empty parts, in the order the Log button names them. */
+/** "45 min · 18.4 km · intensity 12 · 520 kcal · 160 W · IF 0.79": the non-empty parts, in the order the Log button names them. */
 @Composable
 private fun cardioLogText(d: CardioDraft): String {
     val parts = buildList {
@@ -862,6 +882,8 @@ private fun cardioLogText(d: CardioDraft): String {
         if (d.distanceM > 0) add(stringResource(CoreUiR.string.cardio_km, formatKg(d.distanceM / 1000.0)))
         d.intensity?.let { add(stringResource(R.string.machine_cardio_intensity_part, it)) }
         if (d.calories > 0) add(stringResource(CoreUiR.string.cardio_calories, d.calories))
+        d.watts?.let { add(stringResource(R.string.machine_cardio_watts_part, it)) }
+        d.intensityFactor?.let { add(stringResource(R.string.machine_cardio_if_part, it)) }
     }
     return if (parts.isEmpty()) "-" else parts.joinToString(" · ")
 }
@@ -874,6 +896,9 @@ private fun cardioRowText(d: CardioDraft): String {
         if (d.calories > 0) add(stringResource(CoreUiR.string.cardio_calories, d.calories))
         if (d.distanceM > 0) add(stringResource(CoreUiR.string.cardio_km, formatKg(d.distanceM / 1000.0)))
         d.intensity?.let { add(stringResource(R.string.machine_cardio_intensity_short, it)) }
+        d.watts?.let { add(stringResource(R.string.machine_cardio_watts_part, it)) }
+        d.heartRate?.let { add(stringResource(R.string.machine_cardio_bpm_part, it)) }
+        d.intensityFactor?.let { add(stringResource(R.string.machine_cardio_if_part, it)) }
     }
     return if (parts.isEmpty()) "-" else parts.joinToString(" · ")
 }
@@ -891,6 +916,7 @@ private fun CardioSteppers(
     onCalories: (up: Boolean) -> Unit,
     onDistance: (up: Boolean) -> Unit,
     onIntensity: (up: Boolean) -> Unit,
+    bike: BikeStepActions,
 ) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Stepper(
@@ -936,6 +962,108 @@ private fun CardioSteppers(
             modifier = Modifier.weight(1f),
         )
     }
+    BikeValues(draft, bike)
+}
+
+/** The five bike-console steppers' callbacks. */
+private class BikeStepActions(
+    val onWatts: (up: Boolean) -> Unit,
+    val onHeartRate: (up: Boolean) -> Unit,
+    val onWattsPerKg: (up: Boolean) -> Unit,
+    val onTss: (up: Boolean) -> Unit,
+    val onIntensityFactor: (up: Boolean) -> Unit,
+)
+
+private fun MachineActions.bikeSteps() = BikeStepActions(
+    onStepWatts, onStepHeartRate, onStepWattsPerKg, onStepTss, onStepIntensityFactor,
+)
+
+private fun MachineActions.bikeEditorSteps() = BikeStepActions(
+    onStepEditorWatts, onStepEditorHeartRate, onStepEditorWattsPerKg, onStepEditorTss, onStepEditorIntensityFactor,
+)
+
+private fun hasBikeValues(d: CardioDraft): Boolean =
+    d.watts != null || d.heartRate != null || d.wattsPerKg != null || d.tss != null || d.intensityFactor != null
+
+/**
+ * "Bike values": a collapsed row that expands in place (no dialog, no keyboard) to five optional
+ * steppers (Watts, Heart rate, Watts/kg, TSS, IF). Starts open when the draft already has one.
+ */
+@Composable
+private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
+    var expanded by remember { mutableStateOf(hasBikeValues(draft)) }
+    val any = hasBikeValues(draft)
+    LaunchedEffect(any) { if (any) expanded = true }
+    val title = stringResource(R.string.machine_cardio_bike_values)
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = title) { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                painterResource(if (expanded) CoreUiR.drawable.ic_expand_less else CoreUiR.drawable.ic_expand_more),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        AnimatedVisibility(visible = expanded) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Stepper(
+                        label = stringResource(R.string.machine_cardio_watts),
+                        value = draft.watts?.toString() ?: "-",
+                        onMinus = { bike.onWatts(false) },
+                        onPlus = { bike.onWatts(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                    Stepper(
+                        label = stringResource(R.string.machine_cardio_heart_rate),
+                        value = draft.heartRate?.toString() ?: "-",
+                        onMinus = { bike.onHeartRate(false) },
+                        onPlus = { bike.onHeartRate(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Stepper(
+                        label = stringResource(R.string.machine_cardio_watts_per_kg),
+                        value = draft.wattsPerKg?.let { String.format(Locale.US, "%.1f", it) } ?: "-",
+                        onMinus = { bike.onWattsPerKg(false) },
+                        onPlus = { bike.onWattsPerKg(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                    Stepper(
+                        label = stringResource(R.string.machine_cardio_tss),
+                        value = draft.tss?.toString() ?: "-",
+                        onMinus = { bike.onTss(false) },
+                        onPlus = { bike.onTss(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Stepper(
+                        label = stringResource(R.string.machine_cardio_if),
+                        value = draft.intensityFactor?.let { String.format(Locale.US, "%.2f", it) } ?: "-",
+                        onMinus = { bike.onIntensityFactor(false) },
+                        onPlus = { bike.onIntensityFactor(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
 }
 
 /** The cardio bottom half: minutes / distance / intensity / calories steppers, then ONE Log button. No rest timer. */
@@ -959,6 +1087,7 @@ private fun CardioLogPanel(state: MachineUiState, actions: MachineActions) {
                 onCalories = actions.onStepCalories,
                 onDistance = actions.onStepDistance,
                 onIntensity = actions.onStepIntensity,
+                bike = actions.bikeSteps(),
             )
             BoraButton(
                 text = stringResource(R.string.machine_log_cardio, cardioLogText(state.cardio)),
@@ -992,6 +1121,7 @@ private fun EditCardioSheet(editor: CardioEditor, actions: MachineActions) {
                 onCalories = actions.onStepEditorCalories,
                 onDistance = actions.onStepEditorDistance,
                 onIntensity = actions.onStepEditorIntensity,
+                bike = actions.bikeEditorSteps(),
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(

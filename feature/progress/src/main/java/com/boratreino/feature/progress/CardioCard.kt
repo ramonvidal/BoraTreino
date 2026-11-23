@@ -75,6 +75,12 @@ internal fun CardioCard(report: StatsReport, modifier: Modifier = Modifier) {
         totals.intensityAvg?.let { intensity ->
             CardioLine(stringResource(R.string.stats_cardio_average_intensity, formatIntensity(intensity)))
         }
+        totals.powerAvg?.let { power ->
+            CardioLine(stringResource(R.string.stats_cardio_average_power, formatPower(power)))
+        }
+        totals.tssTotal?.let { tss ->
+            CardioLine(stringResource(R.string.stats_cardio_total_tss, formatTss(tss.toDouble())))
+        }
     }
 }
 

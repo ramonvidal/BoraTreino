@@ -6,8 +6,16 @@ import java.time.YearMonth
 /**
  * What a machine's progress chart measures. [ONE_RM] is for chart values only (see [ProgressRules.oneRmPoints]).
  * [SPEED] (km/h), [INTENSITY] and [DISTANCE] (km) are for cardio machines; for cardio, [MINUTES] is the time.
+ * [POWER], [HEART_RATE], [WATTS_PER_KG], [TSS] and [INTENSITY_FACTOR] are the bike console's summary values.
  */
-enum class ProgressMetric { WEIGHT, REPS, MINUTES, ONE_RM, SPEED, INTENSITY, DISTANCE }
+enum class ProgressMetric {
+    WEIGHT, REPS, MINUTES, ONE_RM, SPEED, INTENSITY, DISTANCE,
+    /** Cardio: average watts. */ POWER,
+    /** Cardio: average heart rate (bpm). */ HEART_RATE,
+    /** Cardio: watts per kg as the console shows it. */ WATTS_PER_KG,
+    /** Cardio: training stress score. */ TSS,
+    /** Cardio: intensity factor. */ INTENSITY_FACTOR,
+}
 
 /** One point per session for one machine; [topSet] is the set that gave [value]. */
 data class SessionPoint(
@@ -39,7 +47,7 @@ data class MachineProgress(
     /** Estimated 1RM per session (raw, unrounded); empty for cardio and when no set is eligible. */
     val oneRmPoints: List<SessionPoint> = emptyList(),
     /**
-     * Cardio machines only: points per cardio metric (SPEED, INTENSITY, DISTANCE, MINUTES), ascending; a metric
+     * Cardio machines only: points per cardio metric (see [ProgressRules.CARDIO_METRICS]), ascending; a metric
      * without data maps to an empty list. [points] holds the default one ([metric], see [ProgressRules.defaultCardioMetric]).
      */
     val cardioPoints: Map<ProgressMetric, List<SessionPoint>> = emptyMap(),
@@ -57,16 +65,29 @@ data class ProgressOverview(
 object ProgressRules {
     /** The cardio metrics a machine can chart, in the order the detail screen offers them. */
     val CARDIO_METRICS: List<ProgressMetric> =
-        listOf(ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE, ProgressMetric.MINUTES)
+        listOf(
+            ProgressMetric.SPEED,
+            ProgressMetric.POWER,
+            ProgressMetric.INTENSITY_FACTOR,
+            ProgressMetric.WATTS_PER_KG,
+            ProgressMetric.TSS,
+            ProgressMetric.HEART_RATE,
+            ProgressMetric.INTENSITY,
+            ProgressMetric.DISTANCE,
+            ProgressMetric.MINUTES,
+        )
 
     /**
-     * The cardio metric to show by default: SPEED when any working set has distance and time, else INTENSITY when
-     * any has an intensity and time, else MINUTES.
+     * The cardio metric to show by default: SPEED when any working set has distance and time, else POWER when any
+     * has watts and time, else INTENSITY_FACTOR when any has an IF and time, else INTENSITY when any has an
+     * intensity and time, else MINUTES.
      */
     fun defaultCardioMetric(sets: List<WorkoutSet>): ProgressMetric {
         val working = sets.working()
         return when {
             working.any { CardioRules.speedKmh(it.distanceM, it.seconds) != null } -> ProgressMetric.SPEED
+            working.any { it.watts != null && (it.seconds ?: 0) > 0 } -> ProgressMetric.POWER
+            working.any { it.intensityFactor != null && (it.seconds ?: 0) > 0 } -> ProgressMetric.INTENSITY_FACTOR
             working.any { it.intensity != null && (it.seconds ?: 0) > 0 } -> ProgressMetric.INTENSITY
             else -> ProgressMetric.MINUTES
         }
@@ -87,7 +108,9 @@ object ProgressRules {
      * of the session's sets; topSet = the longest set, ties -> later position.
      * Cardio metrics (sessions without the data have no point): SPEED = the session's total distance / total time
      * (km/h) over its sets with both; INTENSITY = time-weighted average intensity over its sets with intensity and
-     * time; DISTANCE = total distance in km (sessions with 0 are skipped). For these topSet = the longest
+     * time; POWER, HEART_RATE, WATTS_PER_KG and INTENSITY_FACTOR = the same time-weighted average of that value;
+     * TSS = the sum of the session's TSS (a session with one set shows that set's TSS);
+     * DISTANCE = total distance in km (sessions with 0 are skipped). For these topSet = the longest
      * contributing set, ties -> later position; setCount = the session's sets of the machine.
      */
     fun points(
@@ -100,8 +123,10 @@ object ProgressRules {
             ProgressMetric.REPS -> compareBy<WorkoutSet>({ it.reps ?: 0 }, { it.weightKg ?: 0.0 }, { it.position })
             ProgressMetric.MINUTES -> compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.position })
             ProgressMetric.ONE_RM -> return oneRmPoints(sets, sessionDates)
-            ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE ->
-                return cardioPoints(sets, sessionDates, metric)
+            ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE,
+            ProgressMetric.POWER, ProgressMetric.HEART_RATE, ProgressMetric.WATTS_PER_KG,
+            ProgressMetric.TSS, ProgressMetric.INTENSITY_FACTOR,
+            -> return cardioPoints(sets, sessionDates, metric)
         }
         return sets
             .filter { it.isWorking && it.sessionId in sessionDates }
@@ -112,8 +137,7 @@ object ProgressRules {
                     ProgressMetric.WEIGHT -> top.weightKg ?: 0.0
                     ProgressMetric.REPS -> (top.reps ?: 0).toDouble()
                     ProgressMetric.MINUTES -> CardioRules.minutesOf(group.sumOf { it.seconds ?: 0 }).toDouble()
-                    ProgressMetric.ONE_RM, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE ->
-                        top.weightKg ?: 0.0
+                    else -> top.weightKg ?: 0.0
                 }
                 SessionPoint(sessionId, sessionDates.getValue(sessionId), value, top, group.size)
             }
@@ -132,12 +156,22 @@ object ProgressRules {
                 val used = when (metric) {
                     ProgressMetric.SPEED -> group.filter { CardioRules.speedKmh(it.distanceM, it.seconds) != null }
                     ProgressMetric.INTENSITY -> group.filter { it.intensity != null && (it.seconds ?: 0) > 0 }
+                    ProgressMetric.POWER -> group.filter { it.watts != null && (it.seconds ?: 0) > 0 }
+                    ProgressMetric.HEART_RATE -> group.filter { it.heartRate != null && (it.seconds ?: 0) > 0 }
+                    ProgressMetric.WATTS_PER_KG -> group.filter { it.wattsPerKg != null && (it.seconds ?: 0) > 0 }
+                    ProgressMetric.INTENSITY_FACTOR -> group.filter { it.intensityFactor != null && (it.seconds ?: 0) > 0 }
+                    ProgressMetric.TSS -> group.filter { it.tss != null }
                     else -> group.filter { (it.distanceM ?: 0) > 0 }
                 }
                 if (used.isEmpty()) return@mapNotNull null
                 val value = when (metric) {
                     ProgressMetric.SPEED -> CardioRules.averageSpeedKmh(used)
                     ProgressMetric.INTENSITY -> CardioRules.intensityAverage(used)
+                    ProgressMetric.POWER -> CardioRules.powerAverage(used)
+                    ProgressMetric.HEART_RATE -> CardioRules.heartRateAverage(used)
+                    ProgressMetric.WATTS_PER_KG -> CardioRules.wattsPerKgAverage(used)
+                    ProgressMetric.INTENSITY_FACTOR -> CardioRules.intensityFactorAverage(used)
+                    ProgressMetric.TSS -> CardioRules.tssTotal(used)?.toDouble()
                     else -> used.sumOf { it.distanceM ?: 0 } / 1000.0
                 } ?: return@mapNotNull null
                 val top = used.maxWith(compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.position }))

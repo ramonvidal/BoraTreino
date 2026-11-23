@@ -78,5 +78,14 @@
     <string name="calendar_distance_km">Distance (km)</string>
     <string name="calendar_intensity">Intensity</string>
     <string name="calendar_intensity_short">int. %1$d</string>
+    <string name="calendar_bike_values">Bike values</string>
+    <string name="calendar_watts">Watts</string>
+    <string name="calendar_heart_rate">Heart rate</string>
+    <string name="calendar_watts_per_kg">Watts/kg</string>
+    <string name="calendar_tss">TSS</string>
+    <string name="calendar_if">IF</string>
+    <string name="calendar_watts_short">%1$d W</string>
+    <string name="calendar_bpm_short">%1$d bpm</string>
+    <string name="calendar_if_short">IF %1$.2f</string>
     <string name="calendar_dash">-</string>
 </resources>

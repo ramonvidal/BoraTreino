@@ -464,6 +464,31 @@ class MachineViewModel @Inject constructor(
         cardioOverride.value = d.copy(intensity = CardioRules.stepIntensity(d.intensity, up))
     }
 
+    internal fun stepWatts(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(watts = CardioRules.stepWatts(d.watts, up))
+    }
+
+    internal fun stepHeartRate(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(heartRate = CardioRules.stepHeartRate(d.heartRate, up))
+    }
+
+    internal fun stepWattsPerKg(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(wattsPerKg = CardioRules.stepWattsPerKg(d.wattsPerKg, up))
+    }
+
+    internal fun stepTss(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(tss = CardioRules.stepTss(d.tss, up))
+    }
+
+    internal fun stepIntensityFactor(up: Boolean) {
+        val d = state.value.cardio
+        cardioOverride.value = d.copy(intensityFactor = CardioRules.stepIntensityFactor(d.intensityFactor, up))
+    }
+
     internal fun showDistance() {
         distanceRevealed.value = true
     }
@@ -484,6 +509,16 @@ class MachineViewModel @Inject constructor(
     internal fun stepEditorDistance(up: Boolean) = editCardio { it.copy(distanceM = CardioRules.stepDistance(it.distanceM, up)) }
 
     internal fun stepEditorIntensity(up: Boolean) = editCardio { it.copy(intensity = CardioRules.stepIntensity(it.intensity, up)) }
+
+    internal fun stepEditorWatts(up: Boolean) = editCardio { it.copy(watts = CardioRules.stepWatts(it.watts, up)) }
+
+    internal fun stepEditorHeartRate(up: Boolean) = editCardio { it.copy(heartRate = CardioRules.stepHeartRate(it.heartRate, up)) }
+
+    internal fun stepEditorWattsPerKg(up: Boolean) = editCardio { it.copy(wattsPerKg = CardioRules.stepWattsPerKg(it.wattsPerKg, up)) }
+
+    internal fun stepEditorTss(up: Boolean) = editCardio { it.copy(tss = CardioRules.stepTss(it.tss, up)) }
+
+    internal fun stepEditorIntensityFactor(up: Boolean) = editCardio { it.copy(intensityFactor = CardioRules.stepIntensityFactor(it.intensityFactor, up)) }
 
     private fun editCardio(change: (CardioDraft) -> CardioDraft) {
         cardioEditor.value = cardioEditor.value?.let { it.copy(draft = change(it.draft)) }

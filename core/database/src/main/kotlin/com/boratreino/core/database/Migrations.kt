@@ -82,3 +82,14 @@ internal val MIGRATION_9_10: Migration = object : Migration(9, 10) {
         db.execSQL("ALTER TABLE workout_sets ADD COLUMN intensity INTEGER")
     }
 }
+
+/** Version 11: cardio sets can carry the bike console's watts, heart rate, watts/kg, TSS and IF; null for every earlier set. */
+internal val MIGRATION_10_11: Migration = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE workout_sets ADD COLUMN watts INTEGER")
+        db.execSQL("ALTER TABLE workout_sets ADD COLUMN heartRate INTEGER")
+        db.execSQL("ALTER TABLE workout_sets ADD COLUMN wattsPerKg REAL")
+        db.execSQL("ALTER TABLE workout_sets ADD COLUMN tss INTEGER")
+        db.execSQL("ALTER TABLE workout_sets ADD COLUMN intensityFactor REAL")
+    }
+}

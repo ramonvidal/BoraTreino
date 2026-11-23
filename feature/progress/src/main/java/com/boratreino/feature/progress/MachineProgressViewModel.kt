@@ -53,7 +53,7 @@ internal data class MachineProgressUiState(
     val oneRmBest: SessionPoint? = null,
     /** Cardio metrics that have data, in chip order; empty for other machines. Chips show only with two or more. */
     val cardioMetrics: List<ProgressMetric> = emptyList(),
-    /** The all-time best session per cardio metric in [cardioMetrics] (speed, intensity, distance, time), same order. */
+    /** The all-time best session per cardio metric in [cardioMetrics] (speed, power, IF, TSS, intensity, distance, time), same order. */
     val cardioRecords: List<CardioRecord> = emptyList(),
 )
 
@@ -114,7 +114,7 @@ internal fun buildMachineState(
         showOneRm = useOneRm,
         oneRmBest = ProgressRules.best(progress.oneRmPoints),
         cardioMetrics = cardioMetrics,
-        cardioRecords = cardioMetrics.mapNotNull { metric ->
+        cardioRecords = cardioMetrics.filter { it in RECORD_METRICS }.mapNotNull { metric ->
             ProgressRules.best(progress.pointsFor(metric))?.let { CardioRecord(metric, it) }
         },
     )
@@ -181,4 +181,15 @@ class MachineProgressViewModel @Inject constructor(
 }
 
 private const val SHOW_ONE_RM_KEY = "showOneRm"
+/** The cardio metrics that have an all-time best worth a line: heart rate and watts/kg have no "best". */
+private val RECORD_METRICS = setOf(
+    ProgressMetric.SPEED,
+    ProgressMetric.POWER,
+    ProgressMetric.INTENSITY_FACTOR,
+    ProgressMetric.TSS,
+    ProgressMetric.INTENSITY,
+    ProgressMetric.DISTANCE,
+    ProgressMetric.MINUTES,
+)
+
 private const val CARDIO_METRIC_KEY = "cardioMetric"

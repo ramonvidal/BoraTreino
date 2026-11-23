@@ -52,6 +52,11 @@ internal fun valueText(metric: ProgressMetric, value: Double): String = when (me
     ProgressMetric.SPEED -> stringResource(R.string.progress_value_speed, formatSpeed(value))
     ProgressMetric.INTENSITY -> formatIntensity(value)
     ProgressMetric.DISTANCE -> stringResource(CoreUiR.string.cardio_km, formatKm(value))
+    ProgressMetric.POWER -> stringResource(R.string.progress_value_power, formatPower(value))
+    ProgressMetric.HEART_RATE -> stringResource(R.string.progress_value_heart_rate, formatPower(value))
+    ProgressMetric.WATTS_PER_KG -> stringResource(R.string.progress_value_watts_per_kg, formatWattsPerKg(value))
+    ProgressMetric.TSS -> stringResource(R.string.progress_value_tss, formatTss(value))
+    ProgressMetric.INTENSITY_FACTOR -> stringResource(R.string.progress_value_if, formatIntensityFactor(value))
 }
 
 /** "+10 kg", "-5 kg" or "+3 reps". */
@@ -64,7 +69,15 @@ internal fun deltaText(metric: ProgressMetric, delta: Double): String = when (me
     ProgressMetric.SPEED -> stringResource(R.string.progress_value_speed, signedEstimate(delta))
     ProgressMetric.INTENSITY -> signedEstimate(delta)
     ProgressMetric.DISTANCE -> stringResource(CoreUiR.string.cardio_km, signedEstimate(delta))
+    ProgressMetric.POWER -> stringResource(R.string.progress_value_power, signedWith(delta, { v -> formatPower(v) }))
+    ProgressMetric.HEART_RATE -> stringResource(R.string.progress_value_heart_rate, signedWith(delta, { v -> formatPower(v) }))
+    ProgressMetric.WATTS_PER_KG -> stringResource(R.string.progress_value_watts_per_kg, signedWith(delta, { v -> formatWattsPerKg(v) }))
+    ProgressMetric.TSS -> stringResource(R.string.progress_value_tss, signedWith(delta, { v -> formatTss(v) }))
+    ProgressMetric.INTENSITY_FACTOR -> stringResource(R.string.progress_value_if, signedWith(delta, { v -> formatIntensityFactor(v) }))
 }
+
+private fun signedWith(delta: Double, format: (Double) -> String): String =
+    if (delta > 0) "+" + format(delta) else format(delta)
 
 /** "101.3 kg est. (80 kg × 8)" for an estimated 1RM point: the estimate and the set it came from. */
 @Composable
@@ -88,8 +101,10 @@ internal fun topText(metric: ProgressMetric, point: SessionPoint): String = when
         if (reps == null) stringResource(CoreUiR.string.weight_kg, weight) else stringResource(CoreUiR.string.set_text, weight, reps)
     }
     ProgressMetric.ONE_RM -> oneRmText(point)
-    ProgressMetric.REPS, ProgressMetric.MINUTES, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE ->
-        valueText(metric, point.value)
+    ProgressMetric.REPS, ProgressMetric.MINUTES, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE,
+    ProgressMetric.POWER, ProgressMetric.HEART_RATE, ProgressMetric.WATTS_PER_KG, ProgressMetric.TSS,
+    ProgressMetric.INTENSITY_FACTOR,
+    -> valueText(metric, point.value)
 }
 
 /** "3 sets". */
@@ -131,6 +146,23 @@ internal fun formatSpeed(kmh: Double, locale: Locale = Locale.getDefault()): Str
 
 /** An intensity as the bike shows it (a whole number); an average keeps one decimal when it has one: 12.0 -> "12", 12.4 -> "12.4". */
 internal fun formatIntensity(value: Double, locale: Locale = Locale.getDefault()): String = formatDecimal(value, 1, locale)
+
+/** Watts or bpm as a whole number: 159.6 -> "160". */
+internal fun formatPower(value: Double, locale: Locale = Locale.getDefault()): String = formatDecimal(value, 0, locale)
+
+/** Watts per kg as the console shows it, one decimal: 1.2 -> "1.2", 1.0 -> "1.0". */
+internal fun formatWattsPerKg(value: Double, locale: Locale = Locale.getDefault()): String = formatOneDecimal(value, locale)
+
+/** A training stress score as a whole number: 48.4 -> "48". */
+internal fun formatTss(value: Double, locale: Locale = Locale.getDefault()): String = formatDecimal(value, 0, locale)
+
+/** An intensity factor with exactly two decimals: 0.79 -> "0.79", 1.0 -> "1.00". */
+internal fun formatIntensityFactor(value: Double, locale: Locale = Locale.getDefault()): String =
+    NumberFormat.getNumberInstance(locale).apply {
+        minimumFractionDigits = 2
+        maximumFractionDigits = 2
+        isGroupingUsed = false
+    }.format(value)
 
 /** Whole hours of [minutes]: 375 -> 6. */
 internal fun hoursOf(minutes: Int): Int = minutes.coerceAtLeast(0) / 60

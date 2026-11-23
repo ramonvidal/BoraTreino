@@ -226,7 +226,7 @@ private fun ViewChips(showOneRm: Boolean, onShowOneRm: (Boolean) -> Unit) {
     }
 }
 
-/** Speed | Intensity | Distance | Time: which cardio measure the chart and the sessions follow. */
+/** Speed | Power | IF | W/kg | TSS | Heart rate | Intensity | Distance | Time (those with data): which cardio measure the chart and the sessions follow. */
 @Composable
 private fun CardioMetricChips(metrics: List<ProgressMetric>, selected: ProgressMetric, onSelect: (ProgressMetric) -> Unit) {
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -240,18 +240,23 @@ private fun CardioMetricChips(metrics: List<ProgressMetric>, selected: ProgressM
     }
 }
 
-/** "Speed", "Intensity", "Distance" or "Time". */
+/** The chip label of a cardio metric: "Speed", "Power", "IF", "W/kg", "TSS", "Heart rate", "Intensity", "Distance" or "Time". */
 @Composable
 internal fun cardioMetricName(metric: ProgressMetric): String = stringResource(
     when (metric) {
         ProgressMetric.SPEED -> R.string.progress_metric_speed
+        ProgressMetric.POWER -> R.string.progress_metric_power
+        ProgressMetric.INTENSITY_FACTOR -> R.string.progress_metric_if
+        ProgressMetric.WATTS_PER_KG -> R.string.progress_metric_watts_per_kg
+        ProgressMetric.TSS -> R.string.progress_metric_tss
+        ProgressMetric.HEART_RATE -> R.string.progress_metric_heart_rate
         ProgressMetric.INTENSITY -> R.string.progress_metric_intensity
         ProgressMetric.DISTANCE -> R.string.progress_metric_distance
         else -> R.string.progress_metric_time
     },
 )
 
-/** The all-time bests of a cardio exercise, one neutral line each: best speed, highest intensity, longest distance, longest time. */
+/** The all-time bests of a cardio exercise, one neutral line each: best speed, power, IF and TSS, highest intensity, longest distance, longest time. */
 @Composable
 private fun CardioRecordsCard(records: List<CardioRecord>) {
     BoraCard(modifier = Modifier.fillMaxWidth()) {
@@ -262,6 +267,9 @@ private fun CardioRecordsCard(records: List<CardioRecord>) {
                 val label = stringResource(
                     when (record.metric) {
                         ProgressMetric.SPEED -> R.string.progress_record_speed
+                        ProgressMetric.POWER -> R.string.progress_record_power
+                        ProgressMetric.INTENSITY_FACTOR -> R.string.progress_record_if
+                        ProgressMetric.TSS -> R.string.progress_record_tss
                         ProgressMetric.INTENSITY -> R.string.progress_record_intensity
                         ProgressMetric.DISTANCE -> R.string.progress_record_distance
                         else -> R.string.progress_record_time
@@ -305,6 +313,11 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
         ProgressMetric.SPEED -> stringResource(R.string.progress_chart_title_speed)
         ProgressMetric.INTENSITY -> stringResource(R.string.progress_chart_title_intensity)
         ProgressMetric.DISTANCE -> stringResource(R.string.progress_chart_title_distance)
+        ProgressMetric.POWER -> stringResource(R.string.progress_chart_title_power)
+        ProgressMetric.HEART_RATE -> stringResource(R.string.progress_chart_title_heart_rate)
+        ProgressMetric.WATTS_PER_KG -> stringResource(R.string.progress_chart_title_watts_per_kg)
+        ProgressMetric.TSS -> stringResource(R.string.progress_chart_title_tss)
+        ProgressMetric.INTENSITY_FACTOR -> stringResource(R.string.progress_chart_title_if)
     }
     BoraCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -352,7 +365,10 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
 
 /** Plain number formatting for chart labels: estimates keep one decimal, other values up to two. */
 private fun valueFormatter(metric: ProgressMetric): (Double) -> String = when (metric) {
-    ProgressMetric.ONE_RM, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE -> ::formatEstimate1
+    ProgressMetric.INTENSITY_FACTOR -> { value -> formatIntensityFactor(value) }
+    ProgressMetric.ONE_RM, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE,
+    ProgressMetric.POWER, ProgressMetric.HEART_RATE, ProgressMetric.WATTS_PER_KG, ProgressMetric.TSS,
+    -> ::formatEstimate1
     else -> ::formatKg1
 }
 
@@ -369,7 +385,7 @@ private fun chartDescription(state: MachineProgressUiState): String {
     val best = points.maxOf { it.value }
     val metric = state.metric
     val number = valueFormatter(metric)
-    if (metric == ProgressMetric.SPEED || metric == ProgressMetric.INTENSITY || metric == ProgressMetric.DISTANCE) {
+    if (metric.isCardioValue()) {
         val name = cardioMetricName(metric)
         return if (points.size < 2) {
             stringResource(

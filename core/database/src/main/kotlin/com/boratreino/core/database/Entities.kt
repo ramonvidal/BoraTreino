@@ -166,4 +166,10 @@ internal data class WorkoutSetEntity(
     @ColumnInfo(defaultValue = "'NORMAL'") val type: String = "NORMAL",
     /** Cardio intensity as the console shows it; null = not logged (and for every set logged before version 10). */
     val intensity: Int? = null,
+    /** Cardio console values (version 11); null = not logged (and for every set logged before version 11). */
+    val watts: Int? = null,
+    val heartRate: Int? = null,
+    val wattsPerKg: Double? = null,
+    val tss: Int? = null,
+    val intensityFactor: Double? = null,
 )

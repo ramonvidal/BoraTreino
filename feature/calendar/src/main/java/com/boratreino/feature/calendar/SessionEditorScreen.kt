@@ -4,11 +4,13 @@ import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.weightLabel
 import com.boratreino.core.ui.draftText
 import com.boratreino.core.ui.showUndo
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -34,7 +36,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -65,6 +69,7 @@ import com.boratreino.core.ui.setTypeLabel
 import com.boratreino.core.ui.NumberPadDialog
 import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.label
+import java.util.Locale
 import kotlinx.coroutines.launch
 import com.boratreino.core.ui.R as CoreUiR
 
@@ -87,6 +92,11 @@ internal data class SessionEditorActions(
     val onStepEditorCalories: (up: Boolean) -> Unit = {},
     val onStepEditorDistance: (up: Boolean) -> Unit = {},
     val onStepEditorIntensity: (up: Boolean) -> Unit = {},
+    val onStepEditorWatts: (up: Boolean) -> Unit = {},
+    val onStepEditorHeartRate: (up: Boolean) -> Unit = {},
+    val onStepEditorWattsPerKg: (up: Boolean) -> Unit = {},
+    val onStepEditorTss: (up: Boolean) -> Unit = {},
+    val onStepEditorIntensityFactor: (up: Boolean) -> Unit = {},
     val onOpenPad: (PadTarget) -> Unit = {},
     val onConfirmPad: (String) -> Unit = {},
     val onDismissPad: () -> Unit = {},
@@ -142,6 +152,11 @@ internal fun SessionEditorScreen(
             onStepEditorCalories = viewModel::stepEditorCalories,
             onStepEditorDistance = viewModel::stepEditorDistance,
             onStepEditorIntensity = viewModel::stepEditorIntensity,
+            onStepEditorWatts = viewModel::stepEditorWatts,
+            onStepEditorHeartRate = viewModel::stepEditorHeartRate,
+            onStepEditorWattsPerKg = viewModel::stepEditorWattsPerKg,
+            onStepEditorTss = viewModel::stepEditorTss,
+            onStepEditorIntensityFactor = viewModel::stepEditorIntensityFactor,
             onOpenPad = viewModel::openPad,
             onConfirmPad = viewModel::confirmPad,
             onDismissPad = viewModel::dismissPad,
@@ -407,8 +422,90 @@ private fun cardioRowText(d: CardioDraft): String {
         if (d.calories > 0) add(stringResource(CoreUiR.string.cardio_calories, d.calories))
         if (d.distanceM > 0) add(stringResource(CoreUiR.string.cardio_km, formatKg(d.distanceM / 1000.0)))
         d.intensity?.let { add(stringResource(R.string.calendar_intensity_short, it)) }
+        d.watts?.let { add(stringResource(R.string.calendar_watts_short, it)) }
+        d.heartRate?.let { add(stringResource(R.string.calendar_bpm_short, it)) }
+        d.intensityFactor?.let { add(stringResource(R.string.calendar_if_short, it)) }
     }
     return if (parts.isEmpty()) "-" else parts.joinToString(" · ")
+}
+
+private fun hasBikeValues(e: SetEdit): Boolean =
+    e.watts != null || e.heartRate != null || e.wattsPerKg != null || e.tss != null || e.intensityFactor != null
+
+/** "Bike values": collapsed by default, expands in place to five optional steppers; open when the set has any. */
+@Composable
+private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, dash: String) {
+    var expanded by remember { mutableStateOf(hasBikeValues(editor)) }
+    val title = stringResource(R.string.calendar_bike_values)
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = title) { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                painterResource(if (expanded) CoreUiR.drawable.ic_expand_less else CoreUiR.drawable.ic_expand_more),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        AnimatedVisibility(visible = expanded) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Stepper(
+                        label = stringResource(R.string.calendar_watts),
+                        value = editor.watts?.toString() ?: dash,
+                        onMinus = { actions.onStepEditorWatts(false) },
+                        onPlus = { actions.onStepEditorWatts(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                    Stepper(
+                        label = stringResource(R.string.calendar_heart_rate),
+                        value = editor.heartRate?.toString() ?: dash,
+                        onMinus = { actions.onStepEditorHeartRate(false) },
+                        onPlus = { actions.onStepEditorHeartRate(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Stepper(
+                        label = stringResource(R.string.calendar_watts_per_kg),
+                        value = editor.wattsPerKg?.let { String.format(Locale.US, "%.1f", it) } ?: dash,
+                        onMinus = { actions.onStepEditorWattsPerKg(false) },
+                        onPlus = { actions.onStepEditorWattsPerKg(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                    Stepper(
+                        label = stringResource(R.string.calendar_tss),
+                        value = editor.tss?.toString() ?: dash,
+                        onMinus = { actions.onStepEditorTss(false) },
+                        onPlus = { actions.onStepEditorTss(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Stepper(
+                        label = stringResource(R.string.calendar_if),
+                        value = editor.intensityFactor?.let { String.format(Locale.US, "%.2f", it) } ?: dash,
+                        onMinus = { actions.onStepEditorIntensityFactor(false) },
+                        onPlus = { actions.onStepEditorIntensityFactor(true) },
+                        onValueClick = {},
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
 }
 
 /** Fix or delete a set: the two steppers, Delete and Save. */
@@ -462,6 +559,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         modifier = Modifier.weight(1f),
                     )
                 }
+                BikeValuesSection(editor, actions, dash)
             } else {
                 Stepper(
                     label = weightLabel(editor.machine),
