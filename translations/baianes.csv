@@ -175,6 +175,7 @@ feature/calendar,calendar_watts_short,,%1$d W,%1$d W
 feature/calendar,calendar_bpm_short,,%1$d bpm,%1$d bpm
 feature/calendar,calendar_if_short,,IF %1$.2f,IF %1$.2f
 feature/calendar,calendar_dash,,-,-
+feature/calendar,calendar_type_value,,Type the number,Digite o número
 feature/progress,progress_title,,Progress,Evolução
 feature/progress,progress_empty,,Log a training to see your progress.,Registre um treino pra ver sua evolução. Bora!
 feature/progress,progress_summary,,This month: %1$s · %2$s,Neste mês: %1$s · %2$s

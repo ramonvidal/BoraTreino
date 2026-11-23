@@ -67,6 +67,7 @@
     <string name="calendar_bpm_short">%1$d bpm</string>
     <string name="calendar_if_short">IF %1$.2f</string>
     <string name="calendar_dash">-</string>
+    <string name="calendar_type_value">Digite o número</string>
     <plurals name="calendar_streak">
         <item quantity="one">Sequência: %d semana</item>
         <item quantity="other">Sequência: %d semanas</item>

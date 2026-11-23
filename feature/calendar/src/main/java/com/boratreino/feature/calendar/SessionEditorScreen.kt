@@ -480,6 +480,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onPlus = { actions.onStepEditorWatts(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_WATTS) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -489,6 +490,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onPlus = { actions.onStepEditorHeartRate(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_HEART_RATE) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -500,6 +502,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onPlus = { actions.onStepEditorWattsPerKg(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_WATTS_PER_KG) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -509,6 +512,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onPlus = { actions.onStepEditorTss(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_TSS) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -520,6 +524,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onPlus = { actions.onStepEditorIntensityFactor(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_INTENSITY_FACTOR) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.weight(1f))
@@ -552,6 +557,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         onPlus = { actions.onStepEditorMinutes(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_MINUTES) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -561,6 +567,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         onPlus = { actions.onStepEditorDistance(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_DISTANCE_KM) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -572,6 +579,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         onPlus = { actions.onStepEditorIntensity(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_INTENSITY) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -581,6 +589,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         onPlus = { actions.onStepEditorCalories(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_CALORIES) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.calendar_type_value),
                         modifier = Modifier.weight(1f),
                     )
                 }

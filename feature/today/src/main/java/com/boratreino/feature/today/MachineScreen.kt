@@ -956,6 +956,7 @@ private fun CardioSteppers(
             onPlus = { onMinutes(true) },
             onValueClick = { onOpenPad(CardioField.MINUTES) },
             compact = true,
+            valueClickLabel = stringResource(R.string.machine_type_value),
             modifier = Modifier.weight(1f),
         )
         if (showDistance) {
@@ -966,6 +967,7 @@ private fun CardioSteppers(
                 onPlus = { onDistance(true) },
                 onValueClick = { onOpenPad(CardioField.DISTANCE_KM) },
                 compact = true,
+                valueClickLabel = stringResource(R.string.machine_type_value),
                 modifier = Modifier.weight(1f),
             )
         } else {
@@ -984,6 +986,7 @@ private fun CardioSteppers(
             onPlus = { onIntensity(true) },
             onValueClick = { onOpenPad(CardioField.INTENSITY) },
             compact = true,
+            valueClickLabel = stringResource(R.string.machine_type_value),
             modifier = Modifier.weight(1f),
         )
         Stepper(
@@ -993,6 +996,7 @@ private fun CardioSteppers(
             onPlus = { onCalories(true) },
             onValueClick = { onOpenPad(CardioField.CALORIES) },
             compact = true,
+            valueClickLabel = stringResource(R.string.machine_type_value),
             modifier = Modifier.weight(1f),
         )
     }
@@ -1072,6 +1076,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions, onOpenPad: (Ca
                         onPlus = { bike.onWatts(true) },
                         onValueClick = { onOpenPad(CardioField.WATTS) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.machine_type_value),
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -1081,6 +1086,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions, onOpenPad: (Ca
                         onPlus = { bike.onHeartRate(true) },
                         onValueClick = { onOpenPad(CardioField.HEART_RATE) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.machine_type_value),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -1092,6 +1098,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions, onOpenPad: (Ca
                         onPlus = { bike.onWattsPerKg(true) },
                         onValueClick = { onOpenPad(CardioField.WATTS_PER_KG) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.machine_type_value),
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -1101,6 +1108,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions, onOpenPad: (Ca
                         onPlus = { bike.onTss(true) },
                         onValueClick = { onOpenPad(CardioField.TSS) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.machine_type_value),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -1112,6 +1120,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions, onOpenPad: (Ca
                         onPlus = { bike.onIntensityFactor(true) },
                         onValueClick = { onOpenPad(CardioField.INTENSITY_FACTOR) },
                         compact = true,
+                        valueClickLabel = stringResource(R.string.machine_type_value),
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.weight(1f))
