@@ -46,19 +46,13 @@ internal data class SetEdit(
     val minutes: Int = 0,
     val calories: Int = 0,
     val distanceM: Int = 0,
-    /** Cardio: the bike's intensity, null = not logged. */
-    val intensity: Int? = null,
-    /** Cardio: the bike console's values, null = not logged. */
-    val watts: Int? = null,
-    val heartRate: Int? = null,
-    val wattsPerKg: Double? = null,
-    val tss: Int? = null,
-    val intensityFactor: Double? = null,
+    /** Cardio: the intensity (e.g. 0.79), null = not logged. */
+    val intensity: Double? = null,
     val type: SetType = SetType.NORMAL,
 ) {
     val isCardio: Boolean get() = machine.kind == MachineKind.CARDIO
 
-    val cardioDraft: CardioDraft get() = CardioDraft(minutes, calories, distanceM, intensity, watts, heartRate, wattsPerKg, tss, intensityFactor)
+    val cardioDraft: CardioDraft get() = CardioDraft(minutes, calories, distanceM, intensity)
 
     /** A cardio set with nothing logged is not a set; Save waits until there is something. */
     val canSave: Boolean get() = !isCardio || CardioRules.canLog(cardioDraft)
@@ -72,11 +66,6 @@ internal enum class PadTarget(val cardioField: CardioField? = null) {
     EDIT_DISTANCE_KM(CardioField.DISTANCE_KM),
     EDIT_INTENSITY(CardioField.INTENSITY),
     EDIT_CALORIES(CardioField.CALORIES),
-    EDIT_WATTS(CardioField.WATTS),
-    EDIT_HEART_RATE(CardioField.HEART_RATE),
-    EDIT_WATTS_PER_KG(CardioField.WATTS_PER_KG),
-    EDIT_TSS(CardioField.TSS),
-    EDIT_INTENSITY_FACTOR(CardioField.INTENSITY_FACTOR),
 }
 
 /** The number pad dialog: what it edits and the text it starts with. */
@@ -239,11 +228,6 @@ class SessionEditorViewModel @Inject constructor(
             calories = cardio.calories,
             distanceM = cardio.distanceM,
             intensity = cardio.intensity,
-            watts = cardio.watts,
-            heartRate = cardio.heartRate,
-            wattsPerKg = cardio.wattsPerKg,
-            tss = cardio.tss,
-            intensityFactor = cardio.intensityFactor,
             type = if (entry.machine.kind == MachineKind.CARDIO) SetType.NORMAL else set.type,
         )
     }
@@ -281,26 +265,6 @@ class SessionEditorViewModel @Inject constructor(
 
     internal fun stepEditorIntensity(up: Boolean) {
         editor.value = editor.value?.let { it.copy(intensity = CardioRules.stepIntensity(it.intensity, up)) }
-    }
-
-    internal fun stepEditorWatts(up: Boolean) {
-        editor.value = editor.value?.let { it.copy(watts = CardioRules.stepWatts(it.watts, up)) }
-    }
-
-    internal fun stepEditorHeartRate(up: Boolean) {
-        editor.value = editor.value?.let { it.copy(heartRate = CardioRules.stepHeartRate(it.heartRate, up)) }
-    }
-
-    internal fun stepEditorWattsPerKg(up: Boolean) {
-        editor.value = editor.value?.let { it.copy(wattsPerKg = CardioRules.stepWattsPerKg(it.wattsPerKg, up)) }
-    }
-
-    internal fun stepEditorTss(up: Boolean) {
-        editor.value = editor.value?.let { it.copy(tss = CardioRules.stepTss(it.tss, up)) }
-    }
-
-    internal fun stepEditorIntensityFactor(up: Boolean) {
-        editor.value = editor.value?.let { it.copy(intensityFactor = CardioRules.stepIntensityFactor(it.intensityFactor, up)) }
     }
 
     internal fun saveEditor() {
@@ -366,11 +330,6 @@ class SessionEditorViewModel @Inject constructor(
             calories = d.calories,
             distanceM = d.distanceM,
             intensity = d.intensity,
-            watts = d.watts,
-            heartRate = d.heartRate,
-            wattsPerKg = d.wattsPerKg,
-            tss = d.tss,
-            intensityFactor = d.intensityFactor,
         )
     }
 

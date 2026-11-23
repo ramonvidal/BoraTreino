@@ -69,6 +69,7 @@ import com.boratreino.core.ui.setTypeLabel
 import com.boratreino.core.ui.NumberPadDialog
 import com.boratreino.core.ui.Stepper
 import com.boratreino.core.ui.label
+import java.text.NumberFormat
 import java.util.Locale
 import kotlinx.coroutines.launch
 import com.boratreino.core.ui.R as CoreUiR
@@ -92,11 +93,6 @@ internal data class SessionEditorActions(
     val onStepEditorCalories: (up: Boolean) -> Unit = {},
     val onStepEditorDistance: (up: Boolean) -> Unit = {},
     val onStepEditorIntensity: (up: Boolean) -> Unit = {},
-    val onStepEditorWatts: (up: Boolean) -> Unit = {},
-    val onStepEditorHeartRate: (up: Boolean) -> Unit = {},
-    val onStepEditorWattsPerKg: (up: Boolean) -> Unit = {},
-    val onStepEditorTss: (up: Boolean) -> Unit = {},
-    val onStepEditorIntensityFactor: (up: Boolean) -> Unit = {},
     val onOpenPad: (PadTarget) -> Unit = {},
     val onConfirmPad: (String) -> Unit = {},
     val onDismissPad: () -> Unit = {},
@@ -152,11 +148,6 @@ internal fun SessionEditorScreen(
             onStepEditorCalories = viewModel::stepEditorCalories,
             onStepEditorDistance = viewModel::stepEditorDistance,
             onStepEditorIntensity = viewModel::stepEditorIntensity,
-            onStepEditorWatts = viewModel::stepEditorWatts,
-            onStepEditorHeartRate = viewModel::stepEditorHeartRate,
-            onStepEditorWattsPerKg = viewModel::stepEditorWattsPerKg,
-            onStepEditorTss = viewModel::stepEditorTss,
-            onStepEditorIntensityFactor = viewModel::stepEditorIntensityFactor,
             onOpenPad = viewModel::openPad,
             onConfirmPad = viewModel::confirmPad,
             onDismissPad = viewModel::dismissPad,
@@ -245,11 +236,6 @@ internal fun SessionEditorContent(
             PadTarget.EDIT_DISTANCE_KM -> stringResource(R.string.calendar_distance_km)
             PadTarget.EDIT_INTENSITY -> stringResource(R.string.calendar_intensity)
             PadTarget.EDIT_CALORIES -> stringResource(R.string.calendar_calories)
-            PadTarget.EDIT_WATTS -> stringResource(R.string.calendar_watts)
-            PadTarget.EDIT_HEART_RATE -> stringResource(R.string.calendar_heart_rate)
-            PadTarget.EDIT_WATTS_PER_KG -> stringResource(R.string.calendar_watts_per_kg)
-            PadTarget.EDIT_TSS -> stringResource(R.string.calendar_tss)
-            PadTarget.EDIT_INTENSITY_FACTOR -> stringResource(R.string.calendar_if)
         }
         NumberPadDialog(
             title = title,
@@ -427,112 +413,25 @@ private fun MachinePicker(machines: List<Machine>, actions: SessionEditorActions
     }
 }
 
-/** "45 min · 520 kcal · 18.4 km · int. 12": a cardio set's line; unset parts are left out, nothing reads "-". */
+/** "45 min · 520 kcal · 18.4 km · int. 0.79": a cardio set's line; unset parts are left out, nothing reads "-". */
 @Composable
 private fun cardioRowText(d: CardioDraft): String {
     val parts = buildList {
         if (d.minutes > 0) add(stringResource(CoreUiR.string.cardio_minutes, d.minutes))
         if (d.calories > 0) add(stringResource(CoreUiR.string.cardio_calories, d.calories))
         if (d.distanceM > 0) add(stringResource(CoreUiR.string.cardio_km, formatKg(d.distanceM / 1000.0)))
-        d.intensity?.let { add(stringResource(R.string.calendar_intensity_short, it)) }
-        d.watts?.let { add(stringResource(R.string.calendar_watts_short, it)) }
-        d.heartRate?.let { add(stringResource(R.string.calendar_bpm_short, it)) }
-        d.intensityFactor?.let { add(stringResource(R.string.calendar_if_short, it)) }
+        d.intensity?.let { add(stringResource(R.string.calendar_intensity_short, formatIntensity(it))) }
     }
     return if (parts.isEmpty()) "-" else parts.joinToString(" · ")
 }
 
-private fun hasBikeValues(e: SetEdit): Boolean =
-    e.watts != null || e.heartRate != null || e.wattsPerKg != null || e.tss != null || e.intensityFactor != null
-
-/** "Bike values": collapsed by default, expands in place to five optional steppers; open when the set has any. */
-@Composable
-private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, dash: String) {
-    var expanded by remember { mutableStateOf(hasBikeValues(editor)) }
-    // A typed value landing in this section opens it.
-    val hasValues = hasBikeValues(editor)
-    LaunchedEffect(hasValues) { if (hasValues) expanded = true }
-    val title = stringResource(R.string.calendar_bike_values)
-    Column(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = title) { expanded = !expanded },
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                title,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            Icon(
-                painterResource(if (expanded) CoreUiR.drawable.ic_expand_less else CoreUiR.drawable.ic_expand_more),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Stepper(
-                        label = stringResource(R.string.calendar_watts),
-                        value = editor.watts?.toString() ?: dash,
-                        onMinus = { actions.onStepEditorWatts(false) },
-                        onPlus = { actions.onStepEditorWatts(true) },
-                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_WATTS) },
-                        compact = true,
-                        valueClickLabel = stringResource(R.string.calendar_type_value),
-                        modifier = Modifier.weight(1f),
-                    )
-                    Stepper(
-                        label = stringResource(R.string.calendar_heart_rate),
-                        value = editor.heartRate?.toString() ?: dash,
-                        onMinus = { actions.onStepEditorHeartRate(false) },
-                        onPlus = { actions.onStepEditorHeartRate(true) },
-                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_HEART_RATE) },
-                        compact = true,
-                        valueClickLabel = stringResource(R.string.calendar_type_value),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Stepper(
-                        label = stringResource(R.string.calendar_watts_per_kg),
-                        value = editor.wattsPerKg?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: dash,
-                        onMinus = { actions.onStepEditorWattsPerKg(false) },
-                        onPlus = { actions.onStepEditorWattsPerKg(true) },
-                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_WATTS_PER_KG) },
-                        compact = true,
-                        valueClickLabel = stringResource(R.string.calendar_type_value),
-                        modifier = Modifier.weight(1f),
-                    )
-                    Stepper(
-                        label = stringResource(R.string.calendar_tss),
-                        value = editor.tss?.toString() ?: dash,
-                        onMinus = { actions.onStepEditorTss(false) },
-                        onPlus = { actions.onStepEditorTss(true) },
-                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_TSS) },
-                        compact = true,
-                        valueClickLabel = stringResource(R.string.calendar_type_value),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Stepper(
-                        label = stringResource(R.string.calendar_if),
-                        value = editor.intensityFactor?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: dash,
-                        onMinus = { actions.onStepEditorIntensityFactor(false) },
-                        onPlus = { actions.onStepEditorIntensityFactor(true) },
-                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_INTENSITY_FACTOR) },
-                        compact = true,
-                        valueClickLabel = stringResource(R.string.calendar_type_value),
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
+/** Intensity in the app locale: two decimals when [fixed] (stepper), else plain ("0.79", "12", "0.7"). */
+private fun formatIntensity(intensity: Double, fixed: Boolean = false, locale: Locale = Locale.getDefault()): String =
+    NumberFormat.getNumberInstance(locale).apply {
+        minimumFractionDigits = if (fixed) 2 else 0
+        maximumFractionDigits = 2
+        isGroupingUsed = false
+    }.format(intensity)
 
 /** Fix or delete a set: the two steppers, Delete and Save. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -574,7 +473,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Stepper(
                         label = stringResource(R.string.calendar_intensity),
-                        value = editor.intensity?.toString() ?: dash,
+                        value = editor.intensity?.let { formatIntensity(it, fixed = true) } ?: dash,
                         onMinus = { actions.onStepEditorIntensity(false) },
                         onPlus = { actions.onStepEditorIntensity(true) },
                         onValueClick = { actions.onOpenPad(PadTarget.EDIT_INTENSITY) },
@@ -593,7 +492,6 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         modifier = Modifier.weight(1f),
                     )
                 }
-                BikeValuesSection(editor, actions, dash)
             } else {
                 Stepper(
                     label = weightLabel(editor.machine),
