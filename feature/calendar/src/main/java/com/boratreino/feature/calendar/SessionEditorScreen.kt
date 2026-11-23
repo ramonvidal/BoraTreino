@@ -463,6 +463,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onMinus = { actions.onStepEditorWatts(false) },
                         onPlus = { actions.onStepEditorWatts(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -471,6 +472,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onMinus = { actions.onStepEditorHeartRate(false) },
                         onPlus = { actions.onStepEditorHeartRate(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -481,6 +483,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onMinus = { actions.onStepEditorWattsPerKg(false) },
                         onPlus = { actions.onStepEditorWattsPerKg(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -489,6 +492,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onMinus = { actions.onStepEditorTss(false) },
                         onPlus = { actions.onStepEditorTss(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -499,6 +503,7 @@ private fun BikeValuesSection(editor: SetEdit, actions: SessionEditorActions, da
                         onMinus = { actions.onStepEditorIntensityFactor(false) },
                         onPlus = { actions.onStepEditorIntensityFactor(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.weight(1f))
@@ -530,6 +535,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         onMinus = { actions.onStepEditorMinutes(false) },
                         onPlus = { actions.onStepEditorMinutes(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -538,6 +544,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         onMinus = { actions.onStepEditorDistance(false) },
                         onPlus = { actions.onStepEditorDistance(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -548,6 +555,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         onMinus = { actions.onStepEditorIntensity(false) },
                         onPlus = { actions.onStepEditorIntensity(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -556,6 +564,7 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                         onMinus = { actions.onStepEditorCalories(false) },
                         onPlus = { actions.onStepEditorCalories(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                 }

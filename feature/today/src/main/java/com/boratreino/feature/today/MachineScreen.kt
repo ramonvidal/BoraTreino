@@ -943,6 +943,7 @@ private fun CardioSteppers(
             onMinus = { onMinutes(false) },
             onPlus = { onMinutes(true) },
             onValueClick = {},
+            compact = true,
             modifier = Modifier.weight(1f),
         )
         if (showDistance) {
@@ -952,6 +953,7 @@ private fun CardioSteppers(
                 onMinus = { onDistance(false) },
                 onPlus = { onDistance(true) },
                 onValueClick = {},
+                compact = true,
                 modifier = Modifier.weight(1f),
             )
         } else {
@@ -969,6 +971,7 @@ private fun CardioSteppers(
             onMinus = { onIntensity(false) },
             onPlus = { onIntensity(true) },
             onValueClick = {},
+            compact = true,
             modifier = Modifier.weight(1f),
         )
         Stepper(
@@ -977,6 +980,7 @@ private fun CardioSteppers(
             onMinus = { onCalories(false) },
             onPlus = { onCalories(true) },
             onValueClick = {},
+            compact = true,
             modifier = Modifier.weight(1f),
         )
     }
@@ -1040,6 +1044,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         onMinus = { bike.onWatts(false) },
                         onPlus = { bike.onWatts(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -1048,6 +1053,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         onMinus = { bike.onHeartRate(false) },
                         onPlus = { bike.onHeartRate(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -1058,6 +1064,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         onMinus = { bike.onWattsPerKg(false) },
                         onPlus = { bike.onWattsPerKg(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                     Stepper(
@@ -1066,6 +1073,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         onMinus = { bike.onTss(false) },
                         onPlus = { bike.onTss(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -1076,6 +1084,7 @@ private fun BikeValues(draft: CardioDraft, bike: BikeStepActions) {
                         onMinus = { bike.onIntensityFactor(false) },
                         onPlus = { bike.onIntensityFactor(true) },
                         onValueClick = {},
+                        compact = true,
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.weight(1f))
