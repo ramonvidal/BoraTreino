@@ -216,6 +216,7 @@ class MachineExerciseCompleteViewModelTest {
             rest,
             FakeSettings(),
             Clock.fixed(now, ZoneOffset.UTC),
+            FakeBikeScreenScanner(),
         )
         backgroundScope.launch { viewModel.state.collect {} }
         backgroundScope.launch { viewModel.events.collect { events += it } }

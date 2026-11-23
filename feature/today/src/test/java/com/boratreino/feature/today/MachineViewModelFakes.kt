@@ -1,6 +1,8 @@
 package com.boratreino.feature.today
 
+import android.net.Uri
 import com.boratreino.core.data.MachineRepository
+import com.boratreino.core.model.BikeReading
 import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineUsage
@@ -8,8 +10,25 @@ import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.ScheduleMode
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.model.TodayPlan
+import com.boratreino.core.scan.BikeScreenScanner
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+
+/**
+ * Bike screen scanner for the machine view model: answers [reading] (null = could not read the picture).
+ * Records every picture it is asked about; when [gate] is set, waits on it before answering.
+ */
+internal class FakeBikeScreenScanner(var reading: BikeReading? = null) : BikeScreenScanner {
+    val calls = mutableListOf<Uri>()
+    var gate: CompletableDeferred<Unit>? = null
+
+    override suspend fun read(image: Uri): BikeReading? {
+        calls += image
+        gate?.await()
+        return reading
+    }
+}
 
 /** Read-only machine list for the machine view model (it reads the routine's other exercises from it). */
 internal class FakeMachineLibrary(private val all: List<Machine> = emptyList()) : MachineRepository {
