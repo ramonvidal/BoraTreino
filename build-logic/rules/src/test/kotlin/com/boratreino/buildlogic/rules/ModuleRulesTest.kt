@@ -16,6 +16,7 @@ class ModuleRulesTest {
         ":core:health" to setOf(":core:model", ":core:data", ":core:settings"),
         ":core:ui" to setOf(":core:model"),
         ":core:update" to setOf(":core:model"),
+        ":core:scan" to setOf(":core:model"),
     )
 
     private val features = listOf(
@@ -142,6 +143,23 @@ class ModuleRulesTest {
             val violations = ModuleRules.violations(withModule(coreModule(path, contract.getValue(path) + ":core:health")))
             assertTrue("$path -> :core:health should fail", violations.isNotEmpty())
         }
+    }
+
+    @Test
+    fun `core scan may depend on model only`() {
+        assertEquals(setOf(":core:model"), ModuleRules.CORE_DEPENDENCIES.getValue(":core:scan"))
+        for (dependency in listOf(":core:database", ":core:data", ":core:settings", ":core:notify", ":core:health", ":core:ui", ":core:update")) {
+            val violations = ModuleRules.violations(withModule(coreModule(":core:scan", setOf(":core:model", dependency))))
+            assertTrue(":core:scan -> $dependency should fail", violations.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `a feature may depend on core scan`() {
+        val violations = ModuleRules.violations(
+            withModule(featureModule(":feature:today", setOf(":core:model", ":core:data", ":core:settings", ":core:ui", ":core:scan"))),
+        )
+        assertEquals(emptyList<String>(), violations)
     }
 
     @Test

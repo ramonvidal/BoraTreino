@@ -149,6 +149,23 @@ object CardioRules {
         return target.coerceIn(0, max)
     }
 
+    /**
+     * [draft] with every non-null value of [reading] filled in (clamped to the steppers' ranges); values the
+     * reading doesn't have are kept.
+     */
+    fun applyReading(draft: CardioDraft, reading: BikeReading): CardioDraft = draft.copy(
+        minutes = reading.minutes?.coerceIn(0, MAX_MINUTES) ?: draft.minutes,
+        calories = reading.calories?.coerceIn(0, MAX_CALORIES) ?: draft.calories,
+        distanceM = reading.distanceM?.coerceIn(0, MAX_DISTANCE_M) ?: draft.distanceM,
+        watts = reading.watts?.coerceIn(0, MAX_WATTS) ?: draft.watts,
+        heartRate = reading.heartRate?.coerceIn(MIN_HEART_RATE, MAX_HEART_RATE) ?: draft.heartRate,
+        wattsPerKg = reading.wattsPerKg?.let { (Math.round(it * 10) / 10.0).coerceIn(0.0, MAX_WATTS_PER_KG) }
+            ?: draft.wattsPerKg,
+        tss = reading.tss?.coerceIn(0, MAX_TSS) ?: draft.tss,
+        intensityFactor = reading.intensityFactor
+            ?.let { (Math.round(it * 100) / 100.0).coerceIn(0.0, MAX_INTENSITY_FACTOR) } ?: draft.intensityFactor,
+    )
+
     /** A cardio set can be logged when it has minutes or calories. */
     fun canLog(draft: CardioDraft): Boolean = draft.minutes > 0 || draft.calories > 0
 

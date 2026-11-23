@@ -30,6 +30,8 @@ object ModuleRules {
         ":core:ui" to setOf(":core:model"),
         // Updating the app itself from the GitHub release page.
         ":core:update" to setOf(":core:model"),
+        // Reading the bike console photo (on-device text recognition); the parsing rules stay in :core:model.
+        ":core:scan" to setOf(":core:model"),
     )
 
     val PURE_KOTLIN: Set<String> = setOf(":core:model")

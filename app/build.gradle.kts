@@ -104,6 +104,8 @@ dependencies {
     implementation(projects.core.data)
     implementation(projects.core.database)
     implementation(projects.core.settings)
+    // Hilt finds the bike console scanner binding here (MachineViewModel in :feature:today uses it).
+    implementation(projects.core.scan)
     implementation(projects.feature.today)
     implementation(projects.feature.calendar)
     implementation(projects.feature.progress)
