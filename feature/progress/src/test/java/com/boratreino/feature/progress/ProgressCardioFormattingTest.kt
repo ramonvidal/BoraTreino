@@ -40,8 +40,10 @@ class ProgressCardioFormattingTest {
     }
 
     @Test
-    fun `an averaged intensity keeps one decimal`() {
+    fun `an intensity keeps up to two decimals`() {
         assertEquals("12.4", formatIntensity(12.4, us))
+        assertEquals("0.79", formatIntensity(0.79, us))
+        assertEquals("0.7", formatIntensity(0.7, us))
     }
 
     @Test

@@ -168,7 +168,6 @@ class MachineViewModelCardioPadTest {
             FakeRestTimer(),
             FakeSettings(),
             Clock.fixed(now, ZoneOffset.UTC),
-            FakeBikeScreenScanner(),
         )
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
@@ -201,20 +200,20 @@ class MachineViewModelCardioPadTest {
     fun `opening the pad on a value that is not set starts it empty`() = runTest {
         open()
 
-        viewModel.openCardioPad(CardioField.WATTS)
+        viewModel.openCardioPad(CardioField.INTENSITY)
 
-        assertEquals(NumberPad(PadTarget.CARDIO, "", CardioField.WATTS), state.pad)
+        assertEquals(NumberPad(PadTarget.CARDIO, "", CardioField.INTENSITY), state.pad)
     }
 
     @Test
     fun `opening the pad on a logged set's value starts it with that set's value`() = runTest {
-        val logged = cardioSet(2, 0, CardioDraft(35, 300, 0, watts = 160), earlier)
+        val logged = cardioSet(2, 0, CardioDraft(35, 300, 0, 0.79), earlier)
         open(thisSession = listOf(logged))
         viewModel.openCardioSet(logged)
 
-        viewModel.openCardioPad(CardioField.WATTS, inEditor = true)
+        viewModel.openCardioPad(CardioField.INTENSITY, inEditor = true)
 
-        assertEquals(NumberPad(PadTarget.EDIT_CARDIO, "160", CardioField.WATTS), state.pad)
+        assertEquals(NumberPad(PadTarget.EDIT_CARDIO, "0.79", CardioField.INTENSITY), state.pad)
     }
 
     @Test
@@ -253,11 +252,21 @@ class MachineViewModelCardioPadTest {
     fun `a typed value keeps the other values of the log draft`() = runTest {
         open()
         viewModel.stepCalories(up = true)
-        viewModel.openCardioPad(CardioField.WATTS)
+        viewModel.openCardioPad(CardioField.INTENSITY)
 
-        viewModel.confirmPad("150")
+        viewModel.confirmPad("0.15")
 
-        assertEquals(CardioDraft(20, 10, 0, watts = 150), state.cardio)
+        assertEquals(CardioDraft(20, 10, 0, 0.15), state.cardio)
+    }
+
+    @Test
+    fun `a typed intensity is rounded to 2 decimals`() = runTest {
+        open()
+        viewModel.openCardioPad(CardioField.INTENSITY)
+
+        viewModel.confirmPad("0.785")
+
+        assertEquals(0.79, state.cardio.intensity!!, 0.0)
     }
 
     @Test

@@ -1,12 +1,10 @@
 package com.boratreino.feature.today
 
-import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.data.RepeatOffer
 import com.boratreino.core.data.RepeatOutcome
 import com.boratreino.core.data.TrainingRepository
-import com.boratreino.core.model.BikeReading
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.LoggedSet
@@ -27,7 +25,6 @@ import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.notify.RestTimerState
 import com.boratreino.core.settings.TrainingSettings
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -175,7 +172,6 @@ class MachineViewModelCardioTest {
 
     private lateinit var training: FakeTraining
     private lateinit var rest: FakeRestTimer
-    private lateinit var scanner: FakeBikeScreenScanner
     private lateinit var viewModel: MachineViewModel
     private val events = mutableListOf<MachineEvent>()
 
@@ -184,7 +180,6 @@ class MachineViewModelCardioTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         training = FakeTraining()
         rest = FakeRestTimer()
-        scanner = FakeBikeScreenScanner()
         events.clear()
     }
 
@@ -207,7 +202,6 @@ class MachineViewModelCardioTest {
             rest,
             FakeSettings(),
             Clock.fixed(now, ZoneOffset.UTC),
-            scanner,
         )
         backgroundScope.launch { viewModel.state.collect {} }
         backgroundScope.launch { viewModel.events.collect { events += it } }
@@ -216,122 +210,6 @@ class MachineViewModelCardioTest {
     }
 
     private val state: MachineUiState get() = viewModel.state.value
-
-    // Bike screen scan (phase 43): fills the draft, never logs, one read at a time
-
-    private val photo: Uri = Uri.parse("content://photos/bike-console.jpg")
-
-    /** What the console showed in the photo example: 45:52 -> 46 min, 397 kcal, 17.30 km, W/kg 1.2, TSS 48, IF 0.79. */
-    private val summary = BikeReading(
-        minutes = 46,
-        calories = 397,
-        distanceM = 17300,
-        watts = null,
-        heartRate = null,
-        wattsPerKg = 1.2,
-        tss = 48,
-        intensityFactor = 0.79,
-    )
-
-    @Test
-    fun `a scanned screen fills the draft and never logs a set`() = runTest {
-        open(treadmill)
-        scanner.reading = summary
-
-        viewModel.scan(photo)
-        runCurrent()
-
-        assertEquals(listOf(photo), scanner.calls)
-        assertEquals(CardioDraft(46, 397, 17300, wattsPerKg = 1.2, tss = 48, intensityFactor = 0.79), state.cardio)
-        assertFalse(state.scanning)
-        assertFalse(state.scanFailed)
-        assertTrue(training.cardioLogged.isEmpty())
-        assertTrue(training.setLogged.isEmpty())
-    }
-
-    @Test
-    fun `values the screen does not show keep the draft's values`() = runTest {
-        val last = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, watts = 150), earlier))
-        open(treadmill, lastTime = last)
-        scanner.reading = BikeReading(
-            minutes = 46,
-            calories = null,
-            distanceM = null,
-            watts = null,
-            heartRate = 142,
-            wattsPerKg = null,
-            tss = null,
-            intensityFactor = null,
-        )
-
-        viewModel.scan(photo)
-        runCurrent()
-
-        assertEquals(CardioDraft(46, 250, 3200, watts = 150, heartRate = 142), state.cardio)
-    }
-
-    @Test
-    fun `a screen with no values sets the failure and leaves the draft as it was`() = runTest {
-        open(treadmill)
-        scanner.reading = BikeReading(null, null, null, null, null, null, null, null)
-
-        viewModel.scan(photo)
-        runCurrent()
-
-        assertTrue(state.scanFailed)
-        assertFalse(state.scanning)
-        assertEquals(CardioDraft(20, 0, 0), state.cardio)
-        assertTrue(training.cardioLogged.isEmpty())
-    }
-
-    @Test
-    fun `a picture that cannot be read sets the failure and leaves the draft as it was`() = runTest {
-        open(treadmill)
-        scanner.reading = null
-
-        viewModel.scan(photo)
-        runCurrent()
-
-        assertTrue(state.scanFailed)
-        assertEquals(CardioDraft(20, 0, 0), state.cardio)
-        assertTrue(training.cardioLogged.isEmpty())
-    }
-
-    @Test
-    fun `a second scan while one is being read is ignored`() = runTest {
-        open(treadmill)
-        val gate = CompletableDeferred<Unit>()
-        scanner.gate = gate
-        scanner.reading = summary
-        val second = Uri.parse("content://photos/second.jpg")
-
-        viewModel.scan(photo)
-        runCurrent()
-        assertTrue(state.scanning)
-
-        viewModel.scan(second)
-        runCurrent()
-        gate.complete(Unit)
-        runCurrent()
-
-        assertEquals(listOf(photo), scanner.calls)
-        assertFalse(state.scanning)
-        assertEquals(46, state.cardio.minutes)
-    }
-
-    @Test
-    fun `scanMessageShown clears the failure`() = runTest {
-        open(treadmill)
-        scanner.reading = null
-        viewModel.scan(photo)
-        runCurrent()
-        assertTrue(state.scanFailed)
-
-        viewModel.scanMessageShown()
-        runCurrent()
-
-        assertFalse(state.scanFailed)
-    }
 
     // Prefill
 

@@ -7,22 +7,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 
-/** Bike console values carried by the cardio draft, the set it logs, and what the steppers start from (phase 42). */
+/** A cardio draft and its set: intensity is carried by the draft, the set, prefill and same-again. */
 class CardioValueDraftTest {
-    private val at = Instant.parse("2026-11-23T18:00:00Z")
+    private val at: Instant = Instant.parse("2026-11-02T10:00:00Z")
 
     private fun set(
-        id: Long,
+        id: Long = 1L,
         sessionId: Long = 1L,
+        position: Int = 0,
         seconds: Int? = null,
         calories: Int? = null,
         distanceM: Int? = null,
-        watts: Int? = null,
-        heartRate: Int? = null,
-        wattsPerKg: Double? = null,
-        tss: Int? = null,
-        intensityFactor: Double? = null,
-        position: Int = 0,
+        intensity: Double? = null,
     ) = WorkoutSet(
         id = id,
         sessionId = sessionId,
@@ -34,188 +30,130 @@ class CardioValueDraftTest {
         calories = calories,
         distanceM = distanceM,
         loggedAt = at,
-        watts = watts,
-        heartRate = heartRate,
-        wattsPerKg = wattsPerKg,
-        tss = tss,
-        intensityFactor = intensityFactor,
+        intensity = intensity,
     )
 
-    private fun toSet(draft: CardioDraft): WorkoutSet =
-        CardioRules.toSet(id = 7L, sessionId = 2L, machineId = 1L, position = 3, draft = draft, loggedAt = at)
-
-    private val full = CardioDraft(
-        minutes = 20,
-        calories = 180,
-        distanceM = 5000,
-        intensity = 12,
-        watts = 160,
-        heartRate = 142,
-        wattsPerKg = 2.4,
-        tss = 48,
-        intensityFactor = 0.79,
-    )
+    private fun toSet(draft: CardioDraft): WorkoutSet = CardioRules.toSet(1L, 2L, 3L, 0, draft, at)
 
     // toSet
 
     @Test
-    fun `toSet writes every value of the draft`() {
-        val logged = toSet(full)
-
-        assertEquals(1200, logged.seconds)
-        assertEquals(180, logged.calories)
-        assertEquals(5000, logged.distanceM)
-        assertEquals(12, logged.intensity)
-        assertEquals(160, logged.watts)
-        assertEquals(142, logged.heartRate)
-        assertEquals(2.4, logged.wattsPerKg!!, 1e-9)
-        assertEquals(48, logged.tss)
-        assertEquals(0.79, logged.intensityFactor!!, 1e-9)
+    fun `toSet writes the intensity with 2 decimals`() {
+        assertEquals(0.79, toSet(CardioDraft(20, 0, 0, intensity = 0.79)).intensity!!, 0.0)
+        assertEquals(0.79, toSet(CardioDraft(20, 0, 0, intensity = 0.789)).intensity!!, 1e-9)
+        assertEquals(0.71, toSet(CardioDraft(20, 0, 0, intensity = 0.712)).intensity!!, 1e-9)
     }
 
     @Test
-    fun `toSet leaves the values that are not logged null`() {
-        val logged = toSet(CardioDraft(minutes = 20, calories = 0, distanceM = 0))
-
-        assertNull(logged.watts)
-        assertNull(logged.heartRate)
-        assertNull(logged.wattsPerKg)
-        assertNull(logged.tss)
-        assertNull(logged.intensityFactor)
+    fun `toSet leaves the intensity null when none is logged`() {
+        assertNull(toSet(CardioDraft(20, 0, 0)).intensity)
     }
 
     @Test
-    fun `toSet rounds watts per kg to one decimal`() {
-        assertEquals(3.1, toSet(CardioDraft(20, 0, 0, wattsPerKg = 3.14)).wattsPerKg!!, 1e-9)
-        assertEquals(3.2, toSet(CardioDraft(20, 0, 0, wattsPerKg = 3.16)).wattsPerKg!!, 1e-9)
+    fun `toSet keeps an intensity of zero as zero, not as not logged`() {
+        assertEquals(0.0, toSet(CardioDraft(20, 0, 0, intensity = 0.0)).intensity!!, 0.0)
     }
 
     @Test
-    fun `toSet rounds the intensity factor to two decimals`() {
-        assertEquals(0.79, toSet(CardioDraft(20, 0, 0, intensityFactor = 0.789)).intensityFactor!!, 1e-9)
-        assertEquals(0.71, toSet(CardioDraft(20, 0, 0, intensityFactor = 0.712)).intensityFactor!!, 1e-9)
+    fun `toSet keeps the intensity inside 0 to 100`() {
+        assertEquals(100.0, toSet(CardioDraft(20, 0, 0, intensity = 100.0)).intensity!!, 0.0)
+        assertEquals(100.0, toSet(CardioDraft(20, 0, 0, intensity = 150.0)).intensity!!, 0.0)
     }
 
     @Test
-    fun `toSet keeps zero values as zero, not as not logged`() {
-        val logged = toSet(CardioDraft(20, 0, 0, watts = 0, heartRate = 30, wattsPerKg = 0.0, tss = 0, intensityFactor = 0.0))
+    fun `toSet writes minutes, calories, distance and intensity together`() {
+        val logged = toSet(CardioDraft(minutes = 45, calories = 520, distanceM = 18_400, intensity = 0.79))
 
-        assertEquals(0, logged.watts)
-        assertEquals(30, logged.heartRate)
-        assertEquals(0.0, logged.wattsPerKg!!, 0.0)
-        assertEquals(0, logged.tss)
-        assertEquals(0.0, logged.intensityFactor!!, 0.0)
+        assertEquals(2700, logged.seconds)
+        assertEquals(520, logged.calories)
+        assertEquals(18_400, logged.distanceM)
+        assertEquals(0.79, logged.intensity!!, 0.0)
+        assertNull(logged.weightKg)
+        assertNull(logged.reps)
+    }
+
+    // toDraft
+
+    @Test
+    fun `toDraft reads the intensity back`() {
+        val read = CardioRules.toDraft(set(seconds = 1500, calories = 300, distanceM = 5000, intensity = 0.79))
+
+        assertEquals(CardioDraft(minutes = 25, calories = 300, distanceM = 5000, intensity = 0.79), read)
     }
 
     @Test
-    fun `toSet keeps the values inside their ranges`() {
-        val logged = toSet(
-            CardioDraft(20, 0, 0, watts = 2500, heartRate = 20, wattsPerKg = 12.0, tss = 1200, intensityFactor = 2.5),
-        )
-
-        assertEquals(2000, logged.watts)
-        assertEquals(30, logged.heartRate)
-        assertEquals(10.0, logged.wattsPerKg!!, 1e-9)
-        assertEquals(999, logged.tss)
-        assertEquals(2.0, logged.intensityFactor!!, 1e-9)
+    fun `toDraft of a set without intensity has none`() {
+        assertNull(CardioRules.toDraft(set(seconds = 600)).intensity)
     }
 
     @Test
-    fun `a draft with only a value and no time still writes that value`() {
-        val logged = toSet(CardioDraft(0, 0, 0, watts = 150))
-
-        assertNull(logged.seconds)
-        assertEquals(150, logged.watts)
-    }
-
-    // toDraft and the round trip
-
-    @Test
-    fun `toDraft reads every value back from the set`() {
-        val draft = CardioRules.toDraft(toSet(full))
-
-        assertEquals(full, draft)
+    fun `toDraft keeps an intensity of zero`() {
+        assertEquals(0.0, CardioRules.toDraft(set(seconds = 600, intensity = 0.0)).intensity!!, 0.0)
     }
 
     @Test
-    fun `a draft with no values round trips to a draft with no values`() {
-        val plain = CardioDraft(minutes = 15, calories = 90, distanceM = 0)
+    fun `a draft with an intensity round trips through a set`() {
+        val draft = CardioDraft(minutes = 10, calories = 0, distanceM = 0, intensity = 12.0)
 
-        assertEquals(plain, CardioRules.toDraft(toSet(plain)))
+        assertEquals(draft, CardioRules.toDraft(toSet(draft)))
+    }
+
+    // isCardio and canLog
+
+    @Test
+    fun `a set with only an intensity is cardio`() {
+        assertTrue(CardioRules.isCardio(set(intensity = 0.0)))
     }
 
     @Test
-    fun `a draft with zero values round trips with the zeros kept`() {
-        val zeros = CardioDraft(minutes = 15, calories = 0, distanceM = 0, watts = 0, tss = 0, intensityFactor = 0.0)
-
-        assertEquals(zeros, CardioRules.toDraft(toSet(zeros)))
-    }
-
-    // isCardio
-
-    @Test
-    fun `a set with any one console value is cardio`() {
-        assertTrue(CardioRules.isCardio(set(1L, watts = 150)))
-        assertTrue(CardioRules.isCardio(set(2L, heartRate = 140)))
-        assertTrue(CardioRules.isCardio(set(3L, wattsPerKg = 2.1)))
-        assertTrue(CardioRules.isCardio(set(4L, tss = 0)))
-        assertTrue(CardioRules.isCardio(set(5L, intensityFactor = 0.0)))
+    fun `a set with no cardio values is not cardio`() {
+        assertFalse(CardioRules.isCardio(set()))
     }
 
     @Test
-    fun `a set with no value at all is not cardio`() {
-        assertFalse(CardioRules.isCardio(set(1L)))
+    fun `an intensity alone cannot be logged`() {
+        assertFalse(CardioRules.canLog(CardioDraft(0, 0, 0, intensity = 12.0)))
+        assertFalse(CardioRules.canLog(CardioDraft(0, 0, 1000, intensity = 12.0)))
+    }
+
+    @Test
+    fun `minutes or calories are what lets a cardio set be logged`() {
+        assertTrue(CardioRules.canLog(CardioDraft(10, 0, 0, intensity = 0.79)))
+        assertTrue(CardioRules.canLog(CardioDraft(0, 10, 0, intensity = 0.79)))
     }
 
     // prefill and sameAgain
 
     @Test
-    fun `prefill starts from this session's last set, values included`() {
-        val lastTime = listOf(set(1L, sessionId = 9L, seconds = 600, watts = 90))
-        val thisSession = listOf(set(2L, seconds = 1200, watts = 160, heartRate = 142, tss = 48, intensityFactor = 0.79))
+    fun `prefill carries the intensity of this session's last set`() {
+        val lastTime = listOf(set(seconds = 1200, distanceM = 3000, intensity = 0.09))
+        val thisSession = listOf(set(id = 2L, seconds = 900, intensity = 0.12))
 
-        val draft = CardioRules.prefill(lastTime, thisSession)
-
-        assertEquals(20, draft.minutes)
-        assertEquals(160, draft.watts)
-        assertEquals(142, draft.heartRate)
-        assertEquals(48, draft.tss)
-        assertEquals(0.79, draft.intensityFactor!!, 1e-9)
+        assertEquals(CardioDraft(15, 0, 0, intensity = 0.12), CardioRules.prefill(lastTime, thisSession))
     }
 
     @Test
-    fun `prefill falls back to last time's first set, values included, when this session has none`() {
-        val lastTime = listOf(set(1L, sessionId = 9L, seconds = 600, watts = 90, wattsPerKg = 1.8))
+    fun `prefill takes last time's intensity when this session has none`() {
+        val lastTime = listOf(set(seconds = 1200, distanceM = 3000, intensity = 0.09))
 
-        val draft = CardioRules.prefill(lastTime, emptyList())
-
-        assertEquals(90, draft.watts)
-        assertEquals(1.8, draft.wattsPerKg!!, 1e-9)
-        assertNull(draft.tss)
+        assertEquals(CardioDraft(20, 0, 3000, intensity = 0.09), CardioRules.prefill(lastTime, emptyList()))
     }
 
     @Test
-    fun `prefill with no history has no values`() {
-        val draft = CardioRules.prefill(emptyList(), emptyList())
-
-        assertEquals(CardioDraft(CardioRules.DEFAULT_MINUTES, 0, 0), draft)
+    fun `prefill with no intensity logged before leaves the intensity null`() {
+        assertNull(CardioRules.prefill(listOf(set(seconds = 1200)), emptyList()).intensity)
+        assertNull(CardioRules.prefill(emptyList(), emptyList()).intensity)
     }
 
     @Test
-    fun `sameAgain carries the values of last time's set at the same index`() {
-        val lastTime = listOf(
-            set(1L, sessionId = 9L, seconds = 600, watts = 90),
-            set(2L, sessionId = 9L, seconds = 900, watts = 170, intensityFactor = 0.85, position = 1),
-        )
+    fun `sameAgain carries last time's intensity at the same index`() {
+        val lastTime = listOf(set(seconds = 600, intensity = 0.07), set(id = 2L, position = 1, seconds = 300, intensity = 0.15))
 
-        val draft = CardioRules.sameAgain(lastTime, thisSession = listOf(set(3L, seconds = 600)))
-
-        assertEquals(170, draft!!.watts)
-        assertEquals(0.85, draft.intensityFactor!!, 1e-9)
+        assertEquals(CardioDraft(5, 0, 0, intensity = 0.15), CardioRules.sameAgain(lastTime, listOf(set(seconds = 600))))
     }
 
     @Test
     fun `sameAgain is null when last time has no set at that index`() {
-        assertNull(CardioRules.sameAgain(listOf(set(1L, sessionId = 9L, seconds = 600)), listOf(set(2L), set(3L))))
+        assertNull(CardioRules.sameAgain(listOf(set(seconds = 600, intensity = 0.07)), listOf(set(seconds = 600), set(id = 2L))))
     }
 }

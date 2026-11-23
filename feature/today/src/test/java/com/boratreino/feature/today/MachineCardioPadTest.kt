@@ -36,7 +36,7 @@ import java.time.Instant
 
 /**
  * Tapping a cardio stepper value opens the number pad: its title is the stepper's label, it has a decimal key only
- * for the decimal fields, and OK puts the typed value on the stepper (phase 44).
+ * for the decimal fields (Distance and Intensity), and OK puts the typed value on the stepper.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
@@ -58,17 +58,12 @@ class MachineCardioPadTest {
     private val lastVisit = Instant.parse("2026-10-24T18:00:00Z")
     private val lastTime = SetSummary.Cardio(count = 1, minutes = 30, calories = 250, distanceM = 0)
 
-    /** Every stepper holds a value, so each one shows its number (the Bike values section opens by itself). */
+    /** Every stepper holds a value, so each one shows its number. */
     private val allValues = CardioDraft(
         minutes = 20,
         calories = 250,
         distanceM = 17_300,
-        intensity = 12,
-        watts = 160,
-        heartRate = 142,
-        wattsPerKg = 2.4,
-        tss = 48,
-        intensityFactor = 0.79,
+        intensity = 0.79,
     )
 
     private fun state(draft: CardioDraft = allValues, editor: CardioEditor? = null) = MachineUiState(
@@ -166,57 +161,12 @@ class MachineCardioPadTest {
     }
 
     @Test
-    fun `tapping Intensity opens the pad titled Intensity, without a decimal key`() {
-        showWithPad()
-
-        stepperValue("12").performClick()
-
-        assertPadOpenedFor("Intensity", decimalKey = false)
-    }
-
-    @Test
-    fun `tapping Watts opens the pad titled Watts, without a decimal key`() {
-        showWithPad()
-
-        stepperValue("160").performClick()
-
-        assertPadOpenedFor("Watts", decimalKey = false)
-    }
-
-    @Test
-    fun `tapping Heart rate opens the pad titled Heart rate, without a decimal key`() {
-        showWithPad()
-
-        stepperValue("142").performClick()
-
-        assertPadOpenedFor("Heart rate", decimalKey = false)
-    }
-
-    @Test
-    fun `tapping Watts per kg opens the pad titled Watts per kg, with a decimal key`() {
-        showWithPad()
-
-        stepperValue("2.4").performClick()
-
-        assertPadOpenedFor("Watts/kg", decimalKey = true)
-    }
-
-    @Test
-    fun `tapping TSS opens the pad titled TSS, without a decimal key`() {
-        showWithPad()
-
-        stepperValue("48").performClick()
-
-        assertPadOpenedFor("TSS", decimalKey = false)
-    }
-
-    @Test
-    fun `tapping IF opens the pad titled IF, with a decimal key`() {
+    fun `tapping Intensity opens the pad titled Intensity, with a decimal key`() {
         showWithPad()
 
         stepperValue("0.79").performClick()
 
-        assertPadOpenedFor("IF", decimalKey = true)
+        assertPadOpenedFor("Intensity", decimalKey = true)
     }
 
     // OK and Cancel
@@ -246,6 +196,22 @@ class MachineCardioPadTest {
 
         stepperValue("45").assertExists()
         stepperValue("250").assertExists()
+    }
+
+    @Test
+    fun `OK puts the typed intensity on the stepper, rounded to 2 decimals`() {
+        showWithPad()
+        stepperValue("0.79").performClick()
+
+        pressKey("0")
+        pressKey(".")
+        pressKey("7")
+        pressKey("8")
+        pressKey("5")
+        pressKey("OK")
+
+        stepperValue("0.79").assertExists()
+        compose.onAllNodesWithText("OK").assertCountEquals(0)
     }
 
     @Test

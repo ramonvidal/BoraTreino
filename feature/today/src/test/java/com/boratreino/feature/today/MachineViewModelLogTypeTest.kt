@@ -161,7 +161,6 @@ class MachineViewModelLogTypeTest {
             FakeRestTimer(),
             FakeSettings(),
             Clock.fixed(now, ZoneOffset.UTC),
-            FakeBikeScreenScanner(),
         )
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()

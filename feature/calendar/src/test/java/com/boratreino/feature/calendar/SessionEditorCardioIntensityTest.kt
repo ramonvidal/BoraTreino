@@ -241,11 +241,11 @@ class SessionEditorCardioIntensityTest {
     private val cardioEntry get() = SessionMachine(treadmill, listOf(first, second))
     private val weightEntry get() = SessionMachine(legPress, listOf(weightSet))
 
-    /** A treadmill set with an intensity of 12. */
-    private val withIntensity get() = cardio(3, 0, CardioDraft(30, 250, 3200, 12))
+    /** A treadmill set with an intensity of 0.79. */
+    private val withIntensity get() = cardio(3, 0, CardioDraft(30, 250, 3200, 0.79))
 
     /** A set with an intensity and nothing else: it cannot be saved. */
-    private val intensityOnly get() = cardio(4, 2, CardioDraft(0, 0, 0, 12))
+    private val intensityOnly get() = cardio(4, 2, CardioDraft(0, 0, 0, 0.79))
 
     // Opening and stepping
 
@@ -256,8 +256,8 @@ class SessionEditorCardioIntensityTest {
         viewModel.openSet(withIntensity)
         runCurrent()
 
-        assertEquals(12, state.editor?.intensity)
-        assertEquals(CardioDraft(30, 250, 3200, 12), state.editor?.cardioDraft)
+        assertEquals(0.79, state.editor?.intensity)
+        assertEquals(CardioDraft(30, 250, 3200, 0.79), state.editor?.cardioDraft)
     }
 
     @Test
@@ -282,7 +282,7 @@ class SessionEditorCardioIntensityTest {
 
         viewModel.stepEditorIntensity(up = true)
         runCurrent()
-        assertEquals(1, state.editor?.intensity)
+        assertEquals(0.70, state.editor?.intensity)
     }
 
     @Test
@@ -294,7 +294,7 @@ class SessionEditorCardioIntensityTest {
         viewModel.stepEditorIntensity(up = true)
         runCurrent()
 
-        assertEquals(CardioDraft(30, 250, 3200, 13), state.editor?.cardioDraft)
+        assertEquals(CardioDraft(30, 250, 3200, 0.80), state.editor?.cardioDraft)
     }
 
     // Saving
@@ -313,7 +313,7 @@ class SessionEditorCardioIntensityTest {
             withIntensity.sessionId,
             withIntensity.machineId,
             withIntensity.position,
-            CardioDraft(30, 250, 3200, 13),
+            CardioDraft(30, 250, 3200, 0.80),
             withIntensity.loggedAt,
         )
         assertEquals(listOf(expected), training.updated)
@@ -341,6 +341,6 @@ class SessionEditorCardioIntensityTest {
         viewModel.addSet(treadmill.id)
         runCurrent()
 
-        assertEquals(listOf(Triple(session.id, treadmill.id, CardioDraft(30, 250, 3200, 12))), history.cardioAdded)
+        assertEquals(listOf(Triple(session.id, treadmill.id, CardioDraft(30, 250, 3200, 0.79))), history.cardioAdded)
     }
 }

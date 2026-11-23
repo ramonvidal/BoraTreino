@@ -32,17 +32,17 @@ import java.time.Instant
 
 private val padBike = Machine(34L, "Bike", MuscleGroup.CARDIO, MachineKind.CARDIO, 1.0, null, null, archived = false)
 
-/** A bike set with every value: 30 min, 250 kcal, 3.2 km, intensity 12, 160 W, 142 bpm, 2.4 W/kg, TSS 48, IF 0.79. */
+/** A cardio set with every value: 30 min, 250 kcal, 3.2 km and intensity 0.79. */
 private val padSet = CardioRules.toSet(
     id = 9300L,
     sessionId = CalendarSamples.mondaySession.session.id,
     machineId = padBike.id,
     position = 0,
-    draft = CardioDraft(30, 250, 3200, 12, 160, 142, 2.4, 48, 0.79),
+    draft = CardioDraft(minutes = 30, calories = 250, distanceM = 3200, intensity = 0.79),
     loggedAt = Instant.parse("2026-11-02T21:20:00Z"),
 )
 
-/** Monday's editor with the bike set open in the editor; [pad] is the number pad to show over it. */
+/** Monday's editor with the cardio set open in the editor; [pad] is the number pad to show over it. */
 private fun padEditing(pad: NumberPad?): SessionEditorUiState = CalendarSamples.editorState.copy(
     detail = CalendarSamples.mondaySession.let {
         SessionDetail(it.session, it.routine, it.machines + SessionMachine(padBike, listOf(padSet)))
@@ -57,12 +57,7 @@ private fun padEditing(pad: NumberPad?): SessionEditorUiState = CalendarSamples.
         minutes = 30,
         calories = 250,
         distanceM = 3_200,
-        intensity = 12,
-        watts = 160,
-        heartRate = 142,
-        wattsPerKg = 2.4,
-        tss = 48,
-        intensityFactor = 0.79,
+        intensity = 0.79,
     ),
     pad = pad,
 )
@@ -112,13 +107,8 @@ class SessionEditorCardioPadTest {
         val values = listOf(
             "30" to PadTarget.EDIT_MINUTES,
             "3.2" to PadTarget.EDIT_DISTANCE_KM,
-            "12" to PadTarget.EDIT_INTENSITY,
+            "0.79" to PadTarget.EDIT_INTENSITY,
             "250" to PadTarget.EDIT_CALORIES,
-            "160" to PadTarget.EDIT_WATTS,
-            "142" to PadTarget.EDIT_HEART_RATE,
-            "2.4" to PadTarget.EDIT_WATTS_PER_KG,
-            "48" to PadTarget.EDIT_TSS,
-            "0.79" to PadTarget.EDIT_INTENSITY_FACTOR,
         )
         values.forEach { (value, _) -> stepperValue(value).performClick() }
 
@@ -150,56 +140,28 @@ class SessionEditorCardioPadTest {
     }
 
     @Test
-    fun `the intensity pad is titled Intensity and has no decimal key`() {
-        setContent(padEditing(NumberPad(PadTarget.EDIT_INTENSITY, "12")))
+    fun `the intensity pad is titled Intensity, starts at 0 79 and has a decimal key`() {
+        setContent(padEditing(NumberPad(PadTarget.EDIT_INTENSITY, "0.79")))
 
-        assertPadShows("Intensity", decimalKey = false)
-    }
-
-    @Test
-    fun `the watts pad is titled Watts and has no decimal key`() {
-        setContent(padEditing(NumberPad(PadTarget.EDIT_WATTS, "160")))
-
-        assertPadShows("Watts", decimalKey = false)
-    }
-
-    @Test
-    fun `the heart rate pad is titled Heart rate and has no decimal key`() {
-        setContent(padEditing(NumberPad(PadTarget.EDIT_HEART_RATE, "142")))
-
-        assertPadShows("Heart rate", decimalKey = false)
-    }
-
-    @Test
-    fun `the watts per kg pad is titled Watts per kg and has a decimal key`() {
-        setContent(padEditing(NumberPad(PadTarget.EDIT_WATTS_PER_KG, "2.4")))
-
-        assertPadShows("Watts/kg", decimalKey = true)
-    }
-
-    @Test
-    fun `the TSS pad is titled TSS and has no decimal key`() {
-        setContent(padEditing(NumberPad(PadTarget.EDIT_TSS, "48")))
-
-        assertPadShows("TSS", decimalKey = false)
-    }
-
-    @Test
-    fun `the IF pad is titled IF and has a decimal key`() {
-        setContent(padEditing(NumberPad(PadTarget.EDIT_INTENSITY_FACTOR, "0.79")))
-
-        assertPadShows("IF", decimalKey = true)
-    }
-
-    @Test
-    fun `the bike values section opens by itself when the edited set has a typed bike value`() {
-        setContent(padEditing(pad = null))
-
-        compose.onNodeWithContentDescription("Increase Watts").assertExists()
-        compose.onNodeWithContentDescription("Increase IF").assertExists()
+        assertPadShows("Intensity", decimalKey = true)
+        assertTrue(padDialogHas(hasAnyDescendant(hasText("0.79"))))
     }
 
     // OK and Cancel
+
+    @Test
+    fun `OK sends the typed intensity to the view model`() {
+        val confirmed = mutableListOf<String>()
+        setContent(padEditing(NumberPad(PadTarget.EDIT_INTENSITY, "0.79")), SessionEditorActions(onConfirmPad = { confirmed += it }))
+
+        pressKey("1")
+        pressKey(".")
+        pressKey("0")
+        pressKey("5")
+        pressKey("OK")
+
+        assertEquals(listOf("1.05"), confirmed)
+    }
 
     @Test
     fun `OK sends the typed distance to the view model`() {

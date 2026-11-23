@@ -62,7 +62,7 @@ import java.time.ZoneOffset
 
 /**
  * The session editor's number pad on a cardio set: each cardio value opens the pad with its text, confirming types
- * into the editor (saved only by Save), and a set needs minutes or calories to be saved (phase 44).
+ * into the editor (saved only by Save), and a set needs minutes or calories to be saved.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -73,16 +73,13 @@ class SessionEditorCardioPadViewModelTest {
     private val started = Instant.parse("2026-11-02T18:05:00Z")
     private val session = Session(id = 20L, startedAt = started, endedAt = Instant.parse("2026-11-02T19:10:00Z"), routineId = null, note = null)
 
-    /** A bike set with every value: 30 min, 250 kcal, 3.2 km, intensity 12, 160 W, 142 bpm, 2.4 W/kg, TSS 48, IF 0.79. */
+    /** A cardio set with every value: 30 min, 250 kcal, 3.2 km and intensity 0.79. */
     private val bikeSet = CardioRules.toSet(
         id = 1L,
         sessionId = session.id,
         machineId = treadmill.id,
         position = 0,
-        draft = CardioDraft(
-            minutes = 30, calories = 250, distanceM = 3_200, intensity = 12, watts = 160, heartRate = 142,
-            wattsPerKg = 2.4, tss = 48, intensityFactor = 0.79,
-        ),
+        draft = CardioDraft(minutes = 30, calories = 250, distanceM = 3_200, intensity = 0.79),
         loggedAt = started.plusSeconds(600),
     )
 
@@ -231,12 +228,7 @@ class SessionEditorCardioPadViewModelTest {
             PadTarget.EDIT_MINUTES to "30",
             PadTarget.EDIT_CALORIES to "250",
             PadTarget.EDIT_DISTANCE_KM to "3.2",
-            PadTarget.EDIT_INTENSITY to "12",
-            PadTarget.EDIT_WATTS to "160",
-            PadTarget.EDIT_HEART_RATE to "142",
-            PadTarget.EDIT_WATTS_PER_KG to "2.4",
-            PadTarget.EDIT_TSS to "48",
-            PadTarget.EDIT_INTENSITY_FACTOR to "0.79",
+            PadTarget.EDIT_INTENSITY to "0.79",
         )
 
         expected.forEach { (target, text) ->
@@ -248,15 +240,11 @@ class SessionEditorCardioPadViewModelTest {
     @Test
     fun `a cardio value that is not set opens the pad empty`() = runTest {
         open()
-        viewModel.openSet(bikeSet.copy(watts = null, tss = null))
+        viewModel.openSet(bikeSet.copy(intensity = null))
         runCurrent()
 
-        viewModel.openPad(PadTarget.EDIT_WATTS)
-        assertEquals(NumberPad(PadTarget.EDIT_WATTS, ""), state.pad)
-        viewModel.dismissPad()
-
-        viewModel.openPad(PadTarget.EDIT_TSS)
-        assertEquals(NumberPad(PadTarget.EDIT_TSS, ""), state.pad)
+        viewModel.openPad(PadTarget.EDIT_INTENSITY)
+        assertEquals(NumberPad(PadTarget.EDIT_INTENSITY, ""), state.pad)
     }
 
     // Confirming
@@ -285,27 +273,26 @@ class SessionEditorCardioPadViewModelTest {
     @Test
     fun `confirming a value keeps the other values of the editor`() = runTest {
         openEditor()
-        viewModel.openPad(PadTarget.EDIT_WATTS)
+        viewModel.openPad(PadTarget.EDIT_INTENSITY)
 
-        viewModel.confirmPad("150")
+        viewModel.confirmPad("0.15")
 
         val editor = state.editor!!
-        assertEquals(150, editor.watts)
+        assertEquals(0.15, editor.intensity!!, 0.0)
         assertEquals(30, editor.minutes)
         assertEquals(250, editor.calories)
         assertEquals(3_200, editor.distanceM)
-        assertEquals(0.79, editor.intensityFactor!!, 1e-9)
     }
 
     @Test
     fun `a blank text clears an optional value and a blank calorie count goes to 0`() = runTest {
         openEditor()
-        viewModel.openPad(PadTarget.EDIT_TSS)
+        viewModel.openPad(PadTarget.EDIT_INTENSITY)
         viewModel.confirmPad("")
         viewModel.openPad(PadTarget.EDIT_CALORIES)
         viewModel.confirmPad("")
 
-        assertNull(state.editor?.tss)
+        assertNull(state.editor?.intensity)
         assertEquals(0, state.editor?.calories)
     }
 
@@ -313,7 +300,7 @@ class SessionEditorCardioPadViewModelTest {
     fun `a text that is not a number is ignored`() = runTest {
         openEditor()
         val before = state.editor
-        viewModel.openPad(PadTarget.EDIT_WATTS_PER_KG)
+        viewModel.openPad(PadTarget.EDIT_INTENSITY)
 
         viewModel.confirmPad("2,4,5")
 
@@ -323,13 +310,13 @@ class SessionEditorCardioPadViewModelTest {
     @Test
     fun `typed values are clamped to their ranges`() = runTest {
         openEditor()
-        viewModel.openPad(PadTarget.EDIT_HEART_RATE)
-        viewModel.confirmPad("10")
-        assertEquals(30, state.editor?.heartRate)
+        viewModel.openPad(PadTarget.EDIT_INTENSITY)
+        viewModel.confirmPad("150")
+        assertEquals(100.0, state.editor?.intensity!!, 0.0)
 
-        viewModel.openPad(PadTarget.EDIT_INTENSITY_FACTOR)
-        viewModel.confirmPad("2.5")
-        assertEquals(2.0, state.editor?.intensityFactor!!, 1e-9)
+        viewModel.openPad(PadTarget.EDIT_INTENSITY)
+        viewModel.confirmPad("0.785")
+        assertEquals(0.79, state.editor?.intensity!!, 0.0)
 
         viewModel.openPad(PadTarget.EDIT_MINUTES)
         viewModel.confirmPad("700")

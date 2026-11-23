@@ -89,9 +89,9 @@ class MachineCardioIntensityTest {
 
     @Test
     fun `the intensity stepper shows its number once it is set`() {
-        show(state(CardioDraft(15, 100, 0, intensity = 12)))
+        show(state(CardioDraft(15, 100, 0, intensity = 0.79)))
 
-        compose.onNodeWithText("12", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("0.79", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -105,20 +105,29 @@ class MachineCardioIntensityTest {
         assertEquals(listOf(true, false), steps)
     }
 
+    @Test
+    fun `the cardio panel has no bike console values or scan button`() {
+        show(state(CardioDraft(15, 100, 1_000, 0.79)))
+
+        listOf("Watts", "Watts/kg", "Heart rate", "TSS", "IF", "Scan bike screen").forEach { label ->
+            compose.onAllNodesWithText(label, useUnmergedTree = true).assertCountEquals(0)
+        }
+    }
+
     // Log button text
 
     @Test
     fun `Log names minutes, distance, intensity and calories in that order`() {
-        show(state(CardioDraft(45, 520, 18_400, 12)))
+        show(state(CardioDraft(45, 520, 18_400, 0.79)))
 
-        compose.onNodeWithText("Log 45 min · 18.4 km · intensity 12 · 520 kcal").assertExists()
+        compose.onNodeWithText("Log 45 min · 18.4 km · intensity 0.79 · 520 kcal").assertExists()
     }
 
     @Test
     fun `Log leaves calories out when there are none`() {
-        show(state(CardioDraft(45, 0, 18_400, 12)))
+        show(state(CardioDraft(45, 0, 18_400, 0.79)))
 
-        compose.onNodeWithText("Log 45 min · 18.4 km · intensity 12").assertExists()
+        compose.onNodeWithText("Log 45 min · 18.4 km · intensity 0.79").assertExists()
     }
 
     @Test
@@ -130,9 +139,9 @@ class MachineCardioIntensityTest {
 
     @Test
     fun `Log is disabled when only an intensity is set`() {
-        show(state(CardioDraft(0, 0, 0, intensity = 12)))
+        show(state(CardioDraft(0, 0, 0, intensity = 0.79)))
 
-        compose.onNodeWithText("Log intensity 12").assertIsNotEnabled()
+        compose.onNodeWithText("Log intensity 0.79").assertIsNotEnabled()
     }
 
     // The logged set's row
@@ -144,11 +153,11 @@ class MachineCardioIntensityTest {
             sessionId = 1L,
             machineId = bike.id,
             position = 0,
-            draft = CardioDraft(45, 0, 18_400, 12),
+            draft = CardioDraft(45, 0, 18_400, 0.79),
             loggedAt = Instant.parse("2026-11-02T18:12:00Z"),
         )
         show(state(CardioDraft(15, 0, 0, null), sets = listOf(set)))
 
-        compose.onNodeWithText("45 min · 18.4 km · int. 12").assertExists()
+        compose.onNodeWithText("45 min · 18.4 km · int. 0.79").assertExists()
     }
 }

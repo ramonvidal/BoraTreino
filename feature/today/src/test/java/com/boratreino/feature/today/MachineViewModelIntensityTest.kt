@@ -206,7 +206,6 @@ class MachineViewModelIntensityTest {
             rest,
             FakeSettings(),
             Clock.fixed(now, ZoneOffset.UTC),
-            FakeBikeScreenScanner(),
         )
         backgroundScope.launch { viewModel.state.collect {} }
         backgroundScope.launch { viewModel.events.collect { events += it } }
@@ -224,7 +223,7 @@ class MachineViewModelIntensityTest {
     }
 
     @Test
-    fun `stepping intensity up from unset gives 1, and down from unset stays unset`() = runTest {
+    fun `stepping intensity up from unset gives the start value, and down from unset stays unset`() = runTest {
         open(treadmill)
 
         viewModel.stepIntensity(up = false)
@@ -233,78 +232,78 @@ class MachineViewModelIntensityTest {
 
         viewModel.stepIntensity(up = true)
         runCurrent()
-        assertEquals(1, state.cardio.intensity)
+        assertEquals(0.70, state.cardio.intensity!!, 0.0)
     }
 
     @Test
     fun `stepping intensity changes only intensity`() = runTest {
-        open(treadmill, lastTime = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, 12), earlier)))
+        open(treadmill, lastTime = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, 0.79), earlier)))
 
         viewModel.stepIntensity(up = true)
         runCurrent()
 
-        assertEquals(CardioDraft(30, 250, 3200, 13), state.cardio)
+        assertEquals(CardioDraft(30, 250, 3200, 0.80), state.cardio)
     }
 
     // Prefill and Log
 
     @Test
     fun `prefill carries last time's intensity`() = runTest {
-        val last = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, 12), earlier))
+        val last = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, 0.79), earlier))
 
-        assertEquals(CardioDraft(30, 250, 3200, 12), open(treadmill, lastTime = last).cardio)
+        assertEquals(CardioDraft(30, 250, 3200, 0.79), open(treadmill, lastTime = last).cardio)
     }
 
     @Test
     fun `Log writes the intensity with the other steppers`() = runTest {
-        open(treadmill, lastTime = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, 12), earlier)))
+        open(treadmill, lastTime = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, 0.79), earlier)))
         viewModel.stepIntensity(up = true)
         runCurrent()
 
         viewModel.logCardio()
         runCurrent()
 
-        assertEquals(listOf(treadmill.id to CardioDraft(30, 250, 3200, 13)), training.cardioLogged)
+        assertEquals(listOf(treadmill.id to CardioDraft(30, 250, 3200, 0.80)), training.cardioLogged)
     }
 
     @Test
     fun `Log with only an intensity does nothing`() = runTest {
-        open(treadmill, lastTime = listOf(cardioSet(1, treadmill, 0, CardioDraft(0, 0, 0, 12), earlier)))
+        open(treadmill, lastTime = listOf(cardioSet(1, treadmill, 0, CardioDraft(0, 0, 0, 0.79), earlier)))
 
         viewModel.logCardio()
         runCurrent()
 
-        assertEquals(CardioDraft(0, 0, 0, 12), state.cardio)
+        assertEquals(CardioDraft(0, 0, 0, 0.79), state.cardio)
         assertTrue(training.cardioLogged.isEmpty())
     }
 
     @Test
     fun `Same again logs last time's intensity`() = runTest {
-        open(treadmill, lastTime = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, 12), earlier)))
-        assertEquals(CardioDraft(30, 250, 3200, 12), state.cardioSameAgain)
+        open(treadmill, lastTime = listOf(cardioSet(1, treadmill, 0, CardioDraft(30, 250, 3200, 0.79), earlier)))
+        assertEquals(CardioDraft(30, 250, 3200, 0.79), state.cardioSameAgain)
 
         viewModel.logCardioSameAgain()
         runCurrent()
 
-        assertEquals(listOf(treadmill.id to CardioDraft(30, 250, 3200, 12)), training.cardioLogged)
+        assertEquals(listOf(treadmill.id to CardioDraft(30, 250, 3200, 0.79)), training.cardioLogged)
     }
 
     // Editing a logged set
 
     @Test
     fun `opening a logged set shows its intensity in the editor`() = runTest {
-        val set = cardioSet(1, treadmill, 0, CardioDraft(30, 250, 0, 12), earlier)
+        val set = cardioSet(1, treadmill, 0, CardioDraft(30, 250, 0, 0.79), earlier)
         open(treadmill, thisSession = listOf(set))
 
         viewModel.openCardioSet(set)
         runCurrent()
 
-        assertEquals(12, state.cardioEditor?.draft?.intensity)
+        assertEquals(0.79, state.cardioEditor?.draft?.intensity)
     }
 
     @Test
     fun `the editor intensity steps and saving writes it to the same set`() = runTest {
-        val set = cardioSet(1, treadmill, 0, CardioDraft(30, 250, 0, 12), earlier)
+        val set = cardioSet(1, treadmill, 0, CardioDraft(30, 250, 0, 0.79), earlier)
         open(treadmill, thisSession = listOf(set))
         viewModel.openCardioSet(set)
         runCurrent()
@@ -315,7 +314,7 @@ class MachineViewModelIntensityTest {
 
         val saved = training.updated.single()
         assertEquals(set.id, saved.id)
-        assertEquals(13, saved.intensity)
+        assertEquals(0.80, saved.intensity!!, 0.0)
         assertEquals(30 * 60, saved.seconds)
     }
 

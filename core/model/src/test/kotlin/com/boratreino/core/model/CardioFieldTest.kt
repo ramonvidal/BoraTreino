@@ -1,51 +1,54 @@
 package com.boratreino.core.model
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The number pad's cardio values: which fields take a decimal, their starting text, and typed text (phase 44). */
+/** The number pad's cardio fields: which take a decimal, their starting text, and what typed text becomes. */
 class CardioFieldTest {
-    private val full = CardioDraft(
-        minutes = 20,
-        calories = 250,
-        distanceM = 5000,
-        intensity = 12,
-        watts = 160,
-        heartRate = 142,
-        wattsPerKg = 2.4,
-        tss = 48,
-        intensityFactor = 0.79,
-    )
+    private val full = CardioDraft(minutes = 20, calories = 250, distanceM = 5000, intensity = 0.79)
 
     private val empty = CardioDraft(minutes = 0, calories = 0, distanceM = 0)
 
     private fun typed(field: CardioField, text: String, draft: CardioDraft = full): CardioDraft? =
         CardioRules.withField(draft, field, text)
 
-    // allowsDecimal
+    // The fields
 
     @Test
-    fun `only distance, watts per kg and intensity factor take a decimal`() {
-        val decimal = CardioField.entries.filter { CardioRules.allowsDecimal(it) }.toSet()
+    fun `the cardio fields are minutes, distance, calories and intensity`() {
+        assertEquals(
+            listOf(CardioField.MINUTES, CardioField.DISTANCE_KM, CardioField.CALORIES, CardioField.INTENSITY),
+            CardioField.entries,
+        )
+    }
 
-        assertEquals(setOf(CardioField.DISTANCE_KM, CardioField.WATTS_PER_KG, CardioField.INTENSITY_FACTOR), decimal)
+    @Test
+    fun `distance and intensity take a decimal, minutes and calories do not`() {
+        assertTrue(CardioRules.allowsDecimal(CardioField.DISTANCE_KM))
+        assertTrue(CardioRules.allowsDecimal(CardioField.INTENSITY))
+        assertFalse(CardioRules.allowsDecimal(CardioField.MINUTES))
+        assertFalse(CardioRules.allowsDecimal(CardioField.CALORIES))
     }
 
     // fieldText
 
     @Test
     fun `fieldText is empty for a value that is not set or is zero`() {
-        val zeros = CardioDraft(
-            minutes = 0, calories = 0, distanceM = 0, intensity = 0, watts = 0, heartRate = 0,
-            wattsPerKg = 0.0, tss = 0, intensityFactor = 0.0,
-        )
+        val zeros = CardioDraft(minutes = 0, calories = 0, distanceM = 0, intensity = 0.0)
 
         CardioField.entries.forEach { field ->
             assertEquals("$field of an empty draft", "", CardioRules.fieldText(empty, field))
             assertEquals("$field of a zero draft", "", CardioRules.fieldText(zeros, field))
         }
+    }
+
+    @Test
+    fun `fieldText shows whole minutes and calories`() {
+        assertEquals("20", CardioRules.fieldText(full, CardioField.MINUTES))
+        assertEquals("250", CardioRules.fieldText(full, CardioField.CALORIES))
     }
 
     @Test
@@ -56,183 +59,110 @@ class CardioFieldTest {
     }
 
     @Test
-    fun `fieldText shows watts per kg and intensity factor without trailing zeros`() {
-        assertEquals("1", CardioRules.fieldText(empty.copy(wattsPerKg = 1.0), CardioField.WATTS_PER_KG))
-        assertEquals("1.5", CardioRules.fieldText(empty.copy(wattsPerKg = 1.5), CardioField.WATTS_PER_KG))
-        assertEquals("0.7", CardioRules.fieldText(empty.copy(intensityFactor = 0.7), CardioField.INTENSITY_FACTOR))
-        assertEquals("0.79", CardioRules.fieldText(empty.copy(intensityFactor = 0.79), CardioField.INTENSITY_FACTOR))
+    fun `fieldText shows intensity as a plain decimal without trailing zeros`() {
+        assertEquals("0.79", CardioRules.fieldText(full, CardioField.INTENSITY))
+        assertEquals("12", CardioRules.fieldText(empty.copy(intensity = 12.0), CardioField.INTENSITY))
+        assertEquals("0.7", CardioRules.fieldText(empty.copy(intensity = 0.7), CardioField.INTENSITY))
+        assertEquals("", CardioRules.fieldText(empty.copy(intensity = null), CardioField.INTENSITY))
+    }
+
+    // withField: decimals and separators
+
+    @Test
+    fun `intensity takes a comma or a point as the decimal separator`() {
+        assertEquals(0.79, typed(CardioField.INTENSITY, "0,79")!!.intensity!!, 0.0)
+        assertEquals(0.79, typed(CardioField.INTENSITY, "0.79")!!.intensity!!, 0.0)
     }
 
     @Test
-    fun `fieldText shows the whole numbers as they are`() {
-        assertEquals("20", CardioRules.fieldText(full, CardioField.MINUTES))
-        assertEquals("250", CardioRules.fieldText(full, CardioField.CALORIES))
-        assertEquals("12", CardioRules.fieldText(full, CardioField.INTENSITY))
-        assertEquals("160", CardioRules.fieldText(full, CardioField.WATTS))
-        assertEquals("142", CardioRules.fieldText(full, CardioField.HEART_RATE))
-        assertEquals("48", CardioRules.fieldText(full, CardioField.TSS))
+    fun `intensity keeps whole numbers and zero`() {
+        assertEquals(12.0, typed(CardioField.INTENSITY, "12")!!.intensity!!, 0.0)
+        assertEquals(0.0, typed(CardioField.INTENSITY, "0")!!.intensity!!, 0.0)
     }
 
-    // withField: text forms
+    @Test
+    fun `intensity rounds half up to 2 decimals`() {
+        assertEquals(0.79, typed(CardioField.INTENSITY, "0.785")!!.intensity!!, 1e-9)
+        assertEquals(0.78, typed(CardioField.INTENSITY, "0.784")!!.intensity!!, 1e-9)
+    }
+
+    @Test
+    fun `intensity is clamped to 0 to 100`() {
+        assertEquals(100.0, typed(CardioField.INTENSITY, "150")!!.intensity!!, 0.0)
+        assertEquals(100.0, typed(CardioField.INTENSITY, "100.5")!!.intensity!!, 0.0)
+    }
+
+    @Test
+    fun `distance takes a comma or a point and is stored in metres`() {
+        assertEquals(17300, typed(CardioField.DISTANCE_KM, "17,3", empty)!!.distanceM)
+        assertEquals(17300, typed(CardioField.DISTANCE_KM, "17.3", empty)!!.distanceM)
+    }
+
+    @Test
+    fun `whole minutes and calories are typed as they are`() {
+        assertEquals(45, typed(CardioField.MINUTES, "45", empty)!!.minutes)
+        assertEquals(520, typed(CardioField.CALORIES, "520", empty)!!.calories)
+    }
 
     @Test
     fun `surrounding spaces are ignored`() {
-        assertEquals(12, typed(CardioField.MINUTES, "  12  ")!!.minutes)
+        assertEquals(0.79, typed(CardioField.INTENSITY, "  0.79  ", empty)!!.intensity!!, 0.0)
+        assertEquals(12, typed(CardioField.MINUTES, "  12  ", empty)!!.minutes)
     }
 
     @Test
-    fun `a comma or a point is the decimal separator`() {
-        assertEquals(12500, typed(CardioField.DISTANCE_KM, "12,5")!!.distanceM)
-        assertEquals(12500, typed(CardioField.DISTANCE_KM, "12.5")!!.distanceM)
-        assertEquals(2.4, typed(CardioField.WATTS_PER_KG, "2,4")!!.wattsPerKg!!, 1e-9)
-        assertEquals(0.65, typed(CardioField.INTENSITY_FACTOR, "0,65")!!.intensityFactor!!, 1e-9)
+    fun `typed text changes only its own field`() {
+        val result = typed(CardioField.INTENSITY, "0.5")!!
+
+        assertEquals(full.minutes, result.minutes)
+        assertEquals(full.calories, result.calories)
+        assertEquals(full.distanceM, result.distanceM)
     }
 
-    @Test
-    fun `a point with no digits after it, or none before it, is still a number`() {
-        assertEquals(5, typed(CardioField.MINUTES, "5.")!!.minutes)
-        assertEquals(500, typed(CardioField.DISTANCE_KM, ".5")!!.distanceM)
-    }
+    // withField: blank clears
 
     @Test
-    fun `a blank text clears minutes, calories and distance to 0`() {
+    fun `blank text clears minutes, calories and distance to zero`() {
         assertEquals(0, typed(CardioField.MINUTES, "")!!.minutes)
-        assertEquals(0, typed(CardioField.CALORIES, "   ")!!.calories)
+        assertEquals(0, typed(CardioField.CALORIES, "")!!.calories)
         assertEquals(0, typed(CardioField.DISTANCE_KM, "")!!.distanceM)
+        assertEquals(0, typed(CardioField.DISTANCE_KM, "   ")!!.distanceM)
     }
 
     @Test
-    fun `a blank text clears the optional values to null`() {
+    fun `blank text clears intensity to not logged`() {
         assertNull(typed(CardioField.INTENSITY, "")!!.intensity)
-        assertNull(typed(CardioField.WATTS, "")!!.watts)
-        assertNull(typed(CardioField.HEART_RATE, " ")!!.heartRate)
-        assertNull(typed(CardioField.WATTS_PER_KG, "")!!.wattsPerKg)
-        assertNull(typed(CardioField.TSS, "")!!.tss)
-        assertNull(typed(CardioField.INTENSITY_FACTOR, "")!!.intensityFactor)
+        assertNull(typed(CardioField.INTENSITY, "   ")!!.intensity)
     }
 
+    // withField: garbage
+
     @Test
-    fun `text that is not a plain number returns null for every field`() {
-        listOf("abc", "1,2,3", "1e3", "-3", "+5", "1.2.3").forEach { text ->
-            CardioField.entries.forEach { field ->
-                assertNull("$field with '$text'", typed(field, text))
-            }
+    fun `text that is not a plain number is ignored`() {
+        for (text in listOf("abc", "-1", "1e3", "1.2.3", ".", "1 2", "0.7x")) {
+            assertNull("intensity $text", typed(CardioField.INTENSITY, text))
+            assertNull("minutes $text", typed(CardioField.MINUTES, text))
+            assertNull("distance $text", typed(CardioField.DISTANCE_KM, text))
+            assertNull("calories $text", typed(CardioField.CALORIES, text))
         }
     }
 
-    // withField: clamping and rounding
-
     @Test
-    fun `minutes are clamped to the most a cardio set can hold`() {
-        assertEquals(CardioRules.MAX_MINUTES, typed(CardioField.MINUTES, "600")!!.minutes)
-        assertEquals(CardioRules.MAX_MINUTES, typed(CardioField.MINUTES, "700")!!.minutes)
-    }
-
-    @Test
-    fun `calories are clamped to their maximum`() {
-        assertEquals(CardioRules.MAX_CALORIES, typed(CardioField.CALORIES, "9999")!!.calories)
-    }
-
-    @Test
-    fun `distance is typed in kilometres and stored in metres, clamped to 200 km`() {
-        assertEquals(200_000, typed(CardioField.DISTANCE_KM, "9999")!!.distanceM)
-        assertEquals(17_346, typed(CardioField.DISTANCE_KM, "17.3456")!!.distanceM)
-    }
-
-    @Test
-    fun `intensity is clamped to 999`() {
-        assertEquals(999, typed(CardioField.INTENSITY, "999")!!.intensity)
-        assertEquals(999, typed(CardioField.INTENSITY, "1000")!!.intensity)
-    }
-
-    @Test
-    fun `watts are clamped to 2000`() {
-        assertEquals(2000, typed(CardioField.WATTS, "2000")!!.watts)
-        assertEquals(2000, typed(CardioField.WATTS, "2500")!!.watts)
-    }
-
-    @Test
-    fun `heart rate is clamped to 30 to 250`() {
-        assertEquals(30, typed(CardioField.HEART_RATE, "10")!!.heartRate)
-        assertEquals(250, typed(CardioField.HEART_RATE, "300")!!.heartRate)
-        assertEquals(142, typed(CardioField.HEART_RATE, "142")!!.heartRate)
-    }
-
-    @Test
-    fun `TSS is clamped to 999`() {
-        assertEquals(999, typed(CardioField.TSS, "999")!!.tss)
-        assertEquals(999, typed(CardioField.TSS, "1000")!!.tss)
-    }
-
-    @Test
-    fun `watts per kg is clamped to 10 and kept to one decimal`() {
-        assertEquals(10.0, typed(CardioField.WATTS_PER_KG, "10.0")!!.wattsPerKg!!, 1e-9)
-        assertEquals(10.0, typed(CardioField.WATTS_PER_KG, "12")!!.wattsPerKg!!, 1e-9)
-        assertEquals(3.1, typed(CardioField.WATTS_PER_KG, "3.14")!!.wattsPerKg!!, 1e-9)
-        assertEquals(3.2, typed(CardioField.WATTS_PER_KG, "3.16")!!.wattsPerKg!!, 1e-9)
-    }
-
-    @Test
-    fun `intensity factor is clamped to 2 and kept to two decimals`() {
-        assertEquals(2.0, typed(CardioField.INTENSITY_FACTOR, "2.0")!!.intensityFactor!!, 1e-9)
-        assertEquals(2.0, typed(CardioField.INTENSITY_FACTOR, "2.5")!!.intensityFactor!!, 1e-9)
-        assertEquals(0.79, typed(CardioField.INTENSITY_FACTOR, "0.789")!!.intensityFactor!!, 1e-9)
-    }
-
-    @Test
-    fun `a decimal typed into a whole-number field is rounded half up`() {
-        assertEquals(46, typed(CardioField.MINUTES, "45.5")!!.minutes)
-        assertEquals(45, typed(CardioField.MINUTES, "45.4")!!.minutes)
-        assertEquals(250, typed(CardioField.CALORIES, "249.5")!!.calories)
-    }
-
-    @Test
-    fun `a huge string of digits never throws and is clamped`() {
-        val huge = "9".repeat(400)
-
-        CardioField.entries.forEach { field ->
-            assertNotNull("$field with a huge number", typed(field, huge))
+    fun `garbage text never throws`() {
+        listOf("", "abc", "9".repeat(60), "0,,5", "+3").forEach { text ->
+            CardioField.entries.forEach { field -> typed(field, text) }
         }
-        assertEquals(CardioRules.MAX_MINUTES, typed(CardioField.MINUTES, huge)!!.minutes)
-        assertEquals(200_000, typed(CardioField.DISTANCE_KM, huge)!!.distanceM)
-        assertEquals(2000, typed(CardioField.WATTS, huge)!!.watts)
-        assertEquals(10.0, typed(CardioField.WATTS_PER_KG, huge)!!.wattsPerKg!!, 1e-9)
     }
 
-    // withField: zeros in the optional fields
+    // Draft to set and back
 
     @Test
-    fun `typing 0 in an optional field keeps it at 0`() {
-        assertEquals(0, typed(CardioField.INTENSITY, "0")!!.intensity)
-        assertEquals(0, typed(CardioField.WATTS, "0")!!.watts)
-        assertEquals(0, typed(CardioField.TSS, "0")!!.tss)
-        assertEquals(0.0, typed(CardioField.WATTS_PER_KG, "0")!!.wattsPerKg!!, 1e-9)
-        assertEquals(0.0, typed(CardioField.INTENSITY_FACTOR, "0,0")!!.intensityFactor!!, 1e-9)
-    }
+    fun `typed intensity is what the set saves`() {
+        val draft = typed(CardioField.INTENSITY, "0.79", empty)!!
 
-    @Test
-    fun `typing 0 in heart rate clears it to null`() {
-        assertNull(typed(CardioField.HEART_RATE, "0")!!.heartRate)
-    }
+        val saved = CardioRules.toSet(1L, 2L, 3L, 0, draft, java.time.Instant.EPOCH)
 
-    @Test
-    fun `typing 0 in minutes, calories or distance sets it to 0`() {
-        assertEquals(0, typed(CardioField.MINUTES, "0")!!.minutes)
-        assertEquals(0, typed(CardioField.CALORIES, "0")!!.calories)
-        assertEquals(0, typed(CardioField.DISTANCE_KM, "0")!!.distanceM)
-    }
-
-    // withField: the rest of the draft
-
-    @Test
-    fun `only the typed field changes`() {
-        assertEquals(full.copy(watts = 150), typed(CardioField.WATTS, "150"))
-        assertEquals(full.copy(distanceM = 12_500), typed(CardioField.DISTANCE_KM, "12,5"))
-        assertEquals(full.copy(minutes = 0), typed(CardioField.MINUTES, ""))
-    }
-
-    @Test
-    fun `a typed value on an empty draft sets just that value`() {
-        assertEquals(CardioDraft(minutes = 0, calories = 0, distanceM = 0, tss = 99), typed(CardioField.TSS, "99", empty))
+        assertEquals(0.79, saved.intensity!!, 0.0)
+        assertEquals(0.79, CardioRules.toDraft(saved).intensity!!, 0.0)
     }
 }

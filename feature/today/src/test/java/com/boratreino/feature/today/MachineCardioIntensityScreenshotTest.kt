@@ -60,11 +60,11 @@ class MachineCardioIntensityScreenshotTest {
     }
 
     @Test
-    fun `intensity set`() = shoot("machine-cardio-intensity", state(CardioDraft(45, 520, 18_400, 12)))
+    fun `intensity set`() = shoot("machine-cardio-intensity", state(CardioDraft(45, 520, 18_400, 0.79)))
 
     @Test
     fun `intensity not set shows a dash`() = shoot("machine-cardio-intensity-unset", state(CardioDraft(30, 250, 0, null)))
 
     @Test
-    fun `intensity set in the dark`() = shoot("machine-cardio-intensity-dark", state(CardioDraft(45, 520, 18_400, 12)), dark = true)
+    fun `intensity set in the dark`() = shoot("machine-cardio-intensity-dark", state(CardioDraft(45, 520, 18_400, 0.79)), dark = true)
 }

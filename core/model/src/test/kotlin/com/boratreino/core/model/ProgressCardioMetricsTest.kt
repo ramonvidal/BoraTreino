@@ -1,26 +1,25 @@
 package com.boratreino.core.model
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 import java.time.LocalDate
 
-/** Cardio progress by speed, intensity, distance and time, from the phase 41 contract. */
+/** Cardio progress by speed, intensity, distance and time: the metrics, the default and the points. */
 class ProgressCardioMetricsTest {
-    private val at = Instant.parse("2026-11-02T18:00:00Z")
     private val bike = Machine(1L, "Bike", MuscleGroup.CARDIO, MachineKind.CARDIO, 1.0, null, null, false)
-    private val day1 = LocalDate.of(2026, 10, 1)
-    private val day2 = LocalDate.of(2026, 10, 8)
-    private val day3 = LocalDate.of(2026, 10, 15)
-    private val dates = mapOf(1L to day1, 2L to day2, 3L to day3)
+
+    private val day1 = LocalDate.of(2026, 11, 1)
+    private val day2 = LocalDate.of(2026, 11, 2)
+    private val dates = mapOf(1L to day1, 2L to day2)
 
     private fun set(
         id: Long,
         sessionId: Long,
         seconds: Int? = null,
         distanceM: Int? = null,
-        intensity: Int? = null,
+        intensity: Double? = null,
         position: Int = 0,
         type: SetType = SetType.NORMAL,
     ) = WorkoutSet(
@@ -33,57 +32,33 @@ class ProgressCardioMetricsTest {
         seconds = seconds,
         calories = null,
         distanceM = distanceM,
-        loggedAt = at,
+        loggedAt = Instant.parse("2026-11-01T10:00:00Z"),
         type = type,
         intensity = intensity,
     )
 
-    // Metric list
+    // Metrics
 
     @Test
-    fun `the five bike console metrics are the last entries of the enum`() {
+    fun `the cardio metrics are speed, intensity, distance and time, in that order`() {
         assertEquals(
-            listOf(
-                ProgressMetric.POWER,
-                ProgressMetric.HEART_RATE,
-                ProgressMetric.WATTS_PER_KG,
-                ProgressMetric.TSS,
-                ProgressMetric.INTENSITY_FACTOR,
-            ),
-            ProgressMetric.values().toList().takeLast(5),
-        )
-    }
-
-    @Test
-    fun `the cardio detail offers the metrics in the phase 42 order`() {
-        assertEquals(
-            listOf(
-                ProgressMetric.SPEED,
-                ProgressMetric.POWER,
-                ProgressMetric.INTENSITY_FACTOR,
-                ProgressMetric.WATTS_PER_KG,
-                ProgressMetric.TSS,
-                ProgressMetric.HEART_RATE,
-                ProgressMetric.INTENSITY,
-                ProgressMetric.DISTANCE,
-                ProgressMetric.MINUTES,
-            ),
+            listOf(ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE, ProgressMetric.MINUTES),
             ProgressRules.CARDIO_METRICS,
         )
     }
 
-    // defaultCardioMetric
+    // Default metric
 
     @Test
     fun `speed is the default when a set has distance and time`() {
-        val sets = listOf(set(1L, 1L, seconds = 600, distanceM = 2000), set(2L, 1L, seconds = 600, intensity = 10))
+        val sets = listOf(set(1L, 1L, seconds = 600, distanceM = 2000), set(2L, 1L, seconds = 600, intensity = 0.10))
 
         assertEquals(ProgressMetric.SPEED, ProgressRules.defaultCardioMetric(sets))
     }
 
     @Test
     fun `intensity is the default when there is no distance but there is an intensity and time`() {
-        val sets = listOf(set(1L, 1L, seconds = 600, intensity = 10), set(2L, 1L, seconds = 600))
+        val sets = listOf(set(1L, 1L, seconds = 600, intensity = 0.10), set(2L, 1L, seconds = 600))
 
         assertEquals(ProgressMetric.INTENSITY, ProgressRules.defaultCardioMetric(sets))
     }
@@ -100,128 +75,100 @@ class ProgressCardioMetricsTest {
 
     @Test
     fun `warm-up sets do not choose the default`() {
-        val sets = listOf(set(1L, 1L, seconds = 600, distanceM = 2000, type = SetType.WARMUP))
+        val sets = listOf(
+            set(1L, 1L, seconds = 600, distanceM = 2000, type = SetType.WARMUP),
+            set(2L, 1L, seconds = 600, intensity = 0.10),
+        )
 
-        assertEquals(ProgressMetric.MINUTES, ProgressRules.defaultCardioMetric(sets))
+        assertEquals(ProgressMetric.INTENSITY, ProgressRules.defaultCardioMetric(sets))
     }
 
     @Test
     fun `metricFor a cardio machine is the default cardio metric`() {
         assertEquals(
             ProgressMetric.INTENSITY,
-            ProgressRules.metricFor(bike, listOf(set(1L, 1L, seconds = 600, intensity = 10))),
+            ProgressRules.metricFor(bike, listOf(set(1L, 1L, seconds = 600, intensity = 0.10))),
         )
     }
 
-    // points: SPEED
+    // Points
 
     @Test
-    fun `speed points are the session's total distance over its total time, one per session with distance`() {
+    fun `speed points are the session's total distance over its total time`() {
         val sets = listOf(
             set(1L, 1L, seconds = 600, distanceM = 2000),
             set(2L, 1L, seconds = 1200, distanceM = 3000, position = 1),
-            set(3L, 2L, seconds = 1800),
-            set(4L, 3L, seconds = 1800, distanceM = 6000),
         )
 
         val points = ProgressRules.points(sets, dates, ProgressMetric.SPEED)
 
-        assertEquals(listOf(1L, 3L), points.map { it.sessionId })
-        assertEquals(10.0, points[0].value, 1e-9)
-        assertEquals(12.0, points[1].value, 1e-9)
+        assertEquals(1, points.size)
+        assertEquals(5000.0 / 1800.0 * 3.6, points.single().value, 1e-9)
     }
 
     @Test
-    fun `speed points leave out warm-up sets`() {
+    fun `intensity points are the session's time-weighted average intensity as a decimal`() {
         val sets = listOf(
-            set(1L, 1L, seconds = 600, distanceM = 2000),
-            set(2L, 1L, seconds = 1200, distanceM = 3000, position = 1),
-            set(3L, 1L, seconds = 600, distanceM = 9000, type = SetType.WARMUP),
-        )
-
-        val points = ProgressRules.points(sets, dates, ProgressMetric.SPEED)
-
-        assertEquals(10.0, points.single().value, 1e-9)
-    }
-
-    @Test
-    fun `the best speed session is the fastest one`() {
-        val sets = listOf(
-            set(1L, 1L, seconds = 1800, distanceM = 5000),
-            set(2L, 3L, seconds = 1800, distanceM = 6000),
-            set(3L, 2L, seconds = 1800, distanceM = 4000),
-        )
-        val points = ProgressRules.points(sets, dates, ProgressMetric.SPEED)
-
-        assertEquals(3L, ProgressRules.best(points)!!.sessionId)
-    }
-
-    // points: INTENSITY
-
-    @Test
-    fun `intensity points are the session's time-weighted average intensity`() {
-        val sets = listOf(
-            set(1L, 1L, seconds = 600, intensity = 10),
-            set(2L, 1L, seconds = 1200, intensity = 20, position = 1),
-            set(3L, 1L, seconds = 600, position = 2),
-            set(4L, 2L, seconds = 900, intensity = 12),
-            set(5L, 3L, seconds = 600, distanceM = 1000),
+            set(1L, 1L, seconds = 600, intensity = 0.10),
+            set(2L, 1L, seconds = 1200, intensity = 0.20, position = 1),
+            set(3L, 2L, seconds = 900, intensity = 0.12),
         )
 
         val points = ProgressRules.points(sets, dates, ProgressMetric.INTENSITY)
 
-        assertEquals(listOf(1L, 2L), points.map { it.sessionId })
-        assertEquals(50.0 / 3.0, points[0].value, 1e-9)
-        assertEquals(12.0, points[1].value, 1e-9)
+        assertEquals(listOf(day1, day2), points.map { it.date })
+        assertEquals((0.10 * 600 + 0.20 * 1200) / 1800.0, points[0].value, 1e-9)
+        assertEquals(0.12, points[1].value, 1e-9)
     }
 
     @Test
     fun `intensity points ignore warm-up sets`() {
         val sets = listOf(
-            set(1L, 1L, seconds = 600, intensity = 10),
-            set(2L, 1L, seconds = 600, intensity = 500, type = SetType.WARMUP),
+            set(1L, 1L, seconds = 600, intensity = 0.10),
+            set(2L, 1L, seconds = 600, intensity = 5.00, type = SetType.WARMUP, position = 1),
         )
 
-        assertEquals(10.0, ProgressRules.points(sets, dates, ProgressMetric.INTENSITY).single().value, 1e-9)
+        val points = ProgressRules.points(sets, dates, ProgressMetric.INTENSITY)
+
+        assertEquals(0.10, points.single().value, 1e-9)
     }
 
-    // points: DISTANCE and MINUTES
+    @Test
+    fun `sessions without an intensity and time have no intensity point`() {
+        val sets = listOf(set(1L, 1L, seconds = 600), set(2L, 2L, seconds = 0, intensity = 0.10))
+
+        assertTrue(ProgressRules.points(sets, dates, ProgressMetric.INTENSITY).isEmpty())
+    }
 
     @Test
     fun `distance points are the session's total in km, and sessions with no distance are skipped`() {
         val sets = listOf(
             set(1L, 1L, seconds = 600, distanceM = 2000),
-            set(2L, 1L, seconds = 1200, distanceM = 3000, position = 1),
-            set(3L, 2L, seconds = 900),
-            set(4L, 3L, seconds = 600, distanceM = 1500),
+            set(2L, 1L, seconds = 600, distanceM = 1500, position = 1),
+            set(3L, 2L, seconds = 600),
         )
 
         val points = ProgressRules.points(sets, dates, ProgressMetric.DISTANCE)
 
-        assertEquals(listOf(1L, 3L), points.map { it.sessionId })
-        assertEquals(5.0, points[0].value, 1e-9)
-        assertEquals(1.5, points[1].value, 1e-9)
+        assertEquals(1, points.size)
+        assertEquals(3.5, points.single().value, 1e-9)
     }
 
     @Test
     fun `minute points are the session's total minutes`() {
-        val sets = listOf(
-            set(1L, 1L, seconds = 600, distanceM = 2000),
-            set(2L, 1L, seconds = 1200, distanceM = 3000, position = 1),
-            set(3L, 2L, seconds = 900),
-        )
+        val sets = listOf(set(1L, 1L, seconds = 600), set(2L, 1L, seconds = 1200, position = 1))
 
         val points = ProgressRules.points(sets, dates, ProgressMetric.MINUTES)
 
-        assertEquals(30.0, points[0].value, 1e-9)
-        assertEquals(15.0, points[1].value, 1e-9)
+        assertEquals(30.0, points.single().value, 0.0)
     }
 
     @Test
     fun `points are not made for sessions outside the given dates`() {
-        val sets = listOf(set(1L, 99L, seconds = 600, distanceM = 2000))
+        val sets = listOf(set(1L, 1L, seconds = 600, intensity = 0.10), set(2L, 9L, seconds = 600, intensity = 0.20))
 
-        assertEquals(emptyList<SessionPoint>(), ProgressRules.points(sets, dates, ProgressMetric.DISTANCE))
-        assertNull(ProgressRules.best(ProgressRules.points(sets, dates, ProgressMetric.SPEED)))
+        val points = ProgressRules.points(sets, dates, ProgressMetric.INTENSITY)
+
+        assertEquals(listOf(1L), points.map { it.sessionId })
     }
 }

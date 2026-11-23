@@ -30,7 +30,7 @@ class StatsCardioBlocksTest {
         sessionId: Long,
         seconds: Int?,
         distanceM: Int? = null,
-        intensity: Int? = null,
+        intensity: Double? = null,
     ) = WorkoutSet(
         id = id,
         sessionId = sessionId,
@@ -82,8 +82,8 @@ class StatsCardioBlocksTest {
     )
 
     private val sets = listOf(
-        cardio(1L, 1L, seconds = 600, distanceM = 2000, intensity = 10),
-        cardio(2L, 2L, seconds = 1200, distanceM = 3000, intensity = 20),
+        cardio(1L, 1L, seconds = 600, distanceM = 2000, intensity = 0.10),
+        cardio(2L, 2L, seconds = 1200, distanceM = 3000, intensity = 0.20),
         strength(3L, 2L),
         strength(4L, 3L),
         cardio(5L, 4L, seconds = 900),
@@ -104,7 +104,7 @@ class StatsCardioBlocksTest {
         assertEquals(30, block.minutes)
         assertEquals(5000, block.distanceM)
         assertEquals(2, block.sessions)
-        assertEquals(50.0 / 3.0, block.intensityAvg!!, 1e-9)
+        assertEquals((0.10 * 600 + 0.20 * 1200) / 1800.0, block.intensityAvg!!, 1e-9)
         assertEquals(10.0, block.speedKmh!!, 1e-9)
     }
 

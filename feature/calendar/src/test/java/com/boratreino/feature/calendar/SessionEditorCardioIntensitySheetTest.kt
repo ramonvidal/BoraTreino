@@ -3,8 +3,10 @@ package com.boratreino.feature.calendar
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -32,11 +34,11 @@ private val bikeSet = CardioRules.toSet(
     sessionId = CalendarSamples.mondaySession.session.id,
     machineId = bike.id,
     position = 0,
-    draft = CardioDraft(30, 250, 3200, 12),
+    draft = CardioDraft(30, 250, 3200, 0.79),
     loggedAt = Instant.parse("2026-11-02T21:20:00Z"),
 )
 
-/** Monday's session with a bike that has one set with an intensity of 12. */
+/** Monday's session with a bike that has one set with an intensity of 0.79. */
 private val withBike = CalendarSamples.editorState.copy(
     detail = CalendarSamples.mondaySession.let {
         SessionDetail(it.session, it.routine, it.machines + SessionMachine(bike, listOf(bikeSet)))
@@ -61,7 +63,7 @@ class SessionEditorCardioIntensitySheetTest {
         }
     }
 
-    private fun editing(intensity: Int?) = withBike.copy(
+    private fun editing(intensity: Double?) = withBike.copy(
         editor = SetEdit(
             set = bikeSet,
             machine = bike,
@@ -77,12 +79,28 @@ class SessionEditorCardioIntensitySheetTest {
 
     @Test
     fun `the cardio sheet has an Intensity stepper beside Calories`() {
-        setContent(editing(intensity = 12))
+        setContent(editing(intensity = 0.79))
 
         compose.onNodeWithText("Intensity").assertExists()
         compose.onNodeWithContentDescription("Increase Intensity").assertExists()
         compose.onNodeWithContentDescription("Decrease Intensity").assertExists()
         compose.onNodeWithText("Calories").assertExists()
+    }
+
+    @Test
+    fun `the Intensity stepper shows its value with 2 decimals`() {
+        setContent(editing(intensity = 0.79))
+
+        compose.onNodeWithText("0.79", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the cardio sheet has no bike console values`() {
+        setContent(editing(intensity = 0.79))
+
+        listOf("Watts", "Watts/kg", "Heart rate", "TSS", "IF").forEach { label ->
+            compose.onAllNodesWithText(label, useUnmergedTree = true).assertCountEquals(0)
+        }
     }
 
     @Test
@@ -98,7 +116,7 @@ class SessionEditorCardioIntensitySheetTest {
 
     @Test
     fun `the cardio sheet with an intensity captures a picture`() {
-        setContent(editing(intensity = 12))
+        setContent(editing(intensity = 0.79))
         compose.onNode(isDialog()).captureRoboImage("build/outputs/roborazzi/session-editor-cardio-intensity-sheet.png")
     }
 
