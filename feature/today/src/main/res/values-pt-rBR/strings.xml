@@ -138,6 +138,15 @@
     <string name="machine_cardio_intensity">Intensidade</string>
     <string name="machine_cardio_intensity_part">intensidade %1$d</string>
     <string name="machine_cardio_intensity_short">int. %1$d</string>
+    <string name="machine_cardio_bike_values">Valores da bike</string>
+    <string name="machine_cardio_watts">Watts</string>
+    <string name="machine_cardio_heart_rate">Frequência cardíaca</string>
+    <string name="machine_cardio_watts_per_kg">Watts/kg</string>
+    <string name="machine_cardio_tss">TSS</string>
+    <string name="machine_cardio_if">IF</string>
+    <string name="machine_cardio_watts_part">%1$d W</string>
+    <string name="machine_cardio_bpm_part">%1$d bpm</string>
+    <string name="machine_cardio_if_part">IF %1$.2f</string>
     <string name="machine_set_type">Tipo de série: %1$s</string>
     <plurals name="today_machines">
         <item quantity="one">%d exercício</item>

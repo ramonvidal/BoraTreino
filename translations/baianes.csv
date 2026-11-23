@@ -165,6 +165,15 @@ feature/calendar,calendar_calories,,Calories,Calorias
 feature/calendar,calendar_distance_km,,Distance (km),Distância (km)
 feature/calendar,calendar_intensity,,Intensity,Intensidade
 feature/calendar,calendar_intensity_short,,int. %1$d,int. %1$d
+feature/calendar,calendar_bike_values,,Bike values,Valores da bike
+feature/calendar,calendar_watts,,Watts,Watts
+feature/calendar,calendar_heart_rate,,Heart rate,Frequência cardíaca
+feature/calendar,calendar_watts_per_kg,,Watts/kg,Watts/kg
+feature/calendar,calendar_tss,,TSS,TSS
+feature/calendar,calendar_if,,IF,IF
+feature/calendar,calendar_watts_short,,%1$d W,%1$d W
+feature/calendar,calendar_bpm_short,,%1$d bpm,%1$d bpm
+feature/calendar,calendar_if_short,,IF %1$.2f,IF %1$.2f
 feature/calendar,calendar_dash,,-,-
 feature/progress,progress_title,,Progress,Evolução
 feature/progress,progress_empty,,Log a training to see your progress.,Registre um treino pra ver sua evolução. Bora!
@@ -360,6 +369,29 @@ feature/progress,progress_metric_speed,,Speed,Velocidade
 feature/progress,progress_metric_intensity,,Intensity,Intensidade
 feature/progress,progress_metric_distance,,Distance,Distância
 feature/progress,progress_metric_time,,Time,Tempo
+feature/progress,progress_metric_power,,Power,Potência
+feature/progress,progress_metric_if,,IF,IF
+feature/progress,progress_metric_watts_per_kg,,W/kg,W/kg
+feature/progress,progress_metric_tss,,TSS,TSS
+feature/progress,progress_metric_heart_rate,,Heart rate,Frequência cardíaca
+feature/progress,progress_value_power,,%1$s W,%1$s W
+feature/progress,progress_value_heart_rate,,%1$s bpm,%1$s bpm
+feature/progress,progress_value_watts_per_kg,,%1$s W/kg,%1$s W/kg
+feature/progress,progress_value_tss,,%1$s TSS,%1$s TSS
+feature/progress,progress_value_if,,IF %1$s,IF %1$s
+feature/progress,progress_best_generic,,Best %1$s,Melhor: %1$s
+feature/progress,progress_from_to_generic,,%1$s → %2$s,%1$s → %2$s
+feature/progress,progress_trend_generic,,Trend: %1$s to %2$s,Tendência: %1$s a %2$s
+feature/progress,progress_chart_title_power,,Average power (W),Potência média (W)
+feature/progress,progress_chart_title_heart_rate,,Average heart rate (bpm),Frequência cardíaca média (bpm)
+feature/progress,progress_chart_title_watts_per_kg,,Watts per kg,Watts por kg
+feature/progress,progress_chart_title_tss,,Training stress (TSS),Carga de treino (TSS)
+feature/progress,progress_chart_title_if,,Intensity factor (IF),Fator de intensidade (IF)
+feature/progress,progress_record_power,,Best power: %1$s,Melhor potência: %1$s
+feature/progress,progress_record_if,,Best IF: %1$s,Melhor IF: %1$s
+feature/progress,progress_record_tss,,Best TSS: %1$s,Melhor TSS: %1$s
+feature/progress,stats_cardio_average_power,,Average power %1$s W,Potência média %1$s W
+feature/progress,stats_cardio_total_tss,,Total TSS %1$s,TSS total %1$s
 feature/progress,progress_chart_title_speed,,Average speed (km/h),Velocidade média (km/h)
 feature/progress,progress_chart_title_intensity,,Average intensity,Intensidade média
 feature/progress,progress_chart_title_distance,,Distance (km),Distância (km)
@@ -789,6 +821,15 @@ feature/today,machine_log_cardio,,Log %1$s,Registrar %1$s
 feature/today,machine_cardio_intensity,,Intensity,Intensidade
 feature/today,machine_cardio_intensity_part,,intensity %1$d,intensidade %1$d
 feature/today,machine_cardio_intensity_short,,int. %1$d,int. %1$d
+feature/today,machine_cardio_bike_values,,Bike values,Valores da bike
+feature/today,machine_cardio_watts,,Watts,Watts
+feature/today,machine_cardio_heart_rate,,Heart rate,Frequência cardíaca
+feature/today,machine_cardio_watts_per_kg,,Watts/kg,Watts/kg
+feature/today,machine_cardio_tss,,TSS,TSS
+feature/today,machine_cardio_if,,IF,IF
+feature/today,machine_cardio_watts_part,,%1$d W,%1$d W
+feature/today,machine_cardio_bpm_part,,%1$d bpm,%1$d bpm
+feature/today,machine_cardio_if_part,,IF %1$.2f,IF %1$.2f
 feature/today,machine_set_type,,Set type: %1$s,Tipo de série: %1$s
 feature/update,update_available,,Bora pro Treino! %1$s is available,Bora pro Treino! %1$s está disponível
 feature/update,update_install,,Install,Instalar
