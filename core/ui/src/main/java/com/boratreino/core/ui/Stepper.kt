@@ -68,6 +68,7 @@ fun Stepper(
     onValueClick: () -> Unit,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    valueClickLabel: String? = null,
 ) {
     val buttonSize = if (compact) CompactStepperButtonSize else StepperButtonSize
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -91,7 +92,7 @@ fun Stepper(
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = buttonSize)
-                    .clickable(onClick = onValueClick),
+                    .clickable(onClickLabel = valueClickLabel, onClick = onValueClick),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
             ) {

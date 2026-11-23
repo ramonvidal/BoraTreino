@@ -199,6 +199,7 @@ object CardioRules {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return clearField(draft, field)
         val value = parseNumber(trimmed) ?: return null
+        if (field == CardioField.HEART_RATE && value.signum() == 0) return clearField(draft, field)
         return when (field) {
             CardioField.MINUTES -> draft.copy(minutes = value.toClampedInt(0, MAX_MINUTES))
             CardioField.CALORIES -> draft.copy(calories = value.toClampedInt(0, MAX_CALORIES))
