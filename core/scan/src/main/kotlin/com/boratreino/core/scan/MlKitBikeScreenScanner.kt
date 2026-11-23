@@ -62,7 +62,9 @@ internal class MlKitBikeScreenScanner @Inject constructor(
     private fun loadImage(uri: Uri): InputImage? {
         val resolver = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
+        // decodeStream returns null when only the bounds are asked for, so its result can't tell whether
+        // the picture opened: the check is on the bounds below (0 means it did not open or is not an image).
+        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         val longSide = maxOf(bounds.outWidth, bounds.outHeight)
         if (longSide <= 0) return null
         if (longSide <= MAX_SIDE) return InputImage.fromFilePath(context, uri)
