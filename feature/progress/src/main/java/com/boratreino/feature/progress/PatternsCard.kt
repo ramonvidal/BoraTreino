@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -82,9 +83,11 @@ internal fun PatternsCard(patterns: PatternReport?, modifier: Modifier = Modifie
 
 @Composable
 private fun PatternSection(title: String, slots: List<PatternSlot>) {
+    // stringResource is composable and can't run inside the joinToString lambda: use the context directly.
+    val context = LocalContext.current
     val description = slots.filter { it.bucket != null }.joinToString(". ") { slot ->
         val bucket = checkNotNull(slot.bucket)
-        stringResource(R.string.stats_patterns_slot_description, slot.label, signedWhole(bucket.meanIndex), bucket.n)
+        context.getString(R.string.stats_patterns_slot_description, slot.label, signedWhole(bucket.meanIndex), bucket.n)
     }
     Column(
         Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = "$title. $description" },
