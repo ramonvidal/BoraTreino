@@ -2,7 +2,6 @@ package com.boratreino.core.model
 
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-import kotlin.math.sqrt
 
 /** Where the acute:chronic workload ratio sits. See [WorkloadRules]. */
 enum class AcwrStatus { NO_DATA, BUILDING_BASELINE, LOW, OPTIMAL, HIGH, VERY_HIGH }
@@ -10,7 +9,6 @@ enum class AcwrStatus { NO_DATA, BUILDING_BASELINE, LOW, OPTIMAL, HIGH, VERY_HIG
 /**
  * Training load of the last week against the last month. [acuteSets] = working sets in the last 7 days (today
  * included), [chronicWeeklyAverage] = sets in the last 28 days / 4, [acwr] = acute / chronic (null when chronic is 0),
- * [monotony] = mean / population SD of the last 7 daily loads (null when the SD is 0), [strain] = acute * monotony,
  * [historyDays] = days from the first day with load to today, inclusive (0 without load).
  */
 data class WorkloadReport(
@@ -18,8 +16,6 @@ data class WorkloadReport(
     val chronicWeeklyAverage: Double,
     val acwr: Double?,
     val status: AcwrStatus,
-    val monotony: Double?,
-    val strain: Double?,
     val historyDays: Int,
 )
 
@@ -35,13 +31,13 @@ object WorkloadRules {
      * [today] and days with 0 or fewer sets are ignored.
      *
      * Status: NO_DATA when there is no load at all, or when [acwr] is null (nothing in the last 28 days);
-     * BUILDING_BASELINE while [WorkloadReport.historyDays] < 28 (ratio and monotony are still filled);
+     * BUILDING_BASELINE while [WorkloadReport.historyDays] < 28 (the ratio is still filled);
      * otherwise LOW < 0.8, OPTIMAL 0.8..1.3, HIGH > 1.3..1.5, VERY_HIGH > 1.5 (upper bounds inclusive).
      */
     fun report(setsPerDay: Map<LocalDate, Int>, today: LocalDate): WorkloadReport {
         val loads = setsPerDay.filter { (date, sets) -> sets > 0 && !date.isAfter(today) }
         if (loads.isEmpty()) {
-            return WorkloadReport(0, 0.0, null, AcwrStatus.NO_DATA, null, null, 0)
+            return WorkloadReport(0, 0.0, null, AcwrStatus.NO_DATA, 0)
         }
         val first = loads.keys.min()
         val historyDays = (ChronoUnit.DAYS.between(first, today) + 1).toInt()
@@ -51,12 +47,6 @@ object WorkloadRules {
         val chronic = chronicSets / 4.0
         val acwr = if (chronic > 0.0) acuteSets / chronic else null
 
-        val week = (0 until ACUTE_DAYS).map { (loads[today.minusDays(it.toLong())] ?: 0).toDouble() }
-        val mean = week.average()
-        val sd = sqrt(week.sumOf { (it - mean) * (it - mean) } / ACUTE_DAYS)
-        val monotony = if (sd > 1e-12) mean / sd else null
-        val strain = monotony?.let { acuteSets * it }
-
         val status = when {
             acwr == null -> AcwrStatus.NO_DATA
             historyDays < CHRONIC_DAYS -> AcwrStatus.BUILDING_BASELINE
@@ -65,6 +55,6 @@ object WorkloadRules {
             acwr <= HIGH_UP_TO -> AcwrStatus.HIGH
             else -> AcwrStatus.VERY_HIGH
         }
-        return WorkloadReport(acuteSets, chronic, acwr, status, monotony, strain, historyDays)
+        return WorkloadReport(acuteSets, chronic, acwr, status, historyDays)
     }
 }

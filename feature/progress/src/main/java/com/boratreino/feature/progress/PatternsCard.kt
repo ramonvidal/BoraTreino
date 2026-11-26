@@ -40,9 +40,10 @@ private class PatternSlot(val label: String, val bucket: PatternBucket?)
 
 /**
  * When you lift best: the average difference from each exercise's own typical estimated 1RM, by
- * weekday and by days of rest. Whiskers are the standard error; buckets under
- * [PatternRules.MIN_PER_BUCKET] sessions are greyed. Says how many sessions it needs when [patterns]
- * is not [PatternReport.enough]. Draws nothing when [patterns] is null.
+ * weekday and by days of rest. Whiskers are the standard error; only buckets that passed the test
+ * ([PatternBucket.significant]) get the strong colour, the rest are muted. Marked exploratory. Says
+ * how many sessions it needs when [patterns] is not [PatternReport.enough], and "no clear pattern yet"
+ * without bars when nothing is [PatternReport.anySignificant]. Draws nothing when [patterns] is null.
  */
 @Composable
 internal fun PatternsCard(patterns: PatternReport?, modifier: Modifier = Modifier) {
@@ -51,6 +52,15 @@ internal fun PatternsCard(patterns: PatternReport?, modifier: Modifier = Modifie
         if (!patterns.enough) {
             Text(
                 stringResource(R.string.stats_patterns_needs, PatternRules.MIN_SESSIONS, patterns.sessionsUsed),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return@StatsCard
+        }
+        ExploratoryHint(stringResource(R.string.stats_patterns_hint))
+        if (!patterns.anySignificant) {
+            Text(
+                stringResource(R.string.stats_patterns_none, patterns.sessionsUsed),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -74,7 +84,7 @@ internal fun PatternsCard(patterns: PatternReport?, modifier: Modifier = Modifie
         PatternSection(stringResource(R.string.stats_patterns_weekday), weekdaySlots)
         PatternSection(stringResource(R.string.stats_patterns_rest), restSlots)
         Text(
-            stringResource(R.string.stats_patterns_footnote, PatternRules.MIN_PER_BUCKET),
+            stringResource(R.string.stats_patterns_highlight_note),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -104,9 +114,9 @@ private fun PatternSection(title: String, slots: List<PatternSlot>) {
 @Composable
 private fun SlotLabels(slot: PatternSlot, modifier: Modifier) {
     val bucket = slot.bucket
-    val enough = bucket != null && bucket.n >= PatternRules.MIN_PER_BUCKET
+    val highlighted = bucket != null && bucket.significant
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
-    val color = if (enough) MaterialTheme.colorScheme.onSurface else muted.copy(alpha = 0.6f)
+    val color = if (highlighted) MaterialTheme.colorScheme.onSurface else muted.copy(alpha = 0.6f)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(slot.label, style = MaterialTheme.typography.labelMedium, color = muted, maxLines = 1, textAlign = TextAlign.Center)
         Text(
@@ -154,13 +164,13 @@ private fun PatternBars(slots: List<PatternSlot>, modifier: Modifier = Modifier)
         drawLine(grid, Offset(0f, mid), Offset(size.width, mid), strokeWidth = 1.dp.toPx())
         slots.forEachIndexed { index, item ->
             val bucket = item.bucket ?: return@forEachIndexed
-            val enough = bucket.n >= PatternRules.MIN_PER_BUCKET
+            val highlighted = bucket.significant
             val centre = slot * index + slot / 2f
             val barHeight = (abs(bucket.meanIndex) / limit * half).toFloat()
             val top = if (bucket.meanIndex >= 0) mid - barHeight else mid
             if (barHeight > 0f) {
                 drawRoundRect(
-                    if (enough) strong else greyed,
+                    if (highlighted) strong else greyed,
                     Offset(centre - barWidth / 2f, top),
                     Size(barWidth, barHeight),
                     CornerRadius(3.dp.toPx(), 3.dp.toPx()),
@@ -169,7 +179,7 @@ private fun PatternBars(slots: List<PatternSlot>, modifier: Modifier = Modifier)
             bucket.standardError?.let { se ->
                 val tip = (bucket.meanIndex / limit * half).toFloat()
                 val reachPx = (se / limit * half).toFloat()
-                val colorLine = if (enough) whisker else whisker.copy(alpha = 0.5f)
+                val colorLine = if (highlighted) whisker else whisker.copy(alpha = 0.5f)
                 val yTop = mid - tip - reachPx
                 val yBottom = mid - tip + reachPx
                 drawLine(colorLine, Offset(centre, yTop), Offset(centre, yBottom), strokeWidth = stroke)

@@ -132,6 +132,7 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
                     forecast = state.forecast,
                     valueFormatter = ::formatEstimate1,
                     unit = trendUnit(state.trendMetric),
+                    exploratory = state.trendMetric == ProgressMetric.ONE_RM,
                 )
             }
         }

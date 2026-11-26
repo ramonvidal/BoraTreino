@@ -264,6 +264,7 @@
     <string name="trend_needs">Needs %1$d sessions over at least %2$d weeks (you have %3$d)</string>
     <string name="trend_show_explain">What does this mean?</string>
     <string name="trend_hide_explain">Hide explanation</string>
+    <string name="trend_exploratory_hint">Exploratory: estimated 1RM assumes your sets end close to failure.</string>
     <string name="trend_explain">The range is where the true weekly change probably is. If it includes 0, there is no clear change yet.</string>
     <string name="trend_group_rising">Rising</string>
     <string name="trend_group_plateau">Plateau</string>
@@ -274,11 +275,11 @@
     <string name="stats_trends_group">%1$s (%2$d)</string>
     <string name="stats_trends_more">and %1$d more</string>
     <string name="stats_muscle_volume_title">Weekly sets per muscle</string>
-    <string name="stats_muscle_volume_note">Direct sets per week in this period. A common guideline for growth is %1$s to %2$s.</string>
+    <string name="stats_muscle_volume_guideline">Direct sets per week in this period. 10 to 20 weekly sets is a general guideline for growth, not a goal.</string>
     <string name="stats_muscle_volume_row">%1$s sets · %2$s</string>
     <string name="stats_muscle_volume_none">No sets</string>
     <string name="stats_muscle_volume_below">Below %1$s</string>
-    <string name="stats_muscle_volume_in_range">In range</string>
+    <string name="stats_muscle_volume_in_range">Within guideline</string>
     <string name="stats_muscle_volume_above">Above %1$s</string>
 
     <!-- Phase 46 U2: habit and body statistics -->
@@ -301,7 +302,9 @@
     <string name="stats_cardio_speed_amount">%1$s km/h</string>
     <string name="stats_cardio_efficiency_amount">%1$s km/h per level</string>
     <string name="stats_cardio_efficiency_note">Efficiency is your speed divided by the intensity level: a higher number means more speed for the same effort.</string>
-    <string name="stats_workload_title">Training load</string>
+    <string name="stats_exploratory_tag">Exploratory</string>
+    <string name="stats_workload_title">Recent vs usual load</string>
+    <string name="stats_workload_hint">Exploratory: compares your last 7 days with your average week over 28 days. A rough guide, not a rule.</string>
     <string name="stats_workload_note">Working sets on strength machines; warm-ups do not count.</string>
     <string name="stats_workload_acute">Last 7 days</string>
     <string name="stats_workload_chronic">Weekly average over 28 days</string>
@@ -318,9 +321,6 @@
     <string name="stats_workload_meaning_high">This week is clearly above your usual load. Watch your recovery.</string>
     <string name="stats_workload_meaning_very_high">A big jump over your usual load. An easier week may help.</string>
     <string name="stats_workload_meaning_building">Not enough history yet for a reliable ratio.</string>
-    <string name="stats_workload_monotony">Monotony</string>
-    <string name="stats_workload_strain">Strain</string>
-    <string name="stats_workload_monotony_note">Monotony is how alike your days are; strain is the week\'s load times monotony.</string>
     <string name="stats_patterns_title">When you lift best</string>
     <string name="stats_patterns_needs">Needs %1$d sessions (you have %2$d)</string>
     <string name="stats_patterns_note">From %1$d sessions. Bars show how far above or below each exercise\'s own average your estimated 1RM was, in percent.</string>
@@ -331,6 +331,8 @@
     <string name="stats_patterns_rest_long">7+ days</string>
     <string name="stats_patterns_error">±%1$s</string>
     <string name="stats_patterns_count">n=%1$d</string>
-    <string name="stats_patterns_footnote">Whiskers are the standard error. Grey bars have fewer than %1$d sessions: too few to trust.</string>
+    <string name="stats_patterns_highlight_note">Highlighted bars passed the test; muted ones did not.</string>
+    <string name="stats_patterns_hint">Exploratory: patterns from few sessions are often chance. Only differences that survive a correction for testing many days at once are highlighted.</string>
+    <string name="stats_patterns_none">No clear pattern yet (from %1$d sessions).</string>
     <string name="stats_patterns_slot_description">%1$s: %2$s percent, %3$d sessions</string>
 </resources>

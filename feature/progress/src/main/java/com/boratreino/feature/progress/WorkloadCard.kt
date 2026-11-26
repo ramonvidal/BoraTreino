@@ -20,13 +20,14 @@ private const val BASELINE_DAYS = 28
 
 /**
  * Training load: sets in the last 7 days against the 28-day weekly average (the ratio), with a plain
- * meaning for it, plus monotony and strain when they can be computed. Draws nothing without data.
+ * meaning for it. Marked exploratory. Draws nothing without data.
  */
 @Composable
 internal fun WorkloadCard(workload: WorkloadReport?, modifier: Modifier = Modifier) {
     if (workload == null || workload.status == AcwrStatus.NO_DATA) return
     val dash = stringResource(R.string.progress_dash)
     StatsCard(stringResource(R.string.stats_workload_title), modifier) {
+        ExploratoryHint(stringResource(R.string.stats_workload_hint))
         Text(
             stringResource(R.string.stats_workload_note),
             style = MaterialTheme.typography.bodyMedium,
@@ -49,15 +50,6 @@ internal fun WorkloadCard(workload: WorkloadReport?, modifier: Modifier = Modifi
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        workload.monotony?.let { WorkloadRow(stringResource(R.string.stats_workload_monotony), formatDecimal(it, 2)) }
-        workload.strain?.let { WorkloadRow(stringResource(R.string.stats_workload_strain), formatDecimal(it, 0)) }
-        if (workload.monotony != null) {
-            Text(
-                stringResource(R.string.stats_workload_monotony_note),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 

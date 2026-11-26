@@ -59,7 +59,8 @@ private fun signedWith(value: Double, valueFormatter: (Double) -> String): Strin
 /**
  * The honest trend of one exercise: verdict, weekly change with its 95% range, fit quality and a
  * 4-week forecast; "needs more data" instead of a guess below the minimum. [valueFormatter] gives
- * the number only, [unit] is appended by the strings.
+ * the number only, [unit] is appended by the strings. [exploratory] adds the exploratory tag with the
+ * estimated-1RM caveat (for the 1RM series, not cardio speed).
  */
 @Composable
 internal fun TrendCard(
@@ -68,12 +69,14 @@ internal fun TrendCard(
     valueFormatter: (Double) -> String,
     unit: String,
     modifier: Modifier = Modifier,
+    exploratory: Boolean = false,
 ) {
     var explain by rememberSaveable { mutableStateOf(false) }
     val fit = result.fit
     BoraCard(modifier = modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.trend_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (exploratory) ExploratoryHint(stringResource(R.string.trend_exploratory_hint))
             Text(trendVerdictLabel(result.verdict), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             if (result.verdict == TrendVerdict.NOT_ENOUGH_DATA || fit == null) {
                 Text(

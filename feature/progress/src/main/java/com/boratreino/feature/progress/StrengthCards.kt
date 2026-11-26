@@ -118,13 +118,7 @@ internal fun MuscleVolumeCard(volumes: List<MuscleVolume>, modifier: Modifier = 
     val zone = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     StatsCard(stringResource(R.string.stats_muscle_volume_title), modifier) {
-        NoteLine(
-            stringResource(
-                R.string.stats_muscle_volume_note,
-                formatDecimal(MuscleVolumeRules.LOW, 0),
-                formatDecimal(MuscleVolumeRules.HIGH, 0),
-            ),
-        )
+        NoteLine(stringResource(R.string.stats_muscle_volume_guideline))
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             volumes.forEach { item ->
                 val name = item.muscle.label()
