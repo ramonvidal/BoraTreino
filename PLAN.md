@@ -268,8 +268,9 @@ CI green, screenshots looked at).
 - [x] **C0: Statistics phase closed.** Trend per exercise, trends summary, weekly sets per
       muscle, training load, patterns, cardio efficiency, smoothed measurements, waist to hip
       ratio. CI green, screenshots checked.
-- [ ] **C1: Fewer CI rounds.** A pre-push script that compiles and runs the pure-Kotlin tests
-      here (`:core:model`, `:core:data`) and a checker for the mistakes CI kept catching
+- [x] **C1: Fewer CI rounds.** `tools/precheck/precheck.sh`: compiles and runs the
+      `:core:model` tests without Gradle (`:core:data` needs Room and Android, so CI only)
+      and a checker for the mistakes CI kept catching
       (non-existent test imports, JUnit `assertNotNull` used as a value, dots or slashes in test
       names, composables inside non-inline lambdas). Lessons section in CLAUDE.md.
 - [ ] **C2: No empty sessions.** Find what creates a session without sets and fix it (a session
