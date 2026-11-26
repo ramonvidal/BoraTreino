@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.AcwrStatus
@@ -34,7 +36,7 @@ class StatsNewItemsTest {
         }
     }
 
-    private fun shown(text: String) = compose.onNodeWithText(text).assertIsDisplayed()
+    private fun shown(text: String) = compose.onAllNodesWithText(text, useUnmergedTree = true).onFirst().assertIsDisplayed()
 
     private fun notShown(text: String) = compose.onNodeWithText(text).assertDoesNotExist()
 

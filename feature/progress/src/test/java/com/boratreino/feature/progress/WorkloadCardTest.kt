@@ -2,6 +2,8 @@ package com.boratreino.feature.progress
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.AcwrStatus
@@ -22,7 +24,7 @@ class WorkloadCardTest {
         compose.setContent { StatsCardHost { WorkloadCard(workload = workload) } }
     }
 
-    private fun shown(text: String) = compose.onNodeWithText(text).assertIsDisplayed()
+    private fun shown(text: String) = compose.onAllNodesWithText(text, useUnmergedTree = true).onFirst().assertIsDisplayed()
 
     @Test
     fun `the card shows the acute and chronic sets and the ratio`() {

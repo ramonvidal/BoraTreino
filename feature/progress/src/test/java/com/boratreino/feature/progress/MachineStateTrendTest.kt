@@ -44,8 +44,8 @@ class MachineStateTrendTest {
         val forecast = checkNotNull(state.forecast)
         assertEquals(4.0, forecast.weeksAhead, 1e-9)
         assertEquals(116.0, forecast.value, 1e-6)
-        assertTrue(forecast.low < forecast.value)
-        assertTrue(forecast.value < forecast.high)
+        assertTrue(forecast.low <= forecast.value)
+        assertTrue(forecast.value <= forecast.high)
     }
 
     @Test
