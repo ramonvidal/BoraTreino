@@ -381,6 +381,91 @@ feature/progress,stats_cardio_average_speed,,Average speed %1$s km/h,Velocidade 
 feature/progress,stats_cardio_average_intensity,,Average intensity %1$s,Intensidade média %1$s
 feature/progress,stats_cardio_chart_description,one,"Cardio over %1$d block: %2$s in total, longest block %3$s","Cardio em %1$d bloco: %2$s no total, maior bloco %3$s"
 feature/progress,stats_cardio_chart_description,other,"Cardio over %1$d blocks: %2$s in total, longest block %3$s","Cardio em %1$d blocos: %2$s no total, maior bloco %3$s"
+feature/progress,trend_title,,Trend,Tendência
+feature/progress,trend_rising,,Rising,Subindo
+feature/progress,trend_falling,,Falling,Caindo
+feature/progress,trend_plateau,,Plateau,Platô
+feature/progress,trend_not_enough,,Not enough data,Dados insuficientes
+feature/progress,trend_unit_kg,,kg,kg
+feature/progress,trend_unit_kmh,,km/h,km/h
+feature/progress,trend_unit_reps,,reps,reps
+feature/progress,trend_unit_minutes,,min,min
+feature/progress,trend_unit_km,,km,km
+feature/progress,trend_slope_per_week,,%1$s %2$s per week,%1$s %2$s por semana
+feature/progress,trend_slope_range,,%1$s (95%%: %2$s to %3$s),%1$s (intervalo de confiança 95%%: %2$s a %3$s)
+feature/progress,trend_fit,one,R² %1$s · %2$d session,R² %1$s · %2$d treino
+feature/progress,trend_fit,other,R² %1$s · %2$d sessions,R² %1$s · %2$d treinos
+feature/progress,trend_forecast,,In %1$s weeks: about %2$s %3$s (range %4$s-%5$s),Em %1$s semanas: cerca de %2$s %3$s (intervalo %4$s a %5$s)
+feature/progress,trend_needs,,Needs %1$d sessions over at least %2$d weeks (you have %3$d),Precisa de %1$d treinos em pelo menos %2$d semanas (você tem %3$d)
+feature/progress,trend_show_explain,,What does this mean?,O que isso significa?
+feature/progress,trend_hide_explain,,Hide explanation,Esconder explicação
+feature/progress,trend_explain,,"The range is where the true weekly change probably is. If it includes 0, there is no clear change yet.","O intervalo mostra onde provavelmente está a variação semanal real. Se ele inclui o 0, ainda não dá pra dizer que houve mudança."
+feature/progress,trend_group_rising,,Rising,Subindo
+feature/progress,trend_group_plateau,,Plateau,Platô
+feature/progress,trend_group_falling,,Falling,Caindo
+feature/progress,trend_group_not_enough,,Needs more data,Precisa de mais dados
+feature/progress,stats_trends_title,,Trends by exercise,Tendências por exercício
+feature/progress,stats_trends_note,,"Estimated 1RM, whole history. Tap an exercise to open it.","1RM estimado, histórico inteiro. Toque num exercício pra abrir."
+feature/progress,stats_trends_group,,%1$s (%2$d),%1$s (%2$d)
+feature/progress,stats_trends_more,,and %1$d more,e mais %1$d
+feature/progress,stats_muscle_volume_title,,Weekly sets per muscle,Séries por semana por músculo
+feature/progress,stats_muscle_volume_note,,Direct sets per week in this period. A common guideline for growth is %1$s to %2$s.,Séries diretas por semana neste período. Uma referência comum pra crescimento é de %1$s a %2$s.
+feature/progress,stats_muscle_volume_row,,%1$s sets · %2$s,%1$s séries · %2$s
+feature/progress,stats_muscle_volume_none,,No sets,Sem séries
+feature/progress,stats_muscle_volume_below,,Below %1$s,Abaixo de %1$s
+feature/progress,stats_muscle_volume_in_range,,In range,Na faixa
+feature/progress,stats_muscle_volume_above,,Above %1$s,Acima de %1$s
+feature/progress,stats_trend_u2_rising,,Rising %1$s per week,Subindo %1$s por semana
+feature/progress,stats_trend_u2_falling,,Falling %1$s per week,Caindo %1$s por semana
+feature/progress,stats_trend_u2_plateau,,No clear change,Sem mudança clara
+feature/progress,stats_trend_u2_needs_measurements,,Not enough data: needs %1$d measurements,Dados insuficientes: precisa de %1$d medidas
+feature/progress,stats_trend_u2_needs_sessions,,Not enough data: needs %1$d sessions (you have %2$d),Dados insuficientes: precisa de %1$d treinos (você tem %2$d)
+feature/progress,stats_trend_u2_needs_span,,Not enough data: the entries must cover at least %1$d days,Dados insuficientes: os registros precisam cobrir pelo menos %1$d dias
+feature/progress,stats_measure_smooth,,Smooth,Suavizar
+feature/progress,stats_proportions_title,,Waist to hip ratio,Razão cintura/quadril
+feature/progress,stats_proportions_note,,"Waist divided by hips, for days with both measurements","Cintura dividida pelo quadril, nos dias com as duas medidas."
+feature/progress,stats_proportions_chart,,%1$s: %2$s to %3$s,%1$s: %2$s a %3$s
+feature/progress,stats_proportions_amount,,%1$s,%1$s
+feature/progress,stats_cardio_insight_title,,"Whole history, %1$d sessions","Histórico inteiro, %1$d treinos"
+feature/progress,stats_cardio_efficiency,,Efficiency: %1$s km/h per level of intensity,Eficiência: %1$s km/h por nível de intensidade
+feature/progress,stats_cardio_efficiency_best,,Efficiency: %1$s km/h per level of intensity (best %2$s),Eficiência: %1$s km/h por nível de intensidade (melhor %2$s)
+feature/progress,stats_cardio_trend_speed,,Speed: %1$s,Velocidade: %1$s
+feature/progress,stats_cardio_trend_efficiency,,Efficiency: %1$s,Eficiência: %1$s
+feature/progress,stats_cardio_speed_amount,,%1$s km/h,%1$s km/h
+feature/progress,stats_cardio_efficiency_amount,,%1$s km/h per level,%1$s km/h por nível
+feature/progress,stats_cardio_efficiency_note,,Efficiency is your speed divided by the intensity level: a higher number means more speed for the same effort.,Eficiência é a sua velocidade dividida pelo nível de intensidade: número maior significa mais velocidade com o mesmo esforço.
+feature/progress,stats_workload_title,,Training load,Carga de treino
+feature/progress,stats_workload_note,,Working sets on strength machines; warm-ups do not count.,Séries de trabalho em exercícios de força; aquecimento não conta.
+feature/progress,stats_workload_acute,,Last 7 days,Últimos 7 dias
+feature/progress,stats_workload_chronic,,Weekly average over 28 days,Média semanal nos últimos 28 dias
+feature/progress,stats_workload_ratio,,Load ratio,Razão de carga
+feature/progress,stats_workload_sets,,%1$s sets,%1$s séries
+feature/progress,stats_workload_baseline,,Building your baseline: %1$d of %2$d days,Montando sua base: %1$d de %2$d dias
+feature/progress,stats_workload_status_low,,Low,Baixa
+feature/progress,stats_workload_status_optimal,,Optimal,Ideal
+feature/progress,stats_workload_status_high,,High,Alta
+feature/progress,stats_workload_status_very_high,,Very high,Muito alta
+feature/progress,stats_workload_status_building,,Building your baseline,Montando sua base
+feature/progress,stats_workload_meaning_low,,This week is well below your usual load.,Essa semana está bem abaixo da sua carga de costume.
+feature/progress,stats_workload_meaning_optimal,,This week is in line with your recent load.,Essa semana está na mesma linha da sua carga recente.
+feature/progress,stats_workload_meaning_high,,This week is clearly above your usual load. Watch your recovery.,Essa semana está bem acima da sua carga de costume. Fique de olho na recuperação.
+feature/progress,stats_workload_meaning_very_high,,A big jump over your usual load. An easier week may help.,Um salto grande em relação à sua carga de costume. Uma semana mais leve pode ajudar.
+feature/progress,stats_workload_meaning_building,,Not enough history yet for a reliable ratio.,Ainda não tem histórico suficiente pra uma razão confiável.
+feature/progress,stats_workload_monotony,,Monotony,Monotonia
+feature/progress,stats_workload_strain,,Strain,Strain
+feature/progress,stats_workload_monotony_note,,Monotony is how alike your days are; strain is the week's load times monotony.,Monotonia é o quanto os seus dias são parecidos; strain é a carga da semana vezes a monotonia.
+feature/progress,stats_patterns_title,,When you lift best,Quando você rende mais
+feature/progress,stats_patterns_needs,,Needs %1$d sessions (you have %2$d),Precisa de %1$d treinos (você tem %2$d)
+feature/progress,stats_patterns_note,,"From %1$d sessions. Bars show how far above or below each exercise's own average your estimated 1RM was, in percent.","A partir de %1$d treinos. As barras mostram quanto o seu 1RM estimado ficou acima ou abaixo da média do próprio exercício, em porcentagem."
+feature/progress,stats_patterns_weekday,,By weekday,Por dia da semana
+feature/progress,stats_patterns_rest,,By days since the last session of the same exercise,Por dias desde o último treino do mesmo exercício
+feature/progress,stats_patterns_rest_short,,0-3 days,0-3 dias
+feature/progress,stats_patterns_rest_medium,,4-6 days,4-6 dias
+feature/progress,stats_patterns_rest_long,,7+ days,7+ dias
+feature/progress,stats_patterns_error,,±%1$s,±%1$s
+feature/progress,stats_patterns_count,,n=%1$d,n=%1$d
+feature/progress,stats_patterns_footnote,,Whiskers are the standard error. Grey bars have fewer than %1$d sessions: too few to trust.,Os traços são o erro padrão. Barras cinzas têm menos de %1$d treinos: poucos pra confiar.
+feature/progress,stats_patterns_slot_description,,"%1$s: %2$s percent, %3$d sessions","%1$s: %2$s por cento, %3$d treinos"
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha
