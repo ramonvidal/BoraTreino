@@ -32,7 +32,7 @@ class WorkloadCardTest {
 
         shown("Training load")
         shown("Last 7 days")
-        shown("12")
+        shown("12 sets")
         shown("Weekly average over 28 days")
         shown("10.5 sets")
         shown("Load ratio")
