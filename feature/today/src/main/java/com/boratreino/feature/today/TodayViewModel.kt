@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RoutineRepository
+import com.boratreino.core.data.RemovedSets
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.data.HistoryRepository
 import com.boratreino.core.model.DayKind
@@ -177,7 +178,7 @@ internal sealed interface TodayEvent {
     data class Skipped(val machine: Machine) : TodayEvent
 
     /** Skipped from the row menu after sets were logged: those [sets] were deleted; Undo restores them. */
-    data class Discarded(val machine: Machine, val sets: List<WorkoutSet>) : TodayEvent
+    data class Discarded(val machine: Machine, val removed: RemovedSets) : TodayEvent
 
     /** Taken out of the ficha [routineName]; Undo puts [item] back. */
     data class Removed(val routineName: String, val item: RoutineItem) : TodayEvent
@@ -386,8 +387,8 @@ class TodayViewModel @Inject constructor(
         val row = state.value.routines?.machines?.firstOrNull { it.machine.id == machineId } ?: return
         launchSafely {
             if (row.setCount > 0) {
-                val sets = training.discardMachineToday(machineId)
-                eventChannel.send(TodayEvent.Discarded(row.machine, sets))
+                val removed = training.discardMachineToday(machineId)
+                eventChannel.send(TodayEvent.Discarded(row.machine, removed))
             } else {
                 training.skipMachineToday(machineId)
                 eventChannel.send(TodayEvent.Skipped(row.machine))
@@ -395,8 +396,8 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    internal fun undoDiscard(machineId: Long, sets: List<WorkoutSet>) =
-        launchSafely { training.undoDiscardMachineToday(machineId, sets) }
+    internal fun undoDiscard(machineId: Long, removed: RemovedSets) =
+        launchSafely { training.undoDiscardMachineToday(machineId, removed) }
 
     internal fun unskip(machineId: Long) = launchSafely { training.unskipMachineToday(machineId) }
 

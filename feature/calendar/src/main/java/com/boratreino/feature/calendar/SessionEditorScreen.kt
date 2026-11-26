@@ -121,7 +121,7 @@ internal fun SessionEditorScreen(
                 // Only sent once the repository write has finished.
                 SessionEditorEvent.SetAdded -> haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 is SessionEditorEvent.SetRemoved -> launch {
-                    if (snackbar.showUndo(removedText, undoLabel)) viewModel.restoreSet(event.set)
+                    if (snackbar.showUndo(removedText, undoLabel)) viewModel.restoreSets(event.removed)
                 }
                 SessionEditorEvent.NothingToRepeat -> launch { snackbar.showSnackbar(nothingToRepeatText) }
                 SessionEditorEvent.Failed -> launch { snackbar.showSnackbar(failedText) }

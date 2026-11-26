@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.RepeatOutcome
+import com.boratreino.core.data.RemovedSets
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioField
@@ -124,7 +125,7 @@ internal sealed interface MachineEvent {
     data class Logged(val record: Record? = null) : MachineEvent
 
     /** The set was deleted; the screen offers Undo. */
-    data class SetRemoved(val set: WorkoutSet) : MachineEvent
+    data class SetRemoved(val removed: RemovedSets) : MachineEvent
 
     /** The warm-up sets are written; the screen offers Undo with [outcome]. */
     data class WarmupsLogged(val outcome: RepeatOutcome) : MachineEvent
@@ -502,8 +503,7 @@ class MachineViewModel @Inject constructor(
         val e = cardioEditor.value ?: return
         cardioEditor.value = null
         write {
-            training.deleteSet(e.set)
-            eventChannel.send(MachineEvent.SetRemoved(e.set))
+            eventChannel.send(MachineEvent.SetRemoved(training.deleteSet(e.set)))
         }
     }
 
@@ -613,21 +613,19 @@ class MachineViewModel @Inject constructor(
         val e = editor.value ?: return
         editor.value = null
         write {
-            training.deleteSet(e.set)
-            eventChannel.send(MachineEvent.SetRemoved(e.set))
+            eventChannel.send(MachineEvent.SetRemoved(training.deleteSet(e.set)))
         }
     }
 
     /** Long-press menu on a logged set row: deletes it at once; the screen offers Undo. */
     internal fun deleteSet(set: WorkoutSet) {
         write {
-            training.deleteSet(set)
-            eventChannel.send(MachineEvent.SetRemoved(set))
+            eventChannel.send(MachineEvent.SetRemoved(training.deleteSet(set)))
         }
     }
 
-    internal fun restoreSet(set: WorkoutSet) {
-        write { training.restoreSet(set) }
+    internal fun restoreSets(removed: RemovedSets) {
+        write { training.restoreSets(removed) }
     }
 
     private fun write(block: suspend () -> Unit) {

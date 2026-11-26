@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.HistoryRepository
 import com.boratreino.core.data.MachineRepository
+import com.boratreino.core.data.RemovedSets
 import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.TrainingRepository
 import com.boratreino.core.model.CardioDraft
@@ -15,6 +16,7 @@ import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.Routine
+import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
@@ -24,12 +26,15 @@ import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -92,12 +97,13 @@ internal sealed interface SessionEditorEvent {
     data object SetAdded : SessionEditorEvent
 
     /** The set was deleted; the screen offers Undo. */
-    data class SetRemoved(val set: WorkoutSet) : SessionEditorEvent
+    data class SetRemoved(val removed: RemovedSets) : SessionEditorEvent
     /** Repeat found nothing to copy (no earlier session of the routine, or nothing left to fill). */
     data object NothingToRepeat : SessionEditorEvent
     data object Failed : SessionEditorEvent
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SessionEditorViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -108,7 +114,26 @@ class SessionEditorViewModel @Inject constructor(
     private val clock: Clock,
 ) : ViewModel() {
 
-    private val sessionId: Long = checkNotNull(savedStateHandle.get<Long>(SESSION_ID_ARG)) { "sessionId missing" }
+    private val handle = savedStateHandle
+
+    // "New" mode: no session id yet. Date, routine and extra live in the SavedStateHandle and nothing is
+    // written until the first set is added; the id then switches to the session that write created.
+    private val sessionIdFlow: StateFlow<Long?> = handle.getStateFlow<Long?>(SESSION_ID_ARG, null)
+    private val newRoutineId: StateFlow<Long?> = handle.getStateFlow<Long?>(NEW_ROUTINE_KEY, null)
+    private val newExtra: StateFlow<Boolean> = handle.getStateFlow(NEW_EXTRA_KEY, false)
+    private val newDate: StateFlow<String?> = handle.getStateFlow<String?>(DATE_ARG, null)
+
+    /** The session being edited; null in new mode. */
+    private val sessionId: Long? get() = sessionIdFlow.value
+
+    private fun enterNewMode(date: LocalDate, routineId: Long?, extra: Boolean) {
+        handle[DATE_ARG] = date.toString()
+        handle[NEW_ROUTINE_KEY] = routineId
+        handle[NEW_EXTRA_KEY] = extra && routineId != null
+        handle[SESSION_ID_ARG] = null
+    }
+
+    private fun newModeDate(): LocalDate = newDate.value?.let(LocalDate::parse) ?: LocalDate.now(clock)
 
     private val eventChannel = Channel<SessionEditorEvent>(Channel.BUFFERED)
     internal val events: Flow<SessionEditorEvent> = eventChannel.receiveAsFlow()
@@ -117,11 +142,36 @@ class SessionEditorViewModel @Inject constructor(
     private val editor = MutableStateFlow<SetEdit?>(null)
     private val pad = MutableStateFlow<NumberPad?>(null)
 
+    private val storedDetail: Flow<SessionDetail?> = sessionIdFlow.flatMapLatest { id ->
+        if (id == null) flowOf(null) else history.observeSession(id)
+    }
+
     private val sessionAndRoutines: Flow<SessionEditorUiState> = combine(
-        history.observeSession(sessionId),
+        storedDetail,
         routineRepository.observePlan().map { plan -> plan.routines.map { it.routine } },
         machineRepository.observeMachines(includeArchived = false),
-    ) { detail, routines, machines ->
+        sessionIdFlow,
+        combine(newDate, newRoutineId, newExtra) { d, r, e -> Triple(d, r, e) },
+    ) { stored, routines, machines, id, draft ->
+        val detail = if (id == null) {
+            val date = draft.first?.let(LocalDate::parse) ?: LocalDate.now(clock)
+            val routineId = draft.second
+            // Not a stored session: an empty placeholder with the chosen date, routine and extra flag.
+            SessionDetail(
+                session = Session(
+                    id = 0L,
+                    startedAt = date.atStartOfDay(clock.zone).toInstant(),
+                    endedAt = null,
+                    routineId = routineId,
+                    note = null,
+                    isExtra = draft.third && routineId != null,
+                ),
+                routine = routines.firstOrNull { it.id == routineId },
+                machines = emptyList(),
+            )
+        } else {
+            stored
+        }
         SessionEditorUiState(
             loaded = true,
             detail = detail,
@@ -144,17 +194,28 @@ class SessionEditorViewModel @Inject constructor(
 
     /** Null = Free. */
     internal fun chooseRoutine(routineId: Long?) {
+        val id = sessionId
+        if (id == null) {
+            handle[NEW_ROUTINE_KEY] = routineId
+            if (routineId == null) handle[NEW_EXTRA_KEY] = false
+            return
+        }
         val wasExtra = state.value.detail?.session?.isExtra == true
         write {
-            history.setSessionRoutine(sessionId, routineId)
+            history.setSessionRoutine(id, routineId)
             // A workout without a routine cannot be an extra one: the switch is hidden, so it is cleared too.
-            if (routineId == null && wasExtra) history.setSessionExtra(sessionId, false)
+            if (routineId == null && wasExtra) history.setSessionExtra(id, false)
         }
     }
 
     /** An extra workout does not move the rotation on. */
     internal fun setExtra(extra: Boolean) {
-        write { history.setSessionExtra(sessionId, extra) }
+        val id = sessionId
+        if (id == null) {
+            handle[NEW_EXTRA_KEY] = extra
+            return
+        }
+        write { history.setSessionExtra(id, extra) }
     }
 
     /** A copy of the machine's last set in this session. */
@@ -169,7 +230,14 @@ class SessionEditorViewModel @Inject constructor(
     /** Fills the empty session from the last session of its routine (one write, in the repository). */
     internal fun repeatLast(mode: RepeatMode) {
         write {
-            val added = history.repeatLastSession(sessionId, mode)
+            val id = sessionId
+            val added = if (id != null) {
+                history.repeatLastSession(id, mode)
+            } else {
+                history.addSessionRepeating(newModeDate(), newRoutineId.value, newExtra.value, mode).also {
+                    it.firstOrNull()?.let { first -> handle[SESSION_ID_ARG] = first.sessionId }
+                }
+            }
             if (added.isEmpty()) {
                 eventChannel.send(SessionEditorEvent.NothingToRepeat)
             } else {
@@ -190,7 +258,8 @@ class SessionEditorViewModel @Inject constructor(
     internal fun addMachine(machineId: Long) {
         val sets = setsOf(machineId)
         write {
-            val lastTime = history.lastTimeBefore(sessionId, machineId)
+            // New mode has no session yet, so there is no "before" to look at: the first set starts from defaults.
+            val lastTime = sessionId?.let { history.lastTimeBefore(it, machineId) }.orEmpty()
             addPrefilledSet(machineId, lastTime, sets)
             picking.value = false
             eventChannel.send(SessionEditorEvent.SetAdded)
@@ -201,11 +270,27 @@ class SessionEditorViewModel @Inject constructor(
     private suspend fun addPrefilledSet(machineId: Long, lastTime: List<WorkoutSet>, sets: List<WorkoutSet>) {
         val machine = state.value.detail?.machines?.firstOrNull { it.machine.id == machineId }?.machine
             ?: state.value.machines.firstOrNull { it.id == machineId }
-        if (machine?.kind == MachineKind.CARDIO) {
-            history.addCardioSet(sessionId, machineId, CardioRules.prefill(lastTime, sets))
+        val id = sessionId
+        val cardio = machine?.kind == MachineKind.CARDIO
+        if (id != null) {
+            if (cardio) {
+                history.addCardioSet(id, machineId, CardioRules.prefill(lastTime, sets))
+            } else {
+                val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets)
+                history.addSet(id, machineId, draft)
+            }
         } else {
-            val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets)
-            history.addSet(sessionId, machineId, draft)
+            // First set of a new session: the session and the set are written together.
+            val date = newModeDate()
+            val routineId = newRoutineId.value
+            val extra = newExtra.value
+            val added = if (cardio) {
+                history.addSessionWithCardio(date, routineId, extra, machineId, CardioRules.prefill(lastTime, sets))
+            } else {
+                val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets)
+                history.addSessionWithSet(date, routineId, extra, machineId, draft)
+            }
+            handle[SESSION_ID_ARG] = added.sessionId
         }
     }
 
@@ -283,14 +368,33 @@ class SessionEditorViewModel @Inject constructor(
     internal fun deleteEditor() {
         val e = editor.value ?: return
         editor.value = null
-        write {
-            training.deleteSet(e.set)
-            eventChannel.send(SessionEditorEvent.SetRemoved(e.set))
+        val detail = state.value.detail
+        val previousId = sessionId
+        val isLastSet = detail != null && detail.machines.sumOf { it.sets.size } <= 1
+        // The last set takes its session with it: go back to new mode right away, keeping date, routine and extra.
+        if (isLastSet && detail != null) {
+            enterNewMode(
+                detail.session.startedAt.atZone(clock.zone).toLocalDate(),
+                detail.session.routineId,
+                detail.session.isExtra,
+            )
+        }
+        write(onFailure = { if (isLastSet) handle[SESSION_ID_ARG] = previousId }) {
+            val removed = training.deleteSet(e.set)
+            removed.session?.let { gone ->
+                enterNewMode(gone.startedAt.atZone(clock.zone).toLocalDate(), gone.routineId, gone.isExtra)
+            }
+            eventChannel.send(SessionEditorEvent.SetRemoved(removed))
         }
     }
 
-    internal fun restoreSet(set: WorkoutSet) {
-        write { training.restoreSet(set) }
+    internal fun restoreSets(removed: RemovedSets) {
+        write {
+            training.restoreSets(removed)
+            // The deleted session is back with its old id: leave new mode, unless a set was added meanwhile.
+            val back = removed.session
+            if (back != null && sessionId == null) handle[SESSION_ID_ARG] = back.id
+        }
     }
 
     // Number pad (typing is allowed here; the steppers stay the main path).
@@ -339,15 +443,19 @@ class SessionEditorViewModel @Inject constructor(
     private fun parseReps(text: String): Int? =
         text.trim().toIntOrNull()?.coerceIn(1, LoggingRules.MAX_REPS)
 
-    private fun write(block: suspend () -> Unit) {
+    private fun write(onFailure: () -> Unit = {}, block: suspend () -> Unit) {
         viewModelScope.launch {
             try {
                 block()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
+                onFailure()
                 eventChannel.send(SessionEditorEvent.Failed)
             }
         }
     }
 }
+
+private const val NEW_ROUTINE_KEY = "newRoutineId"
+private const val NEW_EXTRA_KEY = "newExtra"

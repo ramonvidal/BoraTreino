@@ -118,6 +118,9 @@ internal sealed interface CalendarEvent {
 
     /** A session was added for a day; the screen opens its editor. */
     data class OpenSession(val sessionId: Long) : CalendarEvent
+
+    /** Open the session editor in new mode for [date]. */
+    data class NewSession(val date: LocalDate) : CalendarEvent
     data object Failed : CalendarEvent
 }
 
@@ -337,10 +340,8 @@ class CalendarViewModel @Inject constructor(
 
     internal fun addTraining() {
         val day = browsing.value.selected
-        write {
-            val id = history.addSession(day, null)
-            eventChannel.send(CalendarEvent.OpenSession(id))
-        }
+        // Nothing is written: the session is created with its first set, in the editor.
+        write { eventChannel.send(CalendarEvent.NewSession(day)) }
     }
 
     internal fun askDelete(sessionId: Long) {

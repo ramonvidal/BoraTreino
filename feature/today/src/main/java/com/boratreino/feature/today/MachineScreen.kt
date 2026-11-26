@@ -206,7 +206,7 @@ internal fun MachineScreen(
                     }
                 }
                 is MachineEvent.SetRemoved -> launch {
-                    if (snackbar.showUndo(removedText, undoLabel)) viewModel.restoreSet(event.set)
+                    if (snackbar.showUndo(removedText, undoLabel)) viewModel.restoreSets(event.removed)
                 }
                 is MachineEvent.WarmupsLogged -> launch {
                     val count = event.outcome.setIds.size

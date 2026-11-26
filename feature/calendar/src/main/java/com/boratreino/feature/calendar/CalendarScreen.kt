@@ -104,6 +104,7 @@ internal data class CalendarActions(
 @Composable
 internal fun CalendarScreen(
     onOpenSession: (sessionId: Long) -> Unit,
+    onNewSession: (date: LocalDate) -> Unit,
     viewModel: CalendarViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -117,6 +118,7 @@ internal fun CalendarScreen(
             when (event) {
                 // Only sent once the repository write has finished.
                 is CalendarEvent.OpenSession -> onOpenSession(event.sessionId)
+                is CalendarEvent.NewSession -> onNewSession(event.date)
                 is CalendarEvent.Deleted -> launch {
                     if (snackbar.showUndo(deletedText, undoLabel)) viewModel.restore(event.detail)
                 }

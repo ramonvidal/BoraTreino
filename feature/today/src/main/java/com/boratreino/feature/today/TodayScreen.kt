@@ -153,7 +153,7 @@ internal fun TodayScreen(
                 }
                 is TodayEvent.Discarded -> launch {
                     val text = resources.getString(R.string.today_menu_removed_today)
-                    if (snackbar.showUndo(text, undoLabel)) viewModel.undoDiscard(event.machine.id, event.sets)
+                    if (snackbar.showUndo(text, undoLabel)) viewModel.undoDiscard(event.machine.id, event.removed)
                 }
                 is TodayEvent.Removed -> launch {
                     val text = resources.getString(R.string.today_removed_from, event.routineName)

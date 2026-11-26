@@ -25,8 +25,6 @@ class WorkloadRulesTest {
         assertEquals(0.0, r.chronicWeeklyAverage, 0.0)
         assertNull(r.acwr)
         assertEquals(AcwrStatus.NO_DATA, r.status)
-        assertNull(r.monotony)
-        assertNull(r.strain)
         assertEquals(0, r.historyDays)
     }
 
@@ -61,37 +59,6 @@ class WorkloadRulesTest {
         assertEquals(27, r.historyDays)
         assertEquals(67.5, r.chronicWeeklyAverage, 1e-12)
         assertEquals(70.0 / 67.5, r.acwr!!, 1e-12)
-    }
-
-    @Test
-    fun `monotony is the population standard deviation of the last 7 days and zeros count`() {
-        // Loads 7, 6, 5, 4, 3, 2, 1 from today back: mean 4, population variance 28 / 7 = 4, SD 2, monotony 2.
-        val load = (0..6).associate { ago(it) to 7 - it }
-        val r = WorkloadRules.report(load, today)
-
-        assertEquals(28, r.acuteSets)
-        assertEquals(2.0, r.monotony!!, 1e-12)
-        assertEquals(56.0, r.strain!!, 1e-12)
-    }
-
-    @Test
-    fun `zero days inside the week are part of monotony`() {
-        // Only today has 7 sets. Mean 1, population variance (6 x 1 + 36) / 7 = 6, SD sqrt(6).
-        // Monotony = 1 / sqrt(6) = 0.4082483, strain = 7 x 0.4082483 = 2.8577380. A sample SD would give a different value.
-        val r = WorkloadRules.report(mapOf(today to 7), today)
-
-        assertEquals(0.4082483, r.monotony!!, 1e-6)
-        assertEquals(2.857738, r.strain!!, 1e-6)
-    }
-
-    @Test
-    fun `monotony and strain are null when the week has no spread`() {
-        val load = (0..6).associate { ago(it) to 10 }
-        val r = WorkloadRules.report(load, today)
-
-        assertEquals(70, r.acuteSets)
-        assertNull(r.monotony)
-        assertNull(r.strain)
     }
 
     @Test
@@ -174,8 +141,6 @@ class WorkloadRulesTest {
         assertNull(r.acwr)
         assertEquals(AcwrStatus.NO_DATA, r.status)
         assertEquals(41, r.historyDays)
-        assertNull(r.monotony)
-        assertNull(r.strain)
     }
 
     @Test

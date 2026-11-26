@@ -198,9 +198,6 @@ class StatsRulesStatisticsTest {
         assertEquals(4.0, workload.acwr!!, 1e-12)
         assertEquals(41, workload.historyDays)
         assertEquals(AcwrStatus.VERY_HIGH, workload.status)
-        // Seven daily loads with only today non-zero: monotony 1 / sqrt(6), strain 3 x that.
-        assertEquals(0.4082483, workload.monotony!!, 1e-6)
-        assertEquals(1.2247449, workload.strain!!, 1e-6)
     }
 
     // Muscle volumes

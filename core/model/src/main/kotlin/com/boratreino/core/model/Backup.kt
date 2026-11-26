@@ -28,6 +28,15 @@ data class BackupSummary(
     val lastDay: LocalDate?,
 )
 
+/**
+ * The same data without the sessions that have no sets (a session exists only while it has sets). Ids and every
+ * other table are kept as they are. Applied when importing, so older backups with empty sessions still import.
+ */
+fun BackupData.withoutEmptySessions(): BackupData {
+    val withSets = sets.mapTo(HashSet()) { it.sessionId }
+    return if (sessions.all { it.id in withSets }) this else copy(sessions = sessions.filter { it.id in withSets })
+}
+
 fun BackupData.summary(zone: ZoneId): BackupSummary {
     val days = sessions.map { it.startedAt.atZone(zone).toLocalDate() }
     return BackupSummary(

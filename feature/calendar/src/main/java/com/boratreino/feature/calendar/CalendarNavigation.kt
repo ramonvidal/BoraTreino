@@ -5,6 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import java.time.LocalDate
 
 /** This feature's only public entry point; everything else stays internal to the module. */
 const val CALENDAR_ROUTE = "calendar"
@@ -14,10 +15,25 @@ internal const val SESSION_ROUTE = "calendar/session/{$SESSION_ID_ARG}"
 
 internal fun sessionRoute(sessionId: Long): String = "calendar/session/$sessionId"
 
+/** The editor for a session that does not exist yet: it is created with its first set, so only the date is known. */
+internal const val DATE_ARG = "date"
+internal const val NEW_SESSION_ROUTE = "calendar/session/new/{$DATE_ARG}"
+
+internal fun newSessionRoute(date: LocalDate): String = "calendar/session/new/$date"
+
 /** The Calendar tab and the session editor it opens. [navController] is only used for this feature's own screens. */
 fun NavGraphBuilder.calendarGraph(navController: NavController) {
     composable(CALENDAR_ROUTE) {
-        CalendarScreen(onOpenSession = { navController.navigate(sessionRoute(it)) })
+        CalendarScreen(
+            onOpenSession = { navController.navigate(sessionRoute(it)) },
+            onNewSession = { navController.navigate(newSessionRoute(it)) },
+        )
+    }
+    composable(
+        route = NEW_SESSION_ROUTE,
+        arguments = listOf(navArgument(DATE_ARG) { type = NavType.StringType }),
+    ) {
+        SessionEditorScreen(onBack = { navController.popBackStack() })
     }
     composable(
         route = SESSION_ROUTE,
