@@ -123,7 +123,7 @@ class StrengthCardsTest {
         shown("Weekly sets per muscle")
         compose.onNodeWithContentDescription("Chest: 0.0 / No sets").assertIsDisplayed()
         compose.onNodeWithContentDescription("Biceps: 4.0 / Below 10").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Quadriceps: 14.0 / In range").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Quadriceps: 14.0 / Within guideline").assertIsDisplayed()
         compose.onNodeWithContentDescription("Upper back: 24.0 / Above 20").assertIsDisplayed()
     }
 
@@ -131,6 +131,6 @@ class StrengthCardsTest {
     fun `the muscle volume card states the 10 to 20 guideline`() {
         showVolumes(Phase46Samples.volumes)
 
-        shown("Direct sets per week in this period. A common guideline for growth is 10 to 20.")
+        shown("Direct sets per week in this period. 10 to 20 weekly sets is a general guideline for growth, not a goal.")
     }
 }

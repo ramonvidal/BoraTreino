@@ -5,6 +5,7 @@ import com.boratreino.core.model.BackupCodec
 import com.boratreino.core.model.BackupData
 import com.boratreino.core.model.BackupDecodeResult
 import com.boratreino.core.model.summary
+import com.boratreino.core.model.withoutEmptySessions
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -26,7 +27,8 @@ internal class DefaultBackupRepository @Inject constructor(
         }
 
     override suspend fun import(data: BackupData) {
-        store.replaceAll(data)
+        // A session exists only while it has sets: older backups may carry empty ones.
+        store.replaceAll(data.withoutEmptySessions())
         // The open session, if any, is gone with everything else.
         training.resetChoice()
     }

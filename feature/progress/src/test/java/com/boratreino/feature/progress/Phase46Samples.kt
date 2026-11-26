@@ -101,33 +101,42 @@ internal object Phase46Samples {
         status: AcwrStatus,
         acwr: Double? = 1.14,
         historyDays: Int = 40,
-        monotony: Double? = 1.8,
-        strain: Double? = 21.6,
     ) = WorkloadReport(
         acuteSets = 12,
         chronicWeeklyAverage = 10.5,
         acwr = acwr,
         status = status,
-        monotony = monotony,
-        strain = strain,
         historyDays = historyDays,
     )
 
+    /** Weekday buckets with one that passed the test (Monday) and the others untested or not significant. */
     private val weekday = listOf(
-        PatternBucket(1, 6, 2.4, 1.1),
+        PatternBucket(1, 6, 2.4, 1.1, tValue = 2.18, significant = true, pValue = 0.012),
         PatternBucket(3, 2, -3.0, null),
-        PatternBucket(5, 4, 4.0, 2.0),
+        PatternBucket(5, 6, 4.0, 2.0, tValue = 2.0, significant = false, pValue = 0.10),
         PatternBucket(6, 3, -1.5, 1.2),
     )
 
     private val rest = listOf(
-        PatternBucket(0, 5, 3.0, 1.5),
+        PatternBucket(0, 5, 3.0, 1.5, tValue = 2.0, significant = false, pValue = 0.12),
         PatternBucket(1, 3, -1.0, 2.0),
         PatternBucket(2, 1, -4.0, null),
     )
 
-    /** Weekday and rest buckets; a bucket with fewer than three sessions is the small one. */
-    fun patterns(sessionsUsed: Int = 18, enough: Boolean = true) = PatternReport(weekday, rest, sessionsUsed, enough)
+    /** The same buckets with nothing that passed the test. */
+    private val weekdayNoneSignificant = weekday.map { it.copy(significant = false) }
+    private val restNoneSignificant = rest.map { it.copy(significant = false) }
+
+    /**
+     * Weekday and rest buckets. Buckets with fewer than five sessions are untested (no p-value); [anySignificant]
+     * false gives the "no clear pattern" report.
+     */
+    fun patterns(sessionsUsed: Int = 18, enough: Boolean = true, anySignificant: Boolean = true): PatternReport =
+        if (anySignificant) {
+            PatternReport(weekday, rest, sessionsUsed, enough, anySignificant = true)
+        } else {
+            PatternReport(weekdayNoneSignificant, restNoneSignificant, sessionsUsed, enough, anySignificant = false)
+        }
 
     /** Five weekly waist to hip ratios falling by 0.01 a week. */
     val waistHipWeekly: List<Pair<LocalDate, Double>> = listOf(

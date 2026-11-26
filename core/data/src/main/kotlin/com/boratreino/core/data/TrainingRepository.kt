@@ -6,6 +6,7 @@ import com.boratreino.core.model.OpenSession
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineUpdate
+import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionSummary
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.SetDraft
@@ -20,6 +21,12 @@ data class RepeatOffer(val routineId: Long, val machineCount: Int, val setCount:
 /** What a repeat wrote, enough for [TrainingRepository.undoRepeat]. */
 data class RepeatOutcome(val sessionId: Long, val sessionCreated: Boolean, val setIds: List<Long>, val machineCount: Int)
 
+/**
+ * What deleting sets removed, enough for [TrainingRepository.restoreSets]. [session] is non-null only when the
+ * delete also removed their session (a session exists only while it has sets).
+ */
+data class RemovedSets(val sets: List<WorkoutSet>, val session: Session?)
+
 interface TrainingRepository {
     fun observeOpenSession(): Flow<OpenSession?>
     /** Routines, the suggested one, the current choice and the active routine with its items. */
@@ -31,7 +38,7 @@ interface TrainingRepository {
     suspend fun chooseRoutine(choice: RoutineChoice)
     /** Null when the machine doesn't exist. Fills target and suggestion from the active routine. */
     fun observeMachineLog(machineId: Long): Flow<MachineLog?>
-    /** Closes the open session if it is stale (SessionRules.isStale at the current time). */
+    /** Closes the open session if it is stale (SessionRules.isStale at the current time); a stale session with no sets is deleted. */
     suspend fun closeStaleSession()
     /**
      * Closes a stale open session first; opens a new one if none is open; writes the set
@@ -42,10 +49,21 @@ interface TrainingRepository {
     /** Same as [logSet] for a cardio machine: seconds / calories / distance instead of weight and reps; `record` is null. */
     suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet
     suspend fun updateSet(set: WorkoutSet)
-    suspend fun deleteSet(set: WorkoutSet)
-    /** Undo of delete: re-inserts the set with its id. */
-    suspend fun restoreSet(set: WorkoutSet)
-    /** Closes the open session now; null if none is open. The summary includes the record count. */
+    /**
+     * Deletes the set and, when its session has no sets left, the session too; one transaction. Works for any
+     * session (open or closed). Does not change the in-memory routine choice.
+     */
+    suspend fun deleteSet(set: WorkoutSet): RemovedSets
+    /**
+     * Undo of [deleteSet] / [discardMachineToday]: re-inserts the removed session first (same id; restored closed
+     * when it was open and another session is open now; without its routine if that routine is gone), then the
+     * sets with their ids. One transaction.
+     */
+    suspend fun restoreSets(removed: RemovedSets)
+    /**
+     * Closes the open session now; null if none is open. The summary includes the record count. An open session
+     * with no sets is deleted instead, and the result is null.
+     */
     suspend fun finishSession(): SessionSummary?
     /**
      * Undo of finish: endedAt = null, only if no other session is open. Also remembers (in memory) that this
@@ -61,12 +79,13 @@ interface TrainingRepository {
     val pendingSummarySessionId: Flow<Long?>
     suspend fun consumePendingSummary()
     /**
-     * Deletes ALL sets of the machine in the open session (returned for undo) and hides the machine for today
-     * ([skipMachineToday]); empty and no-op when no session is open.
+     * Deletes ALL sets of the machine in the open session (returned for undo), and the session too when it has no
+     * sets left, and hides the machine for today ([skipMachineToday]). Empty (no sets, no session) and no-op when
+     * no session is open.
      */
-    suspend fun discardMachineToday(machineId: Long): List<WorkoutSet>
-    /** Undo of [discardMachineToday]: restores the sets and un-skips the machine. */
-    suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>)
+    suspend fun discardMachineToday(machineId: Long): RemovedSets
+    /** Undo of [discardMachineToday]: [restoreSets] and un-skips the machine. */
+    suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets)
     /** Hides the machine from today's ficha for this training only (kept in memory). */
     suspend fun skipMachineToday(machineId: Long)
     suspend fun unskipMachineToday(machineId: Long)
@@ -89,7 +108,7 @@ interface TrainingRepository {
      * seconds. No records, no rest timer. Undo with [undoRepeat].
      */
     suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome
-    /** Deletes the sets of [outcome]; deletes the session too if the repeat created it and it is now empty. */
+    /** Deletes the sets of [outcome]; deletes the session too if it is now empty. */
     suspend fun undoRepeat(outcome: RepeatOutcome)
     /**
      * What "update the routine with this training" would change for a finished (or any) session; null when the

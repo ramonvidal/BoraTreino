@@ -13,7 +13,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The training load card: the status of the load ratio, the baseline while it builds, and monotony and strain when they exist. */
+/**
+ * The "Recent vs usual load" card: the acute and chronic sets and the ratio, its status and meaning, the baseline while it
+ * builds, the exploratory tag with its hint, and no monotony or strain.
+ */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class WorkloadCardTest {
@@ -30,7 +33,7 @@ class WorkloadCardTest {
     fun `the card shows the acute and chronic sets and the ratio`() {
         show(Phase46Samples.workload(AcwrStatus.OPTIMAL))
 
-        shown("Training load")
+        shown("Recent vs usual load")
         shown("Last 7 days")
         shown("12 sets")
         shown("Weekly average over 28 days")
@@ -80,34 +83,32 @@ class WorkloadCardTest {
     }
 
     @Test
-    fun `monotony and strain are shown when they can be computed`() {
-        show(Phase46Samples.workload(AcwrStatus.OPTIMAL, monotony = 1.8, strain = 21.6))
+    fun `the card is marked exploratory with its hint`() {
+        show(Phase46Samples.workload(AcwrStatus.OPTIMAL))
 
-        shown("Monotony")
-        shown("1.8")
-        shown("Strain")
-        shown("22")
+        shown("Exploratory")
+        shown("Exploratory: compares your last 7 days with your average week over 28 days. A rough guide, not a rule.")
     }
 
     @Test
-    fun `monotony and strain are hidden when they cannot be computed`() {
-        show(Phase46Samples.workload(AcwrStatus.OPTIMAL, monotony = null, strain = null))
+    fun `there is no monotony or strain row`() {
+        show(Phase46Samples.workload(AcwrStatus.OPTIMAL))
 
-        compose.onNodeWithText("Monotony").assertDoesNotExist()
-        compose.onNodeWithText("Strain").assertDoesNotExist()
+        compose.onNodeWithText("Monotony", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Strain", substring = true).assertDoesNotExist()
     }
 
     @Test
     fun `a card with no load is not drawn`() {
         show(null)
 
-        compose.onNodeWithText("Training load").assertDoesNotExist()
+        compose.onNodeWithText("Recent vs usual load").assertDoesNotExist()
     }
 
     @Test
     fun `a report without any load status is not drawn`() {
-        show(Phase46Samples.workload(AcwrStatus.NO_DATA, acwr = null, historyDays = 0, monotony = null, strain = null))
+        show(Phase46Samples.workload(AcwrStatus.NO_DATA, acwr = null, historyDays = 0))
 
-        compose.onNodeWithText("Training load").assertDoesNotExist()
+        compose.onNodeWithText("Recent vs usual load").assertDoesNotExist()
     }
 }

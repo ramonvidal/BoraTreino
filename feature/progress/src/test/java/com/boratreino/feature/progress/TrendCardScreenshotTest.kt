@@ -26,10 +26,17 @@ class TrendCardScreenshotTest {
         forecast: Forecast?,
         dark: Boolean = false,
         explain: Boolean = false,
+        exploratory: Boolean = false,
     ) {
         compose.setContent {
             StatsCardHost(dark = dark) {
-                TrendCard(result = result, forecast = forecast, valueFormatter = Phase46Samples.oneDecimal, unit = "kg")
+                TrendCard(
+                    result = result,
+                    forecast = forecast,
+                    valueFormatter = Phase46Samples.oneDecimal,
+                    unit = "kg",
+                    exploratory = exploratory,
+                )
             }
         }
         if (explain) compose.onNodeWithText("What does this mean?").performClick()
@@ -54,6 +61,14 @@ class TrendCardScreenshotTest {
 
     @Test
     fun `trend not enough data dark`() = shoot("not-enough-dark", Phase46Samples.notEnough, forecast = null, dark = true)
+
+    @Test
+    fun `trend estimated one rep max exploratory`() =
+        shoot("exploratory", Phase46Samples.rising, Phase46Samples.risingForecast, exploratory = true)
+
+    @Test
+    fun `trend estimated one rep max exploratory dark`() =
+        shoot("exploratory-dark", Phase46Samples.falling, Phase46Samples.fallingForecast, dark = true, exploratory = true)
 
     @Test
     fun `trend explanation open`() =

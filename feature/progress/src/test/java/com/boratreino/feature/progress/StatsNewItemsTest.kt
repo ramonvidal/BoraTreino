@@ -72,7 +72,7 @@ class StatsNewItemsTest {
     fun `the habit page shows the training load and the patterns when the report has them`() {
         showPage(withHabitData, StatsPage.HABIT)
 
-        shown("Training load")
+        shown("Recent vs usual load")
         shown("When you lift best")
     }
 
@@ -80,7 +80,7 @@ class StatsNewItemsTest {
     fun `the habit page leaves out the training load and the patterns when the report has none`() {
         showPage(StatsSamples.full, StatsPage.HABIT)
 
-        notShown("Training load")
+        notShown("Recent vs usual load")
         notShown("When you lift best")
     }
 

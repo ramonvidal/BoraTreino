@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.PatternReport
@@ -45,10 +46,40 @@ class PatternsCardTest {
     }
 
     @Test
-    fun `the footnote says that the grey bars have too few sessions to trust`() {
+    fun `with some buckets significant the card says that the highlighted bars passed the test`() {
+        show(Phase46Samples.patterns(sessionsUsed = 18, enough = true, anySignificant = true))
+
+        shown("Highlighted bars passed the test; muted ones did not.")
+        compose.onNodeWithText("No clear pattern yet", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the card is marked exploratory with its hint`() {
         show(Phase46Samples.patterns(sessionsUsed = 18, enough = true))
 
-        shown("Whiskers are the standard error. Grey bars have fewer than 3 sessions: too few to trust.")
+        shown("Exploratory")
+        shown(
+            "Exploratory: patterns from few sessions are often chance. " +
+                "Only differences that survive a correction for testing many days at once are highlighted.",
+        )
+    }
+
+    @Test
+    fun `with no significant bucket the card says there is no clear pattern and draws no bars`() {
+        show(Phase46Samples.patterns(sessionsUsed = 18, enough = true, anySignificant = false))
+
+        shown("When you lift best")
+        shown("No clear pattern yet (from 18 sessions).")
+        compose.onNodeWithContentDescription("By weekday", substring = true).assertDoesNotExist()
+        compose.onNodeWithContentDescription("By days since", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Highlighted bars passed the test; muted ones did not.").assertDoesNotExist()
+    }
+
+    @Test
+    fun `with no significant bucket the card still says it is exploratory`() {
+        show(Phase46Samples.patterns(sessionsUsed = 18, enough = true, anySignificant = false))
+
+        shown("Exploratory")
     }
 
     @Test

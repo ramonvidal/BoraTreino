@@ -167,9 +167,9 @@ class PatternRulesTest {
     }
 
     @Test
-    fun `the minimum sessions and per bucket constants are 15 and 3`() {
+    fun `the minimum sessions and per bucket constants are 15 and 5`() {
         assertEquals(15, PatternRules.MIN_SESSIONS)
-        assertEquals(3, PatternRules.MIN_PER_BUCKET)
+        assertEquals(5, PatternRules.MIN_PER_BUCKET)
     }
 
     @Test
@@ -180,5 +180,111 @@ class PatternRulesTest {
         assertTrue(report.rest.isEmpty())
         assertEquals(0, report.sessionsUsed)
         assertFalse(report.enough)
+    }
+
+    // Significance
+
+    @Test
+    fun `buckets below five sessions are never tested`() {
+        // Four sessions Monday to Thursday: each weekday bucket has one session and the rest bucket has three.
+        val report = PatternRules.analyze(
+            listOf(progress(1L, listOf(date(0) to 100.0, date(1) to 130.0, date(2) to 70.0, date(3) to 100.0))),
+        )
+
+        val all = report.weekday + report.rest
+        assertTrue(all.isNotEmpty())
+        assertTrue(all.all { it.n < PatternRules.MIN_PER_BUCKET })
+        assertTrue(all.all { it.pValue == null && !it.significant })
+        assertFalse(report.anySignificant)
+    }
+
+    @Test
+    fun `a clearly different weekday with five or more sessions is significant`() {
+        // Five Mondays at 120 or 130 and every other day at 98 or 102, over five weeks.
+        val points = (0..34).map { day ->
+            val value = when {
+                day % 7 == 0 -> if ((day / 7) % 2 == 0) 130.0 else 120.0
+                day % 2 == 0 -> 98.0
+                else -> 102.0
+            }
+            date(day) to value
+        }
+
+        val report = PatternRules.analyze(listOf(progress(1L, points)))
+
+        val monday = bucket(report.weekday, 1)!!
+        assertEquals(5, monday.n)
+        assertTrue(monday.significant)
+        assertTrue(monday.pValue!! < 0.05)
+        assertTrue(monday.tValue!! > 0.0)
+        assertTrue(report.anySignificant)
+    }
+
+    @Test
+    fun `noisy values with no weekday effect are not significant`() {
+        val points = (0..34).map { day -> date(day) to 100.0 + ((day * 37) % 11 - 5) }
+
+        val report = PatternRules.analyze(listOf(progress(1L, points)))
+
+        assertTrue((report.weekday + report.rest).none { it.significant })
+        assertFalse(report.anySignificant)
+    }
+
+    // Statistics helpers
+
+    @Test
+    fun `two sided p at the 5 percent critical values is about 0 point 05`() {
+        // Critical values of Student's t: 2.776 for 4 degrees of freedom and 2.228 for 10.
+        assertEquals(0.05, PatternRules.twoSidedP(2.776, 4), 1e-3)
+        assertEquals(0.05, PatternRules.twoSidedP(2.228, 10), 1e-3)
+    }
+
+    @Test
+    fun `two sided p is 1 at t 0 and the same for a positive and a negative t`() {
+        assertEquals(1.0, PatternRules.twoSidedP(0.0, 4), 1e-12)
+        assertEquals(PatternRules.twoSidedP(2.0, 10), PatternRules.twoSidedP(-2.0, 10), 1e-12)
+    }
+
+    @Test
+    fun `two sided p of a large t is close to 0`() {
+        assertTrue(PatternRules.twoSidedP(100.0, 4) < 1e-6)
+    }
+
+    @Test
+    fun `two sided p with one degree of freedom follows the Cauchy distribution`() {
+        // P(|T| > t) = 1 - (2 / pi) arctan(t): exactly 0.5 at t = 1.
+        assertEquals(0.5, PatternRules.twoSidedP(1.0, 1), 1e-9)
+        assertEquals(1.0 - 2.0 / Math.PI * Math.atan(2.0), PatternRules.twoSidedP(2.0, 1), 1e-9)
+    }
+
+    @Test
+    fun `regularized beta is 0 at x 0 and 1 at x 1`() {
+        assertEquals(0.0, PatternRules.regularizedBeta(0.0, 2.0, 3.0), 0.0)
+        assertEquals(1.0, PatternRules.regularizedBeta(1.0, 2.0, 3.0), 0.0)
+    }
+
+    @Test
+    fun `regularized beta with both parameters 1 is x`() {
+        for (x in listOf(0.1, 0.3, 0.5, 0.7, 0.9)) {
+            assertEquals(x, PatternRules.regularizedBeta(x, 1.0, 1.0), 1e-9)
+        }
+    }
+
+    @Test
+    fun `holm keeps the p values that pass the step down thresholds`() {
+        // Sorted tested p values: 0.01, 0.011, 0.03, 0.04 with m = 4. Thresholds 0.0125 and 0.01667 pass, 0.025 fails.
+        val flags = PatternRules.holmFlags(listOf(0.01, 0.04, null, 0.011, 0.03))
+
+        assertEquals(listOf(true, false, false, true, false), flags)
+    }
+
+    @Test
+    fun `holm with only untested buckets flags nothing`() {
+        assertEquals(listOf(false, false), PatternRules.holmFlags(listOf(null, null)))
+    }
+
+    @Test
+    fun `holm flags a single p value below alpha`() {
+        assertEquals(listOf(true), PatternRules.holmFlags(listOf(0.049)))
     }
 }

@@ -15,9 +15,9 @@ import org.robolectric.annotation.Config
  * Migration 1 -> 2 adds workout_sets.type; migration 2 -> 3 adds routine_plans.trainingDays; migration
  * 3 -> 4 adds planned_workouts; 4 -> 5 makes its key (date, routineId); 5 -> 6 adds machines.libraryId; 6 -> 7 adds
  * planned_workouts.position; 7 -> 8 adds body_measurements; 8 -> 9 adds sessions.isExtra; 9 -> 10 and 10 -> 11 add cardio
- * columns to workout_sets; 11 -> 12 rebuilds workout_sets without the console values and with a REAL intensity. Needs
- * schemas/.../2.json to 12.json, which Room writes on the first build with those versions (12.json is written by CI, so
- * the 11 -> 12 tests fail until it is committed).
+ * columns to workout_sets; 11 -> 12 rebuilds workout_sets without the console values and with a REAL intensity; 12 -> 13
+ * deletes the sessions without sets. Needs schemas/.../2.json to 13.json, which Room writes on the first build with those
+ * versions (13.json is written by CI, so the 12 -> 13 tests fail until it is committed).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -934,6 +934,185 @@ class MigrationTest {
             assertEquals(80, c.getInt(4))
             assertEquals(2500, c.getInt(5))
             assertEquals(true, c.isNull(7))
+        }
+    }
+
+    // 12 -> 13: sessions without sets are deleted (the 13.json schema is written by CI).
+
+    private fun SupportSQLiteDatabase.insertV12Data() {
+        insertV3Data()
+        execSQL(
+            "INSERT INTO machines (id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived, libraryId) " +
+                "VALUES (1, 'Leg press', 'LEGS', 'WEIGHT_REPS', 5.0, 'seat 4', 90, 0, 'leg_press')",
+        )
+        execSQL(
+            "INSERT INTO machines (id, name, muscleGroup, kind, stepKg, setupNote, restSeconds, archived, libraryId) " +
+                "VALUES (2, 'Bike', 'CARDIO', 'CARDIO', 5.0, NULL, NULL, 0, NULL)",
+        )
+        // 1: closed, with sets, with routine and note. 2: closed, empty. 3: open, empty. 4: extra, closed, with a set.
+        execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note, isExtra) VALUES (1, 1000, 2000, 1, 'good one', 0)")
+        execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note, isExtra) VALUES (2, 3000, 3000, 2, NULL, 0)")
+        execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note, isExtra) VALUES (3, 5000, NULL, NULL, NULL, 0)")
+        execSQL("INSERT INTO sessions (id, startedAt, endedAt, routineId, note, isExtra) VALUES (4, 7000, 8000, 2, NULL, 1)")
+        execSQL(
+            "INSERT INTO workout_sets (id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, " +
+                "loggedAt, type, intensity) VALUES (10, 1, 1, 0, 120.5, 12, NULL, NULL, NULL, 1500, 'WARMUP', NULL)",
+        )
+        execSQL(
+            "INSERT INTO workout_sets (id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, " +
+                "loggedAt, type, intensity) VALUES (11, 1, 1, 1, 130.0, 10, NULL, NULL, NULL, 1600, 'NORMAL', NULL)",
+        )
+        execSQL(
+            "INSERT INTO workout_sets (id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, " +
+                "loggedAt, type, intensity) VALUES (12, 4, 2, 0, NULL, NULL, 2700, 520, 18400, 7500, 'NORMAL', 0.79)",
+        )
+    }
+
+    @Test
+    fun `migrating 12 to 13 keeps a closed session with sets with every column`() {
+        helper.createDatabase(name, 12).apply {
+            insertV12Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 13, true, MIGRATION_12_13)
+
+        db.query("SELECT id, startedAt, endedAt, routineId, note, isExtra FROM sessions WHERE id = 1").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            assertEquals(1000L, c.getLong(1))
+            assertEquals(2000L, c.getLong(2))
+            assertEquals(1L, c.getLong(3))
+            assertEquals("good one", c.getString(4))
+            assertEquals(0, c.getInt(5))
+        }
+    }
+
+    @Test
+    fun `migrating 12 to 13 deletes closed and open sessions without sets`() {
+        helper.createDatabase(name, 12).apply {
+            insertV12Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 13, true, MIGRATION_12_13)
+
+        db.query("SELECT id FROM sessions ORDER BY id").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            c.moveToNext()
+            assertEquals(4L, c.getLong(0))
+        }
+        db.query("SELECT COUNT(*) FROM sessions WHERE endedAt IS NULL").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun `migrating 12 to 13 keeps an extra session with sets`() {
+        helper.createDatabase(name, 12).apply {
+            insertV12Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 13, true, MIGRATION_12_13)
+
+        db.query("SELECT startedAt, endedAt, routineId, isExtra FROM sessions WHERE id = 4").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals(7000L, c.getLong(0))
+            assertEquals(8000L, c.getLong(1))
+            assertEquals(2L, c.getLong(2))
+            assertEquals(1, c.getInt(3))
+        }
+    }
+
+    @Test
+    fun `migrating 12 to 13 leaves every set untouched`() {
+        helper.createDatabase(name, 12).apply {
+            insertV12Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 13, true, MIGRATION_12_13)
+
+        db.query(
+            "SELECT id, sessionId, machineId, position, weightKg, reps, seconds, calories, distanceM, loggedAt, type, " +
+                "intensity FROM workout_sets ORDER BY id",
+        ).use { c ->
+            assertEquals(3, c.count)
+            c.moveToFirst()
+            assertEquals(10L, c.getLong(0))
+            assertEquals(1L, c.getLong(1))
+            assertEquals(1L, c.getLong(2))
+            assertEquals(0, c.getInt(3))
+            assertEquals(120.5, c.getDouble(4), 0.0)
+            assertEquals(12, c.getInt(5))
+            assertEquals(true, c.isNull(6))
+            assertEquals(1500L, c.getLong(9))
+            assertEquals("WARMUP", c.getString(10))
+            assertEquals(true, c.isNull(11))
+            c.moveToNext()
+            assertEquals(11L, c.getLong(0))
+            assertEquals(130.0, c.getDouble(4), 0.0)
+            assertEquals(10, c.getInt(5))
+            assertEquals("NORMAL", c.getString(10))
+            c.moveToNext()
+            assertEquals(12L, c.getLong(0))
+            assertEquals(4L, c.getLong(1))
+            assertEquals(2L, c.getLong(2))
+            assertEquals(true, c.isNull(4))
+            assertEquals(2700, c.getInt(6))
+            assertEquals(520, c.getInt(7))
+            assertEquals(18400, c.getInt(8))
+            assertEquals(0.79, c.getDouble(11), 1e-9)
+        }
+    }
+
+    @Test
+    fun `after 12 to 13 a new session gets an id after the deleted ones`() {
+        helper.createDatabase(name, 12).apply {
+            insertV12Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(name, 13, true, MIGRATION_12_13)
+
+        db.execSQL("INSERT INTO sessions (startedAt, endedAt, routineId, note, isExtra) VALUES (9000, NULL, NULL, NULL, 0)")
+        db.query("SELECT MAX(id) FROM sessions").use { c ->
+            c.moveToFirst()
+            assertEquals(5L, c.getLong(0))
+        }
+    }
+
+    @Test
+    fun `migrating 1 to 13 through every step keeps the session with sets`() {
+        helper.createDatabase(name, 1).apply {
+            insertV1Data()
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            name, 13, true,
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
+        )
+
+        db.query("SELECT id, endedAt FROM sessions").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals(1L, c.getLong(0))
+            assertEquals(true, c.isNull(1))
+        }
+        db.query("SELECT id FROM workout_sets ORDER BY id").use { c ->
+            assertEquals(2, c.count)
+            c.moveToFirst()
+            assertEquals(7L, c.getLong(0))
+            c.moveToNext()
+            assertEquals(8L, c.getLong(0))
         }
     }
 }

@@ -93,16 +93,87 @@ internal class DefaultHistoryRepository @Inject constructor(
             .map { starts -> starts.mapTo(HashSet()) { it.atZone(zone).toLocalDate() } as Set<LocalDate> }
             .distinctUntilChanged()
 
-    override suspend fun addSession(date: LocalDate, routineId: Long?, isExtra: Boolean): Long {
+    /** Today's open session when [date] is today, else null. */
+    private suspend fun openSessionOn(date: LocalDate, now: ZonedDateTime): Session? =
+        if (date == now.toLocalDate()) store.openSession() else null
+
+    /** A new closed session on [date] (CalendarRules.addedSessionStart, endedAt = start), not stored. */
+    private fun newSessionOn(date: LocalDate, now: ZonedDateTime, routineId: Long?, isExtra: Boolean): Session {
+        val start = CalendarRules.addedSessionStart(date, now)
+        return Session(id = 0, startedAt = start, endedAt = start, routineId = routineId, note = null, isExtra = isExtra)
+    }
+
+    /** The open session (today) or a new one with [build]'s set as its first, in one transaction. */
+    private suspend fun addSessionWith(
+        date: LocalDate,
+        routineId: Long?,
+        isExtra: Boolean,
+        machineId: Long,
+        build: (sessionId: Long, position: Int, loggedAt: Instant) -> WorkoutSet,
+    ): WorkoutSet {
         val now = ZonedDateTime.now(clock)
         return store.inTransaction {
-            if (date == now.toLocalDate()) {
-                store.openSession()?.let { return@inTransaction it.id }
+            val open = openSessionOn(date, now)
+            if (open != null) return@inTransaction writeSet(open.id, machineId, build)
+            val session = newSessionOn(date, now, routineId, isExtra)
+            val sessionId = store.insertSession(session)
+            val set = build(sessionId, 0, session.startedAt)
+            set.copy(id = store.insertSet(set))
+        }
+    }
+
+    override suspend fun addSessionWithSet(
+        date: LocalDate,
+        routineId: Long?,
+        isExtra: Boolean,
+        machineId: Long,
+        draft: SetDraft,
+    ): WorkoutSet = addSessionWith(date, routineId, isExtra, machineId) { sessionId, position, loggedAt ->
+        weightSet(sessionId, machineId, position, loggedAt, draft)
+    }
+
+    override suspend fun addSessionWithCardio(
+        date: LocalDate,
+        routineId: Long?,
+        isExtra: Boolean,
+        machineId: Long,
+        draft: CardioDraft,
+    ): WorkoutSet = addSessionWith(date, routineId, isExtra, machineId) { sessionId, position, loggedAt ->
+        CardioRules.toSet(id = 0, sessionId = sessionId, machineId = machineId, position = position, draft = draft, loggedAt = loggedAt)
+    }
+
+    override suspend fun addSessionRepeating(
+        date: LocalDate,
+        routineId: Long?,
+        isExtra: Boolean,
+        mode: RepeatMode,
+    ): List<WorkoutSet> {
+        val now = ZonedDateTime.now(clock)
+        openSessionOn(date, now)?.let { return repeatLastSession(it.id, mode) }
+        routineId ?: return emptyList()
+        val session = newSessionOn(date, now, routineId, isExtra)
+        // Flows are read before the write transaction.
+        val previous = store.observeSessions().first()
+            .filter { it.routineId == routineId && it.startedAt < session.startedAt }
+            .maxByOrNull { it.startedAt }
+            ?: return emptyList()
+        val items = store.routineItems(routineId)
+        val suggestions = if (mode == RepeatMode.SUGGESTED) store.repeatSuggestions(items, NO_SESSION) else emptyMap()
+        return store.inTransaction {
+            // A session opened meanwhile today: leave it alone, the owner can repeat again.
+            if (openSessionOn(date, now) != null) return@inTransaction emptyList()
+            val planned = RepeatSessionRules.plan(items, store.sessionSets(previous.id), emptySet(), mode, suggestions)
+            if (planned.isEmpty()) return@inTransaction emptyList()
+            val sessionId = store.insertSession(session)
+            val counts = HashMap<Long, Int>()
+            val saved = planned.mapIndexed { index, p ->
+                val position = counts[p.machineId] ?: 0
+                counts[p.machineId] = position + 1
+                val set = p.toWorkoutSet(sessionId, position, session.startedAt.plusSeconds(index.toLong()))
+                set.copy(id = store.insertSet(set))
             }
-            val start = CalendarRules.addedSessionStart(date, now)
-            store.insertSession(
-                Session(id = 0, startedAt = start, endedAt = start, routineId = routineId, note = null, isExtra = isExtra),
-            )
+            store.setSessionEnd(sessionId, saved.maxOf { it.loggedAt })
+            saved
         }
     }
 
@@ -116,44 +187,47 @@ internal class DefaultHistoryRepository @Inject constructor(
 
     override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet =
         store.inTransaction {
-            val session = store.session(sessionId) ?: throw IllegalArgumentException("No session $sessionId")
-            val loggedAt = store.lastSetAt(sessionId)?.plusSeconds(60) ?: session.startedAt
-            val set = WorkoutSet(
-                id = 0,
-                sessionId = sessionId,
-                machineId = machineId,
-                position = store.setCount(sessionId, machineId),
-                weightKg = draft.weightKg,
-                reps = draft.reps,
-                seconds = null,
-                calories = null,
-                distanceM = null,
-                loggedAt = loggedAt,
-                type = draft.type,
-            )
-            val saved = set.copy(id = store.insertSet(set))
-            val endedAt = session.endedAt
-            if (endedAt != null && loggedAt > endedAt) store.setSessionEnd(sessionId, loggedAt)
-            saved
+            writeSet(sessionId, machineId) { id, position, loggedAt -> weightSet(id, machineId, position, loggedAt, draft) }
         }
 
     override suspend fun addCardioSet(sessionId: Long, machineId: Long, draft: CardioDraft): WorkoutSet =
         store.inTransaction {
-            val session = store.session(sessionId) ?: throw IllegalArgumentException("No session $sessionId")
-            val loggedAt = store.lastSetAt(sessionId)?.plusSeconds(60) ?: session.startedAt
-            val set = CardioRules.toSet(
-                id = 0,
-                sessionId = sessionId,
-                machineId = machineId,
-                position = store.setCount(sessionId, machineId),
-                draft = draft,
-                loggedAt = loggedAt,
-            )
-            val saved = set.copy(id = store.insertSet(set))
-            val endedAt = session.endedAt
-            if (endedAt != null && loggedAt > endedAt) store.setSessionEnd(sessionId, loggedAt)
-            saved
+            writeSet(sessionId, machineId) { id, position, loggedAt ->
+                CardioRules.toSet(id = 0, sessionId = id, machineId = machineId, position = position, draft = draft, loggedAt = loggedAt)
+            }
         }
+
+    /**
+     * Writes [build]'s set into an existing session: position = the machine's sets in it; loggedAt = the session's
+     * last set + 1 minute, or its start; a closed session's endedAt moves to loggedAt if later. Call inside a transaction.
+     */
+    private suspend fun writeSet(
+        sessionId: Long,
+        machineId: Long,
+        build: (sessionId: Long, position: Int, loggedAt: Instant) -> WorkoutSet,
+    ): WorkoutSet {
+        val session = store.session(sessionId) ?: throw IllegalArgumentException("No session $sessionId")
+        val loggedAt = store.lastSetAt(sessionId)?.plusSeconds(60) ?: session.startedAt
+        val set = build(sessionId, store.setCount(sessionId, machineId), loggedAt)
+        val saved = set.copy(id = store.insertSet(set))
+        val endedAt = session.endedAt
+        if (endedAt != null && loggedAt > endedAt) store.setSessionEnd(sessionId, loggedAt)
+        return saved
+    }
+
+    private fun weightSet(sessionId: Long, machineId: Long, position: Int, loggedAt: Instant, draft: SetDraft) = WorkoutSet(
+        id = 0,
+        sessionId = sessionId,
+        machineId = machineId,
+        position = position,
+        weightKg = draft.weightKg,
+        reps = draft.reps,
+        seconds = null,
+        calories = null,
+        distanceM = null,
+        loggedAt = loggedAt,
+        type = draft.type,
+    )
 
     override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> {
         // Flows are read before the write transaction.
@@ -220,6 +294,18 @@ internal class DefaultHistoryRepository @Inject constructor(
     override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> =
         store.lastTimeBefore(sessionId, machineId)
 
+    override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> {
+        val now = ZonedDateTime.now(clock)
+        openSessionOn(date, now)?.let { return store.lastTimeBefore(it.id, machineId) }
+        val start = CalendarRules.addedSessionStart(date, now)
+        val bySession = store.machineSets(machineId).groupBy { it.sessionId }
+        val latest = store.observeSessions().first()
+            .filter { it.startedAt < start && it.id in bySession }
+            .maxWithOrNull(compareBy({ it.startedAt }, { it.id }))
+            ?: return emptyList()
+        return bySession.getValue(latest.id).sortedWith(compareBy({ it.position }, { it.id }))
+    }
+
     override suspend fun deleteSession(sessionId: Long): SessionDetail? = store.inTransaction {
         val session = store.session(sessionId) ?: return@inTransaction null
         val detail = detail(
@@ -261,5 +347,10 @@ internal class DefaultHistoryRepository @Inject constructor(
             .sortedWith(compareBy<Triple<SessionMachine, Instant, Long>>({ it.second }, { it.third }))
             .map { it.first }
         return SessionDetail(session, session.routineId?.let { id -> routines.firstOrNull { it.id == id } }, ordered)
+    }
+
+    private companion object {
+        /** No session has this id, so "other than" excludes nothing. */
+        const val NO_SESSION = -1L
     }
 }

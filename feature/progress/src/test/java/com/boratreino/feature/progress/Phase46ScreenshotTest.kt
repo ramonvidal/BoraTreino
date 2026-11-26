@@ -13,7 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** Screenshots of the phase 46 Habit and Body cards: training load, patterns, cardio insight, waist to hip and smoothed measurements. */
+/** Screenshots of the phase 46 Habit and Body cards: recent vs usual load, patterns (with and without a clear pattern), cardio insight, waist to hip and smoothed measurements. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h1600dp")
 class Phase46ScreenshotTest {
@@ -37,7 +37,7 @@ class Phase46ScreenshotTest {
 
     @Test
     fun `training load building the baseline`() = shoot("workload-baseline") {
-        WorkloadCard(Phase46Samples.workload(AcwrStatus.BUILDING_BASELINE, acwr = null, historyDays = 10, monotony = null, strain = null))
+        WorkloadCard(Phase46Samples.workload(AcwrStatus.BUILDING_BASELINE, acwr = null, historyDays = 10))
     }
 
     @Test
@@ -53,6 +53,16 @@ class Phase46ScreenshotTest {
     @Test
     fun `patterns not enough sessions`() = shoot("patterns-needs") {
         PatternsCard(Phase46Samples.patterns(sessionsUsed = 9, enough = false))
+    }
+
+    @Test
+    fun `patterns no clear pattern`() = shoot("patterns-none") {
+        PatternsCard(Phase46Samples.patterns(sessionsUsed = 18, enough = true, anySignificant = false))
+    }
+
+    @Test
+    fun `patterns no clear pattern dark`() = shoot("patterns-none-dark", dark = true) {
+        PatternsCard(Phase46Samples.patterns(sessionsUsed = 18, enough = true, anySignificant = false))
     }
 
     @Test

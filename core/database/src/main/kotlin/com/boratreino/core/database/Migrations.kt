@@ -125,3 +125,13 @@ internal val MIGRATION_11_12: Migration = object : Migration(11, 12) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_workout_sets_machineId` ON `workout_sets` (`machineId`)")
     }
 }
+
+/**
+ * Version 13: a session exists only while it has sets. Sessions without any set (open or closed, extra or not) are
+ * deleted; every other session and every set is kept as it is. No column changes.
+ */
+internal val MIGRATION_12_13: Migration = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DELETE FROM sessions WHERE id NOT IN (SELECT DISTINCT sessionId FROM workout_sets)")
+    }
+}

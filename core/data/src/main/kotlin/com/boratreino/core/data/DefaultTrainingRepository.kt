@@ -400,9 +400,8 @@ internal class DefaultTrainingRepository @Inject constructor(
     override suspend fun undoRepeat(outcome: RepeatOutcome) {
         store.inTransaction {
             outcome.setIds.forEach { store.deleteSet(it) }
-            if (outcome.sessionCreated && store.sessionSets(outcome.sessionId).isEmpty()) {
-                store.deleteSession(outcome.sessionId)
-}
+            // A session exists only while it has sets.
+            if (store.sessionSets(outcome.sessionId).isEmpty()) store.deleteSession(outcome.sessionId)
         }
     }
 
@@ -461,12 +460,13 @@ internal class DefaultTrainingRepository @Inject constructor(
         store.updateSet(set)
     }
 
-    override suspend fun deleteSet(set: WorkoutSet) {
+    override suspend fun deleteSet(set: WorkoutSet): RemovedSets = store.inTransaction {
         store.deleteSet(set.id)
+        RemovedSets(listOf(set), deleteSessionIfEmpty(set.sessionId))
     }
 
-    override suspend fun restoreSet(set: WorkoutSet) {
-        store.insertSet(set)
+    override suspend fun restoreSets(removed: RemovedSets) {
+        store.inTransaction { restoreRemoved(store, removed) }
     }
 
     override suspend fun finishSession(): SessionSummary? {
@@ -478,9 +478,14 @@ internal class DefaultTrainingRepository @Inject constructor(
     /** Closes the open session and builds its summary. Call inside a transaction. */
     private suspend fun finishOpenSession(): Pair<SessionSummary?, Long?> {
         val open = store.openSession() ?: return null to null
-        store.setSessionEnd(open.id, Instant.now(clock))
-        resetChoice()
         val sessionSets = store.sessionSets(open.id)
+        resetChoice()
+        if (sessionSets.isEmpty()) {
+            // A session exists only while it has sets: an empty one is dropped, not finished.
+            store.deleteSession(open.id)
+            return null to null
+        }
+        store.setSessionEnd(open.id, Instant.now(clock))
         val earlier = store.machinesSetsBefore(sessionSets.map { it.machineId }.distinct(), open.startedAt)
         val summary = store.summary(open.id).copy(recordCount = RecordRules.countRecords(sessionSets, earlier))
         return summary to open.id
@@ -507,20 +512,52 @@ internal class DefaultTrainingRepository @Inject constructor(
         pendingSummary.value = null
     }
 
-    override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> {
-        val removed = store.inTransaction<List<WorkoutSet>?> {
+    override suspend fun discardMachineToday(machineId: Long): RemovedSets {
+        val removed = store.inTransaction<RemovedSets?> {
             val open = store.openSession() ?: return@inTransaction null
             val sets = store.sessionSets(open.id).filter { it.machineId == machineId }
             sets.forEach { store.deleteSet(it.id) }
-            sets
-        } ?: return emptyList()
+            RemovedSets(sets, deleteSessionIfEmpty(open.id))
+        } ?: return RemovedSets(emptyList(), null)
         skipMachineToday(machineId)
         return removed
     }
 
-    override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) {
-        store.inTransaction { sets.forEach { store.insertSet(it) } }
+    override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) {
+        restoreSets(removed)
         unskipMachineToday(machineId)
+    }
+
+    /** See [restoreSets]. Call inside a transaction. */
+    private suspend fun restoreRemoved(store: WorkoutStore, removed: RemovedSets) {
+        val session = removed.session
+        if (session == null) {
+            removed.sets.forEach { store.insertSet(it) }
+            return
+        }
+        if (store.session(session.id) != null) {
+            // Already back (a second Undo): only the sets that are missing.
+            val present = store.sessionSets(session.id).mapTo(HashSet()) { it.id }
+            removed.sets.filter { it.id !in present }.forEach { store.insertSet(it) }
+            return
+        }
+        // The routine may have been deleted since; the FK would refuse a missing one.
+        val routineId = session.routineId?.takeIf { id -> store.allRoutines().any { it.id == id } }
+        val closed = if (session.isOpen && store.openSession() != null) {
+            // Another session is open now: only one may be, so this one comes back closed at its last set.
+            session.copy(endedAt = SessionRules.closeTime(session, removed.sets.maxOfOrNull { it.loggedAt }?.takeIf { it >= session.startedAt }))
+        } else {
+            session
+        }
+        store.restoreSession(closed.copy(routineId = routineId), removed.sets)
+    }
+
+    /** Deletes the session when it has no sets left and returns it; null when it still has sets or is gone. Call inside a transaction. */
+    private suspend fun deleteSessionIfEmpty(sessionId: Long): Session? {
+        val session = store.session(sessionId) ?: return null
+        if (store.sessionSets(sessionId).isNotEmpty()) return null
+        store.deleteSession(sessionId)
+        return session
     }
 
     override suspend fun sessionRoutineId(sessionId: Long): Long? {
@@ -571,7 +608,8 @@ internal class DefaultTrainingRepository @Inject constructor(
         val open = store.openSession() ?: return
         val lastSetAt = store.lastSetAt(open.id)
         if (SessionRules.isStale(open, lastSetAt, now)) {
-            store.setSessionEnd(open.id, SessionRules.closeTime(open, lastSetAt))
+            // A session exists only while it has sets: a stale empty one is deleted, not closed.
+            if (lastSetAt == null) store.deleteSession(open.id) else store.setSessionEnd(open.id, SessionRules.closeTime(open, lastSetAt))
             resetChoice()
         }
     }

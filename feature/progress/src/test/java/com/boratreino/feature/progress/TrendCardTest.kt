@@ -19,10 +19,16 @@ class TrendCardTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun show(result: TrendResult, forecast: Forecast? = null) {
+    private fun show(result: TrendResult, forecast: Forecast? = null, exploratory: Boolean = false) {
         compose.setContent {
             StatsCardHost {
-                TrendCard(result = result, forecast = forecast, valueFormatter = Phase46Samples.oneDecimal, unit = "kg")
+                TrendCard(
+                    result = result,
+                    forecast = forecast,
+                    valueFormatter = Phase46Samples.oneDecimal,
+                    unit = "kg",
+                    exploratory = exploratory,
+                )
             }
         }
     }
@@ -70,6 +76,22 @@ class TrendCardTest {
         shown("Needs 5 sessions over at least 2 weeks (you have 3)")
         compose.onNodeWithText("In 4 weeks", substring = true).assertDoesNotExist()
         compose.onNodeWithText("95%", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `an estimated 1RM trend is marked exploratory with the failure caveat`() {
+        show(Phase46Samples.rising, Phase46Samples.risingForecast, exploratory = true)
+
+        shown("Exploratory")
+        shown("Exploratory: estimated 1RM assumes your sets end close to failure.")
+    }
+
+    @Test
+    fun `a trend that is not an estimated 1RM has no exploratory tag`() {
+        show(Phase46Samples.rising, Phase46Samples.risingForecast, exploratory = false)
+
+        compose.onNodeWithText("Exploratory", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("estimated 1RM", substring = true).assertDoesNotExist()
     }
 
     @Test
