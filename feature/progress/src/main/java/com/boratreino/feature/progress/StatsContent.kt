@@ -152,6 +152,9 @@ private fun LazyListScope.bodyItems(state: StatsUiState, report: StatsReport) {
     if (report.muscleWeeks.isNotEmpty()) {
         item(key = "hard-sets") { HardSetsCard(report) }
     }
+    if (report.waistHip.isNotEmpty()) {
+        item(key = "proportions") { ProportionsCard(report.waistHip, report.to) }
+    }
 }
 
 private fun LazyListScope.strengthItems(report: StatsReport, actions: StatsActions) {
@@ -176,6 +179,12 @@ private fun LazyListScope.habitItems(report: StatsReport) {
     item(key = "summary") { SummaryCard(report) }
     if (report.muscleWeeks.any { it.volumeKg > 0 }) {
         item(key = "volume") { WeeklyVolumeCard(report) }
+    }
+    report.workload?.let { workload ->
+        item(key = "workload") { WorkloadCard(workload) }
+    }
+    report.patterns?.let { patterns ->
+        item(key = "patterns") { PatternsCard(patterns) }
     }
     if (report.cardioBlocks.isNotEmpty()) {
         item(key = "cardio") { CardioCard(report) }

@@ -15,6 +15,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.boratreino.core.model.CardioInsight
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.ui.R as CoreUiR
 
@@ -75,7 +76,44 @@ internal fun CardioCard(report: StatsReport, modifier: Modifier = Modifier) {
         totals.intensityAvg?.let { intensity ->
             CardioLine(stringResource(R.string.stats_cardio_average_intensity, formatIntensity(intensity)))
         }
+        report.cardioInsight?.let { CardioInsightLines(it) }
     }
+}
+
+/** Efficiency (km/h per unit of intensity, whole history) and the trends of speed and efficiency. */
+@Composable
+private fun CardioInsightLines(insight: CardioInsight) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Text(
+        stringResource(R.string.stats_cardio_insight_title, insight.sessions),
+        style = MaterialTheme.typography.labelLarge,
+        color = muted,
+    )
+    insight.efficiencyLatest?.let { latest ->
+        val best = insight.efficiencyBest
+        CardioLine(
+            if (best != null) {
+                stringResource(R.string.stats_cardio_efficiency_best, formatDecimal(latest, 2), formatDecimal(best, 2))
+            } else {
+                stringResource(R.string.stats_cardio_efficiency, formatDecimal(latest, 2))
+            },
+        )
+    }
+    CardioLine(
+        stringResource(
+            R.string.stats_cardio_trend_speed,
+            trendVerdictText(insight.speedTrend, R.string.stats_cardio_speed_amount, digits = 2, noun = TrendNoun.SESSIONS),
+        ),
+    )
+    if (insight.efficiencyLatest != null) {
+        CardioLine(
+            stringResource(
+                R.string.stats_cardio_trend_efficiency,
+                trendVerdictText(insight.efficiencyTrend, R.string.stats_cardio_efficiency_amount, digits = 3, noun = TrendNoun.SESSIONS),
+            ),
+        )
+    }
+    Text(stringResource(R.string.stats_cardio_efficiency_note), style = MaterialTheme.typography.bodyMedium, color = muted)
 }
 
 @Composable

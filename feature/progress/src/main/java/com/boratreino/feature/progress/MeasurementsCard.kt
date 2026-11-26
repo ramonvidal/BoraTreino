@@ -1,6 +1,7 @@
 package com.boratreino.feature.progress
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,11 +48,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.boratreino.core.model.BodyMeasurement
+import com.boratreino.core.model.BodyTrendRules
 import com.boratreino.core.model.MeasurementRules
 import com.boratreino.core.model.MeasurementType
+import com.boratreino.core.model.TrendRules
 import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraButtonStyle
 import com.boratreino.core.ui.BoraChip
+import com.boratreino.core.ui.BoraSwitchColors
 import com.boratreino.core.ui.holdRepeat
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -108,6 +114,7 @@ internal fun MeasurementsCard(
 ) {
     val type = selectedType ?: defaultMeasurementType(measurements)
     var deleted by remember { mutableStateOf<BodyMeasurement?>(null) }
+    var smooth by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(deleted) {
         if (deleted != null) {
             delay(UNDO_MILLIS)
@@ -138,14 +145,25 @@ internal fun MeasurementsCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            val trendPoints = remember(series) { series.map { it.date to it.valueCm } }
             if (series.size >= 2) {
-                MeasurementChart(series.map { it.valueCm }, type.label())
+                val smoothed = remember(trendPoints, smooth) {
+                    if (smooth) BodyTrendRules.ewma(trendPoints).map { it.second } else null
+                }
+                MeasurementChart(series.map { it.valueCm }, type.label(), smoothed = smoothed)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     val muted = MaterialTheme.colorScheme.onSurfaceVariant
                     Text(formatShortDate(series.first().date, today), style = MaterialTheme.typography.labelMedium, color = muted)
                     Text(formatShortDate(series.last().date, today), style = MaterialTheme.typography.labelMedium, color = muted)
                 }
+                SmoothSwitch(smooth, onChange = { smooth = it })
             }
+            val trend = remember(trendPoints) { TrendRules.verdict(trendPoints, minPoints = BodyTrendRules.MIN_BODY_POINTS) }
+            Text(
+                trendVerdictText(trend, R.string.stats_measure_value, digits = 1, noun = TrendNoun.MEASUREMENTS),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text(
                 stringResource(R.string.stats_measure_history),
                 style = MaterialTheme.typography.labelLarge,
@@ -203,14 +221,40 @@ private fun MeasurementRow(entry: BodyMeasurement, today: LocalDate, onDelete: (
     }
 }
 
-/** A simple line over [values] (oldest first): Ink line, the last point a green dot. */
+/** The "Smooth" switch under the chart: draws the smoothed line (see [BodyTrendRules.ewma]) over the raw points. */
 @Composable
-private fun MeasurementChart(values: List<Double>, name: String, modifier: Modifier = Modifier) {
+private fun SmoothSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.stats_measure_smooth),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(checked = checked, onCheckedChange = onChange, colors = BoraSwitchColors())
+    }
+}
+
+/**
+ * A simple line over [values] (oldest first): Ink line, the last point a green dot. With [smoothed]
+ * (same length) the raw values become small dots and the smoothed line is the main one.
+ */
+@Composable
+internal fun MeasurementChart(
+    values: List<Double>,
+    name: String,
+    modifier: Modifier = Modifier,
+    smoothed: List<Double>? = null,
+    digits: Int = 1,
+    @StringRes descriptionRes: Int = R.string.stats_measure_chart,
+) {
     val description = stringResource(
-        R.string.stats_measure_chart,
+        descriptionRes,
         name,
-        formatDecimal(values.first(), 1),
-        formatDecimal(values.last(), 1),
+        formatDecimal(values.first(), digits),
+        formatDecimal(values.last(), digits),
     )
     val lineColor = MaterialTheme.colorScheme.primary
     val dotColor = MaterialTheme.colorScheme.secondary
@@ -224,17 +268,33 @@ private fun MeasurementChart(values: List<Double>, name: String, modifier: Modif
         val dotRadius = 5.dp.toPx()
         val grid = 1.dp.toPx()
         drawLine(gridColor, Offset(0f, size.height - grid / 2f), Offset(size.width, size.height - grid / 2f), strokeWidth = grid)
-        val offsets = trendOffsets(values, size.width, size.height, inset = dotRadius + 2.dp.toPx())
-        if (offsets.size >= 2) {
+        val inset = dotRadius + 2.dp.toPx()
+        val line = smoothed?.takeIf { it.size == values.size } ?: values
+        val low = minOf(values.min(), line.min())
+        val high = maxOf(values.max(), line.max())
+        val rawOffsets = chartOffsets(values, low, high, size.width, size.height, inset)
+        val lineOffsets = if (line === values) rawOffsets else chartOffsets(line, low, high, size.width, size.height, inset)
+        if (line !== values) {
+            rawOffsets.forEach { drawCircle(lineColor.copy(alpha = 0.35f), 3.dp.toPx(), it) }
+        }
+        if (lineOffsets.size >= 2) {
             val path = Path().apply {
-                moveTo(offsets.first().x, offsets.first().y)
-                for (i in 1 until offsets.size) lineTo(offsets[i].x, offsets[i].y)
+                moveTo(lineOffsets.first().x, lineOffsets.first().y)
+                for (i in 1 until lineOffsets.size) lineTo(lineOffsets[i].x, lineOffsets[i].y)
             }
             drawPath(path, lineColor, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
-        offsets.lastOrNull()?.let { drawCircle(dotColor, dotRadius, it) }
+        lineOffsets.lastOrNull()?.let { drawCircle(dotColor, dotRadius, it) }
     }
 }
+
+/** Points of [values] spread over the width, scaled between [low] and [high] (shared by several lines). */
+private fun chartOffsets(values: List<Double>, low: Double, high: Double, width: Float, height: Float, inset: Float): List<Offset> =
+    values.mapIndexed { index, value ->
+        val x = if (values.size == 1) width / 2f else inset + (width - 2f * inset) * index / (values.size - 1)
+        val y = if (high <= low) height / 2f else inset + (height - 2f * inset) * (1f - ((value - low) / (high - low)).toFloat())
+        Offset(x, y)
+    }
 
 /** The bottom sheet around [LogMeasurementContent]. */
 @OptIn(ExperimentalMaterial3Api::class)

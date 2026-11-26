@@ -280,4 +280,57 @@
     <string name="stats_muscle_volume_below">Below %1$s</string>
     <string name="stats_muscle_volume_in_range">In range</string>
     <string name="stats_muscle_volume_above">Above %1$s</string>
+
+    <!-- Phase 46 U2: habit and body statistics -->
+    <string name="stats_trend_u2_rising">Rising %1$s per week</string>
+    <string name="stats_trend_u2_falling">Falling %1$s per week</string>
+    <string name="stats_trend_u2_plateau">No clear change</string>
+    <string name="stats_trend_u2_needs_measurements">Not enough data: needs %1$d measurements</string>
+    <string name="stats_trend_u2_needs_sessions">Not enough data: needs %1$d sessions (you have %2$d)</string>
+    <string name="stats_trend_u2_needs_span">Not enough data: the entries must cover at least %1$d days</string>
+    <string name="stats_measure_smooth">Smooth</string>
+    <string name="stats_proportions_title">Waist to hip ratio</string>
+    <string name="stats_proportions_note">Waist divided by hips, for days with both measurements</string>
+    <string name="stats_proportions_chart">%1$s: %2$s to %3$s</string>
+    <string name="stats_proportions_amount">%1$s</string>
+    <string name="stats_cardio_insight_title">Whole history, %1$d sessions</string>
+    <string name="stats_cardio_efficiency">Efficiency: %1$s km/h per level of intensity</string>
+    <string name="stats_cardio_efficiency_best">Efficiency: %1$s km/h per level of intensity (best %2$s)</string>
+    <string name="stats_cardio_trend_speed">Speed: %1$s</string>
+    <string name="stats_cardio_trend_efficiency">Efficiency: %1$s</string>
+    <string name="stats_cardio_speed_amount">%1$s km/h</string>
+    <string name="stats_cardio_efficiency_amount">%1$s km/h per level</string>
+    <string name="stats_cardio_efficiency_note">Efficiency is your speed divided by the intensity level: a higher number means more speed for the same effort.</string>
+    <string name="stats_workload_title">Training load</string>
+    <string name="stats_workload_note">Working sets on strength machines; warm-ups do not count.</string>
+    <string name="stats_workload_acute">Last 7 days</string>
+    <string name="stats_workload_chronic">Weekly average over 28 days</string>
+    <string name="stats_workload_ratio">Load ratio</string>
+    <string name="stats_workload_sets">%1$s sets</string>
+    <string name="stats_workload_baseline">Building your baseline: %1$d of %2$d days</string>
+    <string name="stats_workload_status_low">Low</string>
+    <string name="stats_workload_status_optimal">Optimal</string>
+    <string name="stats_workload_status_high">High</string>
+    <string name="stats_workload_status_very_high">Very high</string>
+    <string name="stats_workload_status_building">Building your baseline</string>
+    <string name="stats_workload_meaning_low">This week is well below your usual load.</string>
+    <string name="stats_workload_meaning_optimal">This week is in line with your recent load.</string>
+    <string name="stats_workload_meaning_high">This week is clearly above your usual load. Watch your recovery.</string>
+    <string name="stats_workload_meaning_very_high">A big jump over your usual load. An easier week may help.</string>
+    <string name="stats_workload_meaning_building">Not enough history yet for a reliable ratio.</string>
+    <string name="stats_workload_monotony">Monotony</string>
+    <string name="stats_workload_strain">Strain</string>
+    <string name="stats_workload_monotony_note">Monotony is how alike your days are; strain is the week\'s load times monotony.</string>
+    <string name="stats_patterns_title">When you lift best</string>
+    <string name="stats_patterns_needs">Needs %1$d sessions (you have %2$d)</string>
+    <string name="stats_patterns_note">From %1$d sessions. Bars show how far above or below each exercise\'s own average your estimated 1RM was, in percent.</string>
+    <string name="stats_patterns_weekday">By weekday</string>
+    <string name="stats_patterns_rest">By days since the last session of the same exercise</string>
+    <string name="stats_patterns_rest_short">0-3 days</string>
+    <string name="stats_patterns_rest_medium">4-6 days</string>
+    <string name="stats_patterns_rest_long">7+ days</string>
+    <string name="stats_patterns_error">±%1$s</string>
+    <string name="stats_patterns_count">n=%1$d</string>
+    <string name="stats_patterns_footnote">Whiskers are the standard error. Grey bars have fewer than %1$d sessions: too few to trust.</string>
+    <string name="stats_patterns_slot_description">%1$s: %2$s percent, %3$d sessions</string>
 </resources>
