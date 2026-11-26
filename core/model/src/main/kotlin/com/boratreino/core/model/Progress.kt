@@ -1,5 +1,6 @@
 package com.boratreino.core.model
 
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -219,6 +220,43 @@ object ProgressRules {
         }
         return count
     }
+
+    /**
+     * A machine's whole-history progress from [sets] (only that machine's sets; others are ignored) and
+     * [sessionDates] (session id -> local date): [metricFor] points, [oneRmPoints] for WEIGHT_REPS and
+     * BODYWEIGHT_REPS, and for CARDIO the last [weeks] weeks ([CardioRules.weeks]) and points per
+     * [CARDIO_METRICS]. The same builder serves the progress screens and the statistics report.
+     */
+    fun machineProgress(
+        machine: Machine,
+        sets: List<WorkoutSet>,
+        sessionDates: Map<Long, LocalDate>,
+        today: LocalDate,
+        firstDayOfWeek: DayOfWeek,
+        weeks: Int = CARDIO_WEEKS,
+    ): MachineProgress {
+        val own = sets.filter { it.machineId == machine.id }
+        val metric = metricFor(machine, own)
+        val isCardio = machine.kind == MachineKind.CARDIO
+        val cardioWeeks = if (isCardio) {
+            val dated = own.mapNotNull { set ->
+                val date = sessionDates[set.sessionId] ?: return@mapNotNull null
+                if (CardioRules.isCardio(set)) date to set else null
+            }
+            CardioRules.weeks(dated, today, firstDayOfWeek, weeks)
+        } else {
+            emptyList()
+        }
+        val oneRm = if (!isCardio) oneRmPoints(own, sessionDates) else emptyList()
+        val cardioPoints = if (isCardio) CARDIO_METRICS.associateWith { points(own, sessionDates, it) } else emptyMap()
+        return MachineProgress(
+            machine, metric, points(own, sessionDates, metric),
+            weeks = cardioWeeks, oneRmPoints = oneRm, cardioPoints = cardioPoints,
+        )
+    }
+
+    /** How many weeks of cardio totals [machineProgress] keeps by default. */
+    const val CARDIO_WEEKS = 12
 
     /** Distinct training dates in [month]. */
     fun trainingDaysInMonth(sessionDates: Collection<LocalDate>, month: YearMonth): Int =

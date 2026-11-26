@@ -7,11 +7,15 @@ import com.boratreino.core.data.ProgressRepository
 import com.boratreino.core.model.ChartRules
 import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.ChartScale
+import com.boratreino.core.model.Forecast
 import com.boratreino.core.model.MachineProgress
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.ProgressRange
 import com.boratreino.core.model.ProgressRules
 import com.boratreino.core.model.SessionPoint
+import com.boratreino.core.model.TrendResult
+import com.boratreino.core.model.TrendRules
+import com.boratreino.core.model.TrendVerdict
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.LocalDate
@@ -55,7 +59,16 @@ internal data class MachineProgressUiState(
     val cardioMetrics: List<ProgressMetric> = emptyList(),
     /** The all-time best session per cardio metric in [cardioMetrics] (speed, intensity, distance, time), same order. */
     val cardioRecords: List<CardioRecord> = emptyList(),
+    /** The all-time trend of the machine's main series (est. 1RM, cardio speed or top weight); null without any point. */
+    val trend: TrendResult? = null,
+    /** The 4-week forecast of [trend]; null while the trend needs more data. */
+    val forecast: Forecast? = null,
+    /** What [trend] measures, for its unit. */
+    val trendMetric: ProgressMetric = ProgressMetric.ONE_RM,
 )
+
+/** Weeks ahead the machine trend forecasts. */
+private const val FORECAST_WEEKS = 4.0
 
 /** The best session of one cardio [metric], all-time. */
 internal data class CardioRecord(val metric: ProgressMetric, val point: SessionPoint)
@@ -94,6 +107,12 @@ internal fun buildMachineState(
     } else {
         ChartRules.niceScale(inRange.minOf { it.value }, inRange.maxOf { it.value })
     }
+    val trend = TrendRules.forMachine(progress)
+    val trendMetric = when {
+        oneRmAvailable -> ProgressMetric.ONE_RM
+        progress.cardioPoints[ProgressMetric.SPEED].orEmpty().isNotEmpty() -> ProgressMetric.SPEED
+        else -> progress.metric
+    }
     return MachineProgressUiState(
         loaded = true,
         found = true,
@@ -117,6 +136,11 @@ internal fun buildMachineState(
         cardioRecords = cardioMetrics.filter { it in RECORD_METRICS }.mapNotNull { metric ->
             ProgressRules.best(progress.pointsFor(metric))?.let { CardioRecord(metric, it) }
         },
+        trend = trend.takeIf { it.points > 0 },
+        forecast = trend.fit
+            ?.takeIf { trend.verdict != TrendVerdict.NOT_ENOUGH_DATA }
+            ?.let { TrendRules.forecast(it, FORECAST_WEEKS) },
+        trendMetric = trendMetric,
     )
 }
 

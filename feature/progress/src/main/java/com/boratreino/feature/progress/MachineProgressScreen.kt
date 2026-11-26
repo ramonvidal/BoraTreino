@@ -125,6 +125,16 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
             item(key = "cardio-metrics") { CardioMetricChips(state.cardioMetrics, state.metric, actions.onCardioMetric) }
         }
         item(key = "chart") { ChartCard(state, actions.onSelectPoint) }
+        if (state.trend != null) {
+            item(key = "trend") {
+                TrendCard(
+                    result = state.trend,
+                    forecast = state.forecast,
+                    valueFormatter = valueFormatter(state.trendMetric),
+                    unit = trendUnit(state.trendMetric),
+                )
+            }
+        }
         if (state.cardioRecords.isNotEmpty()) {
             item(key = "cardio-records") { CardioRecordsCard(state.cardioRecords) }
         }
