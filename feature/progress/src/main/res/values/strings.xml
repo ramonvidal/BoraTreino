@@ -244,4 +244,40 @@
         <item quantity="one">Cardio over %1$d block: %2$s in total, longest block %3$s</item>
         <item quantity="other">Cardio over %1$d blocks: %2$s in total, longest block %3$s</item>
     </plurals>
+    <string name="trend_title">Trend</string>
+    <string name="trend_rising">Rising</string>
+    <string name="trend_falling">Falling</string>
+    <string name="trend_plateau">Plateau</string>
+    <string name="trend_not_enough">Not enough data</string>
+    <string name="trend_unit_kg">kg</string>
+    <string name="trend_unit_kmh">km/h</string>
+    <string name="trend_unit_reps">reps</string>
+    <string name="trend_unit_minutes">min</string>
+    <string name="trend_unit_km">km</string>
+    <string name="trend_slope_per_week">%1$s %2$s per week</string>
+    <string name="trend_slope_range">%1$s (95%%: %2$s to %3$s)</string>
+    <plurals name="trend_fit">
+        <item quantity="one">R² %1$s · %2$d session</item>
+        <item quantity="other">R² %1$s · %2$d sessions</item>
+    </plurals>
+    <string name="trend_forecast">In %1$s weeks: about %2$s %3$s (range %4$s-%5$s)</string>
+    <string name="trend_needs">Needs %1$d sessions over at least %2$d weeks (you have %3$d)</string>
+    <string name="trend_show_explain">What does this mean?</string>
+    <string name="trend_hide_explain">Hide explanation</string>
+    <string name="trend_explain">The range is where the true weekly change probably is. If it includes 0, there is no clear change yet.</string>
+    <string name="trend_group_rising">Rising</string>
+    <string name="trend_group_plateau">Plateau</string>
+    <string name="trend_group_falling">Falling</string>
+    <string name="trend_group_not_enough">Needs more data</string>
+    <string name="stats_trends_title">Trends by exercise</string>
+    <string name="stats_trends_note">Estimated 1RM, whole history. Tap an exercise to open it.</string>
+    <string name="stats_trends_group">%1$s (%2$d)</string>
+    <string name="stats_trends_more">and %1$d more</string>
+    <string name="stats_muscle_volume_title">Weekly sets per muscle</string>
+    <string name="stats_muscle_volume_note">Direct sets per week in this period. A common guideline for growth is %1$s to %2$s.</string>
+    <string name="stats_muscle_volume_row">%1$s sets · %2$s</string>
+    <string name="stats_muscle_volume_none">No sets</string>
+    <string name="stats_muscle_volume_below">Below %1$s</string>
+    <string name="stats_muscle_volume_in_range">In range</string>
+    <string name="stats_muscle_volume_above">Above %1$s</string>
 </resources>

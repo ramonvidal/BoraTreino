@@ -79,6 +79,12 @@ data class BalanceStats(
     val unclassifiedSets: Int,
 )
 
+/**
+ * The weekly trend of one strength machine's estimated 1RM over its whole history (see [TrendRules.forMachine]).
+ * [group] is the machine's muscle group.
+ */
+data class MachineTrend(val machineId: Long, val name: String, val group: MuscleGroup, val result: TrendResult)
+
 data class StatsReport(
     val period: StatsPeriod,
     /** First day of the first 7-day block of the period: today minus (7 x blocks - 1) days. */
@@ -116,6 +122,24 @@ data class StatsReport(
     val detailWeeks: List<MuscleDetailWeek> = emptyList(),
     /** One per 7-day block of the period that has cardio sets, oldest first (see [CardioBlock]). */
     val cardioBlocks: List<CardioBlock> = emptyList(),
+    /**
+     * Acute / chronic load over the WHOLE history (not the period), ending today. Load = NORMAL and FAILURE sets of
+     * strength machines per day (no warm-up, drop or cardio sets). Null only when not computed.
+     */
+    val workload: WorkloadReport? = null,
+    /** Average direct sets per week of the period's blocks, all [Muscle]s in enum order (see [MuscleVolumeRules]). */
+    val muscleVolumes: List<MuscleVolume> = emptyList(),
+    /** Weekday and rest-day patterns of the strength machines' estimated 1RM, whole history. */
+    val patterns: PatternReport? = null,
+    /**
+     * Whole-history trends of the strength machines with at least one point: RISING first, then PLATEAU, FALLING,
+     * NOT_ENOUGH_DATA; ties by name (case-insensitive).
+     */
+    val machineTrends: List<MachineTrend> = emptyList(),
+    /** Cardio speed and efficiency trends, whole history; null without any session with distance and time. */
+    val cardioInsight: CardioInsight? = null,
+    /** Waist / hip ratio per date that has both, whole history, oldest first. */
+    val waistHip: List<Pair<LocalDate, Double>> = emptyList(),
 )
 
 /** Statistics over the sets, sessions and machines already logged. Working sets only; pure functions. */
@@ -163,6 +187,7 @@ object StatsRules {
         sets: List<WorkoutSet>,
         zone: ZoneId = ZoneId.systemDefault(),
         library: Map<String, LibraryExercise> = emptyMap(),
+        measurements: List<BodyMeasurement> = emptyList(),
     ): StatsReport {
         val machineById = machines.associateBy { it.id }
         val sessionById = sessions.associateBy { it.id }
@@ -181,6 +206,12 @@ object StatsRules {
 
         val weeks = weekStats(inPeriod, from, weekCount)
         val strength = strengthTrends(inPeriod, from, weekCount)
+        val detailWeeks = detailWeeks(inPeriod, library, from)
+        // Whole-history progress per machine, built the same way as the progress screens build it.
+        val setsByMachine = sets.groupBy { it.machineId }
+        val progresses = machines.map { machine ->
+            ProgressRules.machineProgress(machine, setsByMachine[machine.id].orEmpty(), dateOf, today, firstDayOfWeek)
+        }
         return StatsReport(
             period = period,
             from = from,
@@ -199,10 +230,38 @@ object StatsRules {
             strengthIndex = strengthIndex(inPeriod, from, weekCount),
             balance = balance(inPeriod, library),
             indirectWeeks = indirectWeeks(inPeriod, library, from),
-            detailWeeks = detailWeeks(inPeriod, library, from),
+            detailWeeks = detailWeeks,
             cardioBlocks = CardioRules.blocks(inPeriod.map { it.date to it.set }, from),
+            workload = WorkloadRules.report(loadPerDay(all, today), today),
+            muscleVolumes = MuscleVolumeRules.volumes(detailWeeks, weekCount),
+            patterns = PatternRules.analyze(progresses),
+            machineTrends = machineTrends(progresses),
+            cardioInsight = CardioInsightRules.insight(progresses),
+            waistHip = BodyTrendRules.waistHipRatio(measurements),
         )
     }
+
+    /** NORMAL and FAILURE sets of strength machines per date, whole history up to [today]. */
+    private fun loadPerDay(all: List<Entry>, today: LocalDate): Map<LocalDate, Int> =
+        all.filter {
+            (it.set.type == SetType.NORMAL || it.set.type == SetType.FAILURE) &&
+                isNonCardio(it) && !it.date.isAfter(today)
+        }
+            .groupingBy { it.date }.eachCount()
+
+    private val TREND_ORDER = listOf(
+        TrendVerdict.RISING, TrendVerdict.PLATEAU, TrendVerdict.FALLING, TrendVerdict.NOT_ENOUGH_DATA,
+    )
+
+    /** Strength machines with at least one point, best verdict first, then by name. */
+    private fun machineTrends(progresses: List<MachineProgress>): List<MachineTrend> =
+        progresses
+            .filter { it.machine.kind != MachineKind.CARDIO && it.points.isNotEmpty() }
+            .map { MachineTrend(it.machine.id, it.machine.name, it.machine.muscleGroup, TrendRules.forMachine(it)) }
+            .sortedWith(
+                compareBy<MachineTrend> { TREND_ORDER.indexOf(it.result.verdict) }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name },
+            )
 
     private fun weekCount(
         period: StatsPeriod,

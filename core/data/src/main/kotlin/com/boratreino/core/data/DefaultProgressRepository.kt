@@ -3,7 +3,6 @@ package com.boratreino.core.data
 import com.boratreino.core.database.WorkoutStore
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
-import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineProgress
 import com.boratreino.core.model.ProgressOverview
 import com.boratreino.core.model.ProgressRules
@@ -60,29 +59,8 @@ internal class DefaultProgressRepository @Inject constructor(
     private fun sessionDates(sessions: List<Session>): Map<Long, LocalDate> =
         sessions.associate { it.id to it.startedAt.atZone(clock.zone).toLocalDate() }
 
-    private fun progressFor(machine: Machine, allSets: List<WorkoutSet>, dates: Map<Long, LocalDate>): MachineProgress {
-        val own = allSets.filter { it.machineId == machine.id }
-        val metric = ProgressRules.metricFor(machine, own)
-        val weeks = if (machine.kind == MachineKind.CARDIO) {
-            CardioRules.weeks(datedCardio(own, dates), LocalDate.now(clock), firstDayOfWeek(), WEEKS)
-        } else {
-            emptyList()
-        }
-        val oneRm = if (machine.kind == MachineKind.WEIGHT_REPS || machine.kind == MachineKind.BODYWEIGHT_REPS) {
-            ProgressRules.oneRmPoints(own, dates)
-        } else {
-            emptyList()
-        }
-        val cardioPoints = if (machine.kind == MachineKind.CARDIO) {
-            ProgressRules.CARDIO_METRICS.associateWith { ProgressRules.points(own, dates, it) }
-        } else {
-            emptyMap()
-        }
-        return MachineProgress(
-            machine, metric, ProgressRules.points(own, dates, metric),
-            weeks = weeks, oneRmPoints = oneRm, cardioPoints = cardioPoints,
-        )
-    }
+    private fun progressFor(machine: Machine, allSets: List<WorkoutSet>, dates: Map<Long, LocalDate>): MachineProgress =
+        ProgressRules.machineProgress(machine, allSets, dates, LocalDate.now(clock), firstDayOfWeek(), WEEKS)
 
     /** Cardio sets paired with the date of their session. */
     private fun datedCardio(sets: List<WorkoutSet>, dates: Map<Long, LocalDate>): List<Pair<LocalDate, WorkoutSet>> =

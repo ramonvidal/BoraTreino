@@ -128,7 +128,7 @@ object TrendRules {
         val fit = fit(points)
         val enough = fit != null && points.size >= minPoints && fit.spanDays >= minSpanDays
         val verdict = when {
-            !enough || fit == null -> TrendVerdict.NOT_ENOUGH_DATA
+            fit == null || !enough -> TrendVerdict.NOT_ENOUGH_DATA
             fit.slopeLow > 0.0 -> TrendVerdict.RISING
             fit.slopeHigh < 0.0 -> TrendVerdict.FALLING
             else -> TrendVerdict.PLATEAU

@@ -161,6 +161,12 @@ private fun LazyListScope.strengthItems(report: StatsReport, actions: StatsActio
     if (report.records.isNotEmpty()) {
         item(key = "records") { RecordsCard(report, actions.onOpenMachine) }
     }
+    if (report.machineTrends.isNotEmpty()) {
+        item(key = "machine-trends") { TrendSummaryCard(report.machineTrends, actions.onOpenMachine) }
+    }
+    if (report.muscleVolumes.isNotEmpty()) {
+        item(key = "muscle-volume") { MuscleVolumeCard(report.muscleVolumes) }
+    }
     if (report.repRanges.any { it.sets > 0 }) {
         item(key = "rep-ranges") { RepRangesCard(report) }
     }

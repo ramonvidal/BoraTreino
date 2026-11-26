@@ -130,7 +130,7 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
                 TrendCard(
                     result = state.trend,
                     forecast = state.forecast,
-                    valueFormatter = valueFormatter(state.trendMetric),
+                    valueFormatter = ::formatEstimate1,
                     unit = trendUnit(state.trendMetric),
                 )
             }

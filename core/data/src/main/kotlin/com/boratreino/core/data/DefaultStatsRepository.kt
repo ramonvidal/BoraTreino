@@ -33,7 +33,8 @@ internal class DefaultStatsRepository @Inject constructor(
             store.observeAllSets(),
             store.observeSessions(),
             store.observeMachines(includeArchived = true),
-        ) { sets, sessions, machines ->
+            store.observeMeasurements(),
+        ) { sets, sessions, machines, measurements ->
             StatsRules.report(
                 period = period,
                 today = LocalDate.now(clock),
@@ -44,6 +45,7 @@ internal class DefaultStatsRepository @Inject constructor(
                 sets = sets,
                 zone = clock.zone,
                 library = libraryMap(),
+                measurements = measurements,
             )
         }.flowOn(Dispatchers.Default)
 
