@@ -258,8 +258,9 @@ class SessionEditorViewModel @Inject constructor(
     internal fun addMachine(machineId: Long) {
         val sets = setsOf(machineId)
         write {
-            // New mode has no session yet, so there is no "before" to look at: the first set starts from defaults.
-            val lastTime = sessionId?.let { history.lastTimeBefore(it, machineId) }.orEmpty()
+            // New mode has no session yet: look before the chosen date instead.
+            val lastTime = sessionId?.let { history.lastTimeBefore(it, machineId) }
+                ?: history.lastTimeBeforeDate(newModeDate(), machineId)
             addPrefilledSet(machineId, lastTime, sets)
             picking.value = false
             eventChannel.send(SessionEditorEvent.SetAdded)
