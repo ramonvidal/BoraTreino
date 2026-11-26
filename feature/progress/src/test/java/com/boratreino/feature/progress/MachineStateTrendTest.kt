@@ -9,7 +9,6 @@ import com.boratreino.core.model.SessionPoint
 import com.boratreino.core.model.TrendVerdict
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -39,10 +38,10 @@ class MachineStateTrendTest {
 
         val state = state(progress)
 
-        val trend = assertNotNull(state.trend)
+        val trend = checkNotNull(state.trend)
         assertEquals(TrendVerdict.RISING, trend.verdict)
         assertEquals(2.0, trend.fit!!.slopePerWeek, 1e-6)
-        val forecast = assertNotNull(state.forecast)
+        val forecast = checkNotNull(state.forecast)
         assertEquals(4.0, forecast.weeksAhead, 1e-9)
         assertEquals(116.0, forecast.value, 1e-6)
         assertTrue(forecast.low < forecast.value)
@@ -55,7 +54,7 @@ class MachineStateTrendTest {
 
         val state = state(progress)
 
-        val trend = assertNotNull(state.trend)
+        val trend = checkNotNull(state.trend)
         assertEquals(TrendVerdict.NOT_ENOUGH_DATA, trend.verdict)
         assertEquals(3, trend.points)
         assertNull(state.forecast)
@@ -68,7 +67,7 @@ class MachineStateTrendTest {
         val state = state(progress)
 
         assertEquals(TrendVerdict.PLATEAU, state.trend!!.verdict)
-        assertEquals(100.0, assertNotNull(state.forecast).value, 1e-6)
+        assertEquals(100.0, checkNotNull(state.forecast).value, 1e-6)
     }
 
     @Test
@@ -79,7 +78,7 @@ class MachineStateTrendTest {
 
         assertEquals(TrendVerdict.FALLING, state.trend!!.verdict)
         assertEquals(-2.0, state.trend!!.fit!!.slopePerWeek, 1e-6)
-        assertEquals(94.0, assertNotNull(state.forecast).value, 1e-6)
+        assertEquals(94.0, checkNotNull(state.forecast).value, 1e-6)
     }
 
     @Test
@@ -143,6 +142,6 @@ class MachineStateTrendTest {
 
         assertEquals(ProgressMetric.SPEED, state.trendMetric)
         assertEquals(0.5, state.trend!!.fit!!.slopePerWeek, 1e-6)
-        assertEquals(12.0, assertNotNull(state.forecast).value, 1e-6)
+        assertEquals(12.0, checkNotNull(state.forecast).value, 1e-6)
     }
 }
