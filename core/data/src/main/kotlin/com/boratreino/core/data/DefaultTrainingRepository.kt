@@ -466,7 +466,7 @@ internal class DefaultTrainingRepository @Inject constructor(
     }
 
     override suspend fun restoreSets(removed: RemovedSets) {
-        store.inTransaction { restoreRemoved(store, removed) }
+        store.inTransaction { restoreRemoved(removed) }
     }
 
     override suspend fun finishSession(): SessionSummary? {
@@ -529,8 +529,10 @@ internal class DefaultTrainingRepository @Inject constructor(
     }
 
     /** See [restoreSets]. Call inside a transaction. */
-    private suspend fun restoreRemoved(store: WorkoutStore, removed: RemovedSets) {
+    private suspend fun restoreRemoved(removed: RemovedSets) {
         val session = removed.session
+        // Without sets there is nothing to bring back: a session exists only while it has sets.
+        if (removed.sets.isEmpty()) return
         if (session == null) {
             removed.sets.forEach { store.insertSet(it) }
             return
