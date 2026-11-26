@@ -259,6 +259,38 @@ translations/       baianes.csv and i18n.py (from ChoreMe)
 - [ ] **Extras (later).** Home-screen widget (opens the next routine), photo of a machine's
       setup, reading heart rate from Health Connect, Wear OS tile.
 
+### Consolidation (after the app review, November 2026)
+
+No new features until this list is done: consolidation, fixes and reorganisation only. Each step
+follows the usual process (contract, agents per module, tests by a separate agent, translations,
+CI green, screenshots looked at).
+
+- [x] **C0: Statistics phase closed.** Trend per exercise, trends summary, weekly sets per
+      muscle, training load, patterns, cardio efficiency, smoothed measurements, waist to hip
+      ratio. CI green, screenshots checked.
+- [ ] **C1: Fewer CI rounds.** A pre-push script that compiles and runs the pure-Kotlin tests
+      here (`:core:model`, `:core:data`) and a checker for the mistakes CI kept catching
+      (non-existent test imports, JUnit `assertNotNull` used as a value, dots or slashes in test
+      names, composables inside non-inline lambdas). Lessons section in CLAUDE.md.
+- [ ] **C2: No empty sessions.** Find what creates a session without sets and fix it (a session
+      exists from its first set). Owner's decision: existing empty sessions are deleted once.
+- [ ] **C3: Honest statistics.** "Exploratory" label and a one-line "how to read" on patterns,
+      training load and estimated 1RM; patterns need at least 5 sessions per bucket and a
+      multiple-comparison correction, otherwise "no clear pattern"; training load renamed
+      "recent vs usual load", monotony and strain removed; 10-20 sets shown as a general
+      guideline, not a goal.
+- [ ] **C4: Loose ends.** The "Best -" seen in a detail screenshot; "machine" left in English texts.
+- [ ] **C5: Strength by distance or time.** Exercise kinds weight + distance, weight + time and
+      time only (carries, plank, sled), with their steppers and progress metrics. Changing an
+      exercise's kind keeps its history: owner's Farmer's Walk sets (1 rep each) become 30 s
+      each with the same load. Owner's Back extension becomes weight + reps.
+- [ ] **C6: Evolução reorganised.** A mock-up with the owner's data is approved first. At the
+      top at most three findings chosen by rules in `:core:model` (plateau, muscle with few
+      sets, recent record, drop in frequency), each opening its detail; the rest in sections;
+      technical cards in an "Analysis" level.
+- [ ] **C7: Play Store page.** New screenshots (8 per language) from the final screens and
+      the listing texts revised; the owner uploads them in the Play Console.
+
 ## Settled questions
 
 - **Language**: English by default, Baianês as an option.
