@@ -139,12 +139,12 @@ class CardioInsightRulesTest {
 
         // Machine 1 only: 5 points over 28 days, speeds 9, 10, 10, 12, 8 at weeks 0..4. The slope is exactly 0
         // (sum of (week - 2)(speed - 9.8) = 0), the residual sum of squares is 8.8, so the residual SD is
-        // sqrt(8.8 / 3) and the margin is 3.182 x sqrt(8.8 / 3) / sqrt(10) = 1.7237. Interval contains 0.
+        // sqrt(8.8 / 3) and the margin is 3.182 x sqrt(8.8 / 3) / sqrt(10) = 1.72338. Interval contains 0.
         assertEquals(5, insight.speedTrend.points)
         val fit = insight.speedTrend.fit!!
         assertEquals(0.0, fit.slopePerWeek, 1e-9)
-        assertEquals(-1.7237, fit.slopeLow, 1e-3)
-        assertEquals(1.7237, fit.slopeHigh, 1e-3)
+        assertEquals(-1.72338, fit.slopeLow, 1e-4)
+        assertEquals(1.72338, fit.slopeHigh, 1e-4)
         assertEquals(TrendVerdict.PLATEAU, insight.speedTrend.verdict)
     }
 

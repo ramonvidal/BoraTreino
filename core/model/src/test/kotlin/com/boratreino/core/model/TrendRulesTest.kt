@@ -165,14 +165,14 @@ class TrendRulesTest {
     fun `a noisy series whose interval crosses zero is PLATEAU`() {
         // Values 0, 3, 0, 3, 0, 3 over weeks 0..5: Sxy = 4.5, slope 4.5 / 17.5 = 0.2571429,
         // SSE = 13.5 - 4.5^2 / 17.5 = 12.342857, residual SD = sqrt(12.342857 / 4) = 1.756620,
-        // margin = 2.776 x 1.756620 / sqrt(17.5) = 1.165681, so the interval is about -0.908538 .. 1.422824.
+        // margin = 2.776 x 1.756620 / sqrt(17.5) = 1.165681, so the interval is about -0.908534 .. 1.422820.
         val zigzag = series(0.0, 3.0, 0.0, 3.0, 0.0, 3.0)
         val fit = TrendRules.fit(zigzag)!!
         val result = TrendRules.verdict(zigzag)
 
         assertEquals(0.2571429, fit.slopePerWeek, 1e-6)
-        assertEquals(-0.908538, fit.slopeLow, 1e-3)
-        assertEquals(1.422824, fit.slopeHigh, 1e-3)
+        assertEquals(-0.908534, fit.slopeLow, 1e-4)
+        assertEquals(1.422820, fit.slopeHigh, 1e-4)
         assertTrue(fit.slopeLow < 0.0 && fit.slopeHigh > 0.0)
         assertEquals(TrendVerdict.PLATEAU, result.verdict)
     }
