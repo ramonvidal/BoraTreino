@@ -80,6 +80,25 @@ CI runs all of these. The Android SDK can't be downloaded in Claude's cloud sess
 so there CI is the only full Android build: don't call an Android change done until
 CI is green.
 
+**Before pushing in a cloud session:** run `tools/precheck/precheck.sh`. It compiles and runs the
+`:core:model` JVM tests without Gradle, statically checks the test files for the mistakes below,
+and runs the translation and module-rule checks. It skips what the machine can't do. It doesn't
+replace CI (`:core:data` tests and everything Android still only run there).
+
+### Lessons from CI
+
+`tools/precheck/check_tests.py` enforces the first four.
+
+- `assertExists`, `assertDoesNotExist`, `onNode` and `onAllNodes` are members: never import them.
+  `onFirst`, `onLast` and `assertCountEquals` are top-level and need their import.
+- JUnit's `assertNotNull` returns `Unit`: never use its result as a value.
+- Backtick test names have no `.` or `/`.
+- No `stringResource(` inside non-inline lambdas (`joinToString {}`, `buildString {}`): read the
+  strings first.
+- Stepper values sit inside a clickable, so tests read them with `useUnmergedTree = true`.
+- A new DB version's Room schema JSON comes from CI's "Room schemas are committed" step and must
+  be committed.
+
 ## 4. How Claude works on this repo (the owner's standing requirement)
 
 - **The main Claude session is the coordinator** for each task or phase. It writes a short
