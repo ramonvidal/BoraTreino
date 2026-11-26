@@ -62,6 +62,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneOffset
+import com.boratreino.core.data.RemovedSets
 
 /** The session editor's set types: the chips' state, what Save writes, and cardio staying Normal. Works from the Phase 9 contract. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -103,7 +104,10 @@ class SessionEditorTypesTest {
         override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = emptyFlow()
         override fun observeDay(date: LocalDate): Flow<List<SessionDetail>> = emptyFlow()
         override fun observeTrainingDates(): Flow<Set<LocalDate>> = emptyFlow()
-        override suspend fun addSession(date: LocalDate, routineId: Long?, isExtra: Boolean): Long = 0L
+        override suspend fun addSessionWithSet(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
+        override suspend fun addSessionWithCardio(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
+        override suspend fun addSessionRepeating(date: LocalDate, routineId: Long?, isExtra: Boolean, mode: RepeatMode): List<WorkoutSet> = emptyList()
+        override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> = emptyList()
         override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit
         override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) = Unit
         override fun observeClosedSessionExports(sinceDays: Int): Flow<List<HealthExport>> = emptyFlow()
@@ -126,12 +130,13 @@ class SessionEditorTypesTest {
             updated += set
         }
 
-        override suspend fun deleteSet(set: WorkoutSet) {
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets {
             deleted += set
+            return RemovedSets(listOf(set), null)
         }
 
-        override suspend fun restoreSet(set: WorkoutSet) {
-            restored += set
+        override suspend fun restoreSets(removed: RemovedSets) {
+            restored += removed.sets
         }
 
         override fun observeOpenSession(): Flow<OpenSession?> = emptyFlow()
@@ -145,8 +150,8 @@ class SessionEditorTypesTest {
         override suspend fun finishIfRoutineComplete(): SessionSummary? = null
         override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
         override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit

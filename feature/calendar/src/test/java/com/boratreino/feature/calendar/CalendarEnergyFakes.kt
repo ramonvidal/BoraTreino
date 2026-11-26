@@ -75,7 +75,10 @@ internal class EnergyHistory : HistoryRepository {
     override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = MutableStateFlow(emptyMap())
     override fun observeTrainingDates(): Flow<Set<LocalDate>> = trainingDates
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = emptyFlow()
-    override suspend fun addSession(date: LocalDate, routineId: Long?, isExtra: Boolean): Long = 0L
+    override suspend fun addSessionWithSet(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
+    override suspend fun addSessionWithCardio(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
+    override suspend fun addSessionRepeating(date: LocalDate, routineId: Long?, isExtra: Boolean, mode: RepeatMode): List<WorkoutSet> = emptyList()
+    override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> = emptyList()
     override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit
     override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) = Unit
     override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")

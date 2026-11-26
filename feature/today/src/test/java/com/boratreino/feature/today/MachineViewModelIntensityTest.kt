@@ -52,6 +52,7 @@ import org.robolectric.annotation.Config
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import com.boratreino.core.data.RemovedSets
 
 /**
  * The cardio intensity on the machine screen's view model: the stepper, prefill from last time, Log, and the editor
@@ -125,12 +126,13 @@ class MachineViewModelIntensityTest {
             updated += set
         }
 
-        override suspend fun deleteSet(set: WorkoutSet) {
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets {
             deleted += set
+            return RemovedSets(listOf(set), null)
         }
 
-        override suspend fun restoreSet(set: WorkoutSet) {
-            restored += set
+        override suspend fun restoreSets(removed: RemovedSets) {
+            restored += removed.sets
         }
 
         override fun observeOpenSession(): Flow<OpenSession?> = flowOf(null)
@@ -141,8 +143,8 @@ class MachineViewModelIntensityTest {
         override suspend fun finishIfRoutineComplete(): SessionSummary? = null
         override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
         override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit

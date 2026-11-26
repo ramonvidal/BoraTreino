@@ -53,6 +53,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import com.boratreino.core.data.RemovedSets
 
 /**
  * The hero's inputs on the Today view model: the mascot's sex from the body profile, the next exercise the
@@ -88,14 +89,14 @@ class TodayViewModelHeroTest {
         override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used")
         override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used")
         override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet) = Unit
-        override suspend fun restoreSet(set: WorkoutSet) = Unit
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
+        override suspend fun restoreSets(removed: RemovedSets) = Unit
         override suspend fun finishSession(): SessionSummary? = null
         override suspend fun finishIfRoutineComplete(): SessionSummary? = null
         override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
         override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit

@@ -53,6 +53,7 @@ import org.robolectric.annotation.Config
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import com.boratreino.core.data.RemovedSets
 
 /**
  * The machine screen when the logged set completes the routine: the training finishes by itself and the screen
@@ -124,12 +125,13 @@ class MachineRoutineFinishTest {
             updated += set
         }
 
-        override suspend fun deleteSet(set: WorkoutSet) {
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets {
             if (failNextDelete) {
                 failNextDelete = false
                 error("disk full")
             }
             deleted += set
+            return RemovedSets(listOf(set), null)
         }
 
         override suspend fun finishIfRoutineComplete(): SessionSummary? {
@@ -139,7 +141,7 @@ class MachineRoutineFinishTest {
             return finishResult
         }
 
-        override suspend fun restoreSet(set: WorkoutSet) = Unit
+        override suspend fun restoreSets(removed: RemovedSets) = Unit
         override fun observeOpenSession(): Flow<OpenSession?> = flowOf(null)
         override fun observeTodayPlan(): Flow<TodayPlan> = flowOf(noRoutineTodayPlan())
         override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
@@ -147,8 +149,8 @@ class MachineRoutineFinishTest {
         override suspend fun finishSession(): SessionSummary? = null
         override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
         override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit
@@ -356,7 +358,7 @@ class MachineRoutineFinishTest {
         runCurrent()
 
         assertEquals(listOf(set), training.deleted)
-        assertEquals(listOf<MachineEvent>(MachineEvent.SetRemoved(set)), events)
+        assertEquals(listOf<MachineEvent>(MachineEvent.SetRemoved(RemovedSets(listOf(set), null))), events)
         assertEquals(0, training.finishCalls)
     }
 

@@ -1,10 +1,13 @@
 package com.boratreino.core.data
 
+import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.NextRoutineRules
+import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.Routine
+import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SetDraft
@@ -222,47 +225,65 @@ class HistoryRepositoryTest {
         assertEquals(setOf(LocalDate.of(2026, 10, 31), LocalDate.of(2026, 11, 2)), history.observeTrainingDates().first())
     }
 
-    // addSession
+    // addSessionWithSet, addSessionWithCardio, addSessionRepeating
 
     @Test
-    fun `a session added on a past day is closed at 18 00 that day with the routine`() = runTest {
+    fun `a set added on a past day opens a closed session at 18 00 that day with the routine`() = runTest {
         val b = routine("B")
+        val leg = machine("Leg press", MuscleGroup.LEGS)
 
-        val id = history.addSession(LocalDate.of(2026, 10, 20), b.id)
+        val set = history.addSessionWithSet(LocalDate.of(2026, 10, 20), b.id, false, leg, SetDraft(120.0, 12))
 
-        val stored = requireNotNull(store.session(id))
+        val stored = requireNotNull(store.session(set.sessionId))
         assertEquals(at("2026-10-20", "18:00"), stored.startedAt)
         assertEquals(stored.startedAt, stored.endedAt)
         assertEquals(b.id, stored.routineId)
+        assertEquals(stored.startedAt, set.loggedAt)
     }
 
     @Test
     fun `a session added on a future day is also closed at 18 00`() = runTest {
-        val id = history.addSession(LocalDate.of(2026, 11, 10), null)
+        val leg = machine("Leg press", MuscleGroup.LEGS)
 
-        val stored = requireNotNull(store.session(id))
+        val set = history.addSessionWithSet(LocalDate.of(2026, 11, 10), null, false, leg, SetDraft(120.0, 12))
+
+        val stored = requireNotNull(store.session(set.sessionId))
         assertEquals(at("2026-11-10", "18:00"), stored.startedAt)
         assertEquals(stored.startedAt, stored.endedAt)
     }
 
     @Test
-    fun `today with nothing open adds a closed session an hour before now`() = runTest {
-        val id = history.addSession(LocalDate.of(2026, 11, 2), null)
+    fun `today with nothing open starts the session an hour before now`() = runTest {
+        val leg = machine("Leg press", MuscleGroup.LEGS)
 
-        val stored = requireNotNull(store.session(id))
+        val set = history.addSessionWithSet(LocalDate.of(2026, 11, 2), null, false, leg, SetDraft(120.0, 12))
+
+        val stored = requireNotNull(store.session(set.sessionId))
         assertEquals(now.minusSeconds(3600), stored.startedAt)
         assertEquals(stored.startedAt, stored.endedAt)
     }
 
     @Test
-    fun `today with a session open returns that session and adds nothing`() = runTest {
+    fun `the session and its set are written together, with no other session`() = runTest {
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+
+        val set = history.addSessionWithSet(LocalDate.of(2026, 10, 20), null, false, leg, SetDraft(120.0, 12))
+
+        assertEquals(listOf(set), store.allSets())
+        assertEquals(1, store.allSessions().size)
+        assertEquals(set.sessionId, store.allSessions().single().id)
+    }
+
+    @Test
+    fun `today with a session open puts the set into it and adds no session`() = runTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
         val open = training.logSet(leg, SetDraft(120.0, 12)).set.sessionId
 
-        val id = history.addSession(LocalDate.of(2026, 11, 2), null)
+        val set = history.addSessionWithSet(LocalDate.of(2026, 11, 2), null, false, leg, SetDraft(125.0, 10))
 
-        assertEquals(open, id)
+        assertEquals(open, set.sessionId)
         assertEquals(1, store.allSessions().size)
+        assertEquals(2, store.allSets().size)
     }
 
     @Test
@@ -270,15 +291,17 @@ class HistoryRepositoryTest {
         val leg = machine("Leg press", MuscleGroup.LEGS)
         val open = training.logSet(leg, SetDraft(120.0, 12)).set.sessionId
 
-        val id = history.addSession(LocalDate.of(2026, 10, 20), null)
+        val set = history.addSessionWithSet(LocalDate.of(2026, 10, 20), null, false, leg, SetDraft(120.0, 12))
 
-        assertNotEquals(open, id)
+        assertNotEquals(open, set.sessionId)
         assertEquals(2, store.allSessions().size)
     }
 
     @Test
     fun `an added session does not open a training`() = runTest {
-        history.addSession(LocalDate.of(2026, 10, 20), null)
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+
+        history.addSessionWithSet(LocalDate.of(2026, 10, 20), null, false, leg, SetDraft(120.0, 12))
 
         assertNull(training.observeOpenSession().first())
     }
@@ -286,10 +309,11 @@ class HistoryRepositoryTest {
     @Test
     fun `a session added as extra is flagged extra and keeps its routine`() = runTest {
         val b = routine("B")
+        val leg = machine("Leg press", MuscleGroup.LEGS)
 
-        val id = history.addSession(LocalDate.of(2026, 10, 20), b.id, isExtra = true)
+        val set = history.addSessionWithSet(LocalDate.of(2026, 10, 20), b.id, true, leg, SetDraft(120.0, 12))
 
-        val stored = requireNotNull(store.session(id))
+        val stored = requireNotNull(store.session(set.sessionId))
         assertTrue(stored.isExtra)
         assertEquals(b.id, stored.routineId)
     }
@@ -297,10 +321,104 @@ class HistoryRepositoryTest {
     @Test
     fun `a session added without the extra flag is not extra`() = runTest {
         val b = routine("B")
+        val leg = machine("Leg press", MuscleGroup.LEGS)
 
-        val id = history.addSession(LocalDate.of(2026, 10, 20), b.id)
+        val set = history.addSessionWithSet(LocalDate.of(2026, 10, 20), b.id, false, leg, SetDraft(120.0, 12))
 
-        assertFalse(requireNotNull(store.session(id)).isExtra)
+        assertFalse(requireNotNull(store.session(set.sessionId)).isExtra)
+    }
+
+    @Test
+    fun `a cardio set added on a past day opens a closed session with that set`() = runTest {
+        val treadmill = machine("Treadmill", MuscleGroup.LEGS)
+
+        val set = history.addSessionWithCardio(LocalDate.of(2026, 10, 20), null, false, treadmill, CardioDraft(20, 150, 3000))
+
+        val stored = requireNotNull(store.session(set.sessionId))
+        assertEquals(at("2026-10-20", "18:00"), stored.startedAt)
+        assertEquals(stored.startedAt, stored.endedAt)
+        assertEquals(treadmill, set.machineId)
+        assertEquals(150, set.calories)
+        assertEquals(3000, set.distanceM)
+        assertEquals(listOf(set), store.allSets())
+    }
+
+    @Test
+    fun `addSessionRepeating with no routine writes nothing`() = runTest {
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+        history.addSessionWithSet(LocalDate.of(2026, 10, 19), null, false, leg, SetDraft(100.0, 10))
+        val sessionsBefore = store.allSessions()
+        val setsBefore = store.allSets()
+
+        val written = history.addSessionRepeating(LocalDate.of(2026, 10, 20), null, false, RepeatMode.SAME)
+
+        assertEquals(emptyList<WorkoutSet>(), written)
+        assertEquals(sessionsBefore, store.allSessions())
+        assertEquals(setsBefore, store.allSets())
+    }
+
+    @Test
+    fun `addSessionRepeating with no earlier session of the routine writes nothing`() = runTest {
+        val a = routine("A")
+
+        val written = history.addSessionRepeating(LocalDate.of(2026, 10, 20), a.id, false, RepeatMode.SAME)
+
+        assertEquals(emptyList<WorkoutSet>(), written)
+        assertTrue(store.allSessions().isEmpty())
+        assertTrue(store.allSets().isEmpty())
+    }
+
+    @Test
+    fun `addSessionRepeating copies the latest earlier session of the routine into a new closed session`() = runTest {
+        val a = routine("A")
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+        store.replaceRoutineItems(a.id, listOf(RoutineItem(a.id, leg, 0, 2, 8, 12)))
+        history.addSessionWithSet(LocalDate.of(2026, 10, 19), a.id, false, leg, SetDraft(100.0, 10))
+
+        val written = history.addSessionRepeating(LocalDate.of(2026, 10, 20), a.id, false, RepeatMode.SAME)
+
+        assertTrue(written.isNotEmpty())
+        val sessionId = written.first().sessionId
+        assertEquals(2, store.allSessions().size)
+        assertTrue(written.all { it.sessionId == sessionId })
+        val stored = requireNotNull(store.session(sessionId))
+        assertEquals(a.id, stored.routineId)
+        assertEquals(at("2026-10-20", "18:00"), stored.startedAt)
+        assertEquals(100.0, written.first().weightKg)
+    }
+
+    // lastTimeBeforeDate
+
+    @Test
+    fun `lastTimeBeforeDate returns the sets of the latest earlier session for the machine`() = runTest {
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+        history.addSessionWithSet(LocalDate.of(2026, 10, 18), null, false, leg, SetDraft(90.0, 8))
+        val later = history.addSessionWithSet(LocalDate.of(2026, 10, 20), null, false, leg, SetDraft(100.0, 10))
+        history.addSet(later.sessionId, leg, SetDraft(100.0, 9))
+
+        val last = history.lastTimeBeforeDate(LocalDate.of(2026, 10, 21), leg)
+
+        assertEquals(listOf(10, 9), last.map { it.reps })
+        assertEquals(listOf(100.0, 100.0), last.map { it.weightKg })
+    }
+
+    @Test
+    fun `lastTimeBeforeDate is empty when no session started before that day`() = runTest {
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+        history.addSessionWithSet(LocalDate.of(2026, 10, 18), null, false, leg, SetDraft(90.0, 8))
+
+        assertTrue(history.lastTimeBeforeDate(LocalDate.of(2026, 10, 18), leg).isEmpty())
+    }
+
+    @Test
+    fun `lastTimeBeforeDate today with a session open looks before that session`() = runTest {
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+        history.addSessionWithSet(LocalDate.of(2026, 10, 20), null, false, leg, SetDraft(100.0, 10))
+        training.logSet(leg, SetDraft(110.0, 6))
+
+        val last = history.lastTimeBeforeDate(LocalDate.of(2026, 11, 2), leg)
+
+        assertEquals(listOf(100.0), last.map { it.weightKg })
     }
 
     // setSessionExtra
@@ -334,7 +452,8 @@ class HistoryRepositoryTest {
     @Test
     fun `an extra session of a past day stays out of the rotation`() = runTest {
         val a = routine("A")
-        val id = history.addSession(LocalDate.of(2026, 10, 20), a.id)
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+        val id = history.addSessionWithSet(LocalDate.of(2026, 10, 20), a.id, false, leg, SetDraft(120.0, 12)).sessionId
 
         history.setSessionExtra(id, true)
 

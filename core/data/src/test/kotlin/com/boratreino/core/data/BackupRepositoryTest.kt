@@ -355,6 +355,16 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun `an import drops the sessions that have no sets and keeps everything else`() = runTest {
+        val emptySession = Session(3, Instant.parse("2026-11-01T10:00:00Z"), Instant.parse("2026-11-01T10:00:00Z"), 1, null)
+
+        repo.import(seed.copy(sessions = seed.sessions + emptySession))
+
+        assertEquals(seed, store.exportAll())
+        assertEquals(listOf(1L, 2L), store.allSessions().map { it.id })
+    }
+
+    @Test
     fun `a version 2 backup without training days previews with every day`() {
         val v2 = """
             {"app":"boratreino","version":2,"machines":[],

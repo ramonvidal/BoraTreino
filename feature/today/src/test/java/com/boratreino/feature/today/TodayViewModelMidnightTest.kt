@@ -64,6 +64,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import com.boratreino.core.data.RemovedSets
 
 /** A clock the test moves by hand. */
 private class MovableClock(start: String) : Clock() {
@@ -89,7 +90,10 @@ private class PerDayHistory : HistoryRepository {
     override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = emptyFlow()
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = emptyFlow()
     override fun observeTrainingDates(): Flow<Set<LocalDate>> = emptyFlow()
-    override suspend fun addSession(date: LocalDate, routineId: Long?, isExtra: Boolean): Long = 0L
+    override suspend fun addSessionWithSet(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
+    override suspend fun addSessionWithCardio(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
+    override suspend fun addSessionRepeating(date: LocalDate, routineId: Long?, isExtra: Boolean, mode: RepeatMode): List<WorkoutSet> = emptyList()
+    override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> = emptyList()
     override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit
     override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) = Unit
     override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
@@ -137,14 +141,14 @@ class TodayViewModelMidnightTest {
         override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used")
         override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used")
         override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet) = Unit
-        override suspend fun restoreSet(set: WorkoutSet) = Unit
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
+        override suspend fun restoreSets(removed: RemovedSets) = Unit
         override suspend fun finishSession(): SessionSummary? = null
         override suspend fun finishIfRoutineComplete(): SessionSummary? = null
         override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
         override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit

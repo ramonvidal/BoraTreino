@@ -236,7 +236,8 @@ class RoutineAutoFinishTest {
 
         val removed = training.discardMachineToday(press)
 
-        assertEquals(2, removed.size)
+        assertEquals(2, removed.sets.size)
+        assertNull(removed.session)
         assertEquals(emptyList<WorkoutSet>(), setsOf(press))
         assertEquals(1, setsOf(curl).size)
         assertEquals(setOf(press), training.observeTodayPlan().first().skipped)
@@ -252,7 +253,7 @@ class RoutineAutoFinishTest {
 
         val removed = training.discardMachineToday(press)
 
-        assertEquals(before.map { it.id }, removed.map { it.id })
+        assertEquals(before.map { it.id }, removed.sets.map { it.id })
     }
 
     @Test
@@ -260,7 +261,7 @@ class RoutineAutoFinishTest {
         val press = machine("Leg press")
         ficha(3, press)
 
-        assertEquals(emptyList<WorkoutSet>(), training.discardMachineToday(press))
+        assertEquals(RemovedSets(emptyList(), null), training.discardMachineToday(press))
         assertEquals(emptySet<Long>(), training.observeTodayPlan().first().skipped)
     }
 

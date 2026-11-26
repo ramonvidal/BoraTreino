@@ -53,6 +53,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import com.boratreino.core.data.RemovedSets
 
 /**
  * The set type picked under "Set type" on the machine screen: it applies to the next logged set and goes back
@@ -95,8 +96,8 @@ class MachineViewModelLogTypeTest {
             LoggedSet(CardioRules.toSet(300L, 1L, machineId, 0, draft, Instant.EPOCH), null)
 
         override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet) = Unit
-        override suspend fun restoreSet(set: WorkoutSet) = Unit
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
+        override suspend fun restoreSets(removed: RemovedSets) = Unit
         override fun observeOpenSession(): Flow<OpenSession?> = flowOf(null)
         override fun observeTodayPlan(): Flow<TodayPlan> = flowOf(noRoutineTodayPlan())
         override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
@@ -105,8 +106,8 @@ class MachineViewModelLogTypeTest {
         override suspend fun finishIfRoutineComplete(): SessionSummary? = null
         override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
         override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate? = null
         override suspend fun sessionRoutineId(sessionId: Long): Long? = null
         override suspend fun trainingSummary(sessionId: Long): TrainingSummary? = null

@@ -51,6 +51,7 @@ import org.robolectric.annotation.Config
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import com.boratreino.core.data.RemovedSets
 
 /** The optional warm-up suggestion on the machine screen: when it is offered, and the one-tap log. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -98,8 +99,8 @@ class MachineViewModelWarmupPlanTest {
             LoggedSet(CardioRules.toSet(300L, 1L, machineId, 0, draft, Instant.EPOCH), null)
 
         override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet) = Unit
-        override suspend fun restoreSet(set: WorkoutSet) = Unit
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
+        override suspend fun restoreSets(removed: RemovedSets) = Unit
         override fun observeOpenSession(): Flow<OpenSession?> = flowOf(null)
         override fun observeTodayPlan(): Flow<TodayPlan> = flowOf(noRoutineTodayPlan())
         override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
@@ -108,8 +109,8 @@ class MachineViewModelWarmupPlanTest {
         override suspend fun finishIfRoutineComplete(): SessionSummary? = null
         override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
         override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit

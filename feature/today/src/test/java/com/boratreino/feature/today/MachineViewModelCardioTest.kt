@@ -52,6 +52,7 @@ import org.robolectric.annotation.Config
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import com.boratreino.core.data.RemovedSets
 
 /** The machine screen's view model on a cardio machine: prefill, steppers, logging, editing. Works from the Phase 7 contract. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -121,12 +122,13 @@ class MachineViewModelCardioTest {
             updated += set
         }
 
-        override suspend fun deleteSet(set: WorkoutSet) {
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets {
             deleted += set
+            return RemovedSets(listOf(set), null)
         }
 
-        override suspend fun restoreSet(set: WorkoutSet) {
-            restored += set
+        override suspend fun restoreSets(removed: RemovedSets) {
+            restored += removed.sets
         }
 
         override fun observeOpenSession(): Flow<OpenSession?> = flowOf(null)
@@ -137,8 +139,8 @@ class MachineViewModelCardioTest {
         override suspend fun finishIfRoutineComplete(): SessionSummary? = null
         override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
         override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) = Unit
         override suspend fun unskipMachineToday(machineId: Long) = Unit
@@ -584,10 +586,10 @@ class MachineViewModelCardioTest {
         runCurrent()
 
         assertEquals(listOf(logged), training.deleted)
-        assertEquals(listOf<MachineEvent>(MachineEvent.SetRemoved(logged)), events)
+        assertEquals(listOf<MachineEvent>(MachineEvent.SetRemoved(RemovedSets(listOf(logged), null))), events)
         assertNull(state.cardioEditor)
 
-        viewModel.restoreSet(logged)
+        viewModel.restoreSets(RemovedSets(listOf(logged), null))
         runCurrent()
         assertEquals(listOf(logged), training.restored)
     }

@@ -56,6 +56,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.DayOfWeek
 import java.time.LocalDate
+import com.boratreino.core.data.RemovedSets
 
 /**
  * The "Training complete" sheet's state in the Today view model: Done opens it with the loaded summary, Share
@@ -92,8 +93,8 @@ class TodayViewModelSummaryTest {
         override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used by this test")
         override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used by this test")
         override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet) = Unit
-        override suspend fun restoreSet(set: WorkoutSet) = Unit
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
+        override suspend fun restoreSets(removed: RemovedSets) = Unit
         override suspend fun finishSession(): SessionSummary? {
             finishedSessions++
             pending.value = 12L
@@ -103,8 +104,8 @@ class TodayViewModelSummaryTest {
         override suspend fun consumePendingSummary() {
             pending.value = null
         }
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) = Unit
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
         override suspend fun reopenSession(sessionId: Long) {
             reopened += sessionId
         }

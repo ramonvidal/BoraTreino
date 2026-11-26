@@ -52,6 +52,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.Instant
+import com.boratreino.core.data.RemovedSets
 
 /** Edit mode of the Today training card: when it is on, moving and removing ficha machines, when it ends. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -74,7 +75,7 @@ class TodayViewModelEditTest {
         var finished = 0
         val skipped = mutableListOf<Long>()
         val discarded = mutableListOf<Long>()
-        val undone = mutableListOf<Pair<Long, List<WorkoutSet>>>()
+        val undone = mutableListOf<Pair<Long, RemovedSets>>()
 
         override fun observeOpenSession(): Flow<OpenSession?> = open
         override fun observeTodayPlan(): Flow<TodayPlan> = plan
@@ -86,8 +87,8 @@ class TodayViewModelEditTest {
         override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used")
         override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used")
         override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet) = Unit
-        override suspend fun restoreSet(set: WorkoutSet) = Unit
+        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
+        override suspend fun restoreSets(removed: RemovedSets) = Unit
         private val pending = MutableStateFlow<Long?>(null)
         override suspend fun finishSession(): SessionSummary? {
             finished++
@@ -99,12 +100,12 @@ class TodayViewModelEditTest {
         override suspend fun consumePendingSummary() {
             pending.value = null
         }
-        override suspend fun discardMachineToday(machineId: Long): List<WorkoutSet> {
+        override suspend fun discardMachineToday(machineId: Long): RemovedSets {
             discarded += machineId
-            return open.value?.machines?.firstOrNull { it.machine.id == machineId }?.sets.orEmpty()
+            return RemovedSets(open.value?.machines?.firstOrNull { it.machine.id == machineId }?.sets.orEmpty(), null)
         }
-        override suspend fun undoDiscardMachineToday(machineId: Long, sets: List<WorkoutSet>) {
-            undone += machineId to sets
+        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) {
+            undone += machineId to removed
         }
         override suspend fun reopenSession(sessionId: Long) = Unit
         override suspend fun skipMachineToday(machineId: Long) {
@@ -440,7 +441,7 @@ class TodayViewModelEditTest {
 
         assertEquals(listOf(sample.legPress.id), training.discarded)
         assertTrue(training.skipped.isEmpty())
-        assertEquals(listOf<TodayEvent>(TodayEvent.Discarded(sample.legPress, sets)), events)
+        assertEquals(listOf<TodayEvent>(TodayEvent.Discarded(sample.legPress, RemovedSets(sets, null))), events)
     }
 
     @Test
@@ -485,9 +486,9 @@ class TodayViewModelEditTest {
         vm.skipFromMenu(sample.legPress.id)
         runCurrent()
 
-        vm.undoDiscard(sample.legPress.id, sets)
+        vm.undoDiscard(sample.legPress.id, RemovedSets(sets, null))
         runCurrent()
 
-        assertEquals(listOf(sample.legPress.id to sets), training.undone)
+        assertEquals(listOf(sample.legPress.id to RemovedSets(sets, null)), training.undone)
     }
 }

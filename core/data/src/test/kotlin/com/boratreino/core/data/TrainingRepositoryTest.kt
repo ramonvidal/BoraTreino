@@ -108,13 +108,13 @@ class TrainingRepositoryTest {
     }
 
     @Test
-    fun `a stale session with no sets closes at its start time`() = runTest {
-        val emptySession = store.insertSession(Session(0, t0, null, null, null))
+    fun `a stale session with no sets is deleted, not closed`() = runTest {
+        store.insertSession(Session(0, t0, null, null, null))
         clock.advance(Duration.ofHours(3))
 
         training.closeStaleSession()
 
-        assertEquals(t0, store.allSessions().first { it.id == emptySession }.endedAt)
+        assertEquals(emptyList<Session>(), store.allSessions())
         assertNull(training.observeOpenSession().first())
     }
 
@@ -325,10 +325,10 @@ class TrainingRepositoryTest {
         val lat = machine("Lat pulldown")
         val set = logSet(lat, SetDraft(55.0, 10))
 
-        training.deleteSet(set)
+        val removed = training.deleteSet(set)
         assertEquals(emptyList<WorkoutSet>(), machineLog(lat).thisSession)
 
-        training.restoreSet(set)
+        training.restoreSets(removed)
         assertEquals(listOf(set), machineLog(lat).thisSession)
     }
 
