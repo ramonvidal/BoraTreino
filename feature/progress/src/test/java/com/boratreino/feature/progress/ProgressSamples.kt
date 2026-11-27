@@ -93,6 +93,30 @@ internal object ProgressSamples {
                 distanceM = null,
                 loggedAt = Instant.parse("2026-01-01T10:00:00Z"),
             )
+            ProgressMetric.SECONDS -> WorkoutSet(
+                id = sessionId,
+                sessionId = sessionId,
+                machineId = 0,
+                position = 1,
+                weightKg = 0.0,
+                reps = null,
+                seconds = value.toInt(),
+                calories = null,
+                distanceM = null,
+                loggedAt = Instant.parse("2026-01-01T10:00:00Z"),
+            )
+            ProgressMetric.METRES -> WorkoutSet(
+                id = sessionId,
+                sessionId = sessionId,
+                machineId = 0,
+                position = 1,
+                weightKg = 0.0,
+                reps = null,
+                seconds = null,
+                calories = null,
+                distanceM = value.toInt(),
+                loggedAt = Instant.parse("2026-01-01T10:00:00Z"),
+            )
             ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE -> WorkoutSet(
                 id = sessionId,
                 sessionId = sessionId,
