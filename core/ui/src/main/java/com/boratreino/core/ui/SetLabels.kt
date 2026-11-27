@@ -10,6 +10,7 @@ import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetMeasure
 import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.model.measure
 
 /** "40 kg × 10"; a bodyweight exercise with no added weight reads "10 reps". */
 @Composable
