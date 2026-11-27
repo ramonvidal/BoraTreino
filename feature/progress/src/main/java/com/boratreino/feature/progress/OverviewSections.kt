@@ -356,8 +356,8 @@ internal fun BodySection(
     val latest = body.latestDate
     val note = when {
         latest == null -> null
-        body.hasTrend -> stringResource(R.string.body_note_trend, formatShortDate(latest, today))
-        else -> stringResource(R.string.body_note_once, formatShortDate(latest, today))
+        body.hasTrend -> stringResource(R.string.body_note_trend, formatShortDate(latest, today).removeSuffix("."))
+        else -> stringResource(R.string.body_note_once, formatShortDate(latest, today).removeSuffix("."))
     }
     BoraCard(modifier = modifier.fillMaxWidth()) {
         SectionHeader(

@@ -17,9 +17,12 @@ import java.util.Locale
 internal fun formatWeekday(date: LocalDate, locale: Locale = Locale.getDefault()): String =
     DateTimeFormatter.ofPattern("EEEE", locale).format(date)
 
-/** "Sunday, 22 Nov". */
+/**
+ * "Sunday, 22 Nov". Some languages end the short month with a dot ("1 nov."); it is dropped because the texts
+ * that use this date already end the sentence with one.
+ */
 internal fun formatWeekdayDate(date: LocalDate, locale: Locale = Locale.getDefault()): String =
-    DateTimeFormatter.ofPattern("EEEE, d MMM", locale).format(date)
+    DateTimeFormatter.ofPattern("EEEE, d MMM", locale).format(date).removeSuffix(".")
 
 /** "2/11": the day and month of a week start, the label under a frequency bar. */
 internal fun formatDayMonth(date: LocalDate, locale: Locale = Locale.getDefault()): String =

@@ -285,7 +285,7 @@ CI green, screenshots looked at).
       time only (carries, plank, sled), with their steppers and progress metrics. Changing an
       exercise's kind keeps its history: owner's Farmer's Walk sets (1 rep each) become 30 s
       each with the same load. Owner's Back extension becomes weight + reps.
-- [ ] **C6: Evolução reorganised.** A mock-up with the owner's data is approved first. At the
+- [x] **C6: Evolução reorganised.** A mock-up with the owner's data is approved first. At the
       top at most three findings chosen by rules in `:core:model` (plateau, muscle with few
       sets, recent record, drop in frequency), each opening its detail; the rest in sections;
       technical cards in an "Analysis" level.
