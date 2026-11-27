@@ -273,14 +273,14 @@ CI green, screenshots looked at).
       and a checker for the mistakes CI kept catching
       (non-existent test imports, JUnit `assertNotNull` used as a value, dots or slashes in test
       names, composables inside non-inline lambdas). Lessons section in CLAUDE.md.
-- [ ] **C2: No empty sessions.** Find what creates a session without sets and fix it (a session
+- [x] **C2: No empty sessions.** Find what creates a session without sets and fix it (a session
       exists from its first set). Owner's decision: existing empty sessions are deleted once.
-- [ ] **C3: Honest statistics.** "Exploratory" label and a one-line "how to read" on patterns,
+- [x] **C3: Honest statistics.** "Exploratory" label and a one-line "how to read" on patterns,
       training load and estimated 1RM; patterns need at least 5 sessions per bucket and a
       multiple-comparison correction, otherwise "no clear pattern"; training load renamed
       "recent vs usual load", monotony and strain removed; 10-20 sets shown as a general
       guideline, not a goal.
-- [ ] **C4: Loose ends.** The "Best -" seen in a detail screenshot; "machine" left in English texts.
+- [x] **C4: Loose ends.** The "Best -" seen in a detail screenshot; "machine" left in English texts.
 - [ ] **C5: Strength by distance or time.** Exercise kinds weight + distance, weight + time and
       time only (carries, plank, sled), with their steppers and progress metrics. Changing an
       exercise's kind keeps its history: owner's Farmer's Walk sets (1 rep each) become 30 s
