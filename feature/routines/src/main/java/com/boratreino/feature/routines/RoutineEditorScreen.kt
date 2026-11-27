@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.SetMeasure
+import com.boratreino.core.model.measure
 import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraButtonStyle
 import com.boratreino.core.ui.BoraCard
@@ -290,7 +292,7 @@ private fun ItemRow(entry: RoutineEditorItem, index: Int, lastIndex: Int, callba
                 Text(entry.machineName, style = MaterialTheme.typography.bodyLarge)
                 if (!cardio) {
                     Text(
-                        targetText(entry.item),
+                        targetText(entry.item, entry.kind),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -333,7 +335,7 @@ internal fun SetsRepsSheetContent(entry: RoutineEditorItem, index: Int, callback
     ) {
         Text(entry.machineName, style = MaterialTheme.typography.titleLarge)
         Text(
-            targetText(entry.item),
+            targetText(entry.item, entry.kind),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -347,18 +349,21 @@ internal fun SetsRepsSheetContent(entry: RoutineEditorItem, index: Int, callback
                 onMinus = { callbacks.onSetsStep(index, false) },
                 onPlus = { callbacks.onSetsStep(index, true) },
             )
-            LabelledStepper(
-                label = stringResource(R.string.routine_reps_min),
-                value = entry.item.repsMin.toString(),
-                onMinus = { callbacks.onRepsMinStep(index, false) },
-                onPlus = { callbacks.onRepsMinStep(index, true) },
-            )
-            LabelledStepper(
-                label = stringResource(R.string.routine_reps_max),
-                value = entry.item.repsMax.toString(),
-                onMinus = { callbacks.onRepsMaxStep(index, false) },
-                onPlus = { callbacks.onRepsMaxStep(index, true) },
-            )
+            // Time and distance kinds have no rep range: it is hidden and kept as stored.
+            if (entry.kind.measure == SetMeasure.REPS) {
+                LabelledStepper(
+                    label = stringResource(R.string.routine_reps_min),
+                    value = entry.item.repsMin.toString(),
+                    onMinus = { callbacks.onRepsMinStep(index, false) },
+                    onPlus = { callbacks.onRepsMinStep(index, true) },
+                )
+                LabelledStepper(
+                    label = stringResource(R.string.routine_reps_max),
+                    value = entry.item.repsMax.toString(),
+                    onMinus = { callbacks.onRepsMaxStep(index, false) },
+                    onPlus = { callbacks.onRepsMaxStep(index, true) },
+                )
+            }
         }
         BoraButton(
             text = stringResource(R.string.routine_close),

@@ -15,12 +15,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -28,7 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.ExerciseImages
+import com.boratreino.core.model.KindConversion
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.NotOfferedReason
+import com.boratreino.core.model.hasLoad
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.RestTimerRules
 import com.boratreino.core.ui.BoraButton
@@ -37,6 +44,15 @@ import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
 import com.boratreino.core.ui.R as CoreUiR
+
+private val KindChoices = listOf(
+    MachineKind.WEIGHT_REPS,
+    MachineKind.BODYWEIGHT_REPS,
+    MachineKind.WEIGHT_TIME,
+    MachineKind.WEIGHT_DISTANCE,
+    MachineKind.TIME,
+    MachineKind.CARDIO,
+)
 
 private val StepChoices = listOf(1.0, 2.5, 5.0)
 
@@ -60,6 +76,11 @@ internal fun MachineEditorScreen(
             onSetupNoteChange = viewModel::setSetupNote,
             onRestChange = viewModel::setRest,
             onSave = viewModel::save,
+            onFactorStep = viewModel::stepFactor,
+            onFactorSet = viewModel::setFactor,
+            onConfirmConvert = viewModel::confirmConvert,
+            onDismissConvert = viewModel::dismissConvert,
+            onSaveFailedShown = viewModel::saveFailedShown,
             onToggleArchived = viewModel::toggleArchived,
             onDelete = viewModel::requestDelete,
             onConfirmDelete = viewModel::confirmDelete,
@@ -77,8 +98,17 @@ internal fun MachineEditorContent(
     callbacks: MachineEditorCallbacks,
     modifier: Modifier = Modifier,
 ) {
+    val snackbar = remember { SnackbarHostState() }
+    val failedText = stringResource(R.string.editor_convert_failed)
+    LaunchedEffect(state.saveFailed) {
+        if (state.saveFailed) {
+            snackbar.showSnackbar(failedText)
+            callbacks.onSaveFailedShown()
+        }
+    }
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = {
@@ -120,34 +150,36 @@ internal fun MachineEditorContent(
                         BoraChip(
                             label = group.label(),
                             selected = state.muscleGroup == group,
+                            enabled = state.groupEnabled(group),
                             onClick = { callbacks.onMuscleGroupChange(group) },
                         )
                     }
+                }
+                if (MuscleGroup.entries.any { !state.groupEnabled(it) }) {
+                    Text(
+                        stringResource(R.string.editor_group_locked_cardio),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
             Section(stringResource(R.string.editor_kind)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    BoraChip(
-                        label = stringResource(R.string.editor_kind_weights),
-                        selected = state.kind == MachineKind.WEIGHT_REPS,
-                        onClick = { callbacks.onKindChange(MachineKind.WEIGHT_REPS) },
-                    )
-                    BoraChip(
-                        label = stringResource(R.string.editor_kind_bodyweight),
-                        selected = state.kind == MachineKind.BODYWEIGHT_REPS,
-                        onClick = { callbacks.onKindChange(MachineKind.BODYWEIGHT_REPS) },
-                    )
-                    BoraChip(
-                        label = stringResource(R.string.editor_kind_cardio),
-                        selected = state.kind == MachineKind.CARDIO,
-                        onClick = { callbacks.onKindChange(MachineKind.CARDIO) },
-                    )
+                    KindChoices.forEach { kind ->
+                        BoraChip(
+                            label = kind.editorLabel(),
+                            selected = state.kind == kind,
+                            onClick = { callbacks.onKindChange(kind) },
+                            enabled = state.kindEnabled(kind),
+                        )
+                    }
                 }
+                KindLockedCaption(state)
             }
 
-            // Weight step and rest timer don't apply to cardio.
-            if (state.kind != MachineKind.CARDIO) {
+            // Weight step: only kinds with a load. Rest timer: every kind but cardio.
+            if (state.kind.hasLoad) {
                 Section(stringResource(R.string.editor_step)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         // A machine saved with another step keeps it as a fourth choice.
@@ -161,7 +193,9 @@ internal fun MachineEditorContent(
                         }
                     }
                 }
+            }
 
+            if (state.kind != MachineKind.CARDIO) {
                 Section(stringResource(R.string.editor_rest)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         BoraChip(
@@ -233,12 +267,38 @@ internal fun MachineEditorContent(
         }
     }
 
+    ConvertKindDialog(
+        dialog = state.convertDialog,
+        onFactorStep = callbacks.onFactorStep,
+        onFactorSet = callbacks.onFactorSet,
+        onConfirm = callbacks.onConfirmConvert,
+        onDismiss = callbacks.onDismissConvert,
+    )
     DeleteMachineDialog(
         dialog = state.deleteDialog,
         onConfirm = callbacks.onConfirmDelete,
         onArchiveInstead = callbacks.onArchiveInstead,
         onDismiss = callbacks.onDismissDelete,
     )
+}
+
+/** Why some kinds are off for a machine with sets: the count, then one line per reason. */
+@Composable
+private fun KindLockedCaption(state: MachineEditorUiState) {
+    val reasons = state.conversions.values.filterIsInstance<KindConversion.NotOffered>().map { it.reason }.toSet()
+    if (reasons.isEmpty()) return
+    val count = LocalContext.current.resources.getQuantityString(R.plurals.editor_kind_locked, state.setCount, state.setCount)
+    val lines = buildList {
+        add(count)
+        if (NotOfferedReason.CARDIO in reasons) add(stringResource(R.string.editor_kind_locked_cardio))
+        if (NotOfferedReason.LOAD_WOULD_BE_LOST in reasons) add(stringResource(R.string.editor_kind_locked_load))
+        if (NotOfferedReason.NO_COMMON_MEASURE in reasons) add(stringResource(R.string.editor_kind_locked_measure))
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        lines.forEach { line ->
+            Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
 
 @Composable

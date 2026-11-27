@@ -29,6 +29,8 @@ import com.boratreino.core.model.ExerciseImages
 import com.boratreino.core.model.LibraryEquipment
 import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.LibraryLevel
+import com.boratreino.core.model.SetMeasure
+import com.boratreino.core.model.measure
 import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.ExerciseFrames
@@ -158,6 +160,10 @@ internal fun ExerciseDetailDialog(
                 }
                 DetailLine(stringResource(R.string.library_detail_equipment), exercise.equipment.label())
                 DetailLine(stringResource(R.string.library_detail_level), exercise.level.label())
+                // Strength by time or distance is logged differently, so say so before it is added.
+                if (exercise.kind.measure.let { it == SetMeasure.SECONDS || it == SetMeasure.METRES }) {
+                    DetailLine(stringResource(R.string.library_detail_kind), exercise.kind.editorLabel())
+                }
                 if (exercise.steps.isNotEmpty()) {
                     Text(
                         stringResource(R.string.library_how_to),
