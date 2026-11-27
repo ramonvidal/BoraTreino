@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
@@ -22,6 +23,39 @@ internal fun StatsScreenHost(dark: Boolean = false, fontScale: Float = 1f, conte
         CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
             Surface(Modifier.fillMaxSize()) { content() }
         }
+    }
+}
+
+/** The Overview tab over [state], with its own list state. */
+@Composable
+internal fun OverviewHost(
+    state: StatsUiState,
+    actions: StatsActions = StatsActions(),
+    dark: Boolean = false,
+    fontScale: Float = 1f,
+) {
+    StatsScreenHost(dark, fontScale) {
+        OverviewContent(state = state, actions = actions, listState = rememberLazyListState(), modifier = Modifier.fillMaxSize())
+    }
+}
+
+/** The Analysis list over [state], with its own list state and no anchor. */
+@Composable
+internal fun AnalysisHost(
+    state: StatsUiState,
+    actions: StatsActions = StatsActions(),
+    dark: Boolean = false,
+    fontScale: Float = 1f,
+) {
+    StatsScreenHost(dark, fontScale) {
+        AnalysisContent(
+            state = state,
+            actions = actions,
+            listState = rememberLazyListState(),
+            anchor = null,
+            onAnchorShown = {},
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 
