@@ -281,7 +281,7 @@ CI green, screenshots looked at).
       "recent vs usual load", monotony and strain removed; 10-20 sets shown as a general
       guideline, not a goal.
 - [x] **C4: Loose ends.** The "Best -" seen in a detail screenshot; "machine" left in English texts.
-- [ ] **C5: Strength by distance or time.** Exercise kinds weight + distance, weight + time and
+- [x] **C5: Strength by distance or time.** Exercise kinds weight + distance, weight + time and
       time only (carries, plank, sled), with their steppers and progress metrics. Changing an
       exercise's kind keeps its history: owner's Farmer's Walk sets (1 rep each) become 30 s
       each with the same load. Owner's Back extension becomes weight + reps.
