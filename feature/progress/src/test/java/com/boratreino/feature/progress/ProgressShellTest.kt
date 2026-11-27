@@ -50,16 +50,16 @@ class ProgressShellTest {
 
         compose.onNodeWithText("Overview").assertIsDisplayed()
         compose.onNodeWithText("WHAT MATTERS NOW").assertIsDisplayed()
-        compose.onNodeWithText("More statistics").assertDoesNotExist()
+        compose.onNodeWithText("Highlights").assertDoesNotExist()
     }
 
     @Test
-    fun `the analysis row opens Analysis and the Overview is no longer shown`() {
+    fun `the analysis row opens Analysis on its first section and the Overview is no longer shown`() {
         show()
 
         compose.onNodeWithText("Detailed analysis").performClick()
 
-        compose.onNodeWithText("More statistics").assertIsDisplayed()
+        compose.onNodeWithText("Highlights").assertIsDisplayed()
         compose.onNodeWithText("WHAT MATTERS NOW").assertDoesNotExist()
     }
 
@@ -67,12 +67,12 @@ class ProgressShellTest {
     fun `system back closes Analysis and returns to the Overview`() {
         show()
         compose.onNodeWithText("Detailed analysis").performClick()
-        compose.onNodeWithText("More statistics").assertIsDisplayed()
+        compose.onNodeWithText("Highlights").assertIsDisplayed()
 
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
 
         compose.onNodeWithText("WHAT MATTERS NOW").assertIsDisplayed()
-        compose.onNodeWithText("More statistics").assertDoesNotExist()
+        compose.onNodeWithText("Highlights").assertDoesNotExist()
     }
 }

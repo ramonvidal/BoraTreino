@@ -13,15 +13,15 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** Which new Stats cards each page shows: when the report has their data, and not when it does not. */
+/** Which new Stats cards each section shows: when the report has their data, and not when it does not. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w500dp-h20000dp")
 class StatsNewItemsTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun showPage(report: StatsReport) {
-        compose.setContent { AnalysisHost(StatsSamples.state(report)) }
+    private fun showSection(report: StatsReport, section: AnalysisSection) {
+        compose.setContent { AnalysisHost(StatsSamples.state(report), section = section) }
     }
 
     private fun shown(text: String) = compose.onAllNodesWithText(text, useUnmergedTree = true).onFirst().assertIsDisplayed()
@@ -41,62 +41,74 @@ class StatsNewItemsTest {
     )
 
     @Test
-    fun `the strength page shows the trend summary and the muscle volume when the report has them`() {
-        showPage(withStrengthData)
+    fun `the highlights show the trends by exercise when the report has them`() {
+        showSection(withStrengthData, AnalysisSection.HIGHLIGHTS)
 
         shown("Trends by exercise")
+    }
+
+    @Test
+    fun `the highlights leave out the trends by exercise when the report has none`() {
+        showSection(StatsSamples.full, AnalysisSection.HIGHLIGHTS)
+
+        notShown("Trends by exercise")
+    }
+
+    @Test
+    fun `the muscles show the weekly sets per muscle when the report has them`() {
+        showSection(withStrengthData, AnalysisSection.MUSCLES)
+
         shown("Weekly sets per muscle")
     }
 
     @Test
-    fun `the strength page leaves out the trend summary and the muscle volume when the report has none`() {
-        showPage(StatsSamples.full)
+    fun `the muscles leave out the weekly sets per muscle when the report has none`() {
+        showSection(StatsSamples.full, AnalysisSection.MUSCLES)
 
-        notShown("Trends by exercise")
         notShown("Weekly sets per muscle")
     }
 
     @Test
-    fun `the habit page shows the training load and the patterns when the report has them`() {
-        showPage(withHabitData)
+    fun `the highlights show the training load and the patterns when the report has them`() {
+        showSection(withHabitData, AnalysisSection.HIGHLIGHTS)
 
         shown("Recent vs usual load")
         shown("When you lift best")
     }
 
     @Test
-    fun `the habit page leaves out the training load and the patterns when the report has none`() {
-        showPage(StatsSamples.full)
+    fun `the highlights leave out the training load and the patterns when the report has none`() {
+        showSection(StatsSamples.full, AnalysisSection.HIGHLIGHTS)
 
         notShown("Recent vs usual load")
         notShown("When you lift best")
     }
 
     @Test
-    fun `the cardio card shows its insight when the report has one`() {
-        showPage(withHabitData)
+    fun `the habit section shows the cardio insight when the report has one`() {
+        showSection(withHabitData, AnalysisSection.HABIT)
 
         shown("Whole history, 12 sessions")
     }
 
     @Test
-    fun `the cardio card shows no insight when the report has none`() {
-        showPage(StatsSamples.full.copy(cardioBlocks = Phase46Samples.cardioBlocks))
+    fun `the habit section shows no cardio insight when the report has none`() {
+        showSection(StatsSamples.full.copy(cardioBlocks = Phase46Samples.cardioBlocks), AnalysisSection.HABIT)
 
         shown("Cardio")
         notShown("Whole history, 12 sessions")
     }
 
     @Test
-    fun `the body page shows the waist to hip ratio when the report has it`() {
-        showPage(StatsSamples.full.copy(waistHip = Phase46Samples.waistHipWeekly))
+    fun `the body section shows the waist to hip ratio when the report has it`() {
+        showSection(StatsSamples.full.copy(waistHip = Phase46Samples.waistHipWeekly), AnalysisSection.BODY)
 
         shown("Waist to hip ratio")
     }
 
     @Test
-    fun `the body page leaves out the waist to hip ratio when the report has none`() {
-        showPage(StatsSamples.full)
+    fun `the body section leaves out the waist to hip ratio when the report has none`() {
+        showSection(StatsSamples.full, AnalysisSection.BODY)
 
         notShown("Waist to hip ratio")
     }

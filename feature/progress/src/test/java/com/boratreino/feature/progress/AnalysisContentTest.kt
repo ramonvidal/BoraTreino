@@ -2,10 +2,16 @@ package com.boratreino.feature.progress
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.BodyMeasurement
@@ -18,10 +24,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithText
 
-/** The Analysis level: what it says and does, checked on the text it shows. */
+/** The Analysis level: what it says and does, checked on the text it shows. Each section shows its own cards. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w500dp-h20000dp")
 class AnalysisContentTest {
@@ -31,9 +35,13 @@ class AnalysisContentTest {
     private val full = StatsSamples.full
     private val today = StatsSamples.today
 
-    /** Shows the whole Analysis list over [state]. */
-    private fun showAnalysis(state: StatsUiState = StatsSamples.state(), actions: StatsActions = StatsActions()) {
-        compose.setContent { AnalysisHost(state = state, actions = actions) }
+    /** Shows the Analysis list over [state], on [section]. */
+    private fun showAnalysis(
+        state: StatsUiState = StatsSamples.state(),
+        actions: StatsActions = StatsActions(),
+        section: AnalysisSection = AnalysisSection.HIGHLIGHTS,
+    ) {
+        compose.setContent { AnalysisHost(state = state, actions = actions, section = section) }
     }
 
     private fun showCard(content: @Composable () -> Unit) {
@@ -50,21 +58,72 @@ class AnalysisContentTest {
 
     private fun yOf(text: String): Float = compose.onNodeWithText(text).fetchSemanticsNode().positionInRoot.y
 
-    // The list
+    // The chips and the list
 
     @Test
-    fun `the Analysis list has the headings of its strength, muscle, habit and body groups`() {
+    fun `the Analysis opens on Highlights and shows only its cards`() {
         showAnalysis()
 
-        shown("More statistics")
+        shownSomewhere("Highlights")
+        shown("Hard sets per muscle group")
+        notShown("Strength trend")
+        notShown("Muscle groups")
+        notShown("Summary")
+        notShown("Measurements")
+    }
+
+    @Test
+    fun `the chips name the sections of the Analysis`() {
+        showAnalysis()
+
+        shownSomewhere("Highlights")
         shownSomewhere("Strength")
+        shownSomewhere("Muscles")
         shownSomewhere("Habit")
         shownSomewhere("Body")
     }
 
     @Test
+    fun `an empty period has only the body chip`() {
+        showAnalysis(StatsSamples.state(StatsSamples.empty))
+
+        shownSomewhere("Body")
+        notShown("Highlights")
+        notShown("Strength")
+        notShown("Habit")
+    }
+
+    @Test
+    fun `tapping a chip shows the cards of its section only`() {
+        compose.setContent {
+            HoistedAnalysis(state = StatsSamples.state(), start = AnalysisSection.HIGHLIGHTS)
+        }
+        shown("Hard sets per muscle group")
+
+        compose.onNodeWithText("Muscles").performClick()
+
+        shown("Body map")
+        shown("Weekly volume")
+        notShown("Hard sets per muscle group")
+        notShown("Summary")
+    }
+
+    @Test
+    fun `tapping a chip reports the section it picks`() {
+        var picked: AnalysisSection? = null
+        compose.setContent {
+            HoistedAnalysis(state = StatsSamples.state(), start = AnalysisSection.HIGHLIGHTS, onPicked = { picked = it })
+        }
+
+        compose.onNodeWithText("Habit").performClick()
+
+        assertEquals(AnalysisSection.HABIT, picked)
+        shown("Summary")
+    }
+
+    @Test
     fun `the muscle groups card comes before the body map`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.MUSCLES)
 
         assertTrue(yOf("Muscle groups") < yOf("Body map"))
     }
@@ -84,36 +143,38 @@ class AnalysisContentTest {
     }
 
     @Test
-    fun `the muscle cards come with their titles`() {
-        showAnalysis()
+    fun `the muscles section has the muscle cards with their titles`() {
+        showAnalysis(section = AnalysisSection.MUSCLES)
 
         shown("Muscle groups")
         shown("Body map")
-        shown("Hard sets per muscle group")
+        shown("Weekly volume")
+        notShown("Hard sets per muscle group")
     }
 
     @Test
-    fun `the strength cards come with their titles`() {
-        showAnalysis()
+    fun `the strength section has the strength cards with their titles`() {
+        showAnalysis(section = AnalysisSection.STRENGTH)
 
         shown("Strength trend")
         shown("Records")
         shown("Rep ranges")
+        notShown("Muscle groups")
     }
 
     @Test
-    fun `the habit cards come with their titles`() {
-        showAnalysis()
+    fun `the habit section has the habit cards with their titles`() {
+        showAnalysis(section = AnalysisSection.HABIT)
 
         shown("Summary")
-        shown("Weekly volume")
         shown("Days since each muscle group was trained")
         shown("Session length")
+        notShown("Weekly volume")
     }
 
     @Test
     fun `the summary has the sessions a week, the consistency and the best week`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.HABIT)
 
         shown("2.8 sessions a week")
         shown("Met your goal in 9 of 13 weeks")
@@ -122,28 +183,28 @@ class AnalysisContentTest {
 
     @Test
     fun `the overall strength change is in the summary`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.HABIT)
 
         shown("Strength: +6.4 % in this period")
     }
 
     @Test
     fun `without an overall strength change the summary leaves the line out`() {
-        showAnalysis(StatsSamples.state(full.copy(overallStrengthPercent = null)))
+        showAnalysis(StatsSamples.state(full.copy(overallStrengthPercent = null)), section = AnalysisSection.HABIT)
 
         notShown("Strength: +6.4 % in this period")
     }
 
     @Test
     fun `the volume chart description says one week in the singular`() {
-        showAnalysis(StatsSamples.state(StatsSamples.oneWeek))
+        showAnalysis(StatsSamples.state(StatsSamples.oneWeek), section = AnalysisSection.MUSCLES)
 
         compose.onNodeWithContentDescription("Weekly volume over 1 week: 7.8 t in total, best week 7.8 t").assertIsDisplayed()
     }
 
     @Test
     fun `the volume chart description says the weeks in the plural`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.MUSCLES)
 
         compose.onNodeWithContentDescription("Weekly volume over 13 weeks:", substring = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("Weekly volume over 1 week:", substring = true).assertDoesNotExist()
@@ -151,7 +212,7 @@ class AnalysisContentTest {
 
     @Test
     fun `the volume legend shows tonnes with one decimal and kilograms below a tonne`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.MUSCLES)
 
         shownSomewhere("12.4 t")
         shownSomewhere("8.2 t")
@@ -160,14 +221,14 @@ class AnalysisContentTest {
 
     @Test
     fun `a group that was never trained says Never`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.HABIT)
 
         shownSomewhere("Never")
     }
 
     @Test
     fun `the recency rows say today and days ago`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.HABIT)
 
         shownSomewhere("Today")
         shownSomewhere("1 day ago")
@@ -185,14 +246,14 @@ class AnalysisContentTest {
 
     @Test
     fun `the hard sets note is neutral`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.HIGHLIGHTS)
 
         shown("Many programs use roughly 10 to 20 hard sets per muscle group per week.")
     }
 
     @Test
     fun `the strength list shows the estimate and the change`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.STRENGTH)
 
         shown("95 kg → 100 kg est. 1RM")
         shown("+5.3 %")
@@ -201,14 +262,14 @@ class AnalysisContentTest {
 
     @Test
     fun `a plateau is flagged under the strength list`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.STRENGTH)
 
         shown("Lat pulldown: no progress in 5 sessions")
     }
 
     @Test
     fun `the records show what was beaten and when`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.STRENGTH)
 
         shown("Heaviest: 100 kg")
         shown("Most reps: 12 at 40 kg")
@@ -240,7 +301,7 @@ class AnalysisContentTest {
 
     @Test
     fun `the session length shows the average and the time between sets`() {
-        showAnalysis()
+        showAnalysis(section = AnalysisSection.HABIT)
 
         shown("Average session: 62 min")
         shown("About 3.1 min between sets")
@@ -270,17 +331,23 @@ class AnalysisContentTest {
     // One week
 
     @Test
-    fun `one week has the muscle groups and the strength per body weight, not the strength vs weight chart`() {
-        showAnalysis(StatsSamples.state(StatsSamples.oneWeek).copy(bodyWeightKg = 80.0))
+    fun `one week has the muscle groups card in the muscles section`() {
+        showAnalysis(StatsSamples.state(StatsSamples.oneWeek), section = AnalysisSection.MUSCLES)
 
         shown("Muscle groups")
+    }
+
+    @Test
+    fun `one week has strength per body weight, not the strength vs weight chart`() {
+        showAnalysis(StatsSamples.state(StatsSamples.oneWeek).copy(bodyWeightKg = 80.0), section = AnalysisSection.STRENGTH)
+
         shown("Strength per body weight")
         notShown("Body weight and strength together")
     }
 
     @Test
     fun `one week has no strength trend but keeps the records and rep ranges`() {
-        showAnalysis(StatsSamples.state(StatsSamples.oneWeek))
+        showAnalysis(StatsSamples.state(StatsSamples.oneWeek), section = AnalysisSection.STRENGTH)
 
         notShown("Strength trend")
         shown("Records")
@@ -288,15 +355,21 @@ class AnalysisContentTest {
     }
 
     @Test
-    fun `one week has the summary and the single weekly volume bar`() {
-        showAnalysis(StatsSamples.state(StatsSamples.oneWeek))
+    fun `one week has the summary and the session length in the habit section`() {
+        showAnalysis(StatsSamples.state(StatsSamples.oneWeek), section = AnalysisSection.HABIT)
 
         shown("Summary")
+        shown("Days since each muscle group was trained")
+        shown("Session length")
+    }
+
+    @Test
+    fun `one week has the single weekly volume bar in the muscles section`() {
+        showAnalysis(StatsSamples.state(StatsSamples.oneWeek), section = AnalysisSection.MUSCLES)
+
         shown("Weekly volume")
         // The bar chart's one description: its total and best week are the one week's volume.
         compose.onNodeWithContentDescription("7.8 t in total, best week 7.8 t", substring = true).assertIsDisplayed()
-        shown("Days since each muscle group was trained")
-        shown("Session length")
     }
 
     @Test
@@ -312,7 +385,7 @@ class AnalysisContentTest {
 
     @Test
     fun `a cardio-only period has a summary but no strength cards`() {
-        showAnalysis(StatsSamples.state(StatsSamples.cardioOnly))
+        showAnalysis(StatsSamples.state(StatsSamples.cardioOnly), section = AnalysisSection.HABIT)
 
         shown("Summary")
         shown("2 sessions a week")
@@ -326,7 +399,10 @@ class AnalysisContentTest {
 
     @Test
     fun `a period without time data leaves the session length out`() {
-        showAnalysis(StatsSamples.state(full.copy(times = full.times.copy(averageMinutes = null, averageMinutesBetweenSets = null))))
+        showAnalysis(
+            StatsSamples.state(full.copy(times = full.times.copy(averageMinutes = null, averageMinutesBetweenSets = null))),
+            section = AnalysisSection.HABIT,
+        )
 
         notShown("Session length")
     }
@@ -355,7 +431,7 @@ class AnalysisContentTest {
     @Test
     fun `tapping a machine in the strength list of the analysis opens it`() {
         var opened: Long? = null
-        showAnalysis(actions = StatsActions(onOpenMachine = { opened = it }))
+        showAnalysis(actions = StatsActions(onOpenMachine = { opened = it }), section = AnalysisSection.STRENGTH)
 
         compose.onAllNodesWithText("Lat pulldown")[0].performClick()
 
@@ -406,18 +482,18 @@ class AnalysisContentTest {
     )
 
     @Test
-    fun `the measurements card is in the analysis with its change over the period`() {
-        showAnalysis(StatsSamples.state().copy(measurements = measured))
+    fun `the measurements card is in the body section with its change over the period`() {
+        showAnalysis(StatsSamples.state().copy(measurements = measured), section = AnalysisSection.BODY)
 
         shown("Measurements")
         shown("-2.0 cm in the period")
     }
 
     @Test
-    fun `the measurements card comes after the hard sets card`() {
-        showAnalysis(StatsSamples.state().copy(measurements = measured))
+    fun `the measurements card comes after the hard sets card in the analysis order`() {
+        val cards = analysisCards(StatsSamples.state().copy(measurements = measured))
 
-        assertTrue(yOf("Measurements") > yOf("Hard sets per muscle group"))
+        assertTrue(cards.indexOf(AnalysisCard.HARD_SETS) < cards.indexOf(AnalysisCard.MEASUREMENTS))
     }
 
     @Test
@@ -435,4 +511,22 @@ class AnalysisContentTest {
 
         shown("1 day ago")
     }
+}
+
+/** The Analysis list with its section held here, as ProgressShell holds it: the chips switch the section. */
+@Composable
+private fun HoistedAnalysis(
+    state: StatsUiState,
+    start: AnalysisSection,
+    onPicked: (AnalysisSection) -> Unit = {},
+) {
+    var section by remember { mutableStateOf(start) }
+    AnalysisHost(
+        state = state,
+        section = section,
+        onSection = {
+            section = it
+            onPicked(it)
+        },
+    )
 }

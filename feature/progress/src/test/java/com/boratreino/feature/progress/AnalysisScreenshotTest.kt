@@ -19,8 +19,13 @@ class AnalysisScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private fun analysis(name: String, state: StatsUiState, dark: Boolean = false) {
-        compose.setContent { AnalysisHost(state, dark = dark) }
+    private fun analysis(
+        name: String,
+        state: StatsUiState,
+        dark: Boolean = false,
+        section: AnalysisSection = AnalysisSection.HIGHLIGHTS,
+    ) {
+        compose.setContent { AnalysisHost(state, dark = dark, section = section) }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
@@ -32,4 +37,20 @@ class AnalysisScreenshotTest {
 
     @Test
     fun `analysis one week`() = analysis("analysis-one-week", StatsSamples.state(StatsSamples.oneWeek))
+
+    @Test
+    fun `analysis strength section`() =
+        analysis("analysis-strength", StatsSamples.state(), section = AnalysisSection.STRENGTH)
+
+    @Test
+    fun `analysis muscles section`() =
+        analysis("analysis-muscles", StatsSamples.state(), section = AnalysisSection.MUSCLES)
+
+    @Test
+    fun `analysis habit section`() =
+        analysis("analysis-habit", StatsSamples.state(), section = AnalysisSection.HABIT)
+
+    @Test
+    fun `analysis body section`() =
+        analysis("analysis-body", StatsSamples.state(), section = AnalysisSection.BODY)
 }

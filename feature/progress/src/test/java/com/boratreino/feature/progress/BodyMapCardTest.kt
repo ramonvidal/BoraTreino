@@ -32,7 +32,7 @@ class BodyMapCardTest {
     }
 
     private fun showPage(report: StatsReport) {
-        compose.setContent { AnalysisHost(BodyInsightSamples.state(report)) }
+        compose.setContent { AnalysisHost(BodyInsightSamples.state(report), section = AnalysisSection.MUSCLES) }
     }
 
     private fun yOf(text: String): Float = compose.onNodeWithText(text).fetchSemanticsNode().positionInRoot.y

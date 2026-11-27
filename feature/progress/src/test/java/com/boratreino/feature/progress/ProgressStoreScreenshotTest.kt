@@ -101,6 +101,8 @@ class ProgressStoreScreenshotTest {
                         listState = rememberLazyListState(),
                         anchor = null,
                         onAnchorShown = {},
+                        section = AnalysisSection.HIGHLIGHTS,
+                        onSection = {},
                         modifier = Modifier.weight(1f),
                     )
                 }

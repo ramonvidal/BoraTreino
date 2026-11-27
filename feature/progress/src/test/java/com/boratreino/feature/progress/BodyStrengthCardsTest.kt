@@ -26,7 +26,7 @@ class BodyStrengthCardsTest {
     }
 
     private fun showPage(state: StatsUiState) {
-        compose.setContent { AnalysisHost(state) }
+        compose.setContent { AnalysisHost(state, section = AnalysisSection.STRENGTH) }
     }
 
     // Strength per body weight

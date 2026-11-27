@@ -150,7 +150,7 @@ class MachineStateTest {
     }
 
     @Test
-    fun `the sessions list shows fifteen rows before show all`() {
-        assertEquals(15, SESSIONS_SHOWN)
+    fun `the sessions list shows five rows before show all`() {
+        assertEquals(5, SESSIONS_SHOWN)
     }
 }

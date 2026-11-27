@@ -39,13 +39,18 @@ internal fun OverviewHost(
     }
 }
 
-/** The Analysis list over [state], with its own list state and no anchor. */
+/**
+ * The Analysis list over [state], with its own list state and no anchor. Shows [section]; the chips call [onSection]
+ * (the caller keeps the selection, as ProgressShell does).
+ */
 @Composable
 internal fun AnalysisHost(
     state: StatsUiState,
     actions: StatsActions = StatsActions(),
     dark: Boolean = false,
     fontScale: Float = 1f,
+    section: AnalysisSection = AnalysisSection.HIGHLIGHTS,
+    onSection: (AnalysisSection) -> Unit = {},
 ) {
     StatsScreenHost(dark, fontScale) {
         AnalysisContent(
@@ -54,6 +59,8 @@ internal fun AnalysisHost(
             listState = rememberLazyListState(),
             anchor = null,
             onAnchorShown = {},
+            section = section,
+            onSection = onSection,
             modifier = Modifier.fillMaxSize(),
         )
     }
