@@ -19,8 +19,12 @@ import com.boratreino.core.model.Routine
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SetDraft
+import com.boratreino.core.model.SetMeasure
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.model.hasLoad
+import com.boratreino.core.model.isStrength
+import com.boratreino.core.model.measure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.LocalDate
@@ -50,7 +54,10 @@ internal data class SetEdit(
     /** Cardio machines edit these instead of [weightKg] and [reps]; 0 = not logged. */
     val minutes: Int = 0,
     val calories: Int = 0,
+    /** Cardio: metres covered. Weight + distance machines: the set's distance in metres. */
     val distanceM: Int = 0,
+    /** Weight + time and time machines: the set's duration in seconds. */
+    val seconds: Int = 0,
     /** Cardio: the intensity (e.g. 0.79), null = not logged. */
     val intensity: Double? = null,
     val type: SetType = SetType.NORMAL,
@@ -59,14 +66,20 @@ internal data class SetEdit(
 
     val cardioDraft: CardioDraft get() = CardioDraft(minutes, calories, distanceM, intensity)
 
-    /** A cardio set with nothing logged is not a set; Save waits until there is something. */
-    val canSave: Boolean get() = !isCardio || CardioRules.canLog(cardioDraft)
+    /** The strength set's values as a draft (cardio machines use [cardioDraft] instead). */
+    val setDraft: SetDraft get() = SetDraft(weightKg, reps, type, seconds, distanceM)
+
+    /** A cardio set with nothing logged is not a set; Save waits until there is something. Same for 0 s or 0 m. */
+    val canSave: Boolean get() =
+        if (isCardio) CardioRules.canLog(cardioDraft) else LoggingRules.canLog(setDraft, machine.kind)
 }
 
 /** Which value the number pad is editing. */
 internal enum class PadTarget(val cardioField: CardioField? = null) {
     EDIT_WEIGHT,
     EDIT_REPS,
+    EDIT_SECONDS,
+    EDIT_DISTANCE_M,
     EDIT_MINUTES(CardioField.MINUTES),
     EDIT_DISTANCE_KM(CardioField.DISTANCE_KM),
     EDIT_INTENSITY(CardioField.INTENSITY),
@@ -272,12 +285,13 @@ class SessionEditorViewModel @Inject constructor(
         val machine = state.value.detail?.machines?.firstOrNull { it.machine.id == machineId }?.machine
             ?: state.value.machines.firstOrNull { it.id == machineId }
         val id = sessionId
-        val cardio = machine?.kind == MachineKind.CARDIO
+        val kind = machine?.kind ?: MachineKind.WEIGHT_REPS
+        val cardio = kind == MachineKind.CARDIO
         if (id != null) {
             if (cardio) {
                 history.addCardioSet(id, machineId, CardioRules.prefill(lastTime, sets))
             } else {
-                val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets)
+                val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets, kind = kind)
                 history.addSet(id, machineId, draft)
             }
         } else {
@@ -288,7 +302,7 @@ class SessionEditorViewModel @Inject constructor(
             val added = if (cardio) {
                 history.addSessionWithCardio(date, routineId, extra, machineId, CardioRules.prefill(lastTime, sets))
             } else {
-                val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets)
+                val draft: SetDraft = LoggingRules.prefill(lastTime = lastTime, thisSession = sets, kind = kind)
                 history.addSessionWithSet(date, routineId, extra, machineId, draft)
             }
             handle[SESSION_ID_ARG] = added.sessionId
@@ -304,15 +318,18 @@ class SessionEditorViewModel @Inject constructor(
         val entry = state.value.detail?.machines?.firstOrNull { it.machine.id == set.machineId } ?: return
         val number = entry.sets.indexOfFirst { it.id == set.id } + 1
         val cardio = CardioRules.toDraft(set)
+        val strength = entry.machine.kind.isStrength
+        val draft = if (strength) LoggingRules.draftOf(set, entry.machine.kind) else null
         editor.value = SetEdit(
             set = set,
             machine = entry.machine,
             number = number,
-            weightKg = set.weightKg ?: 0.0,
-            reps = set.reps ?: LoggingRules.DEFAULT_REPS,
+            weightKg = draft?.weightKg ?: (set.weightKg ?: 0.0),
+            reps = draft?.reps ?: (set.reps ?: LoggingRules.DEFAULT_REPS),
             minutes = cardio.minutes,
             calories = cardio.calories,
-            distanceM = cardio.distanceM,
+            distanceM = draft?.distanceM ?: cardio.distanceM,
+            seconds = draft?.seconds ?: 0,
             intensity = cardio.intensity,
             type = if (entry.machine.kind == MachineKind.CARDIO) SetType.NORMAL else set.type,
         )
@@ -335,6 +352,14 @@ class SessionEditorViewModel @Inject constructor(
 
     internal fun stepEditorReps(up: Boolean) {
         editor.value = editor.value?.let { it.copy(reps = LoggingRules.stepReps(it.reps, up)) }
+    }
+
+    internal fun stepEditorSeconds(up: Boolean) {
+        editor.value = editor.value?.let { it.copy(seconds = LoggingRules.stepSeconds(it.seconds, up)) }
+    }
+
+    internal fun stepEditorDistanceM(up: Boolean) {
+        editor.value = editor.value?.let { it.copy(distanceM = LoggingRules.stepDistance(it.distanceM, up)) }
     }
 
     internal fun stepEditorMinutes(up: Boolean) {
@@ -361,7 +386,7 @@ class SessionEditorViewModel @Inject constructor(
             val s = e.set
             CardioRules.toSet(s.id, s.sessionId, s.machineId, s.position, e.cardioDraft, s.loggedAt)
         } else {
-            e.set.copy(weightKg = e.weightKg, reps = e.reps, type = e.type)
+            LoggingRules.applyDraft(e.set, e.setDraft, e.machine.kind)
         }
         write { training.updateSet(updated) }
     }
@@ -407,6 +432,8 @@ class SessionEditorViewModel @Inject constructor(
             when (target) {
                 PadTarget.EDIT_WEIGHT -> e.weightKg.toBigDecimal().stripTrailingZeros().toPlainString()
                 PadTarget.EDIT_REPS -> e.reps.toString()
+                PadTarget.EDIT_SECONDS -> e.seconds.toString()
+                PadTarget.EDIT_DISTANCE_M -> e.distanceM.toString()
                 else -> target.cardioField?.let { CardioRules.fieldText(e.cardioDraft, it) }.orEmpty()
             },
         )
@@ -422,6 +449,10 @@ class SessionEditorViewModel @Inject constructor(
         when (target) {
             PadTarget.EDIT_WEIGHT -> parseWeight(text)?.let { w -> editor.value = editor.value?.copy(weightKg = w) }
             PadTarget.EDIT_REPS -> parseReps(text)?.let { r -> editor.value = editor.value?.copy(reps = r) }
+            PadTarget.EDIT_SECONDS -> text.trim().toIntOrNull()?.coerceIn(1, LoggingRules.MAX_SECONDS)
+                ?.let { v -> editor.value = editor.value?.copy(seconds = v) }
+            PadTarget.EDIT_DISTANCE_M -> text.trim().toIntOrNull()?.coerceIn(1, LoggingRules.MAX_DISTANCE_M)
+                ?.let { v -> editor.value = editor.value?.copy(distanceM = v) }
             else -> target.cardioField?.let { field -> applyCardioField(field, text) }
         }
     }

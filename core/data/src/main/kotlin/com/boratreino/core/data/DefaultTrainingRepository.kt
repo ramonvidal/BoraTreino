@@ -5,7 +5,10 @@ import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.LoggedSet
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.SetMeasure
+import com.boratreino.core.model.measure
 import com.boratreino.core.model.MachineLog
 import com.boratreino.core.model.NextRoutineRules
 import com.boratreino.core.model.OpenSession
@@ -292,7 +295,7 @@ internal class DefaultTrainingRepository @Inject constructor(
                             lastTimeAt = lastTime.maxOfOrNull { it.loggedAt },
                             thisSession = current,
                             target = target,
-                            suggestion = if (machine.kind == MachineKind.CARDIO) null else ProgressionRules.suggest(target, machine.stepKg, history),
+                            suggestion = if (machine.kind.measure != SetMeasure.REPS) null else ProgressionRules.suggest(target, machine.stepKg, history),
                         )
                     }
                 }
@@ -417,18 +420,15 @@ internal class DefaultTrainingRepository @Inject constructor(
                 ?: store.insertSession(
                     Session(id = 0, startedAt = now, endedAt = null, routineId = routineIdFor(choice.value), note = null, isExtra = isExtraFor(choice.value)),
                 )
-            val set = WorkoutSet(
+            val kind = store.machines().firstOrNull { it.id == machineId }?.kind ?: MachineKind.WEIGHT_REPS
+            val set = LoggingRules.toSet(
                 id = 0,
                 sessionId = sessionId,
                 machineId = machineId,
                 position = store.setCount(sessionId, machineId),
-                weightKg = draft.weightKg,
-                reps = draft.reps,
-                seconds = null,
-                calories = null,
-                distanceM = null,
+                draft = draft,
+                kind = kind,
                 loggedAt = now,
-                type = draft.type,
             )
             // Earlier sets of this machine, this session's included; read before the insert.
             val record = RecordRules.recordFor(set, store.machineSets(machineId))

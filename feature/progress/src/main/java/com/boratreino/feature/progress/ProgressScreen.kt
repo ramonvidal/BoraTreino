@@ -219,6 +219,8 @@ private fun ImprovedCard(rows: List<ImprovedRow>, onOpen: (Long) -> Unit) {
                 ProgressMetric.SPEED -> stringResource(R.string.progress_from_to_speed, formatSpeed(row.improvement.from), formatSpeed(row.improvement.to))
                 ProgressMetric.INTENSITY -> stringResource(R.string.progress_from_to_intensity, formatIntensity(row.improvement.from), formatIntensity(row.improvement.to))
                 ProgressMetric.DISTANCE -> stringResource(R.string.progress_from_to_distance, formatKm(row.improvement.from), formatKm(row.improvement.to))
+                ProgressMetric.SECONDS -> stringResource(R.string.progress_from_to_seconds, from, to)
+                ProgressMetric.METRES -> stringResource(R.string.progress_from_to_metres, from, to)
             }
             ExerciseRow(
                 machine = row.machine,
@@ -245,6 +247,8 @@ private fun MachinesCard(state: ProgressUiState, onOpen: (Long) -> Unit) {
                 ProgressMetric.SPEED -> stringResource(R.string.progress_best_speed, formatSpeed(row.best))
                 ProgressMetric.INTENSITY -> stringResource(R.string.progress_best_intensity, formatIntensity(row.best))
                 ProgressMetric.DISTANCE -> stringResource(R.string.progress_best_distance, formatKm(row.best))
+                ProgressMetric.SECONDS -> stringResource(R.string.progress_best_seconds, row.best.toInt())
+                ProgressMetric.METRES -> stringResource(R.string.progress_best_metres, row.best.toInt())
             }
             val days = daysSince(row.lastTrained, state.today)
             val ago = if (days <= 0) stringResource(R.string.progress_today) else pluralStringResource(R.plurals.progress_days_ago, days, days)

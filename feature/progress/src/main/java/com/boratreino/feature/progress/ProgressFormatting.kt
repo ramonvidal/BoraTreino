@@ -7,6 +7,8 @@ import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.SessionPoint
 import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
+import com.boratreino.core.ui.metresText
+import com.boratreino.core.ui.secondsText
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.text.NumberFormat
@@ -52,6 +54,8 @@ internal fun valueText(metric: ProgressMetric, value: Double): String = when (me
     ProgressMetric.SPEED -> stringResource(R.string.progress_value_speed, formatSpeed(value))
     ProgressMetric.INTENSITY -> formatIntensity(value)
     ProgressMetric.DISTANCE -> stringResource(CoreUiR.string.cardio_km, formatKm(value))
+    ProgressMetric.SECONDS -> secondsText(value.roundToInt())
+    ProgressMetric.METRES -> metresText(value.roundToInt())
 }
 
 /** "+10 kg", "-5 kg" or "+3 reps". */
@@ -64,6 +68,8 @@ internal fun deltaText(metric: ProgressMetric, delta: Double): String = when (me
     ProgressMetric.SPEED -> stringResource(R.string.progress_value_speed, signedEstimate(delta))
     ProgressMetric.INTENSITY -> signedWith(delta, { v -> formatIntensity(v) })
     ProgressMetric.DISTANCE -> stringResource(CoreUiR.string.cardio_km, signedEstimate(delta))
+    ProgressMetric.SECONDS -> stringResource(R.string.progress_delta_seconds, signed(delta))
+    ProgressMetric.METRES -> stringResource(R.string.progress_delta_metres, signed(delta))
 }
 
 private fun signedWith(delta: Double, format: (Double) -> String): String =
@@ -92,6 +98,7 @@ internal fun topText(metric: ProgressMetric, point: SessionPoint): String = when
     }
     ProgressMetric.ONE_RM -> oneRmText(point)
     ProgressMetric.REPS, ProgressMetric.MINUTES, ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE,
+    ProgressMetric.SECONDS, ProgressMetric.METRES,
     -> valueText(metric, point.value)
 }
 

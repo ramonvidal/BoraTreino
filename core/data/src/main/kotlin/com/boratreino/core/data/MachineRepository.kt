@@ -1,7 +1,9 @@
 package com.boratreino.core.data
 
 import com.boratreino.core.model.LibraryExercise
+import com.boratreino.core.model.KindConversion
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.StarterMachine
 import kotlinx.coroutines.flow.Flow
@@ -14,8 +16,20 @@ interface MachineRepository {
     fun observeRecentMachines(limit: Int = 8): Flow<List<Machine>>
     /** Starters that no stored machine (archived included) matches by either name. */
     fun observeStartersNotAdded(): Flow<List<StarterMachine>>
-    /** Id 0 inserts, else updates. Returns the id. */
+    /**
+     * Id 0 inserts, else updates. Returns the id. Throws IllegalStateException when the stored kind differs and the
+     * machine has sets (use [saveConvertingSets]).
+     */
     suspend fun save(machine: Machine): Long
+    /** KindConversionRules.conversions(stored kind, all its sets). Empty map for an unknown id. */
+    suspend fun kindConversions(machineId: Long): Map<MachineKind, KindConversion>
+    /**
+     * In one transaction: reads the stored machine and its sets, converts every set with
+     * KindConversionRules.convert(sets, stored.kind, machine.kind, factor), updates them, then saves [machine].
+     * Returns false and changes nothing when the conversion is NotOffered or the factor is missing or out of range.
+     * Unchanged and Free conversions take factor = null. No Undo.
+     */
+    suspend fun saveConvertingSets(machine: Machine, factor: Int?): Boolean
     /** Logged sets and the names of the routines containing the machine (by routine position). */
     suspend fun usage(machineId: Long): MachineUsage
     /**

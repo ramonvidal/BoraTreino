@@ -21,10 +21,12 @@ import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.Suggestion
 import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.SetDraft
+import com.boratreino.core.model.SetMeasure
 import com.boratreino.core.model.SetSummary
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WarmupRules
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.model.measure
 import com.boratreino.core.model.working
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
@@ -47,13 +49,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** The set being fixed in the bottom sheet, with its own stepper values. [number] is its row number (1-based). */
-internal data class SetEditor(val set: WorkoutSet, val number: Int, val weightKg: Double, val reps: Int, val type: SetType = set.type)
+internal data class SetEditor(
+    val set: WorkoutSet, val number: Int, val weightKg: Double, val reps: Int, val type: SetType = set.type,
+    val seconds: Int = LoggingRules.DEFAULT_SECONDS, val distanceM: Int = LoggingRules.DEFAULT_DISTANCE_M,
+)
 
 /** A logged cardio set being fixed in the bottom sheet; [draft] is the stepper values. */
 internal data class CardioEditor(val set: WorkoutSet, val number: Int, val draft: CardioDraft)
 
 /** Which value the number pad is editing. */
-internal enum class PadTarget { WEIGHT, REPS, EDIT_WEIGHT, EDIT_REPS, CARDIO, EDIT_CARDIO }
+internal enum class PadTarget { WEIGHT, REPS, SECONDS, DISTANCE, EDIT_WEIGHT, EDIT_REPS, EDIT_SECONDS, EDIT_DISTANCE, CARDIO, EDIT_CARDIO }
 
 /** The number pad dialog: what it edits and the text it starts with. */
 internal data class NumberPad(val target: PadTarget, val initial: String, val field: CardioField? = null)
@@ -73,6 +78,10 @@ internal data class MachineUiState(
     val sets: List<WorkoutSet> = emptyList(),
     val weightKg: Double = 0.0,
     val reps: Int = LoggingRules.DEFAULT_REPS,
+    /** Time kinds: the seconds stepper's value. */
+    val seconds: Int = LoggingRules.DEFAULT_SECONDS,
+    /** Distance kinds: the metres stepper's value. */
+    val distanceM: Int = LoggingRules.DEFAULT_DISTANCE_M,
     val sameAgain: SetDraft? = null,
     /** The Warm-up chip is on: the next logged set is a warm-up. Turns itself off after each log. */
     val warmupOn: Boolean = false,
@@ -260,8 +269,9 @@ class MachineViewModel @Inject constructor(
                 pad = padding,
             )
         } else {
-            val draft = override ?: LoggingRules.prefill(log.lastTime, log.thisSession, log.suggestion)
-            val warmupPlan = if (calculator && log.thisSession.isEmpty() && draft.weightKg > 0.0) {
+            val kind = log.machine.kind
+            val draft = override ?: LoggingRules.prefill(log.lastTime, log.thisSession, log.suggestion, kind)
+            val warmupPlan = if (calculator && kind.measure == SetMeasure.REPS && log.thisSession.isEmpty() && draft.weightKg > 0.0) {
                 WarmupRules.plan(draft.weightKg, log.machine.stepKg)
             } else {
                 emptyList()
@@ -275,7 +285,9 @@ class MachineViewModel @Inject constructor(
                 sets = log.thisSession,
                 weightKg = draft.weightKg,
                 reps = draft.reps,
-                sameAgain = LoggingRules.sameAgain(log.lastTime, log.thisSession),
+                seconds = draft.seconds,
+                distanceM = draft.distanceM,
+                sameAgain = LoggingRules.sameAgain(log.lastTime, log.thisSession, kind),
                 warmupOn = warmup,
                 logType = toggle.logType,
                 warmupPlan = warmupPlan,
@@ -303,7 +315,9 @@ class MachineViewModel @Inject constructor(
 
     internal fun logSet() {
         val s = state.value
-        write { log(SetDraft(s.weightKg, s.reps, typeFor(s))) }
+        val machine = s.machine ?: return
+        if (!LoggingRules.canLog(draftOf(s), machine.kind)) return
+        write { log(draftOf(s).copy(type = typeFor(s))) }
     }
 
     internal fun logSameAgain() {
@@ -511,27 +525,46 @@ class MachineViewModel @Inject constructor(
 
     internal fun extendRest() = restTimer.extend()
 
+    /** The steppers' current values as a draft (type left NORMAL; [logSet] adds the chosen type). */
+    private fun draftOf(s: MachineUiState): SetDraft = SetDraft(s.weightKg, s.reps, SetType.NORMAL, s.seconds, s.distanceM)
+
     internal fun stepWeight(up: Boolean) {
         val s = state.value
         val machine = s.machine ?: return
-        draftOverride.value = SetDraft(LoggingRules.stepWeight(s.weightKg, machine.stepKg, up), s.reps)
+        draftOverride.value = draftOf(s).copy(weightKg = LoggingRules.stepWeight(s.weightKg, machine.stepKg, up))
     }
 
     internal fun stepReps(up: Boolean) {
         val s = state.value
-        draftOverride.value = SetDraft(s.weightKg, LoggingRules.stepReps(s.reps, up))
+        draftOverride.value = draftOf(s).copy(reps = LoggingRules.stepReps(s.reps, up))
+    }
+
+    internal fun stepSeconds(up: Boolean) {
+        val s = state.value
+        draftOverride.value = draftOf(s).copy(seconds = LoggingRules.stepSeconds(s.seconds, up))
+    }
+
+    internal fun stepMetres(up: Boolean) {
+        val s = state.value
+        draftOverride.value = draftOf(s).copy(distanceM = LoggingRules.stepDistance(s.distanceM, up))
     }
 
     // Number pad (first-time setup; the steppers stay the main path).
 
     internal fun openPad(target: PadTarget) {
         val s = state.value
-        val (weight, reps) = s.editor?.let { it.weightKg to it.reps } ?: (s.weightKg to s.reps)
+        val e = s.editor
+        val weight = e?.weightKg ?: s.weightKg
+        val reps = e?.reps ?: s.reps
+        val seconds = e?.seconds ?: s.seconds
+        val distance = e?.distanceM ?: s.distanceM
         pad.value = NumberPad(
             target,
             when (target) {
                 PadTarget.WEIGHT, PadTarget.EDIT_WEIGHT -> weight.toBigDecimal().stripTrailingZeros().toPlainString()
                 PadTarget.REPS, PadTarget.EDIT_REPS -> reps.toString()
+                PadTarget.SECONDS, PadTarget.EDIT_SECONDS -> seconds.toString()
+                PadTarget.DISTANCE, PadTarget.EDIT_DISTANCE -> distance.toString()
                 PadTarget.CARDIO, PadTarget.EDIT_CARDIO -> ""
             },
         )
@@ -566,15 +599,23 @@ class MachineViewModel @Inject constructor(
             PadTarget.EDIT_CARDIO -> open.field?.let { field ->
                 editCardio { d -> CardioRules.withField(d, field, text) ?: d }
             }
-            PadTarget.WEIGHT -> parseWeight(text)?.let { draftOverride.value = SetDraft(it, s.reps) }
-            PadTarget.REPS -> parseReps(text)?.let { draftOverride.value = SetDraft(s.weightKg, it) }
+            PadTarget.WEIGHT -> parseWeight(text)?.let { draftOverride.value = draftOf(s).copy(weightKg = it) }
+            PadTarget.REPS -> parseReps(text)?.let { draftOverride.value = draftOf(s).copy(reps = it) }
+            PadTarget.SECONDS -> parseWhole(text, LoggingRules.MAX_SECONDS)?.let { draftOverride.value = draftOf(s).copy(seconds = it) }
+            PadTarget.DISTANCE -> parseWhole(text, LoggingRules.MAX_DISTANCE_M)?.let { draftOverride.value = draftOf(s).copy(distanceM = it) }
             PadTarget.EDIT_WEIGHT -> parseWeight(text)?.let { w -> editor.value = editor.value?.copy(weightKg = w) }
             PadTarget.EDIT_REPS -> parseReps(text)?.let { r -> editor.value = editor.value?.copy(reps = r) }
+            PadTarget.EDIT_SECONDS -> parseWhole(text, LoggingRules.MAX_SECONDS)?.let { v -> editor.value = editor.value?.copy(seconds = v) }
+            PadTarget.EDIT_DISTANCE -> parseWhole(text, LoggingRules.MAX_DISTANCE_M)?.let { v -> editor.value = editor.value?.copy(distanceM = v) }
         }
     }
 
     private fun parseWeight(text: String): Double? =
         text.trim().replace(',', '.').toDoubleOrNull()?.coerceIn(0.0, LoggingRules.MAX_WEIGHT_KG)
+
+    /** A whole number clamped to 1..[max]; null when [text] isn't one. */
+    private fun parseWhole(text: String, max: Int): Int? =
+        text.trim().toIntOrNull()?.coerceIn(1, max)
 
     private fun parseReps(text: String): Int? =
         text.trim().toIntOrNull()?.coerceIn(1, LoggingRules.MAX_REPS)
@@ -583,7 +624,9 @@ class MachineViewModel @Inject constructor(
 
     internal fun openSet(set: WorkoutSet) {
         val number = state.value.sets.indexOfFirst { it.id == set.id } + 1
-        editor.value = SetEditor(set, number, set.weightKg ?: 0.0, set.reps ?: LoggingRules.DEFAULT_REPS, set.type)
+        val kind = state.value.machine?.kind ?: MachineKind.WEIGHT_REPS
+        val draft = LoggingRules.draftOf(set, kind)
+        editor.value = SetEditor(set, number, draft.weightKg, draft.reps, set.type, draft.seconds, draft.distanceM)
     }
 
     internal fun setEditorType(type: SetType) {
@@ -603,10 +646,20 @@ class MachineViewModel @Inject constructor(
         editor.value = editor.value?.let { it.copy(reps = LoggingRules.stepReps(it.reps, up)) }
     }
 
+    internal fun stepEditorSeconds(up: Boolean) {
+        editor.value = editor.value?.let { it.copy(seconds = LoggingRules.stepSeconds(it.seconds, up)) }
+    }
+
+    internal fun stepEditorMetres(up: Boolean) {
+        editor.value = editor.value?.let { it.copy(distanceM = LoggingRules.stepDistance(it.distanceM, up)) }
+    }
+
     internal fun saveEditor() {
         val e = editor.value ?: return
+        val kind = state.value.machine?.kind ?: MachineKind.WEIGHT_REPS
         editor.value = null
-        write { training.updateSet(e.set.copy(weightKg = e.weightKg, reps = e.reps, type = e.type)) }
+        val draft = SetDraft(e.weightKg, e.reps, e.type, e.seconds, e.distanceM)
+        write { training.updateSet(LoggingRules.applyDraft(e.set, draft, kind)) }
     }
 
     internal fun deleteEditor() {

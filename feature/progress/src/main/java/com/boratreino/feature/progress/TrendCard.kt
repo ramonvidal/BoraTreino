@@ -45,6 +45,8 @@ internal fun trendUnit(metric: ProgressMetric): String = when (metric) {
     ProgressMetric.REPS -> stringResource(R.string.trend_unit_reps)
     ProgressMetric.MINUTES -> stringResource(R.string.trend_unit_minutes)
     ProgressMetric.DISTANCE -> stringResource(R.string.trend_unit_km)
+    ProgressMetric.SECONDS -> stringResource(R.string.trend_unit_seconds)
+    ProgressMetric.METRES -> stringResource(R.string.trend_unit_metres)
     ProgressMetric.INTENSITY -> ""
 }
 

@@ -6,7 +6,9 @@ import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.HealthExport
 import com.boratreino.core.model.HealthExportRules
+import com.boratreino.core.model.LoggingRules
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.RepeatSessionRules
 import com.boratreino.core.model.Routine
@@ -128,8 +130,11 @@ internal class DefaultHistoryRepository @Inject constructor(
         isExtra: Boolean,
         machineId: Long,
         draft: SetDraft,
-    ): WorkoutSet = addSessionWith(date, routineId, isExtra, machineId) { sessionId, position, loggedAt ->
-        weightSet(sessionId, machineId, position, loggedAt, draft)
+    ): WorkoutSet {
+        val kind = kindOf(machineId)
+        return addSessionWith(date, routineId, isExtra, machineId) { sessionId, position, loggedAt ->
+            LoggingRules.toSet(0, sessionId, machineId, position, draft, kind, loggedAt)
+        }
     }
 
     override suspend fun addSessionWithCardio(
@@ -187,7 +192,10 @@ internal class DefaultHistoryRepository @Inject constructor(
 
     override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet =
         store.inTransaction {
-            writeSet(sessionId, machineId) { id, position, loggedAt -> weightSet(id, machineId, position, loggedAt, draft) }
+            val kind = kindOf(machineId)
+            writeSet(sessionId, machineId) { id, position, loggedAt ->
+                LoggingRules.toSet(0, id, machineId, position, draft, kind, loggedAt)
+            }
         }
 
     override suspend fun addCardioSet(sessionId: Long, machineId: Long, draft: CardioDraft): WorkoutSet =
@@ -215,19 +223,8 @@ internal class DefaultHistoryRepository @Inject constructor(
         return saved
     }
 
-    private fun weightSet(sessionId: Long, machineId: Long, position: Int, loggedAt: Instant, draft: SetDraft) = WorkoutSet(
-        id = 0,
-        sessionId = sessionId,
-        machineId = machineId,
-        position = position,
-        weightKg = draft.weightKg,
-        reps = draft.reps,
-        seconds = null,
-        calories = null,
-        distanceM = null,
-        loggedAt = loggedAt,
-        type = draft.type,
-    )
+    private suspend fun kindOf(machineId: Long): MachineKind =
+        store.machines().firstOrNull { it.id == machineId }?.kind ?: MachineKind.WEIGHT_REPS
 
     override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> {
         // Flows are read before the write transaction.

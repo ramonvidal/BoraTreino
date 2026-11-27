@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.boratreino.core.model.Muscle
 import com.boratreino.core.model.MuscleGroup
+import com.boratreino.core.model.SetMeasure
 import com.boratreino.core.model.SetSummary
 import java.text.NumberFormat
 import java.util.Locale
@@ -32,7 +33,29 @@ fun setSummaryText(summary: SetSummary): String {
             stringResource(R.string.set_summary_same_weight, formatKg(summary.weightKg), summary.reps.joinToString(separator))
         is SetSummary.Mixed ->
             summary.sets.map { setText(it.weightKg, it.reps) }.joinToString(separator)
+        is SetSummary.Measured -> measuredSummaryText(summary, separator)
         is SetSummary.Cardio -> cardioText(summary.minutes, summary.calories, summary.distanceM)
+    }
+}
+
+/** "3 × 30 s at 47.5 kg" (no load "3 × 45 s"); sets that differ are joined with [separator]. */
+@Composable
+private fun measuredSummaryText(summary: SetSummary.Measured, separator: String): String {
+    val first = summary.sets.firstOrNull() ?: return "-"
+    if (!summary.uniform) return summary.sets.map { measuredDraftText(summary.measure, it) }.joinToString(separator)
+    val seconds = summary.measure == SetMeasure.SECONDS
+    val amount = if (seconds) first.seconds else first.distanceM
+    val count = summary.sets.size
+    return if (first.weightKg > 0.001) {
+        stringResource(
+            if (seconds) R.string.set_summary_uniform_seconds else R.string.set_summary_uniform_metres,
+            count, amount, formatKg(first.weightKg),
+        )
+    } else {
+        stringResource(
+            if (seconds) R.string.set_summary_uniform_seconds_no_weight else R.string.set_summary_uniform_metres_no_weight,
+            count, amount,
+        )
     }
 }
 

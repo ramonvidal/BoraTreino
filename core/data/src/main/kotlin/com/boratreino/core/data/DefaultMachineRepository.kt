@@ -2,8 +2,11 @@ package com.boratreino.core.data
 
 import com.boratreino.core.database.WorkoutStore
 import com.boratreino.core.model.ExerciseLibraryRules
+import com.boratreino.core.model.KindConversion
+import com.boratreino.core.model.KindConversionRules
 import com.boratreino.core.model.LibraryExercise
 import com.boratreino.core.model.Machine
+import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.model.StarterMachines
@@ -27,8 +30,42 @@ internal class DefaultMachineRepository @Inject constructor(
             StarterMachines.all.filter { starter -> machines.none { StarterMachines.matches(starter, it.name) } }
         }
 
-    override suspend fun save(machine: Machine): Long =
-        store.saveMachine(machine.copy(name = machine.name.trim()))
+    override suspend fun save(machine: Machine): Long {
+        val clean = machine.copy(name = machine.name.trim())
+        if (clean.id == 0L) return store.saveMachine(clean)
+        return store.inTransaction {
+            val stored = store.machines().firstOrNull { it.id == clean.id }
+            check(stored == null || stored.kind == clean.kind || store.machineSets(clean.id).isEmpty()) {
+                "Machine ${clean.id} has sets; change its kind with saveConvertingSets"
+            }
+            store.saveMachine(clean)
+        }
+    }
+
+    override suspend fun kindConversions(machineId: Long): Map<MachineKind, KindConversion> {
+        val stored = store.machines().firstOrNull { it.id == machineId } ?: return emptyMap()
+        return KindConversionRules.conversions(stored.kind, store.machineSets(machineId))
+    }
+
+    override suspend fun saveConvertingSets(machine: Machine, factor: Int?): Boolean {
+        val clean = machine.copy(name = machine.name.trim())
+        return store.inTransaction {
+            val stored = store.machines().firstOrNull { it.id == clean.id }
+            if (stored == null) {
+                store.saveMachine(clean)
+                return@inTransaction true
+            }
+            val sets = store.machineSets(clean.id)
+            val converted = try {
+                KindConversionRules.convert(sets, stored.kind, clean.kind, factor)
+            } catch (e: IllegalArgumentException) {
+                return@inTransaction false
+            }
+            converted.zip(sets).forEach { (new, old) -> if (new != old) store.updateSet(new) }
+            store.saveMachine(clean)
+            true
+        }
+    }
 
     override suspend fun usage(machineId: Long): MachineUsage =
         MachineUsage(

@@ -12,10 +12,12 @@ import com.boratreino.core.model.SessionPoint
 /** The metrics a cardio exercise can chart, in the order the chips show them (the data layer's own order). */
 internal val CARDIO_METRICS: List<ProgressMetric> = ProgressRules.CARDIO_METRICS
 
-/** True for the cardio-only metrics (everything but weight, reps, minutes and the estimated 1RM). */
+/** True for the cardio-only metrics (speed, intensity, distance); false for the strength ones, SECONDS and METRES included. */
 internal fun ProgressMetric.isCardioValue(): Boolean = when (this) {
-    ProgressMetric.WEIGHT, ProgressMetric.REPS, ProgressMetric.MINUTES, ProgressMetric.ONE_RM -> false
-    else -> true
+    ProgressMetric.WEIGHT, ProgressMetric.REPS, ProgressMetric.MINUTES, ProgressMetric.ONE_RM,
+    ProgressMetric.SECONDS, ProgressMetric.METRES,
+    -> false
+    ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE -> true
 }
 
 internal fun Machine.isCardio(): Boolean = kind == MachineKind.CARDIO

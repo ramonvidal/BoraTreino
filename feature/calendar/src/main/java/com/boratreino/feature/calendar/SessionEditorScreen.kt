@@ -2,7 +2,8 @@ package com.boratreino.feature.calendar
 
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.weightLabel
-import com.boratreino.core.ui.draftText
+import com.boratreino.core.ui.amountLabel
+import com.boratreino.core.ui.setLabel
 import com.boratreino.core.ui.showUndo
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
@@ -56,8 +57,11 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.SessionMachine
+import com.boratreino.core.model.SetMeasure
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.model.hasLoad
+import com.boratreino.core.model.measure
 import com.boratreino.core.ui.BoraButton
 import com.boratreino.core.ui.BoraButtonStyle
 import com.boratreino.core.ui.BoraCard
@@ -89,6 +93,8 @@ internal data class SessionEditorActions(
     val onOpenSet: (WorkoutSet) -> Unit = {},
     val onStepEditorWeight: (up: Boolean) -> Unit = {},
     val onStepEditorReps: (up: Boolean) -> Unit = {},
+    val onStepEditorSeconds: (up: Boolean) -> Unit = {},
+    val onStepEditorDistanceM: (up: Boolean) -> Unit = {},
     val onStepEditorMinutes: (up: Boolean) -> Unit = {},
     val onStepEditorCalories: (up: Boolean) -> Unit = {},
     val onStepEditorDistance: (up: Boolean) -> Unit = {},
@@ -144,6 +150,8 @@ internal fun SessionEditorScreen(
             onOpenSet = viewModel::openSet,
             onStepEditorWeight = viewModel::stepEditorWeight,
             onStepEditorReps = viewModel::stepEditorReps,
+            onStepEditorSeconds = viewModel::stepEditorSeconds,
+            onStepEditorDistanceM = viewModel::stepEditorDistanceM,
             onStepEditorMinutes = viewModel::stepEditorMinutes,
             onStepEditorCalories = viewModel::stepEditorCalories,
             onStepEditorDistance = viewModel::stepEditorDistance,
@@ -232,6 +240,7 @@ internal fun SessionEditorContent(
         val title = when (pad.target) {
             PadTarget.EDIT_WEIGHT -> weightLabel(editor.machine)
             PadTarget.EDIT_REPS -> stringResource(R.string.calendar_reps)
+            PadTarget.EDIT_SECONDS, PadTarget.EDIT_DISTANCE_M -> amountLabel(editor.machine)
             PadTarget.EDIT_MINUTES -> stringResource(R.string.calendar_minutes)
             PadTarget.EDIT_DISTANCE_KM -> stringResource(R.string.calendar_distance_km)
             PadTarget.EDIT_INTENSITY -> stringResource(R.string.calendar_intensity)
@@ -338,7 +347,7 @@ private fun MachineCard(entry: SessionMachine, actions: SessionEditorActions) {
                     if (entry.machine.kind == MachineKind.CARDIO) {
                         cardioRowText(CardioRules.toDraft(set))
                     } else {
-                        draftText(entry.machine, set.weightKg ?: 0.0, set.reps ?: 0)
+                        setLabel(entry.machine, set)
                     },
                     style = MaterialTheme.typography.titleMedium,
                 )
@@ -493,22 +502,42 @@ private fun EditSetSheet(editor: SetEdit, actions: SessionEditorActions) {
                     )
                 }
             } else {
-                Stepper(
-                    label = weightLabel(editor.machine),
-                    value = formatKg(editor.weightKg),
-                    onMinus = { actions.onStepEditorWeight(false) },
-                    onPlus = { actions.onStepEditorWeight(true) },
-                    onValueClick = { actions.onOpenPad(PadTarget.EDIT_WEIGHT) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Stepper(
-                    label = stringResource(R.string.calendar_reps),
-                    value = editor.reps.toString(),
-                    onMinus = { actions.onStepEditorReps(false) },
-                    onPlus = { actions.onStepEditorReps(true) },
-                    onValueClick = { actions.onOpenPad(PadTarget.EDIT_REPS) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (editor.machine.kind.hasLoad) {
+                    Stepper(
+                        label = weightLabel(editor.machine),
+                        value = formatKg(editor.weightKg),
+                        onMinus = { actions.onStepEditorWeight(false) },
+                        onPlus = { actions.onStepEditorWeight(true) },
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_WEIGHT) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                when (editor.machine.kind.measure) {
+                    SetMeasure.SECONDS -> Stepper(
+                        label = amountLabel(editor.machine),
+                        value = editor.seconds.toString(),
+                        onMinus = { actions.onStepEditorSeconds(false) },
+                        onPlus = { actions.onStepEditorSeconds(true) },
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_SECONDS) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    SetMeasure.METRES -> Stepper(
+                        label = amountLabel(editor.machine),
+                        value = editor.distanceM.toString(),
+                        onMinus = { actions.onStepEditorDistanceM(false) },
+                        onPlus = { actions.onStepEditorDistanceM(true) },
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_DISTANCE_M) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    SetMeasure.REPS, null -> Stepper(
+                        label = stringResource(R.string.calendar_reps),
+                        value = editor.reps.toString(),
+                        onMinus = { actions.onStepEditorReps(false) },
+                        onPlus = { actions.onStepEditorReps(true) },
+                        onValueClick = { actions.onOpenPad(PadTarget.EDIT_REPS) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 Text(
                     stringResource(CoreUiR.string.set_type_title),
                     style = MaterialTheme.typography.labelLarge,

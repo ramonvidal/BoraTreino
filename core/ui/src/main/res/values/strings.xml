@@ -51,6 +51,25 @@
         <item quantity="one">%d rep</item>
         <item quantity="other">%d reps</item>
     </plurals>
+    <string name="seconds_text">%1$d s</string>
+    <string name="metres_text">%1$d m</string>
+    <string name="set_text_seconds">%1$s kg · %2$d s</string>
+    <string name="set_text_metres">%1$s kg · %2$d m</string>
+    <string name="amount_label_reps">Reps</string>
+    <string name="amount_label_seconds">Time (s)</string>
+    <string name="amount_label_metres">Distance (m)</string>
+    <string name="record_longest_time">New record: %1$d s at %2$s kg</string>
+    <string name="record_longest_time_no_weight">New record: %1$d s</string>
+    <string name="record_longest_distance">New record: %1$d m at %2$s kg</string>
+    <string name="record_longest_distance_no_weight">New record: %1$d m</string>
+    <string name="set_summary_uniform_seconds">%1$d × %2$d s at %3$s kg</string>
+    <string name="set_summary_uniform_seconds_no_weight">%1$d × %2$d s</string>
+    <string name="set_summary_uniform_metres">%1$d × %2$d m at %3$s kg</string>
+    <string name="set_summary_uniform_metres_no_weight">%1$d × %2$d m</string>
+    <plurals name="target_sets_only">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
     <string name="weight_label">Weight (kg)</string>
     <string name="added_weight_label">Added weight (kg)</string>
     <string name="exercise_image_description">Illustration of %1$s</string>

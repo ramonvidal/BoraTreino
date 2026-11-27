@@ -459,6 +459,18 @@ internal fun RecordsCard(report: StatsReport, onOpenMachine: (Long) -> Unit, mod
                 val text = when (val record = event.record) {
                     is Record.HeaviestWeight -> stringResource(R.string.stats_record_heaviest, formatKg(record.weightKg))
                     is Record.MostReps -> stringResource(R.string.stats_record_most_reps, record.reps, formatKg(record.weightKg))
+                    is Record.LongestTime ->
+                        if (record.weightKg > 0.0) {
+                            stringResource(R.string.stats_record_longest_time, record.seconds, formatKg(record.weightKg))
+                        } else {
+                            stringResource(R.string.stats_record_longest_time_no_load, record.seconds)
+                        }
+                    is Record.LongestDistance ->
+                        if (record.weightKg > 0.0) {
+                            stringResource(R.string.stats_record_longest_distance, record.distanceM, formatKg(record.weightKg))
+                        } else {
+                            stringResource(R.string.stats_record_longest_distance_no_load, record.distanceM)
+                        }
                 }
                 Row(
                     Modifier
