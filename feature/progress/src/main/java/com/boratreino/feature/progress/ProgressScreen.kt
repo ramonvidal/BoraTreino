@@ -1,5 +1,6 @@
 package com.boratreino.feature.progress
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -23,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,13 +42,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.boratreino.core.model.CardioWeek
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.ProgressMetric
-import com.boratreino.core.model.StatsPage
 import com.boratreino.core.ui.BoraCard
 import com.boratreino.core.ui.EmptyState
 import com.boratreino.core.ui.MachineThumb
 import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.R as CoreUiR
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /** What the Progress front page can ask for. */
@@ -53,59 +56,82 @@ internal data class ProgressActions(
     val onOpenMachine: (machineId: Long) -> Unit = {},
 )
 
-/** The pages of the Progress tab. The saved choice is the enum name; an unknown or old name falls back to [EXERCISES]. */
-internal enum class ProgressPage { EXERCISES, BODY, STRENGTH, HABIT }
+/** The pages of the Progress tab. The saved choice is the enum name; an unknown or old name falls back to [OVERVIEW]. */
+internal enum class ProgressPage { OVERVIEW, EXERCISES }
 
-private fun StatsPage.toProgressPage(): ProgressPage = when (this) {
-    StatsPage.BODY -> ProgressPage.BODY
-    StatsPage.STRENGTH -> ProgressPage.STRENGTH
-    StatsPage.HABIT -> ProgressPage.HABIT
-}
-
-private fun ProgressPage.toStatsPage(): StatsPage? = when (this) {
-    ProgressPage.EXERCISES -> null
-    ProgressPage.BODY -> StatsPage.BODY
-    ProgressPage.STRENGTH -> StatsPage.STRENGTH
-    ProgressPage.HABIT -> StatsPage.HABIT
-}
+/** The saved page name to a page; an unknown or old name ("BODY", "STRENGTH", "HABIT") is [ProgressPage.OVERVIEW]. */
+internal fun progressPageOf(name: String?): ProgressPage =
+    ProgressPage.entries.firstOrNull { it.name == name } ?: ProgressPage.OVERVIEW
 
 /**
- * The Progress tab: one fixed header (title, period pill, page chips) above the chosen page.
- * The page choice survives rotation; the period pill is hidden on Exercises.
+ * The Progress tab: one fixed header (title, period pill, page tabs) above the chosen page, or, when
+ * Analysis is open, the Analysis header above the detail cards. Analysis is a level inside this tab, not a
+ * route, so the bottom bar stays and system back returns to Overview. The period pill is hidden on Exercises.
  */
 @Composable
 internal fun ProgressShell(
     onOpenMachine: (machineId: Long) -> Unit,
+    onOpenCalendar: () -> Unit,
     modifier: Modifier = Modifier,
     statsViewModel: StatsViewModel = hiltViewModel(),
 ) {
-    var chosen by rememberSaveable { mutableStateOf(ProgressPage.EXERCISES.name) }
-    val page = ProgressPage.entries.firstOrNull { it.name == chosen } ?: ProgressPage.EXERCISES
+    var chosen by rememberSaveable { mutableStateOf(ProgressPage.OVERVIEW.name) }
+    var analysisOpen by rememberSaveable { mutableStateOf(false) }
+    var anchor by rememberSaveable { mutableStateOf<String?>(null) }
+    val page = progressPageOf(chosen)
     val stats by statsViewModel.state.collectAsStateWithLifecycle()
-    val actions = remember(statsViewModel, onOpenMachine) {
+    val overviewListState = rememberLazyListState()
+    val analysisListState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val actions = remember(statsViewModel, onOpenMachine, onOpenCalendar, scope, analysisListState) {
         StatsActions(
             onPeriod = statsViewModel::setPeriod,
             onOpenMachine = onOpenMachine,
             onAddMeasurement = statsViewModel::addMeasurement,
             onDeleteMeasurement = statsViewModel::deleteMeasurement,
             onUndoDeleteMeasurement = statsViewModel::undoDeleteMeasurement,
-            onOpenPage = { chosen = it.toProgressPage().name },
+            onOpenAnalysis = { card ->
+                anchor = card?.name
+                if (card == null) scope.launch { analysisListState.scrollToItem(0) }
+                analysisOpen = true
+            },
+            onOpenCalendar = onOpenCalendar,
         )
     }
+    BackHandler(enabled = analysisOpen) { analysisOpen = false }
     // statusBarsPadding keeps the header clear of the status bar and consumes that inset, so the pages' own Scaffolds do not add it again below it.
     Column(modifier.fillMaxSize().statusBarsPadding()) {
-        ProgressHeader(
-            page = page,
-            onPage = { chosen = it.name },
-            period = stats.period,
-            onPeriod = actions.onPeriod,
-            showPeriod = page != ProgressPage.EXERCISES,
-        )
-        val statsPage = page.toStatsPage()
-        if (statsPage == null) {
-            ProgressScreen(onOpenMachine = onOpenMachine, modifier = Modifier.weight(1f))
+        if (analysisOpen) {
+            AnalysisHeader(
+                period = stats.period,
+                onPeriod = actions.onPeriod,
+                onBack = { analysisOpen = false },
+            )
+            AnalysisContent(
+                state = stats,
+                actions = actions,
+                listState = analysisListState,
+                anchor = AnalysisCard.entries.firstOrNull { it.name == anchor },
+                onAnchorShown = { anchor = null },
+                modifier = Modifier.weight(1f),
+            )
         } else {
-            StatsContent(state = stats, actions = actions, modifier = Modifier.weight(1f), page = statsPage)
+            ProgressHeader(
+                page = page,
+                onPage = { chosen = it.name },
+                period = stats.period,
+                onPeriod = actions.onPeriod,
+                showPeriod = page == ProgressPage.OVERVIEW,
+            )
+            when (page) {
+                ProgressPage.OVERVIEW -> OverviewContent(
+                    state = stats,
+                    actions = actions,
+                    listState = overviewListState,
+                    modifier = Modifier.weight(1f),
+                )
+                ProgressPage.EXERCISES -> ProgressScreen(onOpenMachine = onOpenMachine, modifier = Modifier.weight(1f))
+            }
         }
     }
 }

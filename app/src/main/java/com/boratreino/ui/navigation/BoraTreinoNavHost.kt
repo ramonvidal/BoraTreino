@@ -150,7 +150,7 @@ fun BoraTreinoNavHost() {
                 onStartSetup = { navController.navigate(SETUP_ROUTE) },
             )
             calendarGraph(navController)
-            progressGraph(navController)
+            progressGraph(navController, onOpenCalendar = { navController.navigateToTab(CALENDAR_ROUTE) })
             routinesScreen(
                 onOpenEditor = { machineId -> navController.navigate(machineEditorRoute(machineId)) },
                 onOpenRoutine = { routineId -> navController.navigate(routineEditorRoute(routineId)) },

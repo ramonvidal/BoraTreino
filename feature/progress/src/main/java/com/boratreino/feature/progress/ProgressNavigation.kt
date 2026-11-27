@@ -14,10 +14,16 @@ internal const val MACHINE_PROGRESS_ROUTE = "progress/machine/{$MACHINE_ID_ARG}"
 
 internal fun machineProgressRoute(machineId: Long): String = "progress/machine/$machineId"
 
-/** The Progress tab and the machine detail it opens. [navController] is only used for this feature's own screens. */
-fun NavGraphBuilder.progressGraph(navController: NavController) {
+/**
+ * The Progress tab and the machine detail it opens. [navController] is only used for this feature's own screens;
+ * [onOpenCalendar] lets :app switch to the Calendar tab, since features never depend on each other.
+ */
+fun NavGraphBuilder.progressGraph(navController: NavController, onOpenCalendar: () -> Unit) {
     composable(PROGRESS_ROUTE) {
-        ProgressShell(onOpenMachine = { navController.navigate(machineProgressRoute(it)) })
+        ProgressShell(
+            onOpenMachine = { navController.navigate(machineProgressRoute(it)) },
+            onOpenCalendar = onOpenCalendar,
+        )
     }
     composable(
         route = MACHINE_PROGRESS_ROUTE,

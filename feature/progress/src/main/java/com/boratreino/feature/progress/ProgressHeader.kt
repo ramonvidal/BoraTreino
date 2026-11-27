@@ -15,6 +15,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -48,7 +49,7 @@ private const val TAB_WEIGHT_PADDING = 2
 
 /**
  * One tab of the page row: the BoraChip look (yellow when selected, sand otherwise, pill) with a small side padding
- * and a single line, so four labels fit at 360 dp in English and Portuguese ("Exercícios", "Hábito").
+ * and a single line, so the labels fit at 360 dp in English and Portuguese ("Exercícios", "Hábito").
  */
 @Composable
 private fun PageTab(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -83,7 +84,6 @@ internal fun ProgressHeader(
     showPeriod: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    var sheetOpen by rememberSaveable { mutableStateOf(false) }
     Column(modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -91,7 +91,7 @@ internal fun ProgressHeader(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.weight(1f),
             )
-            if (showPeriod) PeriodPill(period, onClick = { sheetOpen = true })
+            if (showPeriod) PeriodSelector(period, onPeriod)
         }
         Row(
             Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -110,7 +110,41 @@ internal fun ProgressHeader(
             }
         }
     }
-    if (sheetOpen && showPeriod) {
+}
+
+/** The header of the Analysis level: back arrow, "Detailed analysis" and the period pill. */
+@Composable
+internal fun AnalysisHeader(
+    period: StatsPeriod,
+    onPeriod: (StatsPeriod) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier.fillMaxWidth().padding(start = 4.dp, top = 12.dp, end = 16.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+            Icon(painterResource(CoreUiR.drawable.ic_back), contentDescription = stringResource(CoreUiR.string.back))
+        }
+        Text(
+            stringResource(R.string.analysis_title),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+        )
+        PeriodSelector(period, onPeriod)
+    }
+}
+
+/** The period pill and the sheet it opens, shared by both headers. */
+@Composable
+private fun PeriodSelector(period: StatsPeriod, onPeriod: (StatsPeriod) -> Unit, modifier: Modifier = Modifier) {
+    var sheetOpen by rememberSaveable { mutableStateOf(false) }
+    PeriodPill(period, onClick = { sheetOpen = true }, modifier = modifier)
+    if (sheetOpen) {
         PeriodSheet(
             selected = period,
             onSelect = {
@@ -123,10 +157,8 @@ internal fun ProgressHeader(
 }
 
 private fun pageLabel(page: ProgressPage): Int = when (page) {
+    ProgressPage.OVERVIEW -> R.string.progress_page_overview
     ProgressPage.EXERCISES -> R.string.progress_page_machines
-    ProgressPage.BODY -> R.string.stats_page_body
-    ProgressPage.STRENGTH -> R.string.stats_page_strength
-    ProgressPage.HABIT -> R.string.stats_page_habit
 }
 
 @Composable

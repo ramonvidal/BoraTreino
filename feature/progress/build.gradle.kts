@@ -10,4 +10,6 @@ android {
 dependencies {
     implementation(projects.core.settings)
     implementation(libs.kotlinx.coroutines.android)
+    // BackHandler for the Analysis level.
+    implementation(libs.androidx.activity.compose)
 }
