@@ -287,6 +287,51 @@
     <string name="stats_record_longest_time_no_load">Maior tempo: %1$d s</string>
     <string name="stats_record_longest_distance">Maior distância: %1$d m com %2$s kg</string>
     <string name="stats_record_longest_distance_no_load">Maior distância: %1$d m</string>
+    <string name="progress_page_overview">Resumo</string>
+    <string name="overview_now_title">O que importa agora</string>
+    <string name="overview_now_none">Nada precisa da sua atenção agora.</string>
+    <string name="finding_frequency_title">Treino caiu para %1$s dias por semana</string>
+    <string name="finding_frequency_hint">Nas 4 semanas antes foi %1$s. Meta: %2$d.</string>
+    <string name="finding_low_volume_title">%1$s: só %2$s séries por semana</string>
+    <string name="finding_low_volume_hint">O comum é 10 ou mais.</string>
+    <string name="finding_low_volume_hint_routine">O comum é 10 ou mais. Adicione um exercício de %1$s no treino %2$s.</string>
+    <string name="finding_falling_hint">1RM estimado %1$s → %2$s kg.</string>
+    <string name="finding_hint_more_reps">Tente %1$d repetições antes de subir o peso.</string>
+    <string name="finding_hint_more_weight">Tente %1$s kg na próxima vez.</string>
+    <string name="finding_record_title">Recorde: %1$s %2$s kg</string>
+    <string name="finding_record_title_other">Recorde: %1$s</string>
+    <string name="finding_record_date">%1$s.</string>
+    <string name="frequency_title">Frequência</string>
+    <string name="frequency_calendar_link">Agenda</string>
+    <string name="frequency_this_week">de %1$d treinos</string>
+    <string name="frequency_this_week_label">esta semana</string>
+    <string name="frequency_next">próximo: %1$s, %2$s</string>
+    <string name="frequency_next_today">próximo: %1$s, hoje</string>
+    <string name="frequency_goal">meta: %1$d por semana</string>
+    <string name="frequency_bars_description">Dias de treino nas últimas 4 semanas: %1$s</string>
+    <string name="strength_section_title">Força</string>
+    <string name="strength_section_subtitle">1RM estimado, %1$s</string>
+    <string name="strength_rising">Subindo</string>
+    <string name="strength_flat">Parados ou caindo</string>
+    <string name="strength_check">Confira este valor</string>
+    <string name="strength_from_to">%1$s → %2$s kg</string>
+    <string name="strength_check_marker">Confira este valor</string>
+    <string name="strength_section_empty">Treine um exercício em duas semanas diferentes do período para comparar.</string>
+    <string name="body_section_title">Corpo</string>
+    <string name="body_log_link">Registrar</string>
+    <string name="body_note_trend">Em cm, última medição em %1$s.</string>
+    <string name="body_note_once">Em cm, medido em %1$s. Meça de novo para ver a tendência.</string>
+    <string name="body_empty">Registre cintura, quadril e mais para acompanhar o corpo.</string>
+    <string name="habit_section_title">Hábito</string>
+    <string name="habit_since">desde %1$s</string>
+    <string name="habit_session_length">%1$d min por treino</string>
+    <string name="habit_between_sets">%1$s min entre séries</string>
+    <string name="analysis_row_title">Ver análise detalhada</string>
+    <string name="analysis_row_subtitle">Tendência, carga recente, padrões, séries por músculo, proporções</string>
+    <string name="analysis_title">Análise detalhada</string>
+    <string name="analysis_more">Mais estatísticas</string>
+    <string name="analysis_group_muscles">Músculos</string>
+    <string name="action_back">Voltar</string>
     <plurals name="progress_trainings">
         <item quantity="one">%d treino</item>
         <item quantity="other">%d treinos</item>
@@ -350,5 +395,41 @@
     <plurals name="trend_fit">
         <item quantity="one">R² %1$s · %2$d treino</item>
         <item quantity="other">R² %1$s · %2$d treinos</item>
+    </plurals>
+    <plurals name="finding_flat_title">
+        <item quantity="one">%1$s parado em %2$s kg há %3$d treino</item>
+        <item quantity="other">%1$s parado em %2$s kg há %3$d treinos</item>
+    </plurals>
+    <plurals name="finding_falling_title">
+        <item quantity="one">%1$s em queda há %2$d treino</item>
+        <item quantity="other">%1$s em queda há %2$d treinos</item>
+    </plurals>
+    <plurals name="finding_records_title">
+        <item quantity="one">%1$d novo recorde esta semana</item>
+        <item quantity="other">%1$d novos recordes esta semana</item>
+    </plurals>
+    <plurals name="finding_record_more">
+        <item quantity="one">%1$s. Mais %2$d recorde nos últimos 7 dias.</item>
+        <item quantity="other">%1$s. Mais %2$d recordes nos últimos 7 dias.</item>
+    </plurals>
+    <plurals name="frequency_streak">
+        <item quantity="one">%1$d semana seguida na meta</item>
+        <item quantity="other">%1$d semanas seguidas na meta</item>
+    </plurals>
+    <plurals name="strength_from_to_sessions">
+        <item quantity="one">%1$s → %2$s kg · %3$d treino</item>
+        <item quantity="other">%1$s → %2$s kg · %3$d treinos</item>
+    </plurals>
+    <plurals name="strength_top_sessions">
+        <item quantity="one">%1$s kg × %2$d · %3$d treino</item>
+        <item quantity="other">%1$s kg × %2$d · %3$d treinos</item>
+    </plurals>
+    <plurals name="strength_jump">
+        <item quantity="one">%1$s → %2$s kg em %3$d dia</item>
+        <item quantity="other">%1$s → %2$s kg em %3$d dias</item>
+    </plurals>
+    <plurals name="habit_cardio">
+        <item quantity="one">%1$d × cardio</item>
+        <item quantity="other">%1$d × cardio</item>
     </plurals>
 </resources>

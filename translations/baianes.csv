@@ -502,69 +502,69 @@ feature/progress,stats_record_longest_time,,Longest time: %1$d s at %2$s kg,Maio
 feature/progress,stats_record_longest_time_no_load,,Longest time: %1$d s,Maior tempo: %1$d s
 feature/progress,stats_record_longest_distance,,Longest distance: %1$d m at %2$s kg,Maior distância: %1$d m com %2$s kg
 feature/progress,stats_record_longest_distance_no_load,,Longest distance: %1$d m,Maior distância: %1$d m
-feature/progress,progress_page_overview,,Overview,
-feature/progress,overview_now_title,,What matters now,
-feature/progress,overview_now_none,,Nothing needs your attention right now.,
-feature/progress,finding_frequency_title,,Training fell to %1$s days a week,
-feature/progress,finding_frequency_hint,,It was %1$s in the 4 weeks before. Goal: %2$d.,
-feature/progress,finding_low_volume_title,,%1$s: only %2$s sets a week,
-feature/progress,finding_low_volume_hint,,The usual is 10 or more.,
-feature/progress,finding_low_volume_hint_routine,,The usual is 10 or more. Add a %1$s exercise to %2$s.,
-feature/progress,finding_flat_title,one,%1$s stuck at %2$s kg for %3$d training,
-feature/progress,finding_flat_title,other,%1$s stuck at %2$s kg for %3$d trainings,
-feature/progress,finding_falling_title,one,%1$s down for %2$d training,
-feature/progress,finding_falling_title,other,%1$s down for %2$d trainings,
-feature/progress,finding_falling_hint,,Estimated 1RM %1$s → %2$s kg.,
-feature/progress,finding_hint_more_reps,,Try %1$d reps before going up in weight.,
-feature/progress,finding_hint_more_weight,,Try %1$s kg next time.,
-feature/progress,finding_record_title,,Record: %1$s %2$s kg,
-feature/progress,finding_record_title_other,,Record: %1$s,
-feature/progress,finding_records_title,one,%1$d new record this week,
-feature/progress,finding_records_title,other,%1$d new records this week,
-feature/progress,finding_record_more,one,%1$s. %2$d more record in the last 7 days.,
-feature/progress,finding_record_more,other,%1$s. %2$d more records in the last 7 days.,
-feature/progress,finding_record_date,,%1$s.,
-feature/progress,frequency_title,,Frequency,
-feature/progress,frequency_calendar_link,,Calendar,
-feature/progress,frequency_this_week,,of %1$d trainings,
-feature/progress,frequency_this_week_label,,this week,
-feature/progress,frequency_next,,"next: %1$s, %2$s",
-feature/progress,frequency_next_today,,"next: %1$s, today",
-feature/progress,frequency_streak,one,%1$d week in a row on goal,
-feature/progress,frequency_streak,other,%1$d weeks in a row on goal,
-feature/progress,frequency_goal,,goal: %1$d a week,
-feature/progress,frequency_bars_description,,Training days in the last 4 weeks: %1$s,
-feature/progress,strength_section_title,,Strength,
-feature/progress,strength_section_subtitle,,"Estimated 1RM, %1$s",
-feature/progress,strength_rising,,Going up,
-feature/progress,strength_flat,,Flat or going down,
-feature/progress,strength_check,,Check this value,
-feature/progress,strength_from_to,,%1$s → %2$s kg,
-feature/progress,strength_from_to_sessions,one,%1$s → %2$s kg · %3$d training,
-feature/progress,strength_from_to_sessions,other,%1$s → %2$s kg · %3$d trainings,
-feature/progress,strength_top_sessions,one,%1$s kg × %2$d · %3$d training,
-feature/progress,strength_top_sessions,other,%1$s kg × %2$d · %3$d trainings,
-feature/progress,strength_jump,one,%1$s → %2$s kg in %3$d day,
-feature/progress,strength_jump,other,%1$s → %2$s kg in %3$d days,
-feature/progress,strength_check_marker,,Check this value,
-feature/progress,strength_section_empty,,Train an exercise in two different weeks of the period to compare.,
-feature/progress,body_section_title,,Body,
-feature/progress,body_log_link,,Log,
-feature/progress,body_note_trend,,"In cm, latest on %1$s.",
-feature/progress,body_note_once,,"In cm, measured on %1$s. Measure again to see the trend.",
-feature/progress,body_empty,,"Log your waist, hips and more to follow your body.",
-feature/progress,habit_section_title,,Habit,
-feature/progress,habit_since,,since %1$s,
-feature/progress,habit_cardio,one,%1$d × cardio,
-feature/progress,habit_cardio,other,%1$d × cardio,
-feature/progress,habit_session_length,,%1$d min a training,
-feature/progress,habit_between_sets,,%1$s min between sets,
-feature/progress,analysis_row_title,,Detailed analysis,
-feature/progress,analysis_row_subtitle,,"Trend, recent load, patterns, sets per muscle, proportions",
-feature/progress,analysis_title,,Detailed analysis,
-feature/progress,analysis_more,,More statistics,
-feature/progress,analysis_group_muscles,,Muscles,
-feature/progress,action_back,,Back,
+feature/progress,progress_page_overview,,Overview,Resumo
+feature/progress,overview_now_title,,What matters now,O que importa agora
+feature/progress,overview_now_none,,Nothing needs your attention right now.,Nada precisa da sua atenção agora.
+feature/progress,finding_frequency_title,,Training fell to %1$s days a week,Treino caiu para %1$s dias por semana
+feature/progress,finding_frequency_hint,,It was %1$s in the 4 weeks before. Goal: %2$d.,Nas 4 semanas antes foi %1$s. Meta: %2$d.
+feature/progress,finding_low_volume_title,,%1$s: only %2$s sets a week,%1$s: só %2$s séries por semana
+feature/progress,finding_low_volume_hint,,The usual is 10 or more.,O comum é 10 ou mais.
+feature/progress,finding_low_volume_hint_routine,,The usual is 10 or more. Add a %1$s exercise to %2$s.,O comum é 10 ou mais. Adicione um exercício de %1$s no treino %2$s.
+feature/progress,finding_flat_title,one,%1$s stuck at %2$s kg for %3$d training,%1$s parado em %2$s kg há %3$d treino
+feature/progress,finding_flat_title,other,%1$s stuck at %2$s kg for %3$d trainings,%1$s parado em %2$s kg há %3$d treinos
+feature/progress,finding_falling_title,one,%1$s down for %2$d training,%1$s em queda há %2$d treino
+feature/progress,finding_falling_title,other,%1$s down for %2$d trainings,%1$s em queda há %2$d treinos
+feature/progress,finding_falling_hint,,Estimated 1RM %1$s → %2$s kg.,1RM estimado %1$s → %2$s kg.
+feature/progress,finding_hint_more_reps,,Try %1$d reps before going up in weight.,Tente %1$d repetições antes de subir o peso.
+feature/progress,finding_hint_more_weight,,Try %1$s kg next time.,Tente %1$s kg na próxima vez.
+feature/progress,finding_record_title,,Record: %1$s %2$s kg,Recorde: %1$s %2$s kg
+feature/progress,finding_record_title_other,,Record: %1$s,Recorde: %1$s
+feature/progress,finding_records_title,one,%1$d new record this week,%1$d novo recorde esta semana
+feature/progress,finding_records_title,other,%1$d new records this week,%1$d novos recordes esta semana
+feature/progress,finding_record_more,one,%1$s. %2$d more record in the last 7 days.,%1$s. Mais %2$d recorde nos últimos 7 dias.
+feature/progress,finding_record_more,other,%1$s. %2$d more records in the last 7 days.,%1$s. Mais %2$d recordes nos últimos 7 dias.
+feature/progress,finding_record_date,,%1$s.,%1$s.
+feature/progress,frequency_title,,Frequency,Frequência
+feature/progress,frequency_calendar_link,,Calendar,Agenda
+feature/progress,frequency_this_week,,of %1$d trainings,de %1$d treinos
+feature/progress,frequency_this_week_label,,this week,esta semana
+feature/progress,frequency_next,,"next: %1$s, %2$s","próximo: %1$s, %2$s"
+feature/progress,frequency_next_today,,"next: %1$s, today","próximo: %1$s, hoje"
+feature/progress,frequency_streak,one,%1$d week in a row on goal,%1$d semana seguida na meta
+feature/progress,frequency_streak,other,%1$d weeks in a row on goal,%1$d semanas seguidas na meta
+feature/progress,frequency_goal,,goal: %1$d a week,meta: %1$d por semana
+feature/progress,frequency_bars_description,,Training days in the last 4 weeks: %1$s,Dias de treino nas últimas 4 semanas: %1$s
+feature/progress,strength_section_title,,Strength,Força
+feature/progress,strength_section_subtitle,,"Estimated 1RM, %1$s","1RM estimado, %1$s"
+feature/progress,strength_rising,,Going up,Subindo
+feature/progress,strength_flat,,Flat or going down,Parados ou caindo
+feature/progress,strength_check,,Check this value,Confira este valor
+feature/progress,strength_from_to,,%1$s → %2$s kg,%1$s → %2$s kg
+feature/progress,strength_from_to_sessions,one,%1$s → %2$s kg · %3$d training,%1$s → %2$s kg · %3$d treino
+feature/progress,strength_from_to_sessions,other,%1$s → %2$s kg · %3$d trainings,%1$s → %2$s kg · %3$d treinos
+feature/progress,strength_top_sessions,one,%1$s kg × %2$d · %3$d training,%1$s kg × %2$d · %3$d treino
+feature/progress,strength_top_sessions,other,%1$s kg × %2$d · %3$d trainings,%1$s kg × %2$d · %3$d treinos
+feature/progress,strength_jump,one,%1$s → %2$s kg in %3$d day,%1$s → %2$s kg em %3$d dia
+feature/progress,strength_jump,other,%1$s → %2$s kg in %3$d days,%1$s → %2$s kg em %3$d dias
+feature/progress,strength_check_marker,,Check this value,Confira este valor
+feature/progress,strength_section_empty,,Train an exercise in two different weeks of the period to compare.,Treine um exercício em duas semanas diferentes do período para comparar.
+feature/progress,body_section_title,,Body,Corpo
+feature/progress,body_log_link,,Log,Registrar
+feature/progress,body_note_trend,,"In cm, latest on %1$s.","Em cm, última medição em %1$s."
+feature/progress,body_note_once,,"In cm, measured on %1$s. Measure again to see the trend.","Em cm, medido em %1$s. Meça de novo para ver a tendência."
+feature/progress,body_empty,,"Log your waist, hips and more to follow your body.","Registre cintura, quadril e mais para acompanhar o corpo."
+feature/progress,habit_section_title,,Habit,Hábito
+feature/progress,habit_since,,since %1$s,desde %1$s
+feature/progress,habit_cardio,one,%1$d × cardio,%1$d × cardio
+feature/progress,habit_cardio,other,%1$d × cardio,%1$d × cardio
+feature/progress,habit_session_length,,%1$d min a training,%1$d min por treino
+feature/progress,habit_between_sets,,%1$s min between sets,%1$s min entre séries
+feature/progress,analysis_row_title,,Detailed analysis,Ver análise detalhada
+feature/progress,analysis_row_subtitle,,"Trend, recent load, patterns, sets per muscle, proportions","Tendência, carga recente, padrões, séries por músculo, proporções"
+feature/progress,analysis_title,,Detailed analysis,Análise detalhada
+feature/progress,analysis_more,,More statistics,Mais estatísticas
+feature/progress,analysis_group_muscles,,Muscles,Músculos
+feature/progress,action_back,,Back,Voltar
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha
