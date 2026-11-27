@@ -6,10 +6,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.model.ChartRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.ProgressMetric
+import com.boratreino.core.model.ProgressRules
 import com.boratreino.core.model.SessionPoint
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.theme.BoraTreinoTheme
@@ -59,6 +61,8 @@ class CardioExercisesScreenshotTest {
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/progress-cardio-exercises.png")
     }
 
+    private val points = listOf(point(22.0, 2L), point(24.5, 1L))
+
     @Test
     fun `cardio detail with the measure chips`() {
         compose.setContent {
@@ -71,7 +75,12 @@ class CardioExercisesScreenshotTest {
                             name = bike.name,
                             metric = ProgressMetric.SPEED,
                             today = today,
-                            points = listOf(point(22.0, 2L), point(24.5, 1L)),
+                            points = points,
+                            best = ProgressRules.best(points),
+                            change = ProgressRules.change(points),
+                            scale = ChartRules.niceScale(points.minOf { it.value }, points.maxOf { it.value }),
+                            axisStart = today.minusMonths(3),
+                            axisEnd = today,
                             cardioMetrics = listOf(ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE, ProgressMetric.MINUTES),
                         ),
                         modifier = Modifier.fillMaxSize(),

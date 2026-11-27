@@ -305,7 +305,7 @@
     <string name="stats_exploratory_tag">Exploratory</string>
     <string name="stats_workload_title">Recent vs usual load</string>
     <string name="stats_workload_hint">Exploratory: compares your last 7 days with your average week over 28 days. A rough guide, not a rule.</string>
-    <string name="stats_workload_note">Working sets on strength machines; warm-ups do not count.</string>
+    <string name="stats_workload_note">Working sets on strength exercises; warm-ups do not count.</string>
     <string name="stats_workload_acute">Last 7 days</string>
     <string name="stats_workload_chronic">Weekly average over 28 days</string>
     <string name="stats_workload_ratio">Load ratio</string>

@@ -438,7 +438,7 @@ feature/progress,stats_cardio_efficiency_note,,Efficiency is your speed divided 
 feature/progress,stats_exploratory_tag,,Exploratory,Exploratório
 feature/progress,stats_workload_title,,Recent vs usual load,Carga recente vs. habitual
 feature/progress,stats_workload_hint,,"Exploratory: compares your last 7 days with your average week over 28 days. A rough guide, not a rule.","Exploratório: compara seus últimos 7 dias com a sua semana média dos últimos 28 dias. Um guia aproximado, não uma regra."
-feature/progress,stats_workload_note,,Working sets on strength machines; warm-ups do not count.,Séries de trabalho em exercícios de força; aquecimento não conta.
+feature/progress,stats_workload_note,,Working sets on strength exercises; warm-ups do not count.,Séries de trabalho em exercícios de força; aquecimento não conta.
 feature/progress,stats_workload_acute,,Last 7 days,Últimos 7 dias
 feature/progress,stats_workload_chronic,,Weekly average over 28 days,Média semanal nos últimos 28 dias
 feature/progress,stats_workload_ratio,,Load ratio,Razão de carga
