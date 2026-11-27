@@ -190,7 +190,7 @@ class WarmupLogTest {
         // A session only exists with sets: give the stale one a set, logged when it started.
         store.insertSet(
             WorkoutSet(
-                id = 0, sessionId = stale, machineId = press.id, position = 0, weightKg = 100.0, reps = 10,
+                id = 0, sessionId = stale, machineId = press, position = 0, weightKg = 100.0, reps = 10,
                 seconds = null, calories = null, distanceM = null, loggedAt = now.minus(Duration.ofHours(5)),
             ),
         )
