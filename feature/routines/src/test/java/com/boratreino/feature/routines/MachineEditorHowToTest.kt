@@ -68,7 +68,7 @@ class MachineEditorHowToTest {
         override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(emptyList())
         override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = flowOf(emptyList())
         override suspend fun save(machine: Machine): Long = machine.id
-        override suspend fun usage(machineId: Long): MachineUsage = error("not used by this test")
+        override suspend fun usage(machineId: Long): MachineUsage = MachineUsage(setCount = 0, routineNames = emptyList())
         override suspend fun delete(machineId: Long): Boolean = false
         override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long = 0L
         override suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean): List<Long> = emptyList()
