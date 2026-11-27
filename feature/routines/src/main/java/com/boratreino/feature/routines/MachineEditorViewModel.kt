@@ -5,8 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.boratreino.core.data.ExerciseLibraryRepository
 import com.boratreino.core.data.MachineRepository
+import com.boratreino.core.model.ConversionFactor
+import com.boratreino.core.model.KindConversion
+import com.boratreino.core.model.KindConversionRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
+import com.boratreino.core.model.SetMeasure
+import com.boratreino.core.model.measure
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.settings.AppLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,12 +46,73 @@ internal data class MachineEditorUiState(
     val nameTouched: Boolean = false,
     val done: Boolean = false,
     val deleteDialog: DeleteDialog? = null,
+    /** What changing the stored kind means for the logged sets, per kind; empty for a new machine. */
+    val conversions: Map<MachineKind, KindConversion> = emptyMap(),
+    /** The kind-change confirmation, open when Save needs to convert logged sets. */
+    val convertDialog: ConvertDialog? = null,
+    /** True when saving the conversion was refused; the screen shows a snackbar and clears it. */
+    val saveFailed: Boolean = false,
+    /** Logged sets on the stored machine (0 for a new one). */
+    val setCount: Int = 0,
 ) {
     val isNew: Boolean get() = machineId == 0L
     val nameBlank: Boolean get() = name.isBlank()
     val nameError: Boolean get() = nameTouched && nameBlank
     val canSave: Boolean get() = !loading && !nameBlank
+
+    /** What picking [kind] would do to the logged sets; [KindConversion.Free] when nothing is stored for it. */
+    fun conversionFor(kind: MachineKind): KindConversion = conversions[kind] ?: KindConversion.Free
+    fun kindEnabled(kind: MachineKind): Boolean = conversionFor(kind) !is KindConversion.NotOffered
+
+    /** Group and kind are tied: Cardio is the group of the Cardio kind only. */
+    fun groupEnabled(group: MuscleGroup): Boolean = when {
+        group == MuscleGroup.CARDIO -> kindEnabled(MachineKind.CARDIO)
+        kind == MachineKind.CARDIO -> kindEnabled(MachineKind.WEIGHT_REPS)
+        else -> true
+    }
+
+    /** The logged sets that block some kinds, for the caption; 0 when every kind is offered. */
+    val lockedSetCount: Int
+        get() = if (conversions.values.any { it is KindConversion.NotOffered }) setCount else 0
 }
+
+/**
+ * The confirmation before logged sets are converted. [before] and [after] are the machine with the
+ * stored and the new kind, for the preview. [factor] is null until the user sets it (metres per rep);
+ * [conversion] is [KindConversion.Unchanged] or [KindConversion.NeedsFactor].
+ */
+internal data class ConvertDialog(
+    val before: Machine,
+    val after: Machine,
+    val conversion: KindConversion,
+    val factor: Int? = null,
+) {
+    val setCount: Int
+        get() = when (conversion) {
+            is KindConversion.Unchanged -> conversion.setCount
+            is KindConversion.NeedsFactor -> conversion.setCount
+            else -> 0
+        }
+    val needsFactor: Boolean get() = conversion is KindConversion.NeedsFactor
+    val canConfirm: Boolean get() = !needsFactor || factor != null
+    val maxFactor: Int
+        get() = when ((conversion as? KindConversion.NeedsFactor)?.factor) {
+            ConversionFactor.SECONDS_PER_REP -> KindConversionRules.MAX_SECONDS_PER_REP
+            else -> KindConversionRules.MAX_METRES_PER_REP
+        }
+    /** True when the reps side is the old kind (reps become seconds / metres). */
+    val fromReps: Boolean get() = before.kind.measure == SetMeasure.REPS
+}
+
+/** The +/-5 grid of the factor stepper; off-grid values snap in the step's direction, clamped 1..[max]. */
+internal fun stepConversionFactor(current: Int?, up: Boolean, max: Int): Int? = when {
+    current == null -> if (up) FACTOR_STEP else null
+    up -> (((current / FACTOR_STEP) + 1) * FACTOR_STEP).coerceAtMost(max)
+    current % FACTOR_STEP == 0 -> (current - FACTOR_STEP).coerceAtLeast(1)
+    else -> ((current / FACTOR_STEP) * FACTOR_STEP).coerceAtLeast(1)
+}
+
+internal const val FACTOR_STEP = 5
 
 internal data class MachineEditorCallbacks(
     val onBack: () -> Unit = {},
@@ -57,6 +123,11 @@ internal data class MachineEditorCallbacks(
     val onSetupNoteChange: (String) -> Unit = {},
     val onRestChange: (Int?) -> Unit = {},
     val onSave: () -> Unit = {},
+    val onFactorStep: (Boolean) -> Unit = {},
+    val onFactorSet: (Int) -> Unit = {},
+    val onConfirmConvert: () -> Unit = {},
+    val onDismissConvert: () -> Unit = {},
+    val onSaveFailedShown: () -> Unit = {},
     val onToggleArchived: () -> Unit = {},
     val onDelete: () -> Unit = {},
     val onConfirmDelete: () -> Unit = {},
@@ -88,6 +159,8 @@ class MachineEditorViewModel @Inject constructor(
                     _uiState.update { it.copy(loading = false, done = true) }
                 } else {
                     original = machine
+                    val conversions = machines.kindConversions(machine.id)
+                    val setCount = machines.usage(machine.id).setCount
                     _uiState.update {
                         it.copy(
                             loading = false,
@@ -100,6 +173,8 @@ class MachineEditorViewModel @Inject constructor(
                             restSeconds = machine.restSeconds,
                             archived = machine.archived,
                             libraryId = machine.libraryId,
+                            conversions = conversions,
+                            setCount = setCount,
                         )
                     }
                     // The instructions load after the form is usable; a missing library just shows no card.
@@ -114,6 +189,7 @@ class MachineEditorViewModel @Inject constructor(
 
     /** Cardio is both a group and a kind: picking one picks the other, and leaving it falls back to weights. */
     internal fun setMuscleGroup(value: MuscleGroup) = _uiState.update {
+        if (!it.groupEnabled(value)) return@update it
         val kind = when {
             value == MuscleGroup.CARDIO -> MachineKind.CARDIO
             it.kind == MachineKind.CARDIO -> MachineKind.WEIGHT_REPS
@@ -123,6 +199,7 @@ class MachineEditorViewModel @Inject constructor(
     }
 
     internal fun setKind(value: MachineKind) = _uiState.update {
+        if (!it.kindEnabled(value)) return@update it
         val group = when {
             value == MachineKind.CARDIO -> MuscleGroup.CARDIO
             it.muscleGroup == MuscleGroup.CARDIO -> MuscleGroup.LEGS
@@ -134,9 +211,10 @@ class MachineEditorViewModel @Inject constructor(
     internal fun setSetupNote(value: String) = _uiState.update { it.copy(setupNote = value) }
     internal fun setRest(value: Int?) = _uiState.update { it.copy(restSeconds = value) }
 
-    internal fun save() {
+    /** The machine as the form describes it, or null (and the name error) when the model refuses it. */
+    private fun buildMachine(): Machine? {
         val s = _uiState.value
-        val machine = try {
+        return try {
             Machine(
                 id = s.machineId,
                 name = s.name.trim(),
@@ -151,11 +229,64 @@ class MachineEditorViewModel @Inject constructor(
         } catch (e: IllegalArgumentException) {
             // The model's own rules (blank name) say no: show the inline error instead of crashing.
             _uiState.update { it.copy(nameTouched = true) }
-            return
+            null
+        }
+    }
+
+    /**
+     * Saves. When the kind changed and the machine has sets, asks first (the dialog) instead of
+     * calling save(), which would refuse.
+     */
+    internal fun save() {
+        val s = _uiState.value
+        val machine = buildMachine() ?: return
+        val stored = original
+        if (stored != null && stored.kind != machine.kind) {
+            when (val conversion = s.conversionFor(machine.kind)) {
+                is KindConversion.Unchanged, is KindConversion.NeedsFactor -> {
+                    val factor = (conversion as? KindConversion.NeedsFactor)?.default
+                    _uiState.update {
+                        it.copy(convertDialog = ConvertDialog(stored, stored.copy(kind = machine.kind), conversion, factor))
+                    }
+                    return
+                }
+                is KindConversion.NotOffered -> {
+                    _uiState.update { it.copy(saveFailed = true) }
+                    return
+                }
+                is KindConversion.Free -> Unit
+            }
         }
         viewModelScope.launch {
             machines.save(machine)
             _uiState.update { it.copy(done = true) }
+        }
+    }
+
+    internal fun stepFactor(up: Boolean) = _uiState.update {
+        val dialog = it.convertDialog ?: return@update it
+        it.copy(convertDialog = dialog.copy(factor = stepConversionFactor(dialog.factor, up, dialog.maxFactor)))
+    }
+
+    /** A typed factor; 0 clears it, anything above the maximum is clamped. */
+    internal fun setFactor(value: Int) = _uiState.update {
+        val dialog = it.convertDialog ?: return@update it
+        it.copy(convertDialog = dialog.copy(factor = value.takeIf { v -> v > 0 }?.coerceAtMost(dialog.maxFactor)))
+    }
+
+    internal fun dismissConvert() = _uiState.update { it.copy(convertDialog = null) }
+
+    internal fun saveFailedShown() = _uiState.update { it.copy(saveFailed = false) }
+
+    /** Converts the logged sets and saves the machine in one go (no Undo). */
+    internal fun confirmConvert() {
+        val dialog = _uiState.value.convertDialog ?: return
+        if (!dialog.canConfirm) return
+        val machine = buildMachine() ?: return
+        _uiState.update { it.copy(convertDialog = null) }
+        viewModelScope.launch {
+            val ok = machines.saveConvertingSets(machine, dialog.factor.takeIf { dialog.needsFactor })
+            _uiState.update { if (ok) it.copy(done = true) else it.copy(saveFailed = true) }
         }
     }
 

@@ -4,6 +4,13 @@ import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.weightLabel
 import com.boratreino.core.ui.summaryLabel
 import com.boratreino.core.ui.draftText
+import com.boratreino.core.ui.amountLabel
+import com.boratreino.core.ui.setLabel
+import com.boratreino.core.model.SetDraft
+import com.boratreino.core.model.SetMeasure
+import com.boratreino.core.model.LoggingRules
+import com.boratreino.core.model.hasLoad
+import com.boratreino.core.model.measure
 import com.boratreino.core.ui.showUndo
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -82,7 +89,6 @@ import com.boratreino.core.model.CardioField
 import com.boratreino.core.model.CardioRules
 import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MachineKind
-import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.ui.BoraButton
@@ -123,6 +129,8 @@ internal data class MachineActions(
     val onEdit: () -> Unit = {},
     val onStepWeight: (up: Boolean) -> Unit = {},
     val onStepReps: (up: Boolean) -> Unit = {},
+    val onStepSeconds: (up: Boolean) -> Unit = {},
+    val onStepMetres: (up: Boolean) -> Unit = {},
     val onOpenPad: (PadTarget) -> Unit = {},
     val onOpenCardioPad: (CardioField) -> Unit = {},
     val onOpenEditorCardioPad: (CardioField) -> Unit = {},
@@ -140,6 +148,8 @@ internal data class MachineActions(
     val onOpenSet: (WorkoutSet) -> Unit = {},
     val onStepEditorWeight: (up: Boolean) -> Unit = {},
     val onStepEditorReps: (up: Boolean) -> Unit = {},
+    val onStepEditorSeconds: (up: Boolean) -> Unit = {},
+    val onStepEditorMetres: (up: Boolean) -> Unit = {},
     val onSaveEditor: () -> Unit = {},
     val onDeleteEditor: () -> Unit = {},
     val onDeleteSet: (WorkoutSet) -> Unit = {},
@@ -226,6 +236,8 @@ internal fun MachineScreen(
             onEdit = { state.machine?.let { onEdit(it.id) } },
             onStepWeight = viewModel::stepWeight,
             onStepReps = viewModel::stepReps,
+            onStepSeconds = viewModel::stepSeconds,
+            onStepMetres = viewModel::stepMetres,
             onOpenPad = viewModel::openPad,
             onOpenCardioPad = { viewModel.openCardioPad(it) },
             onOpenEditorCardioPad = { viewModel.openCardioPad(it, inEditor = true) },
@@ -243,6 +255,8 @@ internal fun MachineScreen(
             onOpenSet = viewModel::openSet,
             onStepEditorWeight = viewModel::stepEditorWeight,
             onStepEditorReps = viewModel::stepEditorReps,
+            onStepEditorSeconds = viewModel::stepEditorSeconds,
+            onStepEditorMetres = viewModel::stepEditorMetres,
             onSaveEditor = viewModel::saveEditor,
             onDeleteEditor = viewModel::deleteEditor,
             onDeleteSet = viewModel::deleteSet,
@@ -340,6 +354,7 @@ internal fun MachineContent(
         val title = if (field != null) cardioFieldLabel(field) else when (pad.target) {
             PadTarget.WEIGHT, PadTarget.EDIT_WEIGHT -> weightLabel(machine)
             PadTarget.REPS, PadTarget.EDIT_REPS -> stringResource(R.string.today_reps)
+            PadTarget.SECONDS, PadTarget.EDIT_SECONDS, PadTarget.DISTANCE, PadTarget.EDIT_DISTANCE -> amountLabel(machine)
             PadTarget.CARDIO, PadTarget.EDIT_CARDIO -> ""
         }
         NumberPadDialog(
@@ -448,7 +463,7 @@ private fun InfoChips(machine: Machine, state: MachineUiState, onApplySuggestion
             },
             muted = true,
         )
-        state.target?.let { InfoChip(stringResource(R.string.today_target, targetText(it)), muted = true) }
+        state.target?.let { InfoChip(stringResource(R.string.today_target, targetText(it, machine.kind)), muted = true) }
         state.suggestion?.let { suggestion ->
             BoraChip(label = suggestionText(suggestion), selected = true, onClick = onApplySuggestion)
         }
@@ -487,7 +502,7 @@ private fun setValueText(machine: Machine, set: WorkoutSet): String =
         val d = CardioRules.toDraft(set)
         cardioRowText(d)
     } else {
-        draftText(machine, set.weightKg ?: 0.0, set.reps ?: 0)
+        setLabel(machine, set)
     }
 
 /**
@@ -512,7 +527,7 @@ private fun SetTable(
     val nextText = if (isCardio) {
         cardioRowText(state.cardio)
     } else {
-        draftText(machine, state.weightKg, state.reps)
+        draftText(machine, currentDraft(state))
     }
     val initialIds = remember { sets.map { it.id }.toSet() }
     val recordId = if (state.record != null) sets.lastOrNull()?.id else null
@@ -681,24 +696,46 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
         ) {
             state.restSeconds?.let { RestBar(it, state.restTotalSeconds, actions.onExtendRest, actions.onSkipRest) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BigStepper(
-                    label = weightLabel(machine),
-                    value = formatKg(state.weightKg),
-                    onMinus = { actions.onStepWeight(false) },
-                    onPlus = { actions.onStepWeight(true) },
-                    onValueClick = { actions.onOpenPad(PadTarget.WEIGHT) },
-                    modifier = Modifier.weight(1f),
-                )
-                BigStepper(
-                    label = stringResource(R.string.today_reps),
-                    value = state.reps.toString(),
-                    onMinus = { actions.onStepReps(false) },
-                    onPlus = { actions.onStepReps(true) },
-                    onValueClick = { actions.onOpenPad(PadTarget.REPS) },
-                    modifier = Modifier.weight(1f),
-                )
+                if (machine.kind.hasLoad) {
+                    BigStepper(
+                        label = weightLabel(machine),
+                        value = formatKg(state.weightKg),
+                        onMinus = { actions.onStepWeight(false) },
+                        onPlus = { actions.onStepWeight(true) },
+                        onValueClick = { actions.onOpenPad(PadTarget.WEIGHT) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                when (machine.kind.measure) {
+                    SetMeasure.SECONDS -> BigStepper(
+                        label = amountLabel(machine),
+                        value = state.seconds.toString(),
+                        onMinus = { actions.onStepSeconds(false) },
+                        onPlus = { actions.onStepSeconds(true) },
+                        onValueClick = { actions.onOpenPad(PadTarget.SECONDS) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    SetMeasure.METRES -> BigStepper(
+                        label = amountLabel(machine),
+                        value = state.distanceM.toString(),
+                        onMinus = { actions.onStepMetres(false) },
+                        onPlus = { actions.onStepMetres(true) },
+                        onValueClick = { actions.onOpenPad(PadTarget.DISTANCE) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    else -> BigStepper(
+                        label = stringResource(R.string.today_reps),
+                        value = state.reps.toString(),
+                        onMinus = { actions.onStepReps(false) },
+                        onPlus = { actions.onStepReps(true) },
+                        onValueClick = { actions.onOpenPad(PadTarget.REPS) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
-            val logText = if (machine.kind == MachineKind.BODYWEIGHT_REPS && state.weightKg <= 0.0) {
+            val logText = if (machine.kind.measure != SetMeasure.REPS) {
+                stringResource(R.string.machine_log_measured, draftText(machine, currentDraft(state)))
+            } else if (machine.kind == MachineKind.BODYWEIGHT_REPS && state.weightKg <= 0.0) {
                 LocalContext.current.resources.getQuantityString(R.plurals.machine_log_reps, state.reps, state.reps)
             } else {
                 stringResource(
@@ -708,7 +745,12 @@ private fun LogPanel(machine: Machine, state: MachineUiState, actions: MachineAc
                 )
             }
             // The one filled button on the screen, and the biggest target: one tap logs the set.
-            BoraButton(text = logText, onClick = actions.onLogSet, modifier = Modifier.fillMaxWidth())
+            BoraButton(
+                text = logText,
+                onClick = actions.onLogSet,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = LoggingRules.canLog(currentDraft(state), machine.kind),
+            )
             val activeType = if (state.logType != SetType.NORMAL) state.logType else if (state.warmupOn) SetType.WARMUP else SetType.NORMAL
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { typeSheet = true }, modifier = Modifier.heightIn(min = 36.dp)) {
@@ -814,7 +856,7 @@ private fun CompletePanel(state: MachineUiState, actions: MachineActions) {
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            targetText(next.target),
+                            targetText(next.target, next.machine.kind),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -845,7 +887,7 @@ private fun WarmupDialog(machine: Machine, plan: List<SetDraft>, actions: Machin
         title = { Text(stringResource(R.string.today_warmup_sets)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                plan.forEach { Text(draftText(machine, it.weightKg, it.reps), style = MaterialTheme.typography.titleMedium) }
+                plan.forEach { Text(draftText(machine, it), style = MaterialTheme.typography.titleMedium) }
             }
         },
         confirmButton = {
@@ -1074,22 +1116,42 @@ private fun EditSetSheet(machine: Machine, editor: SetEditor, actions: MachineAc
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.today_set_number, editor.number), style = MaterialTheme.typography.titleLarge)
-            Stepper(
-                label = weightLabel(machine),
-                value = formatKg(editor.weightKg),
-                onMinus = { actions.onStepEditorWeight(false) },
-                onPlus = { actions.onStepEditorWeight(true) },
-                onValueClick = { actions.onOpenPad(PadTarget.EDIT_WEIGHT) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Stepper(
-                label = stringResource(R.string.today_reps),
-                value = editor.reps.toString(),
-                onMinus = { actions.onStepEditorReps(false) },
-                onPlus = { actions.onStepEditorReps(true) },
-                onValueClick = { actions.onOpenPad(PadTarget.EDIT_REPS) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (machine.kind.hasLoad) {
+                Stepper(
+                    label = weightLabel(machine),
+                    value = formatKg(editor.weightKg),
+                    onMinus = { actions.onStepEditorWeight(false) },
+                    onPlus = { actions.onStepEditorWeight(true) },
+                    onValueClick = { actions.onOpenPad(PadTarget.EDIT_WEIGHT) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            when (machine.kind.measure) {
+                SetMeasure.SECONDS -> Stepper(
+                    label = amountLabel(machine),
+                    value = editor.seconds.toString(),
+                    onMinus = { actions.onStepEditorSeconds(false) },
+                    onPlus = { actions.onStepEditorSeconds(true) },
+                    onValueClick = { actions.onOpenPad(PadTarget.EDIT_SECONDS) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                SetMeasure.METRES -> Stepper(
+                    label = amountLabel(machine),
+                    value = editor.distanceM.toString(),
+                    onMinus = { actions.onStepEditorMetres(false) },
+                    onPlus = { actions.onStepEditorMetres(true) },
+                    onValueClick = { actions.onOpenPad(PadTarget.EDIT_DISTANCE) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                else -> Stepper(
+                    label = stringResource(R.string.today_reps),
+                    value = editor.reps.toString(),
+                    onMinus = { actions.onStepEditorReps(false) },
+                    onPlus = { actions.onStepEditorReps(true) },
+                    onValueClick = { actions.onOpenPad(PadTarget.EDIT_REPS) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Text(stringResource(CoreUiR.string.set_type_title), style = MaterialTheme.typography.labelLarge)
             SetTypeChips(selected = editor.type, onSelect = actions.onEditorType)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1103,6 +1165,7 @@ private fun EditSetSheet(machine: Machine, editor: SetEditor, actions: MachineAc
                 }
                 Button(
                     onClick = actions.onSaveEditor,
+                    enabled = LoggingRules.canLog(SetDraft(editor.weightKg, editor.reps, editor.type, editor.seconds, editor.distanceM), machine.kind),
                     modifier = Modifier.weight(1f).heightIn(min = 56.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.inverseSurface,
@@ -1143,3 +1206,7 @@ private fun Modifier.recordScaleIn(): Modifier {
     LaunchedEffect(Unit) { scale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) }
     return graphicsLayer { scaleX = scale.value; scaleY = scale.value }
 }
+
+/** The steppers' current values as a draft, for the Log button text and the "next" row. */
+private fun currentDraft(state: MachineUiState): SetDraft =
+    SetDraft(state.weightKg, state.reps, SetType.NORMAL, state.seconds, state.distanceM)

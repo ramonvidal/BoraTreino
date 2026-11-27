@@ -701,7 +701,7 @@ private fun RoutineExerciseRow(
     val supporting = if (row.machine.kind == MachineKind.CARDIO) {
         row.cardioSummary?.let { summaryLabel(row.machine, it) }
     } else {
-        targetText(row.target)
+        targetText(row.target, row.machine.kind)
     }
     Box {
         Row(

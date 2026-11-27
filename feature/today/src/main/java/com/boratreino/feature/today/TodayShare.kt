@@ -62,6 +62,18 @@ internal fun summaryTexts(resources: Resources, summary: TrainingSummary, locale
                 resources.getString(R.string.summary_record_heaviest, event.machine.name, formatKg(record.weightKg, locale))
             is Record.MostReps ->
                 resources.getString(R.string.summary_record_most_reps, event.machine.name, record.reps, formatKg(record.weightKg, locale))
+            is Record.LongestTime ->
+                if (record.weightKg > 0.0) {
+                    resources.getString(R.string.summary_record_longest_time, event.machine.name, record.seconds, formatKg(record.weightKg, locale))
+                } else {
+                    resources.getString(R.string.summary_record_longest_time_no_weight, event.machine.name, record.seconds)
+                }
+            is Record.LongestDistance ->
+                if (record.weightKg > 0.0) {
+                    resources.getString(R.string.summary_record_longest_distance, event.machine.name, record.distanceM, formatKg(record.weightKg, locale))
+                } else {
+                    resources.getString(R.string.summary_record_longest_distance_no_weight, event.machine.name, record.distanceM)
+                }
         }
     }
     val comparison = buildList {

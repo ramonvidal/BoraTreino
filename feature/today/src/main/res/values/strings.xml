@@ -151,6 +151,10 @@
     <string name="summary_records_title">Records</string>
     <string name="summary_record_heaviest">%1$s: Heaviest %2$s kg</string>
     <string name="summary_record_most_reps">%1$s: Most reps %2$d at %3$s kg</string>
+    <string name="summary_record_longest_time">%1$s: Longest %2$d s at %3$s kg</string>
+    <string name="summary_record_longest_time_no_weight">%1$s: Longest %2$d s</string>
+    <string name="summary_record_longest_distance">%1$s: Farthest %2$d m at %3$s kg</string>
+    <string name="summary_record_longest_distance_no_weight">%1$s: Farthest %2$d m</string>
     <string name="summary_compare_title">Compared with last time</string>
     <string name="summary_compare_volume_up">Volume +%1$d %% vs last time</string>
     <string name="summary_compare_volume_down">Volume -%1$d %% vs last time</string>
@@ -182,6 +186,7 @@
         <item quantity="one">Log %d rep</item>
         <item quantity="other">Log %d reps</item>
     </plurals>
+    <string name="machine_log_measured">Log %1$s</string>
     <string name="machine_log_cardio">Log %1$s</string>
     <string name="machine_cardio_intensity">Intensity</string>
     <string name="machine_cardio_intensity_part">intensity %1$s</string>
