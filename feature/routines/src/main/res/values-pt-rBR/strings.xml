@@ -23,9 +23,31 @@
     <string name="editor_name_error">Dê um nome ao exercício.</string>
     <string name="editor_muscle_group">Grupo muscular</string>
     <string name="editor_kind">Tipo</string>
-    <string name="editor_kind_weights">Com carga</string>
+    <string name="editor_kind_weights">Peso + repetições</string>
     <string name="editor_kind_bodyweight">Peso do corpo</string>
     <string name="editor_kind_cardio">Cardio</string>
+    <string name="editor_kind_weight_time">Peso + tempo</string>
+    <string name="editor_kind_weight_distance">Peso + distância</string>
+    <string name="editor_kind_time">Tempo</string>
+    <string name="editor_kind_locked_cardio">Série de cardio e série de força medem coisas diferentes, então não dá pra converter uma na outra.</string>
+    <string name="editor_kind_locked_load">Tempo sozinho não tem peso, então perderia a carga das suas séries.</string>
+    <string name="editor_kind_locked_measure">Séries de tempo e de distância não dá pra converter uma na outra. Escolha peso + repetições primeiro e depois mude de novo.</string>
+    <string name="editor_group_locked_cardio">O grupo muscular segue o tipo, então Cardio não dá pra ligar ou desligar enquanto este exercício tiver séries.</string>
+    <string name="editor_convert_failed">Não deu pra mudar o tipo. Nada foi alterado.</string>
+    <string name="convert_title_unchanged">Mudar pra %1$s?</string>
+    <string name="convert_change">Mudar</string>
+    <string name="convert_title_seconds_per_rep">Cada repetição foi quantos segundos?</string>
+    <string name="convert_title_metres_per_rep">Cada repetição foi quantos metros?</string>
+    <string name="convert_title_rep_seconds">Quantos segundos foi uma repetição?</string>
+    <string name="convert_title_rep_metres">Quantos metros foi uma repetição?</string>
+    <string name="convert_stepper_seconds">Segundos por repetição</string>
+    <string name="convert_stepper_metres">Metros por repetição</string>
+    <string name="convert_value_empty">-</string>
+    <string name="convert_preview_title">Sua última série</string>
+    <string name="convert_preview">%1$s vira %2$s</string>
+    <string name="convert_preview_pending">%1$s vira ... (defina o número acima)</string>
+    <string name="convert_no_undo">Não dá pra desfazer.</string>
+    <string name="library_detail_kind">Registrado como</string>
     <string name="editor_step">Passo da carga</string>
     <string name="editor_step_value">%1$s kg</string>
     <string name="editor_rest">Descanso após cada série</string>
@@ -147,6 +169,26 @@
     <plurals name="routines_last_trained_days">
         <item quantity="one">Treinada há %1$d dia</item>
         <item quantity="other">Treinada há %1$d dias</item>
+    </plurals>
+    <plurals name="editor_kind_locked">
+        <item quantity="one">Tipos que não dá pra manter com esta %1$d série estão desligados.</item>
+        <item quantity="other">Tipos que não dá pra manter com estas %1$d séries estão desligados.</item>
+    </plurals>
+    <plurals name="convert_body_unchanged">
+        <item quantity="one">Sua %1$d série mantém os números.</item>
+        <item quantity="other">Suas %1$d séries mantêm os números.</item>
+    </plurals>
+    <plurals name="convert_to_timed">
+        <item quantity="one">A %1$d série mantém a carga; cada repetição vira %2$s.</item>
+        <item quantity="other">Cada uma das %1$d séries mantém a carga; cada repetição vira %2$s.</item>
+    </plurals>
+    <plurals name="convert_from_timed">
+        <item quantity="one">A %1$d série mantém a carga; cada %2$s vira uma repetição.</item>
+        <item quantity="other">Cada uma das %1$d séries mantém a carga; cada %2$s vira uma repetição.</item>
+    </plurals>
+    <plurals name="convert_confirm">
+        <item quantity="one">Converter %1$d série</item>
+        <item quantity="other">Converter %1$d séries</item>
     </plurals>
     <plurals name="routines_add_selected">
         <item quantity="one">Adicionar %1$d</item>

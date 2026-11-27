@@ -131,6 +131,8 @@ class SessionEditorExtraTest {
 
     /** No machines: the switch does not depend on them. */
     private class NoMachines : MachineRepository {
+    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
+    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
         override suspend fun addFromLibrary(exercise: LibraryExercise, portuguese: Boolean): Long = error("not used")
         override fun observeLibraryIdsInUse(): Flow<Set<String>> = flowOf(emptySet())
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(emptyList())

@@ -56,6 +56,8 @@ class RoutinesLibraryViewModelTest {
         private val notAdded: List<StarterMachine>,
         private val inUse: Set<String>,
     ) : MachineRepository {
+    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
+    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
         val addedStarters = mutableListOf<String>()
         val addedLibrary = mutableListOf<String>()
 

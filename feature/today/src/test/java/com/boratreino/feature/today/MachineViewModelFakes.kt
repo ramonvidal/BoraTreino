@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.flowOf
 
 /** Read-only machine list for the machine view model (it reads the routine's other exercises from it). */
 internal class FakeMachineLibrary(private val all: List<Machine> = emptyList()) : MachineRepository {
+    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
+    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
     override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> =
         flowOf(all.filter { includeArchived || !it.archived })
 

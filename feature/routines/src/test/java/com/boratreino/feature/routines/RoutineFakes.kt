@@ -114,6 +114,8 @@ internal class FakeRoutineRepository(
 
 /** A fixed gym; every other call is not needed by the routines view models. */
 internal class FakeMachineRepository(private val all: List<Machine> = emptyList()) : MachineRepository {
+    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
+    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
     override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
     override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
 

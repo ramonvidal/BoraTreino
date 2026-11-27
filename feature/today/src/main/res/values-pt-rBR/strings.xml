@@ -107,6 +107,10 @@
     <string name="summary_records_title">Recordes</string>
     <string name="summary_record_heaviest">%1$s: Maior carga %2$s kg</string>
     <string name="summary_record_most_reps">%1$s: Mais repetições %2$d com %3$s kg</string>
+    <string name="summary_record_longest_time">%1$s: Maior %2$d s com %3$s kg</string>
+    <string name="summary_record_longest_time_no_weight">%1$s: Maior %2$d s</string>
+    <string name="summary_record_longest_distance">%1$s: Mais longe %2$d m com %3$s kg</string>
+    <string name="summary_record_longest_distance_no_weight">%1$s: Mais longe %2$d m</string>
     <string name="summary_compare_title">Em relação à última vez</string>
     <string name="summary_compare_volume_up">Volume +%1$d %% em relação à última vez</string>
     <string name="summary_compare_volume_down">Volume -%1$d %% em relação à última vez</string>
@@ -134,6 +138,7 @@
     <string name="machine_last">Última: %1$s</string>
     <string name="machine_last_on">Última: %1$s, %2$s</string>
     <string name="machine_log_value">Registrar %1$s × %2$d</string>
+    <string name="machine_log_measured">Registrar %1$s</string>
     <string name="machine_log_cardio">Registrar %1$s</string>
     <string name="machine_cardio_intensity">Intensidade</string>
     <string name="machine_cardio_intensity_part">intensidade %1$s</string>

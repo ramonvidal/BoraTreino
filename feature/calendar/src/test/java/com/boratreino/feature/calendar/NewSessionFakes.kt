@@ -222,6 +222,8 @@ internal class NewSessionTraining(private val store: NewSessionStore) : Training
 }
 
 internal class NewSessionMachines(private val all: List<Machine>) : MachineRepository {
+    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
+    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
     override suspend fun addFromLibrary(exercise: LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
     override fun observeLibraryIdsInUse(): Flow<Set<String>> = emptyFlow()
     override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = MutableStateFlow(all)

@@ -81,6 +81,23 @@ core/ui,target_text_fixed,,%1$d × %2$d,%1$d × %2$d
 core/ui,set_summary_uniform_no_weight,,%1$d × %2$d,%1$d × %2$d
 core/ui,reps_only,one,%d rep,%d repetição
 core/ui,reps_only,other,%d reps,%d repetições
+core/ui,seconds_text,,%1$d s,%1$d s
+core/ui,metres_text,,%1$d m,%1$d m
+core/ui,set_text_seconds,,%1$s kg · %2$d s,%1$s kg · %2$d s
+core/ui,set_text_metres,,%1$s kg · %2$d m,%1$s kg · %2$d m
+core/ui,amount_label_reps,,Reps,Repetições
+core/ui,amount_label_seconds,,Time (s),Tempo (s)
+core/ui,amount_label_metres,,Distance (m),Distância (m)
+core/ui,record_longest_time,,New record: %1$d s at %2$s kg,Recorde novo: %1$d s com %2$s kg
+core/ui,record_longest_time_no_weight,,New record: %1$d s,Recorde novo: %1$d s
+core/ui,record_longest_distance,,New record: %1$d m at %2$s kg,Recorde novo: %1$d m com %2$s kg
+core/ui,record_longest_distance_no_weight,,New record: %1$d m,Recorde novo: %1$d m
+core/ui,set_summary_uniform_seconds,,%1$d × %2$d s at %3$s kg,%1$d × %2$d s com %3$s kg
+core/ui,set_summary_uniform_seconds_no_weight,,%1$d × %2$d s,%1$d × %2$d s
+core/ui,set_summary_uniform_metres,,%1$d × %2$d m at %3$s kg,%1$d × %2$d m com %3$s kg
+core/ui,set_summary_uniform_metres_no_weight,,%1$d × %2$d m,%1$d × %2$d m
+core/ui,target_sets_only,one,%d set,%d série
+core/ui,target_sets_only,other,%d sets,%d séries
 core/ui,weight_label,,Weight (kg),Peso (kg)
 core/ui,added_weight_label,,Added weight (kg),Peso extra (kg)
 core/ui,exercise_image_description,,Illustration of %1$s,Desenho de %1$s
@@ -468,6 +485,23 @@ feature/progress,stats_patterns_highlight_note,,Highlighted bars passed the test
 feature/progress,stats_patterns_hint,,Exploratory: patterns from few sessions are often chance. Only differences that survive a correction for testing many days at once are highlighted.,Exploratório: padrões com poucos treinos costumam acontecer por acaso. Só as diferenças que sobrevivem à correção para muitas comparações (testar muitos dias de uma vez) são destacadas.
 feature/progress,stats_patterns_none,,No clear pattern yet (from %1$d sessions).,Nenhum padrão claro ainda (com %1$d treinos).
 feature/progress,stats_patterns_slot_description,,"%1$s: %2$s percent, %3$d sessions","%1$s: %2$s por cento, %3$d treinos"
+feature/progress,progress_metric_weight,,Weight,Peso
+feature/progress,progress_chart_title_seconds,,Time (s),Tempo (s)
+feature/progress,progress_chart_title_metres,,Distance (m),Distância (m)
+feature/progress,progress_from_to_seconds,,%1$s → %2$s s,%1$s → %2$s s
+feature/progress,progress_from_to_metres,,%1$s → %2$s m,%1$s → %2$s m
+feature/progress,progress_best_seconds,,Best: %1$d s,Melhor: %1$d s
+feature/progress,progress_best_metres,,Best: %1$d m,Melhor: %1$d m
+feature/progress,progress_delta_seconds,,%1$s s,%1$s s
+feature/progress,progress_delta_metres,,%1$s m,%1$s m
+feature/progress,progress_trend_seconds,,Trend: %1$s to %2$s s,Tendência: %1$s a %2$s s
+feature/progress,progress_trend_metres,,Trend: %1$s to %2$s m,Tendência: %1$s a %2$s m
+feature/progress,trend_unit_seconds,,s,s
+feature/progress,trend_unit_metres,,m,m
+feature/progress,stats_record_longest_time,,Longest time: %1$d s at %2$s kg,Maior tempo: %1$d s com %2$s kg
+feature/progress,stats_record_longest_time_no_load,,Longest time: %1$d s,Maior tempo: %1$d s
+feature/progress,stats_record_longest_distance,,Longest distance: %1$d m at %2$s kg,Maior distância: %1$d m com %2$s kg
+feature/progress,stats_record_longest_distance_no_load,,Longest distance: %1$d m,Maior distância: %1$d m
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha
@@ -494,9 +528,41 @@ feature/routines,editor_name,,Name,Nome
 feature/routines,editor_name_error,,Give the exercise a name.,Dê um nome ao exercício.
 feature/routines,editor_muscle_group,,Muscle group,Grupo muscular
 feature/routines,editor_kind,,Kind,Tipo
-feature/routines,editor_kind_weights,,Weights,Com carga
+feature/routines,editor_kind_weights,,Weight + reps,Peso + repetições
 feature/routines,editor_kind_bodyweight,,Bodyweight,Peso do corpo
 feature/routines,editor_kind_cardio,,Cardio,Cardio
+feature/routines,editor_kind_weight_time,,Weight + time,Peso + tempo
+feature/routines,editor_kind_weight_distance,,Weight + distance,Peso + distância
+feature/routines,editor_kind_time,,Time,Tempo
+feature/routines,editor_kind_locked,one,Kinds that can't keep this %1$d set are off.,Tipos que não dá pra manter com esta %1$d série estão desligados.
+feature/routines,editor_kind_locked,other,Kinds that can't keep these %1$d sets are off.,Tipos que não dá pra manter com estas %1$d séries estão desligados.
+feature/routines,editor_kind_locked_cardio,,"Cardio and strength sets measure different things, so they can't be converted into each other.","Série de cardio e série de força medem coisas diferentes, então não dá pra converter uma na outra."
+feature/routines,editor_kind_locked_load,,"Time only has no weight, so it would lose the weight of your sets.","Tempo sozinho não tem peso, então perderia a carga das suas séries."
+feature/routines,editor_kind_locked_measure,,"Time and distance sets can't be converted into each other. Pick weight + reps first, then change again.",Séries de tempo e de distância não dá pra converter uma na outra. Escolha peso + repetições primeiro e depois mude de novo.
+feature/routines,editor_group_locked_cardio,,"The muscle group follows the kind, so Cardio can't be switched on or off while this exercise has sets.","O grupo muscular segue o tipo, então Cardio não dá pra ligar ou desligar enquanto este exercício tiver séries."
+feature/routines,editor_convert_failed,,Couldn't change the kind. Nothing was changed.,Não deu pra mudar o tipo. Nada foi alterado.
+feature/routines,convert_title_unchanged,,Change to %1$s?,Mudar pra %1$s?
+feature/routines,convert_body_unchanged,one,Your %1$d set keeps its numbers.,Sua %1$d série mantém os números.
+feature/routines,convert_body_unchanged,other,Your %1$d sets keep their numbers.,Suas %1$d séries mantêm os números.
+feature/routines,convert_change,,Change,Mudar
+feature/routines,convert_title_seconds_per_rep,,Each rep was how many seconds?,Cada repetição foi quantos segundos?
+feature/routines,convert_title_metres_per_rep,,Each rep was how many metres?,Cada repetição foi quantos metros?
+feature/routines,convert_title_rep_seconds,,How many seconds was one rep?,Quantos segundos foi uma repetição?
+feature/routines,convert_title_rep_metres,,How many metres was one rep?,Quantos metros foi uma repetição?
+feature/routines,convert_stepper_seconds,,Seconds per rep,Segundos por repetição
+feature/routines,convert_stepper_metres,,Metres per rep,Metros por repetição
+feature/routines,convert_value_empty,,-,-
+feature/routines,convert_to_timed,one,The %1$d set keeps its load; every rep becomes %2$s.,A %1$d série mantém a carga; cada repetição vira %2$s.
+feature/routines,convert_to_timed,other,Each of the %1$d sets keeps its load; every rep becomes %2$s.,Cada uma das %1$d séries mantém a carga; cada repetição vira %2$s.
+feature/routines,convert_from_timed,one,The %1$d set keeps its load; every %2$s becomes one rep.,A %1$d série mantém a carga; cada %2$s vira uma repetição.
+feature/routines,convert_from_timed,other,Each of the %1$d sets keeps its load; every %2$s becomes one rep.,Cada uma das %1$d séries mantém a carga; cada %2$s vira uma repetição.
+feature/routines,convert_preview_title,,Your latest set,Sua última série
+feature/routines,convert_preview,,%1$s becomes %2$s,%1$s vira %2$s
+feature/routines,convert_preview_pending,,%1$s becomes ... (set the number above),%1$s vira ... (defina o número acima)
+feature/routines,convert_no_undo,,This can't be undone.,Não dá pra desfazer.
+feature/routines,convert_confirm,one,Convert %1$d set,Converter %1$d série
+feature/routines,convert_confirm,other,Convert %1$d sets,Converter %1$d séries
+feature/routines,library_detail_kind,,Logged as,Registrado como
 feature/routines,editor_step,,Weight step,Passo da carga
 feature/routines,editor_step_value,,%1$s kg,%1$s kg
 feature/routines,editor_rest,,Rest after each set,Descanso após cada série
@@ -844,6 +910,10 @@ feature/today,summary_no_value,,-,-
 feature/today,summary_records_title,,Records,Recordes
 feature/today,summary_record_heaviest,,%1$s: Heaviest %2$s kg,%1$s: Maior carga %2$s kg
 feature/today,summary_record_most_reps,,%1$s: Most reps %2$d at %3$s kg,%1$s: Mais repetições %2$d com %3$s kg
+feature/today,summary_record_longest_time,,%1$s: Longest %2$d s at %3$s kg,%1$s: Maior %2$d s com %3$s kg
+feature/today,summary_record_longest_time_no_weight,,%1$s: Longest %2$d s,%1$s: Maior %2$d s
+feature/today,summary_record_longest_distance,,%1$s: Farthest %2$d m at %3$s kg,%1$s: Mais longe %2$d m com %3$s kg
+feature/today,summary_record_longest_distance_no_weight,,%1$s: Farthest %2$d m,%1$s: Mais longe %2$d m
 feature/today,summary_compare_title,,Compared with last time,Em relação à última vez
 feature/today,summary_compare_volume_up,,Volume +%1$d %% vs last time,Volume +%1$d %% em relação à última vez
 feature/today,summary_compare_volume_down,,Volume -%1$d %% vs last time,Volume -%1$d %% em relação à última vez
@@ -873,6 +943,7 @@ feature/today,machine_last_on,,"Last: %1$s, %2$s","Última: %1$s, %2$s"
 feature/today,machine_log_value,,Log %1$s x %2$d,Registrar %1$s × %2$d
 feature/today,machine_log_reps,one,Log %d rep,Registrar %d repetição
 feature/today,machine_log_reps,other,Log %d reps,Registrar %d repetições
+feature/today,machine_log_measured,,Log %1$s,Registrar %1$s
 feature/today,machine_log_cardio,,Log %1$s,Registrar %1$s
 feature/today,machine_cardio_intensity,,Intensity,Intensidade
 feature/today,machine_cardio_intensity_part,,intensity %1$s,intensidade %1$s

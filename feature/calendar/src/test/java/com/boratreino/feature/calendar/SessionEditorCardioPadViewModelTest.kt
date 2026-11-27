@@ -170,6 +170,8 @@ class SessionEditorCardioPadViewModelTest {
     }
 
     private class FakeMachines(private val all: List<Machine>) : MachineRepository {
+    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
+    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
         override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used")
         override fun observeLibraryIdsInUse(): Flow<Set<String>> = flowOf(emptySet())
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(all)

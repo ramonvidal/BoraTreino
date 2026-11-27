@@ -61,6 +61,8 @@ class MachineEditorHowToTest {
     )
 
     private class OneMachine(private val stored: Machine?) : MachineRepository {
+    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
+    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
         override fun observeMachine(id: Long): Flow<Machine?> = flowOf(stored?.takeIf { it.id == id })
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(listOfNotNull(stored))
         override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(emptyList())
