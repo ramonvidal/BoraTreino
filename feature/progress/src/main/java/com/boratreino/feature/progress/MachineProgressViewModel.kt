@@ -57,6 +57,8 @@ internal data class MachineProgressUiState(
     val oneRmBest: SessionPoint? = null,
     /** Cardio metrics that have data, in chip order; empty for other machines. Chips show only with two or more. */
     val cardioMetrics: List<ProgressMetric> = emptyList(),
+    /** WEIGHT_TIME / WEIGHT_DISTANCE: the metrics with data, in chip order; chips show only with two or more. Empty for every other machine. */
+    val measureMetrics: List<ProgressMetric> = emptyList(),
     /** The all-time best session per cardio metric in [cardioMetrics] (speed, intensity, distance, time), same order. */
     val cardioRecords: List<CardioRecord> = emptyList(),
     /** The all-time trend of the machine's main series (est. 1RM, cardio speed or top weight); null without any point. */
@@ -94,10 +96,19 @@ internal fun buildMachineState(
     } else {
         null
     }
-    val shownMetric = chosenCardio ?: progress.metric
+    val measureMetrics = ProgressRules.strengthMetrics(progress.machine.kind)
+        .filter { progress.measurePoints[it].orEmpty().isNotEmpty() }
+        .takeIf { it.size >= 2 }
+        .orEmpty()
+    val chosenMeasure = measureMetrics.takeIf { it.isNotEmpty() }?.let { metrics ->
+        // The saved chip choice (shared with the cardio chip), else the machine's own default metric.
+        metrics.firstOrNull { it.name == cardioMetric } ?: progress.metric.takeIf { it in metrics } ?: metrics.first()
+    }
+    val shownMetric = chosenCardio ?: chosenMeasure ?: progress.metric
     val allPoints = when {
         useOneRm -> progress.oneRmPoints
         chosenCardio != null -> progress.pointsFor(chosenCardio)
+        chosenMeasure != null -> progress.measurePoints[chosenMeasure].orEmpty()
         else -> progress.points
     }
     val inRange = ProgressRules.inRange(allPoints, range, today)
@@ -133,6 +144,7 @@ internal fun buildMachineState(
         showOneRm = useOneRm,
         oneRmBest = ProgressRules.best(progress.oneRmPoints),
         cardioMetrics = cardioMetrics,
+        measureMetrics = measureMetrics,
         cardioRecords = cardioMetrics.filter { it in RECORD_METRICS }.mapNotNull { metric ->
             ProgressRules.best(progress.pointsFor(metric))?.let { CardioRecord(metric, it) }
         },
@@ -193,7 +205,7 @@ class MachineProgressViewModel @Inject constructor(
         savedStateHandle[SHOW_ONE_RM_KEY] = show
     }
 
-    /** Picks the cardio chart's metric chip; remembered while the screen is open (and across rotation). */
+    /** Picks the cardio chart's metric chip (also the Weight / Time or Weight / Distance chip); remembered while the screen is open (and across rotation). */
     internal fun setCardioMetric(metric: ProgressMetric) {
         selected.value = null
         savedStateHandle[CARDIO_METRIC_KEY] = metric.name

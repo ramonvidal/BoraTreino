@@ -29,9 +29,51 @@
     <string name="editor_name_error">Give the exercise a name.</string>
     <string name="editor_muscle_group">Muscle group</string>
     <string name="editor_kind">Kind</string>
-    <string name="editor_kind_weights">Weights</string>
+    <string name="editor_kind_weights">Weight + reps</string>
     <string name="editor_kind_bodyweight">Bodyweight</string>
     <string name="editor_kind_cardio">Cardio</string>
+    <string name="editor_kind_weight_time">Weight + time</string>
+    <string name="editor_kind_weight_distance">Weight + distance</string>
+    <string name="editor_kind_time">Time</string>
+    <plurals name="editor_kind_locked">
+        <item quantity="one">Kinds that can\'t keep this %1$d set are off.</item>
+        <item quantity="other">Kinds that can\'t keep these %1$d sets are off.</item>
+    </plurals>
+    <string name="editor_kind_locked_cardio">Cardio and strength sets measure different things, so they can\'t be converted into each other.</string>
+    <string name="editor_kind_locked_load">Time only has no weight, so it would lose the weight of your sets.</string>
+    <string name="editor_kind_locked_measure">Time and distance sets can\'t be converted into each other. Pick weight + reps first, then change again.</string>
+    <string name="editor_group_locked_cardio">The muscle group follows the kind, so Cardio can\'t be switched on or off while this exercise has sets.</string>
+    <string name="editor_convert_failed">Couldn\'t change the kind. Nothing was changed.</string>
+    <string name="convert_title_unchanged">Change to %1$s?</string>
+    <plurals name="convert_body_unchanged">
+        <item quantity="one">Your %1$d set keeps its numbers.</item>
+        <item quantity="other">Your %1$d sets keep their numbers.</item>
+    </plurals>
+    <string name="convert_change">Change</string>
+    <string name="convert_title_seconds_per_rep">Each rep was how many seconds?</string>
+    <string name="convert_title_metres_per_rep">Each rep was how many metres?</string>
+    <string name="convert_title_rep_seconds">How many seconds was one rep?</string>
+    <string name="convert_title_rep_metres">How many metres was one rep?</string>
+    <string name="convert_stepper_seconds">Seconds per rep</string>
+    <string name="convert_stepper_metres">Metres per rep</string>
+    <string name="convert_value_empty">-</string>
+    <plurals name="convert_to_timed">
+        <item quantity="one">The %1$d set keeps its load; every rep becomes %2$s.</item>
+        <item quantity="other">Each of the %1$d sets keeps its load; every rep becomes %2$s.</item>
+    </plurals>
+    <plurals name="convert_from_timed">
+        <item quantity="one">The %1$d set keeps its load; every %2$s becomes one rep.</item>
+        <item quantity="other">Each of the %1$d sets keeps its load; every %2$s becomes one rep.</item>
+    </plurals>
+    <string name="convert_preview_title">Your latest set</string>
+    <string name="convert_preview">%1$s becomes %2$s</string>
+    <string name="convert_preview_pending">%1$s becomes ... (set the number above)</string>
+    <string name="convert_no_undo">This can\'t be undone.</string>
+    <plurals name="convert_confirm">
+        <item quantity="one">Convert %1$d set</item>
+        <item quantity="other">Convert %1$d sets</item>
+    </plurals>
+    <string name="library_detail_kind">Logged as</string>
     <string name="editor_step">Weight step</string>
     <string name="editor_step_value">%1$s kg</string>
     <string name="editor_rest">Rest after each set</string>

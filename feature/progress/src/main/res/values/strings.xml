@@ -335,4 +335,23 @@
     <string name="stats_patterns_hint">Exploratory: patterns from few sessions are often chance. Only differences that survive a correction for testing many days at once are highlighted.</string>
     <string name="stats_patterns_none">No clear pattern yet (from %1$d sessions).</string>
     <string name="stats_patterns_slot_description">%1$s: %2$s percent, %3$d sessions</string>
+
+    <!-- C5: strength by time or distance -->
+    <string name="progress_metric_weight">Weight</string>
+    <string name="progress_chart_title_seconds">Time (s)</string>
+    <string name="progress_chart_title_metres">Distance (m)</string>
+    <string name="progress_from_to_seconds">%1$s → %2$s s</string>
+    <string name="progress_from_to_metres">%1$s → %2$s m</string>
+    <string name="progress_best_seconds">Best: %1$d s</string>
+    <string name="progress_best_metres">Best: %1$d m</string>
+    <string name="progress_delta_seconds">%1$s s</string>
+    <string name="progress_delta_metres">%1$s m</string>
+    <string name="progress_trend_seconds">Trend: %1$s to %2$s s</string>
+    <string name="progress_trend_metres">Trend: %1$s to %2$s m</string>
+    <string name="trend_unit_seconds">s</string>
+    <string name="trend_unit_metres">m</string>
+    <string name="stats_record_longest_time">Longest time: %1$d s at %2$s kg</string>
+    <string name="stats_record_longest_time_no_load">Longest time: %1$d s</string>
+    <string name="stats_record_longest_distance">Longest distance: %1$d m at %2$s kg</string>
+    <string name="stats_record_longest_distance_no_load">Longest distance: %1$d m</string>
 </resources>

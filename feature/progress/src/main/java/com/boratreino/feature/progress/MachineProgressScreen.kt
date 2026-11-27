@@ -42,6 +42,7 @@ import com.boratreino.core.ui.cardioText
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.R as CoreUiR
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 /** Sessions listed before "Show all". */
 internal const val SESSIONS_SHOWN = 15
@@ -123,6 +124,9 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
         }
         if (state.cardioMetrics.size > 1) {
             item(key = "cardio-metrics") { CardioMetricChips(state.cardioMetrics, state.metric, actions.onCardioMetric) }
+        }
+        if (state.measureMetrics.size > 1) {
+            item(key = "measure-metrics") { CardioMetricChips(state.measureMetrics, state.metric, actions.onCardioMetric) }
         }
         item(key = "chart") { ChartCard(state, actions.onSelectPoint) }
         if (state.trend != null) {
@@ -251,13 +255,14 @@ private fun CardioMetricChips(metrics: List<ProgressMetric>, selected: ProgressM
     }
 }
 
-/** The chip label of a cardio metric: "Speed", "Intensity", "Distance" or "Time". */
+/** The chip label of a metric: "Speed", "Intensity", "Distance" or "Time", and "Weight" for the strength chip row. */
 @Composable
 internal fun cardioMetricName(metric: ProgressMetric): String = stringResource(
     when (metric) {
         ProgressMetric.SPEED -> R.string.progress_metric_speed
         ProgressMetric.INTENSITY -> R.string.progress_metric_intensity
-        ProgressMetric.DISTANCE -> R.string.progress_metric_distance
+        ProgressMetric.DISTANCE, ProgressMetric.METRES -> R.string.progress_metric_distance
+        ProgressMetric.WEIGHT -> R.string.progress_metric_weight
         else -> R.string.progress_metric_time
     },
 )
@@ -316,6 +321,8 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
         ProgressMetric.SPEED -> stringResource(R.string.progress_chart_title_speed)
         ProgressMetric.INTENSITY -> stringResource(R.string.progress_chart_title_intensity)
         ProgressMetric.DISTANCE -> stringResource(R.string.progress_chart_title_distance)
+        ProgressMetric.SECONDS -> stringResource(R.string.progress_chart_title_seconds)
+        ProgressMetric.METRES -> stringResource(R.string.progress_chart_title_metres)
     }
     BoraCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -365,8 +372,12 @@ private fun ChartCard(state: MachineProgressUiState, onSelect: (Int?) -> Unit) {
 private fun valueFormatter(metric: ProgressMetric): (Double) -> String = when (metric) {
     ProgressMetric.INTENSITY -> { value -> formatIntensity(value) }
     ProgressMetric.ONE_RM, ProgressMetric.SPEED, ProgressMetric.DISTANCE -> ::formatEstimate1
+    ProgressMetric.SECONDS, ProgressMetric.METRES -> ::formatWhole
     else -> ::formatKg1
 }
+
+/** Whole numbers for the time and distance axes. */
+private fun formatWhole(value: Double): String = value.roundToInt().toString()
 
 private fun formatEstimate1(value: Double): String = formatEstimate(value)
 
@@ -381,7 +392,7 @@ private fun chartDescription(state: MachineProgressUiState): String {
     val best = points.maxOf { it.value }
     val metric = state.metric
     val number = valueFormatter(metric)
-    if (metric.isCardioValue()) {
+    if (metric.isCardioValue() || metric == ProgressMetric.SECONDS || metric == ProgressMetric.METRES) {
         val name = cardioMetricName(metric)
         return if (points.size < 2) {
             stringResource(
