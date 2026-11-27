@@ -46,17 +46,50 @@ data class UpcomingTraining(val date: LocalDate, val routine: Routine)
 
 object NextRoutineRules {
     /**
-     * Each routine is either in rotation (empty weekdays) or on specific days (non-empty weekdays); [mode] is
-     * ignored (kept for source compatibility). Order:
-     * 1. The first routine of [planned] (planned for today's date, in the order the owner set, given by the caller)
-     *    that is not in [doneToday] (ids of routines already trained today) wins, even on a rest day.
-     * 2. No routines: null.
-     * 3. The first on-specific-days routine (by position) whose weekdays contain [today] wins over rotation.
-     * 4. No rotation routines: null.
-     * 5. Rotation is offered only when [today] is in [trainingDays], or when [trainingDays] is empty and no routine
-     *    is on specific days (train any day). Otherwise null (rest day).
-     * 6. The pick is the rotation routine after [lastRoutineId] (the last rotation routine trained) by position,
-     *    wrapping; the first rotation routine when it is null or no longer in rotation.
+     * The routines of [today]'s workouts, in the order they are offered; a day may hold several and none hides
+     * another. Each routine is either in rotation (empty weekdays) or on specific days (non-empty weekdays); [mode]
+     * is ignored (kept for source compatibility). In order, without duplicates, leaving out the ids in [doneToday]
+     * (routines already trained today):
+     * 1. [planned]: the routines planned for today's date, in the order the owner set (given by the caller), even on
+     *    a rest day.
+     * 2. The rotation slot: the rotation routine after [lastRoutineId] (the last rotation routine trained) by
+     *    position, wrapping; the first rotation routine when it is null or no longer in rotation. Offered only when
+     *    [today] is in [trainingDays], or when [trainingDays] is empty and no routine is on specific days (train any
+     *    day). The slot is already filled, so left out, when a routine of [planned] is in rotation or a rotation
+     *    routine is in [doneToday] (the rotation is trained once a day).
+     * 3. Every on-specific-days routine whose weekdays contain [today], by position.
+     */
+    fun dayRoutines(
+        mode: ScheduleMode,
+        routines: List<Routine>,
+        lastRoutineId: Long?,
+        today: DayOfWeek,
+        trainingDays: Set<DayOfWeek> = emptySet(),
+        planned: List<Routine> = emptyList(),
+        doneToday: Set<Long> = emptySet(),
+    ): List<Routine> {
+        val result = LinkedHashMap<Long, Routine>()
+        planned.forEach { result.putIfAbsent(it.id, it) }
+        val sorted = routines.sortedBy { it.position }
+        val fixed = sorted.filter { it.weekdays.isNotEmpty() }
+        val rotation = sorted.filter { it.weekdays.isEmpty() }
+        val rotationIds = rotation.map { it.id }.toSet()
+        val offered = if (trainingDays.isEmpty()) fixed.isEmpty() else today in trainingDays
+        val slotFilled = planned.any { it.weekdays.isEmpty() } || doneToday.any { it in rotationIds }
+        if (rotation.isNotEmpty() && offered && !slotFilled) {
+            val i = rotation.indexOfFirst { it.id == lastRoutineId }
+            val pick = if (lastRoutineId == null || i < 0) rotation.first() else rotation[(i + 1) % rotation.size]
+            result.putIfAbsent(pick.id, pick)
+        }
+        fixed.filter { today in it.weekdays }.forEach { result.putIfAbsent(it.id, it) }
+        return result.values.filter { it.id !in doneToday }
+    }
+
+    /**
+     * The routine to train next today: the first of [dayRoutines]. When that list is empty because everything of the
+     * day is in [doneToday], the schedule decides again as if nothing were planned or done (so after the day's
+     * workouts Today still offers one more, the rotation routine after [lastRoutineId] first, rather than a rest
+     * day). Null when the day holds no workout at all (rest day).
      */
     fun next(
         mode: ScheduleMode,
@@ -67,17 +100,9 @@ object NextRoutineRules {
         planned: List<Routine> = emptyList(),
         doneToday: Set<Long> = emptySet(),
     ): Routine? {
-        planned.firstOrNull { it.id !in doneToday }?.let { return it }
-        if (routines.isEmpty()) return null
-        val sorted = routines.sortedBy { it.position }
-        val fixed = sorted.filter { it.weekdays.isNotEmpty() }
-        fixed.firstOrNull { today in it.weekdays }?.let { return it }
-        val rotation = sorted.filter { it.weekdays.isEmpty() }
-        if (rotation.isEmpty()) return null
-        val offered = if (trainingDays.isEmpty()) fixed.isEmpty() else today in trainingDays
-        if (!offered) return null
-        val i = rotation.indexOfFirst { it.id == lastRoutineId }
-        return if (lastRoutineId == null || i < 0) rotation.first() else rotation[(i + 1) % rotation.size]
+        val day = dayRoutines(mode, routines, lastRoutineId, today, trainingDays, planned, doneToday)
+        if (day.isNotEmpty() || doneToday.isEmpty()) return day.firstOrNull()
+        return dayRoutines(mode, routines, lastRoutineId, today, trainingDays).firstOrNull()
     }
 
     /**
@@ -93,10 +118,9 @@ object NextRoutineRules {
     }
 
     /**
-     * The first date strictly after [after] (looking at most 7 days ahead) that is a training day, with the
-     * routine suggested then. Null when there is none or no routines. A routine in [planned] for a date
-     * (when it exists in [routines]) wins over the schedule on that date; with several on one date, the one with the
-     * lowest planned position (then routine position) wins.
+     * The first date strictly after [after] (looking at most 7 days ahead) that holds a workout, with its first
+     * routine ([dayRoutines] with that date's [planned] routines, those that exist in [routines], by planned
+     * position then routine position). Null when there is none or no routines.
      */
     fun upcoming(
         mode: ScheduleMode,
@@ -107,18 +131,22 @@ object NextRoutineRules {
         planned: List<PlannedWorkout> = emptyList(),
     ): UpcomingTraining? {
         if (routines.isEmpty()) return null
-        val byId = routines.associateBy { it.id }
-        val plannedByDate = planned
-            .mapNotNull { p -> byId[p.routineId]?.let { r -> Triple(p.date, p.position, r) } }
-            .groupBy({ it.first }, { it.second to it.third })
-            .mapValues { (_, list) -> list.minWith(compareBy({ it.first }, { it.second.position })).second }
+        val plannedByDate = plannedByDate(routines, planned)
         for (offset in 1L..7L) {
             val date = after.plusDays(offset)
-            val routine = plannedByDate[date]
-                ?: next(mode, routines, lastRoutineId, date.dayOfWeek, trainingDays)
+            val routine = next(mode, routines, lastRoutineId, date.dayOfWeek, trainingDays, plannedByDate[date].orEmpty())
             if (routine != null) return UpcomingTraining(date, routine)
         }
         return null
+    }
+
+    /** The routines of [planned] that exist in [routines], grouped by date, by planned position then routine position. */
+    internal fun plannedByDate(routines: List<Routine>, planned: List<PlannedWorkout>): Map<LocalDate, List<Routine>> {
+        val byId = routines.associateBy { it.id }
+        return planned
+            .mapNotNull { p -> byId[p.routineId]?.let { r -> Triple(p.date, p.position, r) } }
+            .groupBy({ it.first }, { it.second to it.third })
+            .mapValues { (_, list) -> list.sortedWith(compareBy({ it.first }, { it.second.position })).map { it.second }.distinct() }
     }
 
     /** The next free single letter A..Z not used as a shortName (case-insensitive); "R" + n if all used. */

@@ -530,8 +530,10 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
     if (state.loaded && !isPast) {
         PlanSection(
             planned = state.planned[state.selected].orEmpty(),
-            // Only a day without a manual plan and nothing logged shows what the rotation puts on it.
-            projected = state.projected[state.selected].takeIf { state.sessions.isEmpty() },
+            // What the rotation and the fixed days put on the day, besides its plans (today: what is not trained yet).
+            // A routine already logged on the day (the session in progress, too) is not suggested again.
+            projected = (listOfNotNull(state.projected[state.selected]) + state.projectedMore[state.selected].orEmpty())
+                .filter { p -> state.sessions.none { it.session.routineId == p.routineId } },
             routines = state.routines,
             hasSessions = state.sessions.isNotEmpty(),
             offerAdd = isToday && state.sessions.isEmpty(),
@@ -551,13 +553,13 @@ private fun DayDetail(state: CalendarUiState, actions: CalendarActions) {
 }
 
 /**
- * Today or later: the planned routines as rows (letter, name, move, remove), or the rotation's muted suggestion, then "Plan a workout" while routines
+ * Today or later: the planned routines as rows (letter, name, move, remove), then the rotation's and the fixed days' muted suggestions, then "Plan a workout" while routines
  * are left (filled when nothing is logged yet, tonal otherwise). Today with nothing logged also offers "Add a workout".
  */
 @Composable
 private fun PlanSection(
     planned: List<PlannedUi>,
-    projected: ProjectedUi?,
+    projected: List<ProjectedUi>,
     routines: List<RoutineChoiceUi>,
     hasSessions: Boolean,
     offerAdd: Boolean,
@@ -587,23 +589,26 @@ private fun PlanSection(
             }
         }
     }
-    if (projected != null && planned.isEmpty()) {
+    if (projected.isNotEmpty()) {
         BoraCard(modifier = Modifier.fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (projected.shortName.isNotBlank()) {
-                    RoutineBadge(projected.shortName, selected = false, modifier = Modifier.padding(end = 12.dp))
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        projected.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        stringResource(R.string.calendar_from_rotation),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            projected.forEachIndexed { index, item ->
+                if (index > 0) Hairline()
+                Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (item.shortName.isNotBlank()) {
+                        RoutineBadge(item.shortName, selected = false, modifier = Modifier.padding(end = 12.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            item.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            stringResource(R.string.calendar_from_rotation),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

@@ -69,8 +69,10 @@ private data class PlanningData(
     val routines: List<RoutineChoiceUi>,
     val scheduleMode: ScheduleMode = ScheduleMode.IN_TURN,
     val trainingDays: Set<DayOfWeek> = emptySet(),
-    /** What the rotation puts on today and the 7 days after it, by date. */
+    /** What the rotation and the fixed days put on today and the 7 days after it, by date: the day's first one. */
     val projected: Map<LocalDate, ProjectedUi> = emptyMap(),
+    /** The same days' further projected workouts (a fixed routine after the rotation one), in order; absent when none. */
+    val projectedMore: Map<LocalDate, List<ProjectedUi>> = emptyMap(),
 )
 
 /**
@@ -93,8 +95,13 @@ internal data class CalendarUiState(
     val dayRoutineIds: Map<LocalDate, Long> = emptyMap(),
     /** The days with a finished or open session (any month): the week strip marks the ones of this week. */
     val trainedDates: Set<LocalDate> = emptySet(),
-    /** The routines the rotation puts on today and the next 7 days (not on days with a manual plan). */
+    /**
+     * The first routine the rotation or a fixed day puts on today and the next 7 days (besides any manual plan; on
+     * today, not the routines already trained).
+     */
     val projected: Map<LocalDate, ProjectedUi> = emptyMap(),
+    /** The further projected routines of those days, in order (a fixed routine after the rotation one); absent when none. */
+    val projectedMore: Map<LocalDate, List<ProjectedUi>> = emptyMap(),
     val sessions: List<SessionDetail> = emptyList(),
     /** Null for future days, without a profile, or when the owner switched the estimate off. */
     val energy: DayEnergyUi? = null,
@@ -186,6 +193,17 @@ class CalendarViewModel @Inject constructor(
         val routines: List<Routine> = plan.routines.map { it.routine }
         val byId = routines.associateBy { it.id }
         val plannedFromToday = plannedList.filter { !it.date.isBefore(today) }
+        val projectedByDate = RotationProjection.project(
+            today = today,
+            routines = routines,
+            lastRoutineId = lastRoutineId,
+            trainingDays = plan.plan.trainingDays,
+            planned = plannedFromToday,
+            // A finished session today: the open one does not count, it is the workout in progress.
+            trainedToday = todaySessions.any { it.session.endedAt != null },
+            // Today's routines already trained get no projected entry (the screen hides the one in progress).
+            doneToday = todaySessions.filter { it.session.endedAt != null }.mapNotNull { it.session.routineId }.toSet(),
+        ).groupBy({ it.date }, { ProjectedUi(it.routine.id, it.routine.shortName, it.routine.name) })
         PlanningData(
             planned = plannedFromToday
                 // observePlanned() already comes ordered by date, position and routine: keep that order.
@@ -194,15 +212,8 @@ class CalendarViewModel @Inject constructor(
             routines = routines.map { RoutineChoiceUi(it.id, it.name, it.shortName, it.weekdays) },
             scheduleMode = plan.plan.scheduleMode,
             trainingDays = plan.plan.trainingDays,
-            projected = RotationProjection.project(
-                today = today,
-                routines = routines,
-                lastRoutineId = lastRoutineId,
-                trainingDays = plan.plan.trainingDays,
-                planned = plannedFromToday,
-                // A finished session today: the open one does not count, it is the workout in progress.
-                trainedToday = todaySessions.any { it.session.endedAt != null },
-            ).associate { it.date to ProjectedUi(it.routine.id, it.routine.shortName, it.routine.name) },
+            projected = projectedByDate.mapValues { it.value.first() },
+            projectedMore = projectedByDate.mapValues { it.value.drop(1) }.filterValues { it.isNotEmpty() },
         )
     }
 
@@ -234,6 +245,7 @@ class CalendarViewModel @Inject constructor(
                 }.toMap(),
                 trainedDates = dates,
                 projected = plan.projected,
+                projectedMore = plan.projectedMore,
                 sessions = day,
                 energy = dayEnergy(profile, view.selected, today, day),
                 planned = plan.planned,

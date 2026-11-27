@@ -86,6 +86,8 @@ class StatsViewModel @Inject constructor(
             trainingDays = plan.plan.trainingDays,
             planned = plannedList.filter { !it.date.isBefore(today) },
             trainedToday = todaySessions.any { it.session.endedAt != null },
+            // Today's routines already trained are not next; another of the day's workouts can be.
+            doneToday = todaySessions.filter { it.session.endedAt != null }.mapNotNull { it.session.routineId }.toSet(),
         ).firstOrNull()
         plan.routines to next
     }
