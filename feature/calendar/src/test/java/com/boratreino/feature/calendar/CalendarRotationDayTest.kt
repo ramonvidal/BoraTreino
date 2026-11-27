@@ -40,6 +40,8 @@ class CalendarRotationDayTest {
 
     private val routineChoices = listOf(RoutineChoiceUi(1L, "Treino A", "A"), RoutineChoiceUi(2L, "Treino B", "B"))
     private val projectedB = ProjectedUi(2L, "B", "Treino B")
+    private val projectedC = ProjectedUi(3L, "C", "Treino C")
+    private val projectedFixedF = ProjectedUi(4L, "F", "Treino F")
     private val planA = PlannedUi(1L, "Treino A", "A")
     private val planB = PlannedUi(2L, "Treino B", "B")
 
@@ -56,6 +58,7 @@ class CalendarRotationDayTest {
     private fun dayState(
         selected: LocalDate,
         projected: Map<LocalDate, ProjectedUi> = emptyMap(),
+        projectedMore: Map<LocalDate, List<ProjectedUi>> = emptyMap(),
         planned: Map<LocalDate, List<PlannedUi>> = emptyMap(),
         sessions: List<SessionDetail> = emptyList(),
     ) = CalendarUiState(
@@ -67,6 +70,7 @@ class CalendarRotationDayTest {
         planned = planned,
         routines = routineChoices,
         projected = projected,
+        projectedMore = projectedMore,
         sessions = sessions,
     )
 
@@ -102,24 +106,49 @@ class CalendarRotationDayTest {
     }
 
     @Test
-    fun `a day with a manual plan shows the planned row and not the rotation suggestion`() {
+    fun `a day with a manual plan shows the planned row and the rotation row next to it`() {
         show(
             dayState(
                 tomorrow,
-                projected = mapOf(tomorrow to projectedB),
+                projected = mapOf(tomorrow to projectedC),
                 planned = mapOf(tomorrow to listOf(planB)),
             ),
         )
 
-        compose.onNodeWithText("From your rotation").assertDoesNotExist()
+        compose.onNodeWithText("Treino B").assertIsDisplayed()
+        compose.onNodeWithText("Treino C").assertIsDisplayed()
+        compose.onNodeWithText("From your rotation").assertIsDisplayed()
         compose.onAllNodesWithContentDescription("Remove").assertCountEquals(1)
     }
 
     @Test
-    fun `a day with a session shows no rotation suggestion`() {
+    fun `a routine already logged on a day with a session is not suggested again`() {
         show(dayState(today, projected = mapOf(today to projectedB), sessions = listOf(CalendarSamples.mondaySession)))
 
         compose.onNodeWithText("From your rotation").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a day with a session still shows the rotation row of a routine not logged yet`() {
+        show(dayState(today, projected = mapOf(today to projectedC), sessions = listOf(CalendarSamples.mondaySession)))
+
+        compose.onNodeWithText("Treino C").assertIsDisplayed()
+        compose.onNodeWithText("From your rotation").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a mixed day shows the rotation routine and the fixed-day one as rows`() {
+        show(
+            dayState(
+                tomorrow,
+                projected = mapOf(tomorrow to projectedC),
+                projectedMore = mapOf(tomorrow to listOf(projectedFixedF)),
+            ),
+        )
+
+        compose.onNodeWithText("Treino C").assertIsDisplayed()
+        compose.onNodeWithText("Treino F").assertIsDisplayed()
+        compose.onNodeWithText("Plan a workout").assertIsEnabled()
     }
 
     @Test

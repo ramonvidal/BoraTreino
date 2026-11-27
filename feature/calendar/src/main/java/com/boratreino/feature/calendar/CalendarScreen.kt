@@ -604,7 +604,7 @@ private fun PlanSection(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            stringResource(R.string.calendar_from_rotation),
+                            stringResource(if (item.inRotation) R.string.calendar_from_rotation else R.string.calendar_fixed_day),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -31,6 +31,7 @@
     <string name="calendar_extra_workout">Extra workout</string>
     <string name="calendar_extra_hint">Does not change the rotation.</string>
     <string name="calendar_from_rotation">From your rotation</string>
+    <string name="calendar_fixed_day">On its fixed days</string>
     <string name="calendar_session_counts">%1$s · %2$s</string>
     <string name="calendar_session_summary">%1$s · %2$s · %3$s</string>
     <string name="calendar_time_range">%1$s–%2$s</string>

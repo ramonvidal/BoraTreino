@@ -20,6 +20,7 @@
     <string name="calendar_extra_workout">Treino extra</string>
     <string name="calendar_extra_hint">Não muda o rodízio.</string>
     <string name="calendar_from_rotation">Do seu rodízio</string>
+    <string name="calendar_fixed_day">Nos dias fixos dela</string>
     <string name="calendar_session_counts">%1$s · %2$s</string>
     <string name="calendar_session_summary">%1$s · %2$s · %3$s</string>
     <string name="calendar_time_range">%1$s–%2$s</string>

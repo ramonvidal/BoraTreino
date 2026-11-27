@@ -45,6 +45,7 @@ class RotationProjectionTest {
         trainedToday: Boolean = false,
         today: LocalDate = monday,
         daysAhead: Int = RotationProjection.DAYS_AHEAD,
+        doneToday: Set<Long> = emptySet(),
     ): List<Pair<LocalDate, String>> = RotationProjection.project(
         today = today,
         routines = routines,
@@ -53,6 +54,7 @@ class RotationProjectionTest {
         planned = planned,
         trainedToday = trainedToday,
         daysAhead = daysAhead,
+        doneToday = doneToday,
     ).map { it.date to it.routine.shortName }
 
     // Today and the coming days
@@ -159,8 +161,8 @@ class RotationProjectionTest {
     }
 
     @Test
-    fun `a manual plan of a fixed routine does not move the rotation pointer`() {
-        // Monday is planned for the fixed routine: no entry, and the rotation is still at A.
+    fun `a manual plan of a fixed routine does not hide the rotation and does not move its pointer`() {
+        // Monday is planned for the fixed routine: no entry for it, but the rotation still gives Monday its B.
         val planned = listOf(PlannedWorkout(monday, fixedThursday.id))
 
         val result = project(
@@ -170,8 +172,11 @@ class RotationProjectionTest {
             planned = planned,
         )
 
-        // Wednesday B, Thursday is the fixed routine (no slot), Friday A, next Monday B.
-        assertEquals(listOf(wednesday to "B", LocalDate.of(2026, 11, 5) to "T", friday to "A", nextMonday to "B"), result)
+        // Monday B, Wednesday A, Thursday is the fixed routine (no slot), Friday B, next Monday A.
+        assertEquals(
+            listOf(monday to "B", wednesday to "A", LocalDate.of(2026, 11, 5) to "T", friday to "B", nextMonday to "A"),
+            result,
+        )
     }
 
     @Test
@@ -187,13 +192,57 @@ class RotationProjectionTest {
     // Fixed routines
 
     @Test
-    fun `a fixed routine wins on its weekday and does not use up a rotation slot`() {
+    fun `a fixed routine on its weekday comes after that day's rotation routine and does not use up a rotation slot`() {
         val fixedWednesday = routine(4L, 2, "W", setOf(DayOfWeek.WEDNESDAY))
 
         val result = project(routines = listOf(a, b, fixedWednesday), lastRoutineId = null, trainingDays = monWedFri)
 
-        // Monday A, Wednesday the fixed W (no slot used), Friday B, next Monday A again.
-        assertEquals(listOf(monday to "A", wednesday to "W", friday to "B", nextMonday to "A"), result)
+        // Monday A, Wednesday B then the fixed W (no slot used), Friday A, next Monday B.
+        assertEquals(
+            listOf(monday to "A", wednesday to "B", wednesday to "W", friday to "A", nextMonday to "B"),
+            result,
+        )
+    }
+
+    @Test
+    fun `a fixed routine of today that is done gets no entry and the rotation of today still shows`() {
+        val fixedMonday = routine(4L, 2, "W", setOf(DayOfWeek.MONDAY))
+
+        val result = project(
+            routines = listOf(a, b, fixedMonday),
+            lastRoutineId = a.id,
+            trainingDays = monWedFri,
+            trainedToday = true,
+            doneToday = setOf(fixedMonday.id),
+        )
+
+        assertEquals(listOf(monday to "B"), result.filter { it.first == monday })
+        assertTrue(result.none { it.first == monday && it.second == "W" })
+    }
+
+    @Test
+    fun `a rotation routine done today fills today's slot and gets no entry, and the rotation goes on from it`() {
+        val result = project(
+            lastRoutineId = b.id,
+            trainingDays = monWedFri,
+            trainedToday = true,
+            doneToday = setOf(b.id),
+        )
+
+        // Monday's slot is filled by the B done today; Wednesday C, Friday A, next Monday B.
+        assertEquals(listOf(wednesday to "C", friday to "A", nextMonday to "B"), result)
+    }
+
+    @Test
+    fun `several entries on one date are listed rotation first and then the fixed routine`() {
+        val fixedMonday = routine(4L, 2, "W", setOf(DayOfWeek.MONDAY))
+
+        val result = project(routines = listOf(a, b, fixedMonday), lastRoutineId = null, trainingDays = monWedFri)
+
+        assertEquals(
+            listOf(monday to "A", monday to "W", wednesday to "B", friday to "A", nextMonday to "B", nextMonday to "W"),
+            result,
+        )
     }
 
     @Test

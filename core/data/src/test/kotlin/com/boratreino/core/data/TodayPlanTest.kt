@@ -357,13 +357,13 @@ class TodayPlanTest {
     }
 
     @Test
-    fun `a routine on specific days ignores the last routine done`() = runTest {
+    fun `a second routine on specific days is suggested once the first one is done that day`() = runTest {
         val press = machine("Leg press")
-        val a = routine("A", press, weekdays = setOf(DayOfWeek.MONDAY))
-        routine("B", machine("Lat pulldown"), weekdays = setOf(DayOfWeek.MONDAY))
-        finishedSession(press)
+        routine("A", press, weekdays = setOf(DayOfWeek.MONDAY))
+        val b = routine("B", machine("Lat pulldown"), weekdays = setOf(DayOfWeek.MONDAY))
+        finishedSession(press) // Monday: A, which is first by position
 
-        assertEquals(a, plan().suggested?.id)
+        assertEquals(b, plan().suggested?.id)
     }
 
     @Test

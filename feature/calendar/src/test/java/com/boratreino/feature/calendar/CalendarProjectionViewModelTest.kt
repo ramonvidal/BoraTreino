@@ -129,13 +129,29 @@ class CalendarProjectionViewModelTest {
     }
 
     @Test
-    fun `a fixed-day routine takes its day without moving the rotation`() = runTest {
+    fun `a fixed-day routine comes after that day's rotation routine and does not move the rotation`() = runTest {
         val fixedC = Routine(3L, 1L, "Treino C", "C", 2, setOf(DayOfWeek.FRIDAY))
         routines = PlanRoutines(listOf(routineA, routineB, fixedC))
         routines.setTrainingDays(setOf(DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY))
         start()
 
-        assertEquals(listOf(5 to "A", 6 to "C", 7 to "B", 8 to "A", 12 to "B"), letters())
+        // Friday: the rotation's B first, then the fixed C, which is only in projectedMore.
+        assertEquals(listOf(5 to "A", 6 to "B", 7 to "A", 8 to "B", 12 to "A"), letters())
+        assertEquals(listOf("C"), viewModel.state.value.projectedMore[day(6)]?.map { it.shortName })
+        assertEquals(null, viewModel.state.value.projectedMore[today])
+    }
+
+    @Test
+    fun `a fixed-day routine trained today leaves the projection and the rotation routine of the day stays`() = runTest {
+        val fixedThursday = Routine(3L, 1L, "Treino C", "C", 2, setOf(DayOfWeek.THURSDAY))
+        routines = PlanRoutines(listOf(routineA, routineB, fixedThursday))
+        routines.lastRoutineFlow.value = routineA.id
+        routines.setTrainingDays(setOf(DayOfWeek.THURSDAY))
+        history.days.value = mapOf(today to listOf(session(fixedThursday, finished = true)))
+        start()
+
+        assertEquals(ProjectedUi(routineB.id, "B", "Treino B"), viewModel.state.value.projected[today])
+        assertEquals(null, viewModel.state.value.projectedMore[today])
     }
 
     @Test
@@ -151,8 +167,9 @@ class CalendarProjectionViewModelTest {
     }
 
     @Test
-    fun `a manual plan of a fixed-day routine does not move the rotation`() = runTest {
-        // C has fixed days, so it is not in the rotation: planning it on Friday leaves the pointer on A.
+    fun `a manual plan of a fixed-day routine does not hide the rotation and does not move it`() = runTest {
+        // C has fixed days, so it is not in the rotation: planning it on Friday gets no entry, and the rotation
+        // still gives Friday its A. The pointer moves as if C were not planned.
         val fixedC = Routine(3L, 1L, "Treino C", "C", 2, setOf(DayOfWeek.MONDAY))
         routines = PlanRoutines(listOf(routineA, routineB, fixedC))
         routines.lastRoutineFlow.value = routineA.id
@@ -160,8 +177,11 @@ class CalendarProjectionViewModelTest {
         routines.plannedFlow.value = listOf(PlannedWorkout(day(6), fixedC.id))
         start()
 
-        assertFalse(viewModel.state.value.projected.containsKey(day(6)))
-        assertEquals(listOf(5 to "B", 7 to "A", 8 to "B", 9 to "C", 10 to "A", 11 to "B", 12 to "A"), letters())
+        assertEquals("A", viewModel.state.value.projected[day(6)]?.shortName)
+        assertEquals(null, viewModel.state.value.projectedMore[day(6)])
+        // Monday's own fixed C comes after the rotation's B.
+        assertEquals(listOf("C"), viewModel.state.value.projectedMore[day(9)]?.map { it.shortName })
+        assertEquals(listOf(5 to "B", 6 to "A", 7 to "B", 8 to "A", 9 to "B", 10 to "A", 11 to "B", 12 to "A"), letters())
     }
 
     @Test

@@ -90,6 +90,18 @@ class CalendarRotationScreenshotTest {
     )
 
     @Test
+    fun `calendar mixed day with the rotation routine and a fixed-day routine`() = shootCalendar(
+        "calendar-mixed-day",
+        CalendarSamples.monthWithTraining.copy(
+            selected = nov5,
+            sessions = emptyList(),
+            routines = routineChoices,
+            projected = mapOf(nov5 to projected(CalendarSamples.routineC)),
+            projectedMore = mapOf(nov5 to listOf(ProjectedUi(4L, "F", "Treino F"))),
+        ),
+    )
+
+    @Test
     fun `calendar session of an extra workout with the Extra pill`() = shootCalendar(
         "calendar-extra-session",
         CalendarSamples.monthWithTraining.copy(sessions = listOf(extraMonday), routines = routineChoices),

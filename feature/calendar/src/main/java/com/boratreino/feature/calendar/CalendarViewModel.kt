@@ -52,7 +52,8 @@ internal data class DayEnergyUi(val kcal: Int, val kind: DayKind)
 internal data class PlannedUi(val routineId: Long, val name: String, val shortName: String)
 
 /** A routine the rotation puts on a coming day (not a manual plan): its id and the texts shown. */
-internal data class ProjectedUi(val routineId: Long, val shortName: String, val name: String)
+/** A routine the plan puts on a day; [inRotation] is false for a routine with fixed weekdays. */
+internal data class ProjectedUi(val routineId: Long, val shortName: String, val name: String, val inRotation: Boolean = true)
 
 /** A routine the owner can plan: its letter ([shortName], as in the rotation), its name and its [weekdays] (empty = in rotation). */
 internal data class RoutineChoiceUi(
@@ -203,7 +204,7 @@ class CalendarViewModel @Inject constructor(
             trainedToday = todaySessions.any { it.session.endedAt != null },
             // Today's routines already trained get no projected entry (the screen hides the one in progress).
             doneToday = todaySessions.filter { it.session.endedAt != null }.mapNotNull { it.session.routineId }.toSet(),
-        ).groupBy({ it.date }, { ProjectedUi(it.routine.id, it.routine.shortName, it.routine.name) })
+        ).groupBy({ it.date }, { ProjectedUi(it.routine.id, it.routine.shortName, it.routine.name, inRotation = it.routine.weekdays.isEmpty()) })
         PlanningData(
             planned = plannedFromToday
                 // observePlanned() already comes ordered by date, position and routine: keep that order.

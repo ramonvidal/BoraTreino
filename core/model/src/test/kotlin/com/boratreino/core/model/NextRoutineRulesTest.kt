@@ -151,16 +151,19 @@ class NextRoutineRulesTest {
     // Fixed routines (weekdays set)
 
     @Test
-    fun `fixed, the routine on its day wins over the rotation`() {
+    fun `fixed, on a day the rotation is not offered the routine on its day is next`() {
         assertEquals(fixedC, nextRoutine(mixed, lastRoutineId = a.id, today = DayOfWeek.TUESDAY, trainingDays = trainingDays))
     }
 
     @Test
-    fun `fixed, the routine on its day wins even when the rotation is offered that day`() {
+    fun `fixed, on a day the rotation is offered the rotation routine comes first and the fixed one after it`() {
+        val tuesdayOnly = setOf(DayOfWeek.TUESDAY)
+
         assertEquals(
-            fixedC,
-            nextRoutine(mixed, lastRoutineId = a.id, today = DayOfWeek.TUESDAY, trainingDays = setOf(DayOfWeek.TUESDAY)),
+            listOf(b, fixedC),
+            NextRoutineRules.dayRoutines(ScheduleMode.IN_TURN, mixed, lastRoutineId = a.id, today = DayOfWeek.TUESDAY, trainingDays = tuesdayOnly),
         )
+        assertEquals(b, nextRoutine(mixed, lastRoutineId = a.id, today = DayOfWeek.TUESDAY, trainingDays = tuesdayOnly))
     }
 
     @Test
@@ -319,6 +322,78 @@ class NextRoutineRulesTest {
     @Test
     fun `a routine done today that is not planned does not change the planned pick`() {
         assertEquals(b, nextRoutine(abc, lastRoutineId = null, today = DayOfWeek.TUESDAY, planned = listOf(b), doneToday = setOf(c.id)))
+    }
+
+    // Several workouts a day (dayRoutines)
+
+    // The owner's week: rotation A, B, C; F on Tuesday and Saturday; training on Tue, Thu, Sat and Sun.
+    private val f = routine(4L, 3, "F", setOf(DayOfWeek.TUESDAY, DayOfWeek.SATURDAY))
+    private val ownerRoutines = listOf(a, b, c, f)
+    private val ownerDays = setOf(DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
+
+    private fun dayOf(
+        routines: List<Routine>,
+        lastRoutineId: Long?,
+        today: DayOfWeek,
+        trainingDays: Set<DayOfWeek> = emptySet(),
+        planned: List<Routine> = emptyList(),
+        doneToday: Set<Long> = emptySet(),
+    ): List<Routine> = NextRoutineRules.dayRoutines(
+        ScheduleMode.IN_TURN,
+        routines,
+        lastRoutineId,
+        today,
+        trainingDays,
+        planned,
+        doneToday,
+    )
+
+    @Test
+    fun `day, on Saturday before training the rotation routine and the fixed one are both offered`() {
+        assertEquals(listOf(a, f), dayOf(ownerRoutines, lastRoutineId = c.id, today = DayOfWeek.SATURDAY, trainingDays = ownerDays))
+        assertEquals(a, nextRoutine(ownerRoutines, lastRoutineId = c.id, today = DayOfWeek.SATURDAY, trainingDays = ownerDays))
+    }
+
+    @Test
+    fun `day, after A on Saturday only F is left and it is next`() {
+        val doneA = setOf(a.id)
+
+        assertEquals(listOf(f), dayOf(ownerRoutines, lastRoutineId = a.id, today = DayOfWeek.SATURDAY, trainingDays = ownerDays, doneToday = doneA))
+        assertEquals(f, nextRoutine(ownerRoutines, lastRoutineId = a.id, today = DayOfWeek.SATURDAY, trainingDays = ownerDays, doneToday = doneA))
+    }
+
+    @Test
+    fun `day, after A and F on Saturday the next is B and the day falls back to it`() {
+        val doneAF = setOf(a.id, f.id)
+
+        assertEquals(emptyList<Routine>(), dayOf(ownerRoutines, lastRoutineId = a.id, today = DayOfWeek.SATURDAY, trainingDays = ownerDays, doneToday = doneAF))
+        assertEquals(b, nextRoutine(ownerRoutines, lastRoutineId = a.id, today = DayOfWeek.SATURDAY, trainingDays = ownerDays, doneToday = doneAF))
+    }
+
+    @Test
+    fun `day, on Sunday only the rotation routine is offered`() {
+        assertEquals(listOf(a), dayOf(ownerRoutines, lastRoutineId = c.id, today = DayOfWeek.SUNDAY, trainingDays = ownerDays))
+    }
+
+    @Test
+    fun `day, a Monday with only a fixed routine gives that routine and no rotation`() {
+        val mondayOnly = routine(5L, 3, "M", setOf(DayOfWeek.MONDAY))
+        val routines = listOf(a, b, c, mondayOnly)
+
+        assertEquals(listOf(mondayOnly), dayOf(routines, lastRoutineId = c.id, today = DayOfWeek.MONDAY, trainingDays = ownerDays))
+        assertEquals(mondayOnly, nextRoutine(routines, lastRoutineId = c.id, today = DayOfWeek.MONDAY, trainingDays = ownerDays))
+    }
+
+    @Test
+    fun `day, a planned rotation routine fills the rotation slot and the fixed one still shows`() {
+        assertEquals(listOf(c, f), dayOf(ownerRoutines, lastRoutineId = a.id, today = DayOfWeek.TUESDAY, trainingDays = ownerDays, planned = listOf(c)))
+        assertEquals(listOf(b, f), dayOf(ownerRoutines, lastRoutineId = a.id, today = DayOfWeek.TUESDAY, trainingDays = ownerDays))
+    }
+
+    @Test
+    fun `day, a planned fixed routine of today is listed once and the rotation still follows`() {
+        assertEquals(listOf(f, b), dayOf(ownerRoutines, lastRoutineId = a.id, today = DayOfWeek.TUESDAY, trainingDays = ownerDays, planned = listOf(f)))
+        assertEquals(listOf(b), dayOf(ownerRoutines, lastRoutineId = a.id, today = DayOfWeek.TUESDAY, trainingDays = ownerDays, planned = listOf(f), doneToday = setOf(f.id)))
     }
 
     // upcoming

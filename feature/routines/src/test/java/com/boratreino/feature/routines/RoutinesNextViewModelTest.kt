@@ -101,7 +101,7 @@ class RoutinesNextViewModelTest {
     }
 
     @Test
-    fun `a routine on specific days beats the rotation on its day`() = runTest(dispatcher) {
+    fun `on a day with a rotation routine and a routine on specific days the rotation one is flagged Next`() = runTest(dispatcher) {
         val plan = RoutinePlan(id = 1L, scheduleMode = ScheduleMode.IN_TURN, trainingDays = setOf(DayOfWeek.WEDNESDAY))
         val mixed = listOf(
             RoutineWithItems(fakeRoutine(1L, "Treino A", "A", 0), emptyList()),
@@ -109,7 +109,8 @@ class RoutinesNextViewModelTest {
         )
         val vm = viewModel(FakeRoutineRepository(mixed, initialPlan = plan, initialLastRoutineId = null))
 
-        assertEquals(listOf(false, true), vm.uiState.value.routines.map { it.isNext })
+        // Wednesday's list is A, then B; only the first one is flagged Next.
+        assertEquals(listOf(true, false), vm.uiState.value.routines.map { it.isNext })
     }
 
     @Test

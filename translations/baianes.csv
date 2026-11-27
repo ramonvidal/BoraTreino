@@ -141,6 +141,7 @@ feature/calendar,calendar_extra,,Extra,Extra
 feature/calendar,calendar_extra_workout,,Extra workout,Treino extra
 feature/calendar,calendar_extra_hint,,Does not change the rotation.,Não muda o rodízio.
 feature/calendar,calendar_from_rotation,,From your rotation,Do seu rodízio
+feature/calendar,calendar_fixed_day,,On its fixed days,Nos dias fixos dela
 feature/calendar,calendar_session_counts,,%1$s · %2$s,%1$s · %2$s
 feature/calendar,calendar_session_summary,,%1$s · %2$s · %3$s,%1$s · %2$s · %3$s
 feature/calendar,calendar_time_range,,%1$s–%2$s,%1$s–%2$s
