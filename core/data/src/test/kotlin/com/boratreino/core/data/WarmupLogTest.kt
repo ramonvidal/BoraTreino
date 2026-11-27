@@ -7,6 +7,7 @@ import com.boratreino.core.model.Routine
 import com.boratreino.core.model.RoutineChoice
 import com.boratreino.core.model.RoutineItem
 import com.boratreino.core.model.Session
+import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.SetType
 import kotlinx.coroutines.test.runTest
@@ -185,6 +186,13 @@ class WarmupLogTest {
         val press = machine("Leg press")
         val stale = store.insertSession(
             Session(id = 0, startedAt = now.minus(Duration.ofHours(5)), endedAt = null, routineId = null, note = null),
+        )
+        // A session only exists with sets: give the stale one a set, logged when it started.
+        store.insertSet(
+            WorkoutSet(
+                id = 0, sessionId = stale, machineId = press.id, position = 0, weightKg = 100.0, reps = 10,
+                seconds = null, calories = null, distanceM = null, loggedAt = now.minus(Duration.ofHours(5)),
+            ),
         )
 
         val outcome = training.logWarmups(press, plan)

@@ -337,12 +337,13 @@ class BackupRepositoryTest {
     fun `a version 7 backup imports with its sessions not extra`() = runTest {
         store.replaceAll(seed)
         val v7 = """
-            {"app":"boratreino","version":7,"machines":[],
+            {"app":"boratreino","version":7,"machines":[{"id":1,"name":"Leg press","muscleGroup":"LEGS","kind":"WEIGHT_REPS","stepKg":5.0,"setupNote":null,"restSeconds":null,"archived":false}],
              "plans":[{"id":1,"scheduleMode":"IN_TURN","trainingDays":[]}],
              "routines":[{"id":1,"planId":1,"name":"Routine A","shortName":"A","position":0,"weekdays":[]}],
              "items":[],
              "sessions":[{"id":4,"startedAt":"2026-11-02T10:00:00Z","endedAt":"2026-11-02T10:45:00Z","routineId":1,"note":null}],
-             "sets":[],"plannedWorkouts":[],"measurements":[]}
+             "sets":[{"id":1,"sessionId":4,"machineId":1,"position":0,"weightKg":100.0,"reps":10,"seconds":null,"calories":null,"distanceM":null,"loggedAt":"2026-11-02T10:10:00Z","type":"NORMAL"}],
+             "plannedWorkouts":[],"measurements":[]}
         """.trimIndent()
 
         val preview = repo.preview(v7)
