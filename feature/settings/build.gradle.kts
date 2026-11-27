@@ -13,4 +13,7 @@ dependencies {
     implementation(projects.core.health)
     implementation(libs.androidx.activity.compose)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Shared stub repositories and settings (tests only).
+    testImplementation(projects.core.testing)
 }

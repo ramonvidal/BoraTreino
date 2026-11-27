@@ -35,6 +35,11 @@ import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.notify.RestTimerState
+import com.boratreino.core.testing.StubHistoryRepository
+import com.boratreino.core.testing.StubMachineRepository
+import com.boratreino.core.testing.StubRoutineRepository
+import com.boratreino.core.testing.StubTrainingRepository
+import com.boratreino.core.testing.TestClock
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -66,17 +71,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import com.boratreino.core.data.RemovedSets
 
-/** A clock the test moves by hand. */
-private class MovableClock(start: String) : Clock() {
-    var now: Instant = Instant.parse(start)
-
-    override fun getZone(): ZoneId = ZoneOffset.UTC
-    override fun withZone(zone: ZoneId): Clock = this
-    override fun instant(): Instant = now
-}
-
 /** A history with one state flow per date; remembers every date it was asked for. */
-private class PerDayHistory : HistoryRepository {
+private class PerDayHistory : StubHistoryRepository() {
     private val days = mutableMapOf<LocalDate, MutableStateFlow<List<SessionDetail>>>()
     val asked = mutableListOf<LocalDate>()
 
@@ -90,20 +86,8 @@ private class PerDayHistory : HistoryRepository {
     override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = emptyFlow()
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = emptyFlow()
     override fun observeTrainingDates(): Flow<Set<LocalDate>> = emptyFlow()
-    override suspend fun addSessionWithSet(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
-    override suspend fun addSessionWithCardio(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
-    override suspend fun addSessionRepeating(date: LocalDate, routineId: Long?, isExtra: Boolean, mode: RepeatMode): List<WorkoutSet> = emptyList()
-    override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> = emptyList()
-    override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit
-    override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) = Unit
-    override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
-    override suspend fun addCardioSet(sessionId: Long, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
-    override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> = emptyList()
     override fun observeClosedSessionExports(sinceDays: Int): Flow<List<HealthExport>> = emptyFlow()
     override fun observeSessionIds(): Flow<Set<Long>> = emptyFlow()
-    override suspend fun deleteSession(sessionId: Long): SessionDetail? = null
-    override suspend fun restoreSession(detail: SessionDetail) = Unit
-    override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> = emptyList()
 }
 
 /** The energy line follows the clock's date: it is recomputed for the new day after midnight. */
@@ -123,80 +107,19 @@ class TodayViewModelMidnightTest {
     // From 00:00:05 the day has 86395 s left, plus the 1 second margin.
     private val fullDayWakeMs = 86_395_000L + 1_000L
 
-    private class MidTraining : TrainingRepository {
-    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
-    override suspend fun trainingSummary(sessionId: Long): com.boratreino.core.model.TrainingSummary? = null
-    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
-
-        override fun observeOpenSession(): Flow<OpenSession?> = MutableStateFlow(null)
+    private class MidTraining : StubTrainingRepository() {
         override fun observeTodayPlan(): Flow<TodayPlan> =
             MutableStateFlow(TodayPlan(ScheduleMode.IN_TURN, emptyList(), null, RoutineChoice.Suggested, null, restDay = false))
-        override fun observeRepeatOffer(): Flow<RepeatOffer?> = MutableStateFlow(null)
-        override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
-        override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
-        override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
-        override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
         override fun observeMachineLog(machineId: Long): Flow<MachineLog?> = emptyFlow()
-        override suspend fun closeStaleSession() = Unit
-        override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used")
-        override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used")
-        override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
-        override suspend fun restoreSets(removed: RemovedSets) = Unit
-        override suspend fun finishSession(): SessionSummary? = null
-        override suspend fun finishIfRoutineComplete(): SessionSummary? = null
-        override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
-        override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
-        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
-        override suspend fun reopenSession(sessionId: Long) = Unit
-        override suspend fun skipMachineToday(machineId: Long) = Unit
-        override suspend fun unskipMachineToday(machineId: Long) = Unit
     }
 
-    private class MidMachines : MachineRepository {
-    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
-    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
-    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
-    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
-
-        override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = MutableStateFlow(emptyList())
-        override fun observeMachine(id: Long): Flow<Machine?> = MutableStateFlow(null)
-        override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = MutableStateFlow(emptyList())
-        override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = MutableStateFlow(emptyList())
-        override suspend fun save(machine: Machine): Long = machine.id
-        override suspend fun usage(machineId: Long): MachineUsage = MachineUsage(0, emptyList())
+    private class MidMachines : StubMachineRepository() {
         override suspend fun delete(machineId: Long): Boolean = true
-        override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long = 0L
-        override suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean): List<Long> = emptyList()
-        override suspend fun setArchived(id: Long, archived: Boolean) = Unit
     }
 
-    private class MidRoutines : RoutineRepository {
-    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
-        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
-    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
-
+    private class MidRoutines : StubRoutineRepository() {
         override fun observePlan(): Flow<RoutinePlanWithRoutines> = emptyFlow()
         override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = emptyFlow()
-        override fun observeLastRoutineId(): Flow<Long?> = kotlinx.coroutines.flow.flowOf(null)
-        override fun observeLastTrained(): Flow<Map<Long, java.time.Instant>> = kotlinx.coroutines.flow.flowOf(emptyMap())
-        override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
-        override suspend fun setTrainingDays(days: Set<java.time.DayOfWeek>) = Unit
-        override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long = routine.id
-        override suspend fun deleteRoutine(id: Long) = Unit
-        override suspend fun moveRoutine(id: Long, up: Boolean) = Unit
-        override suspend fun moveItem(routineId: Long, machineId: Long, up: Boolean) = Unit
-        override suspend fun duplicateRoutine(id: Long): Long = 0L
-        override suspend fun createRoutine(): Long = 0L
-        override suspend fun addMachine(routineId: Long, machineId: Long) = Unit
-        override suspend fun removeMachine(routineId: Long, machineId: Long): RoutineItem? = null
-        override fun observePlanned(): kotlinx.coroutines.flow.Flow<List<com.boratreino.core.model.PlannedWorkout>> =
-            kotlinx.coroutines.flow.flowOf(emptyList())
-        override suspend fun planWorkout(date: java.time.LocalDate, routineId: Long) = Unit
-        override suspend fun unplanWorkout(date: java.time.LocalDate, routineId: Long) = Unit
-        override suspend fun reorderPlanned(date: java.time.LocalDate, routineIds: List<Long>) = Unit
-        override suspend fun restoreItem(item: RoutineItem) = Unit
     }
 
     private class MidRest : RestTimer {
@@ -209,7 +132,7 @@ class TodayViewModelMidnightTest {
 
     private lateinit var history: PerDayHistory
     private lateinit var body: FakeBodySettings
-    private lateinit var clock: MovableClock
+    private lateinit var clock: TestClock
     private lateinit var viewModel: TodayViewModel
 
     @Before
@@ -218,7 +141,7 @@ class TodayViewModelMidnightTest {
         history = PerDayHistory()
         body = FakeBodySettings()
         body.profileFlow.value = profile
-        clock = MovableClock("2026-11-05T12:00:00Z")
+        clock = TestClock("2026-11-05T12:00:00Z")
     }
 
     @After

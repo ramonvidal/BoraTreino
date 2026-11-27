@@ -9,4 +9,7 @@ android {
 
 dependencies {
     implementation(projects.core.settings)
+
+    // Shared stub repositories and settings (tests only).
+    testImplementation(projects.core.testing)
 }

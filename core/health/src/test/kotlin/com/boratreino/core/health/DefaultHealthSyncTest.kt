@@ -13,6 +13,8 @@ import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.CardioDraft
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.settings.HealthSettings
+import com.boratreino.core.testing.StubHealthSettings
+import com.boratreino.core.testing.StubHistoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
@@ -71,7 +73,7 @@ class DefaultHealthSyncTest {
         }
     }
 
-    private class FakeSettings : HealthSettings {
+    private class FakeSettings : StubHealthSettings() {
         val enabledFlow = MutableStateFlow(false)
         val syncedFlow = MutableStateFlow<Set<Long>>(emptySet())
         val storedSyncedValues = mutableListOf<Set<Long>>()
@@ -90,7 +92,7 @@ class DefaultHealthSyncTest {
         }
     }
 
-    private class FakeHistory : HistoryRepository {
+    private class FakeHistory : StubHistoryRepository() {
         val exports = MutableStateFlow<List<HealthExport>>(emptyList())
         val sessionIds = MutableStateFlow<Set<Long>>(emptySet())
         val requestedDays = mutableListOf<Int>()
@@ -101,24 +103,7 @@ class DefaultHealthSyncTest {
         }
 
         override fun observeSessionIds(): Flow<Set<Long>> = sessionIds
-
-        override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = error("not used")
-        override fun observeDay(date: LocalDate): Flow<List<SessionDetail>> = error("not used")
-        override fun observeSession(sessionId: Long): Flow<SessionDetail?> = error("not used")
-        override fun observeTrainingDates(): Flow<Set<LocalDate>> = error("not used")
-        override suspend fun addSessionWithSet(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
-        override suspend fun addSessionWithCardio(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
-        override suspend fun addSessionRepeating(date: LocalDate, routineId: Long?, isExtra: Boolean, mode: RepeatMode): List<WorkoutSet> = emptyList()
-        override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> = emptyList()
-        override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?): Unit = error("not used")
-        override suspend fun setSessionExtra(sessionId: Long, extra: Boolean): Unit = error("not used")
-        override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
-        override suspend fun addCardioSet(sessionId: Long, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
-        override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> = error("not used")
-        override suspend fun deleteSession(sessionId: Long): SessionDetail? = error("not used")
-        override suspend fun restoreSession(detail: SessionDetail): Unit = error("not used")
-        override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> = error("not used")
-    }
+}
 
     private lateinit var access: FakeAccess
     private lateinit var settings: FakeSettings

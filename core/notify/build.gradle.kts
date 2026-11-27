@@ -26,4 +26,6 @@ dependencies {
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.work.testing)
+    // Shared stub repositories and settings (tests only).
+    testImplementation(projects.core.testing)
 }

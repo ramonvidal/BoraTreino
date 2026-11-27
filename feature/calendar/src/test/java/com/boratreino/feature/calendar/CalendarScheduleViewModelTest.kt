@@ -3,6 +3,7 @@ package com.boratreino.feature.calendar
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.ScheduleMode
+import com.boratreino.core.testing.TestClock
 import java.time.DayOfWeek
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,7 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 class CalendarScheduleViewModelTest {
-    private val clock = MutableClock(Instant.parse("2026-11-05T12:00:00Z"))
+    private val clock = TestClock(Instant.parse("2026-11-05T12:00:00Z"))
 
     private lateinit var routines: PlanRoutines
     private lateinit var viewModel: CalendarViewModel

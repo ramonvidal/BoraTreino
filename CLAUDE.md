@@ -28,6 +28,7 @@ in the way and what you propose, before writing the code.
 | `:core:notify` | Rest timer notification, training-day reminders | `:core:model`, `:core:data`, `:core:settings` |
 | `:core:ui` | Theme, shared composables, strings used by more than one feature, icons | `:core:model` |
 | `:core:update` | Updating the app itself from the GitHub release page | `:core:model` |
+| `:core:testing` | Shared test fakes; tests only (`testImplementation`, never main code): `Stub...` repositories and settings, `answering<T>()`, `TestClock` | `:core:model`, `:core:data`, `:core:settings` |
 | `:feature:<name>` | One tab or screen: `today`, `calendar`, `progress`, `routines`, `settings`, `update` | `:core:*` only |
 | `:app` | Wires features together: activity, root screen, navigation | anything; nothing depends on it |
 
@@ -51,6 +52,9 @@ in the way and what you propose, before writing the code.
   from `translations/baianes.csv` through `translations/i18n.py`.
 - **New modules use the convention plugins** in `build-logic/convention`
   (`boratreino.android.feature`, `boratreino.android.library`, `boratreino.jvm.library`, ...).
+- **Test fakes are shared.** A test needing a repository or settings fake subclasses the `Stub...` class in
+  `:core:testing` and overrides only what it checks, so an interface change updates one stub. Any module may
+  add `testImplementation(projects.core.testing)`; a main-code dependency on it fails the build.
 - **New core modules** must be added to `ModuleRules.CORE_DEPENDENCIES` with what they
   may depend on. That's a deliberate decision, not a workaround.
 

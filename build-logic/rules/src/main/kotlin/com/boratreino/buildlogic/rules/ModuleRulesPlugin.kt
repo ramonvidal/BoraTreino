@@ -3,6 +3,7 @@ package com.boratreino.buildlogic.rules
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ProjectDependency
 
 /** Applied to the root project; checks [ModuleRules] once all modules are configured. */
@@ -11,13 +12,14 @@ class ModuleRulesPlugin : Plugin<Project> {
         require(target == target.rootProject) { "boratreino.module-rules belongs in the root build.gradle.kts" }
         target.gradle.projectsEvaluated {
             val modules = target.subprojects.map { project ->
+                val (test, main) = project.configurations.partition { ModuleRules.isTestConfiguration(it.name) }
+                fun List<Configuration>.projectPaths() =
+                    flatMap { it.dependencies.withType(ProjectDependency::class.java) }.map { it.path }.toSet()
                 ModuleRules.Module(
                     path = project.path,
                     usesAndroid = ANDROID_PLUGINS.any(project.plugins::hasPlugin),
-                    dependsOn = project.configurations
-                        .flatMap { it.dependencies.withType(ProjectDependency::class.java) }
-                        .map { it.path }
-                        .toSet(),
+                    dependsOn = main.projectPaths(),
+                    testDependsOn = test.projectPaths(),
                 )
             }
             val violations = ModuleRules.violations(modules)

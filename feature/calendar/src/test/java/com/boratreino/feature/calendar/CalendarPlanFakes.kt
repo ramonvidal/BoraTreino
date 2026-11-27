@@ -8,6 +8,7 @@ import com.boratreino.core.model.RoutinePlan
 import com.boratreino.core.model.RoutinePlanWithRoutines
 import com.boratreino.core.model.RoutineWithItems
 import com.boratreino.core.model.ScheduleMode
+import com.boratreino.core.testing.StubRoutineRepository
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -21,11 +22,7 @@ import kotlinx.coroutines.flow.map
  * date, unique per (date, routine), ordered by date, then position, then routine id; a new plan goes to the end
  * of its date's order and a planned routine that does not exist is not stored. The calls are recorded for assertions.
  */
-internal class PlanRoutines(private val routines: List<Routine> = emptyList()) : RoutineRepository {
-    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
-        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
-    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
-
+internal class PlanRoutines(private val routines: List<Routine> = emptyList()) : StubRoutineRepository() {
     val plannedFlow = MutableStateFlow<List<PlannedWorkout>>(emptyList())
     val planCalls = mutableListOf<Pair<LocalDate, Long>>()
     val unplanCalls = mutableListOf<Pair<LocalDate, Long>>()
@@ -59,14 +56,6 @@ internal class PlanRoutines(private val routines: List<Routine> = emptyList()) :
     }
 
     override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long = 0L
-    override suspend fun deleteRoutine(id: Long) = Unit
-    override suspend fun moveRoutine(id: Long, up: Boolean) = Unit
-    override suspend fun moveItem(routineId: Long, machineId: Long, up: Boolean) = Unit
-    override suspend fun duplicateRoutine(id: Long): Long = 0L
-    override suspend fun createRoutine(): Long = 0L
-    override suspend fun addMachine(routineId: Long, machineId: Long) = Unit
-    override suspend fun removeMachine(routineId: Long, machineId: Long): RoutineItem? = null
-    override suspend fun restoreItem(item: RoutineItem) = Unit
 
     override fun observePlanned(): Flow<List<PlannedWorkout>> = plannedFlow
 

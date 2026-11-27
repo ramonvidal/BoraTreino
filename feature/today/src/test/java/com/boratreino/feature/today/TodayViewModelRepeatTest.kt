@@ -26,6 +26,9 @@ import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.notify.RestTimerState
+import com.boratreino.core.testing.StubMachineRepository
+import com.boratreino.core.testing.StubRoutineRepository
+import com.boratreino.core.testing.StubTrainingRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -57,11 +60,7 @@ import com.boratreino.core.data.RemovedSets
 class TodayViewModelRepeatTest {
     private val sample = TodaySamples
 
-    private class RepeatTraining : TrainingRepository {
-    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
-    override suspend fun trainingSummary(sessionId: Long): com.boratreino.core.model.TrainingSummary? = null
-    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
-
+    private class RepeatTraining : StubTrainingRepository() {
         val plan = MutableStateFlow(
             TodayPlan(ScheduleMode.IN_TURN, emptyList(), null, RoutineChoice.Suggested, null, restDay = false),
         )
@@ -72,7 +71,6 @@ class TodayViewModelRepeatTest {
         var failRepeat = false
         var failUndo = false
 
-        override fun observeOpenSession(): Flow<OpenSession?> = MutableStateFlow(null)
         override fun observeTodayPlan(): Flow<TodayPlan> = plan
         override fun observeRepeatOffer(): Flow<RepeatOffer?> = offer
 
@@ -82,75 +80,21 @@ class TodayViewModelRepeatTest {
             return outcome
         }
 
-        override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
-
         override suspend fun undoRepeat(outcome: RepeatOutcome) {
             if (failUndo) error("disk full")
             undone += outcome
         }
 
-        override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
         override fun observeMachineLog(machineId: Long): Flow<MachineLog?> = emptyFlow()
-        override suspend fun closeStaleSession() = Unit
-        override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used")
-        override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used")
-        override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
-        override suspend fun restoreSets(removed: RemovedSets) = Unit
-        override suspend fun finishSession(): SessionSummary? = null
-        override suspend fun finishIfRoutineComplete(): SessionSummary? = null
-        override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
-        override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
-        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
-        override suspend fun reopenSession(sessionId: Long) = Unit
-        override suspend fun skipMachineToday(machineId: Long) = Unit
-        override suspend fun unskipMachineToday(machineId: Long) = Unit
     }
 
-    private class RepeatMachines(private val all: List<Machine>) : MachineRepository {
-    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
-    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
-    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
-    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
-
-        override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = MutableStateFlow(all)
-        override fun observeMachine(id: Long): Flow<Machine?> = MutableStateFlow(all.firstOrNull { it.id == id })
-        override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = MutableStateFlow(emptyList())
-        override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = MutableStateFlow(emptyList())
-        override suspend fun save(machine: Machine): Long = machine.id
-        override suspend fun usage(machineId: Long): MachineUsage = MachineUsage(0, emptyList())
+    private class RepeatMachines(private val all: List<Machine>) : StubMachineRepository(all) {
         override suspend fun delete(machineId: Long): Boolean = true
-        override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long = 0L
-        override suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean): List<Long> = emptyList()
-        override suspend fun setArchived(id: Long, archived: Boolean) = Unit
     }
 
-    private class RepeatRoutines : RoutineRepository {
-    override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
-        com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
-    override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<com.boratreino.core.model.RoutineItem>) {}
-
+    private class RepeatRoutines : StubRoutineRepository() {
         override fun observePlan(): Flow<RoutinePlanWithRoutines> = emptyFlow()
         override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = emptyFlow()
-        override fun observeLastRoutineId(): Flow<Long?> = kotlinx.coroutines.flow.flowOf(null)
-        override fun observeLastTrained(): Flow<Map<Long, java.time.Instant>> = kotlinx.coroutines.flow.flowOf(emptyMap())
-        override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
-        override suspend fun setTrainingDays(days: Set<java.time.DayOfWeek>) = Unit
-        override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long = routine.id
-        override suspend fun deleteRoutine(id: Long) = Unit
-        override suspend fun moveRoutine(id: Long, up: Boolean) = Unit
-        override suspend fun moveItem(routineId: Long, machineId: Long, up: Boolean) = Unit
-        override suspend fun duplicateRoutine(id: Long): Long = 0L
-        override suspend fun createRoutine(): Long = 0L
-        override suspend fun addMachine(routineId: Long, machineId: Long) = Unit
-        override suspend fun removeMachine(routineId: Long, machineId: Long): RoutineItem? = null
-        override fun observePlanned(): kotlinx.coroutines.flow.Flow<List<com.boratreino.core.model.PlannedWorkout>> =
-            kotlinx.coroutines.flow.flowOf(emptyList())
-        override suspend fun planWorkout(date: java.time.LocalDate, routineId: Long) = Unit
-        override suspend fun unplanWorkout(date: java.time.LocalDate, routineId: Long) = Unit
-        override suspend fun reorderPlanned(date: java.time.LocalDate, routineIds: List<Long>) = Unit
-        override suspend fun restoreItem(item: RoutineItem) = Unit
     }
 
     private class RepeatRestTimer : RestTimer {

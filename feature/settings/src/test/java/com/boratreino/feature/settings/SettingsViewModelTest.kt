@@ -16,6 +16,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.testing.StubBackupRepository
+import com.boratreino.core.testing.StubHealthSettings
+import com.boratreino.core.testing.StubTrainingSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +43,7 @@ import java.time.LocalTime
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 class SettingsViewModelTest {
-    private class FakeSettings : TrainingSettings {
+    private class FakeSettings : StubTrainingSettings() {
         val goal = MutableStateFlow(4)
         val reminder = MutableStateFlow(ReminderSettings(enabled = true, weekdays = setOf(DayOfWeek.MONDAY)))
         val rest = MutableStateFlow(RestTimerSettings())
@@ -71,14 +74,11 @@ class SettingsViewModelTest {
         }
     }
 
-    private class FakeBackup : BackupRepository {
-        override suspend fun export(): String = ""
+    private class FakeBackup : StubBackupRepository() {
         override fun suggestedFileName(): String = "boratreino-backup-2026-11-02.json"
-        override fun preview(text: String): BackupPreview = BackupPreview.Invalid("")
-        override suspend fun import(data: BackupData) = Unit
     }
 
-    private class FakeHealthSettings : HealthSettings {
+    private class FakeHealthSettings : StubHealthSettings() {
         val on = MutableStateFlow(false)
         val synced = MutableStateFlow<Set<Long>>(emptySet())
         override val enabled: Flow<Boolean> get() = on

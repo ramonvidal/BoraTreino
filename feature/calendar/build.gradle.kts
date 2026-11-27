@@ -10,4 +10,7 @@ android {
 dependencies {
     implementation(projects.core.settings)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Shared stub repositories and settings (tests only).
+    testImplementation(projects.core.testing)
 }

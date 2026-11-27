@@ -3,6 +3,7 @@ package com.boratreino.feature.calendar
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
+import com.boratreino.core.testing.TestClock
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +30,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34])
 class CalendarPlanViewModelTest {
     // Today is 5 November 2026 (UTC).
-    private val clock = MutableClock(Instant.parse("2026-11-05T12:00:00Z"))
+    private val clock = TestClock(Instant.parse("2026-11-05T12:00:00Z"))
     private val today = LocalDate.of(2026, 11, 5)
     private val yesterday = LocalDate.of(2026, 11, 4)
     private val nextWeek = LocalDate.of(2026, 11, 10)

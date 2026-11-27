@@ -17,6 +17,9 @@ import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.notify.RestTimerState
 import com.boratreino.core.settings.HealthSettings
 import com.boratreino.core.settings.TrainingSettings
+import com.boratreino.core.testing.StubBackupRepository
+import com.boratreino.core.testing.StubHealthSettings
+import com.boratreino.core.testing.StubTrainingSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,14 +47,8 @@ class SettingsViewModelRestTest {
         override fun skip() = Unit
     }
 
-    private class FakeTrainingSettings : TrainingSettings {
+    private class FakeTrainingSettings : StubTrainingSettings() {
         val rest = MutableStateFlow(RestTimerSettings(enabled = true))
-        override val weeklyGoal: Flow<Int> = MutableStateFlow(4)
-        override suspend fun setWeeklyGoal(goal: Int) = Unit
-        override val reminders: Flow<ReminderSettings> = MutableStateFlow(ReminderSettings())
-        override suspend fun setReminders(settings: ReminderSettings) = Unit
-        override val warmupCalculator: Flow<Boolean> = MutableStateFlow(true)
-        override suspend fun setWarmupCalculator(enabled: Boolean) = Unit
         override val restTimer: Flow<RestTimerSettings> get() = rest
         override suspend fun setRestTimer(settings: RestTimerSettings) {
             rest.value = settings
@@ -62,19 +59,9 @@ class SettingsViewModelRestTest {
         override fun reschedule() = Unit
     }
 
-    private class FakeBackup : BackupRepository {
-        override suspend fun export(): String = ""
-        override fun suggestedFileName(): String = "boratreino-backup.json"
-        override fun preview(text: String): BackupPreview = BackupPreview.Invalid("")
-        override suspend fun import(data: BackupData) = Unit
-    }
+    private class FakeBackup : StubBackupRepository()
 
-    private class FakeHealthSettings : HealthSettings {
-        override val enabled: Flow<Boolean> = MutableStateFlow(false)
-        override suspend fun setEnabled(enabled: Boolean) = Unit
-        override val syncedSessionIds: Flow<Set<Long>> = MutableStateFlow(emptySet())
-        override suspend fun setSyncedSessionIds(ids: Set<Long>) = Unit
-    }
+    private class FakeHealthSettings : StubHealthSettings()
 
     private class FakeHealthAccess : HealthConnectAccess {
         override suspend fun availability(): HealthAvailability = HealthAvailability.Ready

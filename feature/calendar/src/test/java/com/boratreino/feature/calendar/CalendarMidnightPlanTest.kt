@@ -2,6 +2,7 @@ package com.boratreino.feature.calendar
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.Routine
+import com.boratreino.core.testing.TestClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -30,7 +31,7 @@ class CalendarMidnightPlanTest {
     private val tomorrow = LocalDate.of(2026, 11, 6)
     private val routineA = Routine(1L, 1L, "Treino A", "A", 0, emptySet())
 
-    private lateinit var clock: MutableClock
+    private lateinit var clock: TestClock
     private lateinit var routines: PlanRoutines
     private lateinit var viewModel: CalendarViewModel
 
@@ -38,7 +39,7 @@ class CalendarMidnightPlanTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         // Thirty seconds before midnight in UTC.
-        clock = MutableClock(Instant.parse("2026-11-05T23:59:30Z"))
+        clock = TestClock(Instant.parse("2026-11-05T23:59:30Z"))
         routines = PlanRoutines(listOf(routineA))
     }
 

@@ -12,6 +12,7 @@ import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.RoutineWithItems
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.model.StarterMachines
+import com.boratreino.core.testing.StubMachineRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -55,19 +56,13 @@ class RoutinesLibraryViewModelTest {
         private val stored: List<Machine>,
         private val notAdded: List<StarterMachine>,
         private val inUse: Set<String>,
-    ) : MachineRepository {
-    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
-    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
+    ) : StubMachineRepository() {
         val addedStarters = mutableListOf<String>()
         val addedLibrary = mutableListOf<String>()
 
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(stored)
         override fun observeMachine(id: Long): Flow<Machine?> = flowOf(stored.firstOrNull { it.id == id })
-        override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(emptyList())
         override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = flowOf(notAdded)
-        override suspend fun save(machine: Machine): Long = machine.id
-        override suspend fun usage(machineId: Long): MachineUsage = error("not used by this test")
-        override suspend fun delete(machineId: Long): Boolean = false
         override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long {
             addedStarters += starter.name
             return 0L
@@ -81,7 +76,6 @@ class RoutinesLibraryViewModelTest {
             return 0L
         }
         override fun observeLibraryIdsInUse(): Flow<Set<String>> = flowOf(inUse)
-        override suspend fun setArchived(id: Long, archived: Boolean) = Unit
     }
 
     private fun exercise(

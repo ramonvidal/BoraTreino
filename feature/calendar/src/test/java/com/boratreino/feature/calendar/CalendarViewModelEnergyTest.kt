@@ -13,6 +13,7 @@ import com.boratreino.core.model.SessionMachine
 import com.boratreino.core.model.SessionSets
 import com.boratreino.core.model.Sex
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.testing.TestClock
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +39,7 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 class CalendarViewModelEnergyTest {
-    private val clock = MutableClock(Instant.parse("2026-11-05T12:00:00Z"))
+    private val clock = TestClock(Instant.parse("2026-11-05T12:00:00Z"))
     private val profile = BodyProfile(Sex.MALE, birthYear = 1990, heightCm = 180, weightKg = 80.0)
     private val trainedDate = LocalDate.of(2026, 11, 3)
     private val restDate = LocalDate.of(2026, 11, 4)

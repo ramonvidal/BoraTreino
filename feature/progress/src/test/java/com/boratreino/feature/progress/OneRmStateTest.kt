@@ -8,6 +8,7 @@ import com.boratreino.core.model.OneRepMaxRules
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.ProgressOverview
 import com.boratreino.core.model.ProgressRange
+import com.boratreino.core.testing.StubProgressRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -158,7 +159,7 @@ class OneRmStateTest {
 
     // View model
 
-    private class FakeProgressRepository(progress: MachineProgress?) : ProgressRepository {
+    private class FakeProgressRepository(progress: MachineProgress?) : StubProgressRepository() {
         val flow = MutableStateFlow(progress)
         override fun observeOverview(): Flow<ProgressOverview> = emptyFlow()
         override fun observeMachineProgress(machineId: Long): Flow<MachineProgress?> = flow

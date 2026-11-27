@@ -5,6 +5,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.settings.TrainingSettings
+import com.boratreino.core.testing.StubTrainingSettings
+import com.boratreino.core.testing.TestClock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -32,13 +34,13 @@ import java.time.ZoneId
 @Config(sdk = [34])
 class DefaultRestTimerTest {
     private val start: Instant = Instant.parse("2026-11-02T18:00:00Z")
-    private lateinit var clock: MovableClock
+    private lateinit var clock: TestClock
     private lateinit var scope: TestScope
     private lateinit var timer: DefaultRestTimer
 
     @Before
     fun setUp() {
-        clock = MovableClock(start)
+        clock = TestClock(start, ZoneId.of("UTC"))
         scope = TestScope()
         timer = DefaultRestTimer(RuntimeEnvironment.getApplication(), clock, scope)
     }
@@ -183,15 +185,8 @@ class DefaultRestTimerTest {
 
     // beep
 
-    private class BeepSettings(beep: Boolean) : TrainingSettings {
-        override val weeklyGoal: Flow<Int> = MutableStateFlow(3)
-        override suspend fun setWeeklyGoal(goal: Int) = Unit
-        override val reminders: Flow<ReminderSettings> = MutableStateFlow(ReminderSettings())
-        override suspend fun setReminders(settings: ReminderSettings) = Unit
-        override val warmupCalculator: Flow<Boolean> = MutableStateFlow(true)
-        override suspend fun setWarmupCalculator(enabled: Boolean) = Unit
+    private class BeepSettings(beep: Boolean) : StubTrainingSettings(weeklyGoal = 3) {
         override val restTimer: Flow<RestTimerSettings> = MutableStateFlow(RestTimerSettings(beep = beep))
-        override suspend fun setRestTimer(settings: RestTimerSettings) = Unit
     }
 
     private fun finishRest(t: DefaultRestTimer) {
@@ -389,18 +384,5 @@ class DefaultRestTimerTest {
             secondsFromStart(90).toEpochMilli(),
             shadowOf(live).savedIntent.getLongExtra(RestAlarmReceiver.EXTRA_ENDS_AT, 0L),
         )
-    }
-}
-
-/** A clock the test moves by hand. */
-private class MovableClock(private var now: Instant) : Clock() {
-    override fun getZone(): ZoneId = ZoneId.of("UTC")
-
-    override fun withZone(zone: ZoneId): Clock = this
-
-    override fun instant(): Instant = now
-
-    fun advance(by: Duration) {
-        now = now.plus(by)
     }
 }

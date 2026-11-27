@@ -8,6 +8,7 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.StarterMachine
+import com.boratreino.core.testing.StubMachineRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -29,12 +30,7 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 class MachineEditorViewModelCardioTest {
-    private class FakeMachines(private val stored: Machine? = null) : MachineRepository {
-    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
-    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
-    override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
-    override fun observeLibraryIdsInUse(): kotlinx.coroutines.flow.Flow<Set<String>> = kotlinx.coroutines.flow.flowOf(emptySet())
-
+    private class FakeMachines(private val stored: Machine? = null) : StubMachineRepository() {
         val saved = mutableListOf<Machine>()
 
         override fun observeMachine(id: Long): Flow<Machine?> = flowOf(stored?.takeIf { it.id == id })
@@ -42,16 +38,7 @@ class MachineEditorViewModelCardioTest {
             saved += machine
             return if (machine.id == 0L) 99L else machine.id
         }
-
-        override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(emptyList())
-        override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(emptyList())
-        override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = flowOf(emptyList())
-        override suspend fun usage(machineId: Long): MachineUsage = MachineUsage(setCount = 0, routineNames = emptyList())
-        override suspend fun delete(machineId: Long): Boolean = false
-        override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long = 0L
-        override suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean): List<Long> = emptyList()
-        override suspend fun setArchived(id: Long, archived: Boolean) = Unit
-    }
+}
 
     @Before
     fun setUp() {

@@ -23,4 +23,6 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Shared stub repositories and settings (tests only).
+    testImplementation(projects.core.testing)
 }

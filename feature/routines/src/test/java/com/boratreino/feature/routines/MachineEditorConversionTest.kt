@@ -13,6 +13,7 @@ import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.testing.StubMachineRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -40,7 +41,7 @@ import java.time.Instant
 @Config(sdk = [34])
 class MachineEditorConversionTest {
     /** A machine with [sets] logged; records each conversion the editor asks for. */
-    private class ConvertingMachines(private val stored: Machine, private val sets: List<WorkoutSet>) : MachineRepository {
+    private class ConvertingMachines(private val stored: Machine, private val sets: List<WorkoutSet>) : StubMachineRepository() {
         val converted = mutableListOf<Pair<MachineKind, Int?>>()
         var convertSucceeds = true
 
@@ -55,15 +56,6 @@ class MachineEditorConversionTest {
         override suspend fun usage(machineId: Long): MachineUsage = MachineUsage(setCount = sets.size, routineNames = emptyList())
         override fun observeMachine(id: Long): Flow<Machine?> = flowOf(stored.takeIf { it.id == id })
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(listOf(stored))
-        override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(emptyList())
-        override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = flowOf(emptyList())
-        override suspend fun save(machine: Machine): Long = machine.id
-        override suspend fun delete(machineId: Long): Boolean = false
-        override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long = 0L
-        override suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean): List<Long> = emptyList()
-        override suspend fun addFromLibrary(exercise: LibraryExercise, portuguese: Boolean): Long = 0L
-        override fun observeLibraryIdsInUse(): Flow<Set<String>> = flowOf(emptySet())
-        override suspend fun setArchived(id: Long, archived: Boolean) = Unit
     }
 
     @Before

@@ -20,6 +20,8 @@ import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.MachineUsage
 import com.boratreino.core.model.MuscleGroup
 import com.boratreino.core.model.StarterMachine
+import com.boratreino.core.testing.StubExerciseLibraryRepository
+import com.boratreino.core.testing.StubMachineRepository
 import com.boratreino.core.ui.theme.BoraTreinoTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -60,24 +62,12 @@ class MachineEditorHowToTest {
         steps = steps,
     )
 
-    private class OneMachine(private val stored: Machine?) : MachineRepository {
-    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
-    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
+    private class OneMachine(private val stored: Machine?) : StubMachineRepository() {
         override fun observeMachine(id: Long): Flow<Machine?> = flowOf(stored?.takeIf { it.id == id })
         override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(listOfNotNull(stored))
-        override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(emptyList())
-        override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = flowOf(emptyList())
-        override suspend fun save(machine: Machine): Long = machine.id
-        override suspend fun usage(machineId: Long): MachineUsage = MachineUsage(setCount = 0, routineNames = emptyList())
-        override suspend fun delete(machineId: Long): Boolean = false
-        override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long = 0L
-        override suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean): List<Long> = emptyList()
-        override suspend fun addFromLibrary(exercise: LibraryExercise, portuguese: Boolean): Long = 0L
-        override fun observeLibraryIdsInUse(): Flow<Set<String>> = flowOf(emptySet())
-        override suspend fun setArchived(id: Long, archived: Boolean) = Unit
     }
 
-    private class Library(private val exercises: List<LibraryExercise>) : ExerciseLibraryRepository {
+    private class Library(private val exercises: List<LibraryExercise>) : StubExerciseLibraryRepository() {
         override suspend fun all(): List<LibraryExercise> = exercises
         override suspend fun byId(id: String): LibraryExercise? = exercises.firstOrNull { it.id == id }
     }

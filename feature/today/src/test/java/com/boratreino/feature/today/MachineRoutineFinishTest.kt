@@ -27,6 +27,8 @@ import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.notify.RestTimerState
 import com.boratreino.core.settings.TrainingSettings
+import com.boratreino.core.testing.StubTrainingRepository
+import com.boratreino.core.testing.StubTrainingSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -90,7 +92,7 @@ class MachineRoutineFinishTest {
     private fun savedSet(id: Long, machineId: Long, type: SetType = SetType.NORMAL) =
         WorkoutSet(id, 5L, machineId, id.toInt(), 60.0, 10, null, null, null, now.minusSeconds(120), type)
 
-    private class FakeTraining : TrainingRepository {
+    private class FakeTraining : StubTrainingRepository() {
         val log = MutableStateFlow<MachineLog?>(null)
         val setLogged = mutableListOf<Pair<Long, SetDraft>>()
         val cardioLogged = mutableListOf<Pair<Long, CardioDraft>>()
@@ -140,28 +142,7 @@ class MachineRoutineFinishTest {
             if (finishFails) error("disk full")
             return finishResult
         }
-
-        override suspend fun restoreSets(removed: RemovedSets) = Unit
-        override fun observeOpenSession(): Flow<OpenSession?> = flowOf(null)
-        override fun observeTodayPlan(): Flow<TodayPlan> = flowOf(noRoutineTodayPlan())
-        override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
-        override suspend fun closeStaleSession() = Unit
-        override suspend fun finishSession(): SessionSummary? = null
-        override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
-        override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
-        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
-        override suspend fun reopenSession(sessionId: Long) = Unit
-        override suspend fun skipMachineToday(machineId: Long) = Unit
-        override suspend fun unskipMachineToday(machineId: Long) = Unit
-        override fun observeRepeatOffer(): Flow<RepeatOffer?> = MutableStateFlow(null)
-        override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
-        override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
-        override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
-        override suspend fun routineUpdateOffer(sessionId: Long): RoutineUpdate? = null
-        override suspend fun sessionRoutineId(sessionId: Long): Long? = null
-        override suspend fun trainingSummary(sessionId: Long): TrainingSummary? = null
-    }
+}
 
     private class FakeRestTimer : RestTimer {
         val started = mutableListOf<Int>()
@@ -177,16 +158,7 @@ class MachineRoutineFinishTest {
         }
     }
 
-    private class FakeSettings : TrainingSettings {
-        override val weeklyGoal: Flow<Int> = MutableStateFlow(4)
-        override suspend fun setWeeklyGoal(goal: Int) = Unit
-        override val reminders: Flow<ReminderSettings> = MutableStateFlow(ReminderSettings())
-        override suspend fun setReminders(settings: ReminderSettings) = Unit
-        override val warmupCalculator: Flow<Boolean> = MutableStateFlow(true)
-        override suspend fun setWarmupCalculator(enabled: Boolean) = Unit
-        override val restTimer: Flow<RestTimerSettings> = MutableStateFlow(RestTimerSettings(enabled = true, defaultSeconds = 90))
-        override suspend fun setRestTimer(settings: RestTimerSettings) = Unit
-    }
+    private class FakeSettings : StubTrainingSettings()
 
     private lateinit var training: FakeTraining
     private lateinit var rest: FakeRestTimer

@@ -3,12 +3,13 @@ package com.boratreino.feature.settings
 import com.boratreino.core.model.BodyProfile
 import com.boratreino.core.model.WeightEntry
 import com.boratreino.core.settings.BodySettings
+import com.boratreino.core.testing.StubBodySettings
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Body settings on plain state flows that also record what was written. */
-internal class FakeBodySettings : BodySettings {
+internal class FakeBodySettings : StubBodySettings() {
     val profileFlow = MutableStateFlow<BodyProfile?>(null)
     val weightsFlow = MutableStateFlow<List<WeightEntry>>(emptyList())
     val showFlow = MutableStateFlow(true)

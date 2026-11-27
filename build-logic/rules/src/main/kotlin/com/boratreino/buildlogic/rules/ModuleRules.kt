@@ -7,9 +7,12 @@ package com.boratreino.buildlogic.rules
  * - :feature:* modules depend only on :core:* modules, never on each other.
  * - :core:* modules never depend on features, and only on the core modules listed here.
  * - Modules in [PURE_KOTLIN] must not use Android, so their logic stays plain and testable.
+ * - [TESTING] holds shared test fakes: any module may use it from a test configuration (testImplementation, ...),
+ *   none from main code (implementation, api, ...).
  */
 object ModuleRules {
     const val APP = ":app"
+    const val TESTING = ":core:testing"
     private const val FEATURE_PREFIX = ":feature:"
 
     /** Every core module, with the core modules it may depend on. New ones must be added here on purpose. */
@@ -30,16 +33,36 @@ object ModuleRules {
         ":core:ui" to setOf(":core:model"),
         // Updating the app itself from the GitHub release page.
         ":core:update" to setOf(":core:model"),
+        // Shared test fakes (stub repositories and settings, answering<T>(), TestClock); tests only.
+        TESTING to setOf(":core:model", ":core:data", ":core:settings"),
         // Reading the bike console photo (on-device text recognition); the parsing rules stay in :core:model.
     )
 
     val PURE_KOTLIN: Set<String> = setOf(":core:model")
 
-    data class Module(val path: String, val usesAndroid: Boolean, val dependsOn: Set<String>)
+    /**
+     * [dependsOn]: project dependencies of main code (implementation, api, ksp, ...).
+     * [testDependsOn]: project dependencies of test configurations only (see [isTestConfiguration]).
+     */
+    data class Module(
+        val path: String,
+        val usesAndroid: Boolean,
+        val dependsOn: Set<String>,
+        val testDependsOn: Set<String> = emptySet(),
+    )
+
+    /**
+     * Whether the Gradle configuration [name] only feeds tests: testImplementation, testDebugImplementation,
+     * androidTestImplementation, kspTest, debugUnitTestRuntimeOnly, ... ("latest" style lower-case words don't count).
+     */
+    fun isTestConfiguration(name: String): Boolean =
+        name.startsWith("test") || name.startsWith("androidTest") || "Test" in name
 
     fun violations(modules: List<Module>): List<String> = modules.flatMap { module ->
         listOfNotNull(placementViolation(module), androidViolation(module)) +
-            module.dependsOn.filter { it != module.path }.mapNotNull { dependencyViolation(module.path, it) }
+            module.dependsOn.filter { it != module.path }.mapNotNull { dependencyViolation(module.path, it) } +
+            (module.testDependsOn - module.dependsOn).filter { it != module.path && it != TESTING }
+                .mapNotNull { dependencyViolation(module.path, it) }
     }
 
     private fun isFeature(path: String) = path.startsWith(FEATURE_PREFIX) && path.count { it == ':' } == 2
@@ -64,6 +87,8 @@ object ModuleRules {
     private fun dependencyViolation(from: String, to: String): String? {
         val reason = when {
             to == APP -> "nothing may depend on $APP"
+            to == TESTING ->
+                "$TESTING holds test fakes: depend on it with testImplementation (a test configuration), never from main code"
             from == APP -> null
             isFeature(from) && isFeature(to) -> "features must not depend on each other; move what they share to a :core module"
             isFeature(from) && isCore(to) -> null

@@ -16,6 +16,7 @@ class ModuleRulesTest {
         ":core:health" to setOf(":core:model", ":core:data", ":core:settings"),
         ":core:ui" to setOf(":core:model"),
         ":core:update" to setOf(":core:model"),
+        ":core:testing" to setOf(":core:model", ":core:data", ":core:settings"),
     )
 
     private val features = listOf(
@@ -46,7 +47,8 @@ class ModuleRulesTest {
                 Module(
                     ":app",
                     usesAndroid = true,
-                    dependsOn = (contract.keys + features).toSet(),
+                    dependsOn = (contract.keys - ":core:testing" + features).toSet(),
+                    testDependsOn = setOf(":core:testing"),
                 ),
             )
 
@@ -141,6 +143,62 @@ class ModuleRulesTest {
         for (path in listOf(":core:model", ":core:database", ":core:data", ":core:settings", ":core:ui", ":core:update")) {
             val violations = ModuleRules.violations(withModule(coreModule(path, contract.getValue(path) + ":core:health")))
             assertTrue("$path -> :core:health should fail", violations.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `any module may use core testing from a test configuration`() {
+        val users = (contract.keys - ":core:testing").map { coreModule(it) } +
+            features.map { featureModule(it) } +
+            valid.filter { it.path == ":app" }
+        for (user in users) {
+            val violations = ModuleRules.violations(withModule(user.copy(testDependsOn = user.testDependsOn + ":core:testing")))
+            assertEquals("${user.path} testImplementation :core:testing should pass", emptyList<String>(), violations)
+        }
+    }
+
+    @Test
+    fun `using core testing from main code fails, naming testImplementation`() {
+        val users = (contract.keys - ":core:testing").map { coreModule(it) } +
+            features.map { featureModule(it) } +
+            valid.filter { it.path == ":app" }
+        for (user in users) {
+            val violations = ModuleRules.violations(withModule(user.copy(dependsOn = user.dependsOn + ":core:testing")))
+            assertEquals("${user.path} -> :core:testing should fail once", 1, violations.size)
+            assertTrue(violations.single(), violations.single().contains("testImplementation"))
+            assertTrue(violations.single(), violations.single().startsWith("${user.path} -> :core:testing"))
+        }
+    }
+
+    @Test
+    fun `test configurations still follow the other rules`() {
+        val violations = ModuleRules.violations(
+            withModule(featureModule(":feature:today").copy(testDependsOn = setOf(":feature:calendar"))),
+        )
+        assertTrue(":feature:today test -> :feature:calendar should fail", violations.isNotEmpty())
+        val coreViolations = ModuleRules.violations(
+            withModule(coreModule(":core:model").copy(testDependsOn = setOf(":core:ui"))),
+        )
+        assertTrue(":core:model test -> :core:ui should fail", coreViolations.isNotEmpty())
+    }
+
+    @Test
+    fun `core testing may depend on model, data and settings only`() {
+        val allowed = setOf(":core:model", ":core:data", ":core:settings")
+        assertEquals(allowed, ModuleRules.CORE_DEPENDENCIES.getValue(":core:testing"))
+        for (dependency in listOf(":core:database", ":core:notify", ":core:ui", ":core:update", ":core:health")) {
+            val violations = ModuleRules.violations(withModule(coreModule(":core:testing", allowed + dependency)))
+            assertTrue(":core:testing -> $dependency should fail", violations.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `test configurations are told apart from main ones by name`() {
+        for (name in listOf("testImplementation", "testDebugImplementation", "androidTestImplementation", "kspTest", "debugUnitTestRuntimeOnly", "testFixturesApi")) {
+            assertTrue("$name is a test configuration", ModuleRules.isTestConfiguration(name))
+        }
+        for (name in listOf("implementation", "api", "ksp", "debugImplementation", "compileOnly", "releaseRuntimeClasspath", "latestImplementation")) {
+            assertTrue("$name is main code", !ModuleRules.isTestConfiguration(name))
         }
     }
 

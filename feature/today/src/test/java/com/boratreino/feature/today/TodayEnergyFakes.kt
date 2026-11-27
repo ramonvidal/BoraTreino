@@ -11,6 +11,8 @@ import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.WeightEntry
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.settings.BodySettings
+import com.boratreino.core.testing.StubBodySettings
+import com.boratreino.core.testing.StubHistoryRepository
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -21,7 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 
 /** Body settings backed by plain state flows; no profile and the estimate switched on. */
-internal class FakeBodySettings : BodySettings {
+internal class FakeBodySettings : StubBodySettings() {
     val profileFlow = MutableStateFlow<BodyProfile?>(null)
     val weightsFlow = MutableStateFlow<List<WeightEntry>>(emptyList())
     val showFlow = MutableStateFlow(true)
@@ -47,7 +49,7 @@ internal class FakeBodySettings : BodySettings {
  * A history whose [day] flow always has a value (an empty flow would keep Today's combined state from
  * ever emitting); everything else is not used by the Today view model.
  */
-internal class FakeHistory : HistoryRepository {
+internal class FakeHistory : StubHistoryRepository() {
     val day = MutableStateFlow<List<SessionDetail>>(emptyList())
     val daysAsked = mutableListOf<LocalDate>()
 
@@ -59,20 +61,8 @@ internal class FakeHistory : HistoryRepository {
     override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = emptyFlow()
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = emptyFlow()
     override fun observeTrainingDates(): Flow<Set<LocalDate>> = emptyFlow()
-    override suspend fun addSessionWithSet(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
-    override suspend fun addSessionWithCardio(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
-    override suspend fun addSessionRepeating(date: LocalDate, routineId: Long?, isExtra: Boolean, mode: RepeatMode): List<WorkoutSet> = emptyList()
-    override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> = emptyList()
-    override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit
-    override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) = Unit
-    override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
-    override suspend fun addCardioSet(sessionId: Long, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
-    override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> = emptyList()
     override fun observeClosedSessionExports(sinceDays: Int): Flow<List<HealthExport>> = emptyFlow()
     override fun observeSessionIds(): Flow<Set<Long>> = emptyFlow()
-    override suspend fun deleteSession(sessionId: Long): SessionDetail? = null
-    override suspend fun restoreSession(detail: SessionDetail) = Unit
-    override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> = emptyList()
 }
 
 /** 5 November 2026, 12:00 UTC. */

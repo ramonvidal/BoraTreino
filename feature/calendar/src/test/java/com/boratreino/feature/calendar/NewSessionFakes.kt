@@ -26,6 +26,9 @@ import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.StarterMachine
 import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.WorkoutSet
+import com.boratreino.core.testing.StubHistoryRepository
+import com.boratreino.core.testing.StubMachineRepository
+import com.boratreino.core.testing.StubTrainingRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -118,7 +121,7 @@ internal class NewSessionStore(private val machines: List<Machine>) {
     }
 }
 
-internal class NewSessionHistory(private val store: NewSessionStore) : HistoryRepository {
+internal class NewSessionHistory(private val store: NewSessionStore) : StubHistoryRepository() {
     override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = emptyFlow()
     override fun observeDay(date: LocalDate): Flow<List<SessionDetail>> = emptyFlow()
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = store.detail
@@ -167,8 +170,6 @@ internal class NewSessionHistory(private val store: NewSessionStore) : HistoryRe
         }
     }
 
-    override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> = emptyList()
-
     override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> {
         store.lastTimeCalls += date to machineId
         return store.lastTimeBeforeDate
@@ -176,12 +177,9 @@ internal class NewSessionHistory(private val store: NewSessionStore) : HistoryRe
 
     override fun observeClosedSessionExports(sinceDays: Int): Flow<List<HealthExport>> = emptyFlow()
     override fun observeSessionIds(): Flow<Set<Long>> = emptyFlow()
-    override suspend fun deleteSession(sessionId: Long): SessionDetail? = null
-    override suspend fun restoreSession(detail: SessionDetail) = Unit
-    override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> = emptyList()
 }
 
-internal class NewSessionTraining(private val store: NewSessionStore) : TrainingRepository {
+internal class NewSessionTraining(private val store: NewSessionStore) : StubTrainingRepository() {
     override suspend fun updateSet(set: WorkoutSet) {
         store.writes += "updateSet"
     }
@@ -198,42 +196,12 @@ internal class NewSessionTraining(private val store: NewSessionStore) : Training
 
     override fun observeOpenSession(): Flow<OpenSession?> = emptyFlow()
     override fun observeTodayPlan(): Flow<TodayPlan> = emptyFlow()
-    override suspend fun chooseRoutine(choice: RoutineChoice) = Unit
     override fun observeMachineLog(machineId: Long): Flow<MachineLog?> = emptyFlow()
-    override suspend fun closeStaleSession() = Unit
-    override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used by this test")
-    override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used by this test")
-    override suspend fun finishSession(): SessionSummary? = null
-    override suspend fun finishIfRoutineComplete(): SessionSummary? = null
-    override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
-    override suspend fun consumePendingSummary() = Unit
-    override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
-    override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
-    override suspend fun reopenSession(sessionId: Long) = Unit
-    override suspend fun skipMachineToday(machineId: Long) = Unit
-    override suspend fun unskipMachineToday(machineId: Long) = Unit
     override fun observeRepeatOffer(): Flow<RepeatOffer?> = emptyFlow()
-    override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
-    override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
-    override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
-    override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
-    override suspend fun trainingSummary(sessionId: Long): com.boratreino.core.model.TrainingSummary? = null
-    override suspend fun sessionRoutineId(sessionId: Long): Long? = null
 }
 
-internal class NewSessionMachines(private val all: List<Machine>) : MachineRepository {
-    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
-    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
-    override suspend fun addFromLibrary(exercise: LibraryExercise, portuguese: Boolean): Long = error("not used by this test")
+internal class NewSessionMachines(private val all: List<Machine>) : StubMachineRepository(all) {
     override fun observeLibraryIdsInUse(): Flow<Set<String>> = emptyFlow()
-    override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = MutableStateFlow(all)
-    override fun observeMachine(id: Long): Flow<Machine?> = MutableStateFlow(all.firstOrNull { it.id == id })
     override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = MutableStateFlow(all)
     override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = emptyFlow()
-    override suspend fun save(machine: Machine): Long = machine.id
-    override suspend fun usage(machineId: Long): MachineUsage = error("not used by this test")
-    override suspend fun delete(machineId: Long): Boolean = false
-    override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long = 0L
-    override suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean): List<Long> = emptyList()
-    override suspend fun setArchived(id: Long, archived: Boolean) = Unit
 }

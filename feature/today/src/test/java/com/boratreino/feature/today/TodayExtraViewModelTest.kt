@@ -28,6 +28,9 @@ import com.boratreino.core.model.TodayPlan
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.notify.RestTimer
 import com.boratreino.core.notify.RestTimerState
+import com.boratreino.core.testing.StubMachineRepository
+import com.boratreino.core.testing.StubRoutineRepository
+import com.boratreino.core.testing.StubTrainingRepository
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -68,7 +71,7 @@ class TodayExtraViewModelTest {
     private val at = Instant.parse("2026-11-05T10:05:00Z")
 
     /** Records the routine choices the view model makes; the rest of the training repository is not used here. */
-    private class RecordingTraining : TrainingRepository {
+    private class RecordingTraining : StubTrainingRepository() {
         val chosen = mutableListOf<RoutineChoice>()
         val plan = MutableStateFlow(TodayPlan(ScheduleMode.IN_TURN, emptyList(), null, RoutineChoice.Suggested, null, restDay = false))
         val open = MutableStateFlow<OpenSession?>(null)
@@ -79,71 +82,17 @@ class TodayExtraViewModelTest {
 
         override fun observeOpenSession(): Flow<OpenSession?> = open
         override fun observeTodayPlan(): Flow<TodayPlan> = plan
-        override fun observeRepeatOffer(): Flow<RepeatOffer?> = MutableStateFlow(null)
-        override suspend fun repeatLastTraining(mode: RepeatMode): RepeatOutcome? = null
-        override suspend fun logWarmups(machineId: Long, sets: List<SetDraft>): RepeatOutcome = RepeatOutcome(0, false, emptyList(), 1)
-        override suspend fun undoRepeat(outcome: RepeatOutcome) = Unit
         override fun observeMachineLog(machineId: Long): Flow<MachineLog?> = emptyFlow()
-        override suspend fun closeStaleSession() = Unit
-        override suspend fun logSet(machineId: Long, draft: SetDraft): LoggedSet = error("not used")
-        override suspend fun logCardio(machineId: Long, draft: CardioDraft): LoggedSet = error("not used")
-        override suspend fun updateSet(set: WorkoutSet) = Unit
-        override suspend fun deleteSet(set: WorkoutSet): RemovedSets = RemovedSets(listOf(set), null)
-        override suspend fun restoreSets(removed: RemovedSets) = Unit
-        override suspend fun finishSession(): SessionSummary? = null
-        override suspend fun finishIfRoutineComplete(): SessionSummary? = null
-        override val pendingSummarySessionId: Flow<Long?> = MutableStateFlow(null)
-        override suspend fun consumePendingSummary() = Unit
-        override suspend fun discardMachineToday(machineId: Long): RemovedSets = RemovedSets(emptyList(), null)
-        override suspend fun undoDiscardMachineToday(machineId: Long, removed: RemovedSets) = Unit
-        override suspend fun reopenSession(sessionId: Long) = Unit
-        override suspend fun skipMachineToday(machineId: Long) = Unit
-        override suspend fun unskipMachineToday(machineId: Long) = Unit
-        override suspend fun routineUpdateOffer(sessionId: Long): com.boratreino.core.model.RoutineUpdate? = null
-        override suspend fun trainingSummary(sessionId: Long): com.boratreino.core.model.TrainingSummary? = null
-        override suspend fun sessionRoutineId(sessionId: Long): Long? = null
     }
 
-    private class NoMachines : MachineRepository {
-    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
-    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
-        override suspend fun addFromLibrary(exercise: com.boratreino.core.model.LibraryExercise, portuguese: Boolean): Long = error("not used")
-        override fun observeLibraryIdsInUse(): Flow<Set<String>> = flowOf(emptySet())
-        override fun observeMachines(includeArchived: Boolean): Flow<List<Machine>> = flowOf(emptyList())
-        override fun observeMachine(id: Long): Flow<Machine?> = flowOf(null)
-        override fun observeRecentMachines(limit: Int): Flow<List<Machine>> = flowOf(emptyList())
-        override fun observeStartersNotAdded(): Flow<List<StarterMachine>> = flowOf(emptyList())
-        override suspend fun save(machine: Machine): Long = machine.id
-        override suspend fun usage(machineId: Long): MachineUsage = MachineUsage(0, emptyList())
+    private class NoMachines : StubMachineRepository() {
         override suspend fun delete(machineId: Long): Boolean = true
-        override suspend fun addStarter(starter: StarterMachine, portuguese: Boolean): Long = 0L
-        override suspend fun addStarters(starters: List<StarterMachine>, portuguese: Boolean): List<Long> = emptyList()
-        override suspend fun setArchived(id: Long, archived: Boolean) = Unit
     }
 
-    private class NoRoutines : RoutineRepository {
-        override suspend fun updateRoutineFromSession(routineId: Long, sessionId: Long): com.boratreino.core.model.RoutineUpdate =
-            com.boratreino.core.model.RoutineUpdate(emptyList(), emptyList())
-        override suspend fun undoRoutineUpdate(routineId: Long, previousItems: List<RoutineItem>) {}
+    private class NoRoutines : StubRoutineRepository() {
         override fun observePlan(): Flow<RoutinePlanWithRoutines> = emptyFlow()
         override fun observeRoutine(id: Long): Flow<RoutineWithItems?> = emptyFlow()
-        override fun observeLastRoutineId(): Flow<Long?> = flowOf(null)
-        override fun observeLastTrained(): Flow<Map<Long, Instant>> = flowOf(emptyMap())
-        override suspend fun setScheduleMode(mode: ScheduleMode) = Unit
-        override suspend fun setTrainingDays(days: Set<java.time.DayOfWeek>) = Unit
-        override suspend fun saveRoutine(routine: Routine, items: List<RoutineItem>): Long = routine.id
-        override suspend fun deleteRoutine(id: Long) = Unit
-        override suspend fun moveRoutine(id: Long, up: Boolean) = Unit
-        override suspend fun moveItem(routineId: Long, machineId: Long, up: Boolean) = Unit
-        override suspend fun duplicateRoutine(id: Long): Long = 0L
-        override suspend fun createRoutine(): Long = 0L
-        override suspend fun addMachine(routineId: Long, machineId: Long) = Unit
-        override suspend fun removeMachine(routineId: Long, machineId: Long): RoutineItem? = null
         override fun observePlanned(): Flow<List<PlannedWorkout>> = emptyFlow()
-        override suspend fun planWorkout(date: LocalDate, routineId: Long) = Unit
-        override suspend fun unplanWorkout(date: LocalDate, routineId: Long) = Unit
-        override suspend fun reorderPlanned(date: LocalDate, routineIds: List<Long>) = Unit
-        override suspend fun restoreItem(item: RoutineItem) = Unit
     }
 
     private class IdleRest : RestTimer {

@@ -25,6 +25,11 @@ import com.boratreino.core.model.StatsReport
 import com.boratreino.core.model.WeightEntry
 import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.settings.TrainingSettings
+import com.boratreino.core.testing.StubBodySettings
+import com.boratreino.core.testing.StubMeasurementRepository
+import com.boratreino.core.testing.StubStatsRepository
+import com.boratreino.core.testing.StubTrainingSettings
+import com.boratreino.core.testing.answering
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,7 +68,7 @@ class StatsViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     /** Records every query; the report it returns carries the asked period. */
-    private class FakeStatsRepository : StatsRepository {
+    private class FakeStatsRepository : StubStatsRepository() {
         val calls = mutableListOf<Pair<StatsPeriod, Int>>()
 
         override fun observeStats(period: StatsPeriod, weeklyGoal: Int): Flow<StatsReport> = flow {
@@ -72,36 +77,27 @@ class StatsViewModelTest {
         }
     }
 
-    private class FakeSettings(initialGoal: Int = 4) : TrainingSettings {
+    private class FakeSettings(initialGoal: Int = 4) : StubTrainingSettings() {
         val goal = MutableStateFlow(initialGoal)
         override val weeklyGoal: Flow<Int> get() = goal
         override suspend fun setWeeklyGoal(goal: Int) {
             this.goal.value = goal.coerceIn(1, 7)
         }
-        override val reminders: Flow<ReminderSettings> = MutableStateFlow(ReminderSettings())
-        override suspend fun setReminders(settings: ReminderSettings) = Unit
-        override val restTimer: Flow<RestTimerSettings> = MutableStateFlow(RestTimerSettings())
-        override suspend fun setRestTimer(settings: RestTimerSettings) = Unit
-        override val warmupCalculator: Flow<Boolean> = MutableStateFlow(true)
-        override suspend fun setWarmupCalculator(enabled: Boolean) = Unit
     }
 
     /** Body settings on state flows: the profile and the weight entries (newest first, as stored). */
-    private class FakeBody(profile: BodyProfile? = null, weights: List<WeightEntry> = emptyList()) : BodySettings {
+    private class FakeBody(profile: BodyProfile? = null, weights: List<WeightEntry> = emptyList()) : StubBodySettings() {
         val profileFlow = MutableStateFlow(profile)
         val weightsFlow = MutableStateFlow(weights)
         override val profile: Flow<BodyProfile?> get() = profileFlow
         override val weights: Flow<List<WeightEntry>> get() = weightsFlow
-        override val showEnergyEstimate: Flow<Boolean> = MutableStateFlow(true)
         override suspend fun setProfile(profile: BodyProfile) {
             profileFlow.value = profile
         }
-        override suspend fun addWeight(date: LocalDate, kg: Double) = Unit
-        override suspend fun setShowEnergyEstimate(show: Boolean) = Unit
     }
 
     /** Keeps the measurements newest first, as the repository does; [add] clamps like the real one. */
-    private class FakeMeasurementRepository(initial: List<BodyMeasurement> = emptyList()) : MeasurementRepository {
+    private class FakeMeasurementRepository(initial: List<BodyMeasurement> = emptyList()) : StubMeasurementRepository() {
         val items = MutableStateFlow(initial.sortedWith(newestFirst))
         val added = mutableListOf<Triple<LocalDate, MeasurementType, Double>>()
         private var nextId = (initial.maxOfOrNull { it.id } ?: 0L) + 1

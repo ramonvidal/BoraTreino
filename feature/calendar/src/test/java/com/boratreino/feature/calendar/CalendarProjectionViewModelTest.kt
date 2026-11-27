@@ -5,6 +5,7 @@ import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.Routine
 import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionDetail
+import com.boratreino.core.testing.TestClock
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -35,7 +36,7 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 class CalendarProjectionViewModelTest {
-    private val clock = MutableClock(Instant.parse("2026-11-05T12:00:00Z"))
+    private val clock = TestClock(Instant.parse("2026-11-05T12:00:00Z"))
     private val today = LocalDate.of(2026, 11, 5)
 
     private val routineA = Routine(1L, 1L, "Treino A", "A", 0, emptySet())

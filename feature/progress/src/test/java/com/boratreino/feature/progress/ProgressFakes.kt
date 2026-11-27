@@ -18,8 +18,7 @@ import com.boratreino.core.model.StatsReport
 import com.boratreino.core.model.WeightEntry
 import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.settings.TrainingSettings
-import java.lang.reflect.InvocationHandler
-import java.lang.reflect.Proxy
+import com.boratreino.core.testing.answering
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -28,29 +27,6 @@ import kotlinx.coroutines.flow.flowOf
 
 /** The clock of the Stats tests: 2 Nov 2026 at noon UTC, the day [StatsSamples] is built for. */
 internal val statsTestClock: Clock = Clock.fixed(Instant.parse("2026-11-02T12:00:00Z"), ZoneOffset.UTC)
-
-/**
- * A stand-in for the repository interface [T]: [answers] maps a method name to the value it returns (usually a
- * flow). Any other call fails the test, so each test states which repository calls it depends on.
- */
-internal inline fun <reified T : Any> answering(vararg answers: Pair<String, Any?>): T {
-    val byName = answers.toMap()
-    val handler = InvocationHandler { proxy, method, args ->
-        when (method.name) {
-            "toString" -> "fake ${T::class.java.simpleName}"
-            "hashCode" -> System.identityHashCode(proxy)
-            "equals" -> proxy === args?.firstOrNull()
-            else -> {
-                // A Kotlin property `weeklyGoal` is the method `getWeeklyGoal`: answer it by the property name too.
-                val name = method.name.takeIf { it in byName }
-                    ?: method.name.removePrefix("get").replaceFirstChar { it.lowercase() }
-                check(name in byName) { "${T::class.java.simpleName}.${method.name} is not answered in this test" }
-                byName[name]
-            }
-        }
-    }
-    return Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java), handler) as T
-}
 
 /**
  * A Stats view model over fake repositories: [report] for every period and goal, a weekly goal of 4, no body data,

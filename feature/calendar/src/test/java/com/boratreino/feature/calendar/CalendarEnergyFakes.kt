@@ -14,6 +14,9 @@ import com.boratreino.core.model.WeightEntry
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.settings.TrainingSettings
+import com.boratreino.core.testing.StubBodySettings
+import com.boratreino.core.testing.StubHistoryRepository
+import com.boratreino.core.testing.StubTrainingSettings
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -26,7 +29,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 
 /** Body settings backed by plain state flows; no profile and the estimate switched on. */
-internal class FakeBodySettings : BodySettings {
+internal class FakeBodySettings : StubBodySettings() {
     val profileFlow = MutableStateFlow<BodyProfile?>(null)
     val weightsFlow = MutableStateFlow<List<WeightEntry>>(emptyList())
     val showFlow = MutableStateFlow(true)
@@ -49,7 +52,7 @@ internal class FakeBodySettings : BodySettings {
 }
 
 /** Only the weekly goal is used by the Calendar view model. */
-internal class FakeTrainingSettings : TrainingSettings {
+internal class FakeTrainingSettings : StubTrainingSettings() {
     val goalFlow = MutableStateFlow(3)
 
     override val weeklyGoal: Flow<Int> = goalFlow
@@ -58,42 +61,18 @@ internal class FakeTrainingSettings : TrainingSettings {
     }
 
     override val reminders: Flow<ReminderSettings> = emptyFlow()
-    override suspend fun setReminders(settings: ReminderSettings) = Unit
     override val restTimer: Flow<RestTimerSettings> = emptyFlow()
-    override suspend fun setRestTimer(settings: RestTimerSettings) = Unit
-    override val warmupCalculator: Flow<Boolean> = MutableStateFlow(true)
-    override suspend fun setWarmupCalculator(enabled: Boolean) = Unit
 }
 
 /** Sessions by date; every date has a value (an empty list when nothing is stored). */
-internal class EnergyHistory : HistoryRepository {
+internal class EnergyHistory : StubHistoryRepository() {
     val days = MutableStateFlow<Map<LocalDate, List<SessionDetail>>>(emptyMap())
     /** The days with a session (trained); empty unless a test sets them. */
     val trainingDates = MutableStateFlow<Set<LocalDate>>(emptySet())
 
     override fun observeDay(date: LocalDate): Flow<List<SessionDetail>> = days.map { it[date].orEmpty() }
-    override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = MutableStateFlow(emptyMap())
     override fun observeTrainingDates(): Flow<Set<LocalDate>> = trainingDates
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = emptyFlow()
-    override suspend fun addSessionWithSet(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
-    override suspend fun addSessionWithCardio(date: LocalDate, routineId: Long?, isExtra: Boolean, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
-    override suspend fun addSessionRepeating(date: LocalDate, routineId: Long?, isExtra: Boolean, mode: RepeatMode): List<WorkoutSet> = emptyList()
-    override suspend fun lastTimeBeforeDate(date: LocalDate, machineId: Long): List<WorkoutSet> = emptyList()
-    override suspend fun setSessionRoutine(sessionId: Long, routineId: Long?) = Unit
-    override suspend fun setSessionExtra(sessionId: Long, extra: Boolean) = Unit
-    override suspend fun addSet(sessionId: Long, machineId: Long, draft: SetDraft): WorkoutSet = error("not used")
-    override suspend fun addCardioSet(sessionId: Long, machineId: Long, draft: CardioDraft): WorkoutSet = error("not used")
-    override suspend fun lastTimeBefore(sessionId: Long, machineId: Long): List<WorkoutSet> = emptyList()
     override fun observeClosedSessionExports(sinceDays: Int): Flow<List<HealthExport>> = emptyFlow()
     override fun observeSessionIds(): Flow<Set<Long>> = emptyFlow()
-    override suspend fun deleteSession(sessionId: Long): SessionDetail? = null
-    override suspend fun restoreSession(detail: SessionDetail) = Unit
-    override suspend fun repeatLastSession(sessionId: Long, mode: RepeatMode): List<WorkoutSet> = emptyList()
-}
-
-/** A clock the test can move. */
-internal class MutableClock(var now: Instant, private val zone: ZoneId = ZoneOffset.UTC) : Clock() {
-    override fun getZone(): ZoneId = zone
-    override fun withZone(zone: ZoneId): Clock = MutableClock(now, zone)
-    override fun instant(): Instant = now
 }
