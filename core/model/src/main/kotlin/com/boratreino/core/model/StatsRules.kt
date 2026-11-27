@@ -85,6 +85,12 @@ data class BalanceStats(
  */
 data class MachineTrend(val machineId: Long, val name: String, val group: MuscleGroup, val result: TrendResult)
 
+/** A machine's estimated 1RM per session, whole history, ascending (ProgressRules oneRmPoints). */
+data class MachineSeries(val machine: Machine, val points: List<SessionPoint>)
+
+/** Average direct working sets per week by group over the last [weeks] 7-day blocks ending today. */
+data class RecentGroupSets(val weeks: Int, val setsPerWeek: Map<MuscleGroup, Double>)
+
 data class StatsReport(
     val period: StatsPeriod,
     /** First day of the first 7-day block of the period: today minus (7 x blocks - 1) days. */
@@ -140,6 +146,12 @@ data class StatsReport(
     val cardioInsight: CardioInsight? = null,
     /** Waist / hip ratio per date that has both, whole history, oldest first. */
     val waistHip: List<Pair<LocalDate, Double>> = emptyList(),
+    /** Non-cardio machines with >= 1 e1RM point, whole history; order: machine name (case-insensitive). */
+    val oneRmHistory: List<MachineSeries> = emptyList(),
+    /** One per flagged machine (SuspiciousJumpRules.find over the PERIOD [from]..[to]); newest toDate first. */
+    val suspiciousJumps: List<SuspiciousJump> = emptyList(),
+    /** Independent of the period: direct working sets per week of the last 4 blocks (fewer for a short history). */
+    val recentGroupSets: RecentGroupSets = RecentGroupSets(0, emptyMap()),
 )
 
 /** Statistics over the sets, sessions and machines already logged. Working sets only; pure functions. */
@@ -238,6 +250,31 @@ object StatsRules {
             machineTrends = machineTrends(progresses),
             cardioInsight = CardioInsightRules.insight(progresses),
             waistHip = BodyTrendRules.waistHipRatio(measurements),
+            oneRmHistory = progresses
+                .filter { it.machine.kind != MachineKind.CARDIO && it.oneRmPoints.isNotEmpty() }
+                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.machine.name })
+                .map { MachineSeries(it.machine, it.oneRmPoints) },
+            suspiciousJumps = progresses
+                .mapNotNull { SuspiciousJumpRules.find(it.machine, SuspiciousJumpRules.weightSeries(it), from, today) }
+                .sortedByDescending { it.toDate },
+            recentGroupSets = recentGroupSets(all, today),
+        )
+    }
+
+    private const val RECENT_SETS_MAX_WEEKS = 4
+
+    /** Direct working sets per week and group over the last (at most 4) 7-day blocks ending [today]. */
+    private fun recentGroupSets(all: List<Entry>, today: LocalDate): RecentGroupSets {
+        val first = all.minOfOrNull { it.date } ?: return RecentGroupSets(0, emptyMap())
+        val weeks = minOf(RECENT_SETS_MAX_WEEKS.toLong(), ChronoUnit.DAYS.between(first, today) / DAYS_IN_BLOCK + 1)
+            .toInt().coerceAtLeast(1)
+        val start = today.minusDays(DAYS_IN_BLOCK * weeks - 1)
+        val counts = all.filter {
+            !it.date.isBefore(start) && !it.date.isAfter(today) && isStrengthSet(it) && it.machine.kind != MachineKind.CARDIO
+        }.groupingBy { it.machine.muscleGroup }.eachCount()
+        return RecentGroupSets(
+            weeks,
+            MuscleGroup.entries.filter { it != MuscleGroup.CARDIO }.associateWith { (counts[it] ?: 0).toDouble() / weeks },
         )
     }
 
