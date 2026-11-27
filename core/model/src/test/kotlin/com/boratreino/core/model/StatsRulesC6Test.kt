@@ -153,10 +153,9 @@ class StatsRulesC6Test {
 
     @Test
     fun `recent group sets without any session are empty`() {
-        val chest = machine("Chest press")
+        machine("Chest press")
         assertEquals(0, report().recentGroupSets.weeks)
         assertTrue(report().recentGroupSets.setsPerWeek.isEmpty())
-        assertTrue(chest.id > 0)
     }
 
     @Test
