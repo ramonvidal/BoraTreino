@@ -59,43 +59,162 @@ private const val RECENT_DAYS = 3
 private const val WEEK_DAYS = 7
 private const val MAX_RECORDS = 10
 
+/** One entry of the Analysis list. The key is the LazyColumn item key, so an anchor maps to an index by key. */
+private sealed interface AnalysisItem {
+    val key: String
+
+    data object Empty : AnalysisItem {
+        override val key = "empty"
+    }
+
+    data class Heading(override val key: String, val title: Int, val sub: Boolean) : AnalysisItem
+
+    data class CardItem(val card: AnalysisCard) : AnalysisItem {
+        override val key: String = card.name
+    }
+}
+
+private val StrengthGroup = listOf(
+    AnalysisCard.STRENGTH,
+    AnalysisCard.RECORDS,
+    AnalysisCard.REP_RANGES,
+    AnalysisCard.STRENGTH_VS_WEIGHT,
+    AnalysisCard.RELATIVE_STRENGTH,
+)
+private val MusclesGroup = listOf(
+    AnalysisCard.MUSCLE_VOLUME,
+    AnalysisCard.WEEK_MUSCLES,
+    AnalysisCard.BODY_MAP,
+    AnalysisCard.MUSCLES,
+    AnalysisCard.WEEKLY_VOLUME,
+)
+private val HabitGroup = listOf(AnalysisCard.SUMMARY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY)
+private val BodyGroup = listOf(AnalysisCard.MEASUREMENTS, AnalysisCard.PROPORTIONS)
+
+/** Whether [card] has anything to show for [state] (the card's own condition from the old pages). */
+private fun isPresent(card: AnalysisCard, state: StatsUiState, report: StatsReport): Boolean = when (card) {
+    AnalysisCard.TREND -> report.machineTrends.isNotEmpty()
+    AnalysisCard.WORKLOAD -> report.workload != null
+    AnalysisCard.PATTERNS -> report.patterns != null
+    AnalysisCard.HARD_SETS -> report.muscleWeeks.isNotEmpty()
+    AnalysisCard.BALANCE -> hasBalance(report.balance)
+    AnalysisCard.STRENGTH -> report.strength.isNotEmpty()
+    AnalysisCard.RECORDS -> report.records.isNotEmpty()
+    AnalysisCard.MUSCLE_VOLUME -> report.muscleVolumes.isNotEmpty()
+    AnalysisCard.WEEK_MUSCLES -> true
+    AnalysisCard.BODY_MAP, AnalysisCard.MUSCLES -> BodyInsightRules.muscleDetailLoad(report).values.any { it > 0 }
+    AnalysisCard.REP_RANGES -> report.repRanges.any { it.sets > 0 }
+    AnalysisCard.WEEKLY_VOLUME -> report.muscleWeeks.any { it.volumeKg > 0 }
+    AnalysisCard.STRENGTH_VS_WEIGHT -> hasStrengthChart(report)
+    AnalysisCard.RELATIVE_STRENGTH -> hasRelativeStrength(state)
+    AnalysisCard.SUMMARY -> true
+    AnalysisCard.CARDIO -> report.cardioBlocks.isNotEmpty()
+    AnalysisCard.TIMES -> report.times.averageMinutes != null || report.times.averageMinutesBetweenSets != null
+    AnalysisCard.RECENCY -> true
+    AnalysisCard.MEASUREMENTS -> true
+    AnalysisCard.PROPORTIONS -> report.waistHip.isNotEmpty()
+}
+
+/** The Analysis list in display order, headings included. Empty when there is no report yet. */
+private fun analysisItems(state: StatsUiState): List<AnalysisItem> {
+    val report = state.report ?: return emptyList()
+    if (report.isEmptyPeriod()) return listOf(AnalysisItem.Empty, AnalysisItem.CardItem(AnalysisCard.MEASUREMENTS))
+    val items = mutableListOf<AnalysisItem>()
+    listOf(AnalysisCard.TREND, AnalysisCard.WORKLOAD, AnalysisCard.PATTERNS, AnalysisCard.HARD_SETS, AnalysisCard.BALANCE)
+        .filter { isPresent(it, state, report) }
+        .forEach { items += AnalysisItem.CardItem(it) }
+    items += AnalysisItem.Heading("heading-more", R.string.analysis_more, sub = false)
+    listOf(
+        Triple("heading-strength", R.string.stats_page_strength, StrengthGroup),
+        Triple("heading-muscles", R.string.analysis_group_muscles, MusclesGroup),
+        Triple("heading-habit", R.string.stats_page_habit, HabitGroup),
+        Triple("heading-body", R.string.stats_page_body, BodyGroup),
+    ).forEach { (key, title, cards) ->
+        val present = cards.filter { isPresent(it, state, report) }
+        if (present.isNotEmpty()) {
+            items += AnalysisItem.Heading(key, title, sub = true)
+            present.forEach { items += AnalysisItem.CardItem(it) }
+        }
+    }
+    return items
+}
+
+/** Pure: the cards present for this state, in display order. */
+internal fun analysisCards(state: StatsUiState): List<AnalysisCard> =
+    analysisItems(state).filterIsInstance<AnalysisItem.CardItem>().map { it.card }
+
 /**
- * The cards of ONE stats [page] (the header and page switch live in [ProgressShell]). Drawn from
- * its state alone. The highlights strip is the first item of the Body page only.
+ * The Analysis level: the existing detail cards (the header lives in [ProgressShell]). Drawn from its state
+ * alone. Scrolls to [anchor] once it is present, then calls [onAnchorShown].
  */
 @Composable
-internal fun StatsContent(
+internal fun AnalysisContent(
     state: StatsUiState,
     actions: StatsActions,
+    listState: LazyListState,
+    anchor: AnalysisCard?,
+    onAnchorShown: () -> Unit,
     modifier: Modifier = Modifier,
-    page: StatsPage = StatsPage.BODY,
 ) {
     val report = state.report
     var measureType by rememberSaveable { mutableStateOf<String?>(null) }
     var logSheetOpen by rememberSaveable { mutableStateOf(false) }
     val selectedMeasure = MeasurementType.entries.firstOrNull { it.name == measureType }
+    val items = analysisItems(state)
+    val anchorIndex = if (anchor == null) -1 else items.indexOfFirst { it.key == anchor.name }
+    LaunchedEffect(anchor, anchorIndex, state.loaded) {
+        if (anchor == null) return@LaunchedEffect
+        if (anchorIndex >= 0) {
+            listState.scrollToItem(anchorIndex)
+            onAnchorShown()
+        } else if (state.loaded && report != null) {
+            onAnchorShown()
+        }
+    }
     LazyColumn(
         modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (report == null) return@LazyColumn
-        if (report.isEmptyPeriod()) {
-            item(key = "empty") { StatsEmptyCard() }
-            if (page == StatsPage.BODY) measurementsItem(state, report, selectedMeasure, { measureType = it.name }, { logSheetOpen = true }, actions)
-            return@LazyColumn
-        }
-        when (page) {
-            StatsPage.BODY -> {
-                val highlights = StatsHighlights.of(report)
-                if (highlights.isNotEmpty()) {
-                    item(key = "highlights") { HighlightsStrip(highlights, onPage = actions.onOpenPage) }
+        items(items, key = { it.key }) { item ->
+            when (item) {
+                AnalysisItem.Empty -> StatsEmptyCard()
+                is AnalysisItem.Heading -> AnalysisHeading(stringResource(item.title), item.sub)
+                is AnalysisItem.CardItem -> when (item.card) {
+                    AnalysisCard.TREND -> TrendSummaryCard(report.machineTrends, actions.onOpenMachine)
+                    AnalysisCard.WORKLOAD -> report.workload?.let { WorkloadCard(it) }
+                    AnalysisCard.PATTERNS -> report.patterns?.let { PatternsCard(it) }
+                    AnalysisCard.HARD_SETS -> HardSetsCard(report)
+                    AnalysisCard.BALANCE -> BalanceCard(report.balance)
+                    AnalysisCard.STRENGTH -> StrengthCard(report, actions.onOpenMachine)
+                    AnalysisCard.RECORDS -> RecordsCard(report, actions.onOpenMachine)
+                    AnalysisCard.MUSCLE_VOLUME -> MuscleVolumeCard(report.muscleVolumes)
+                    AnalysisCard.WEEK_MUSCLES -> WeekMusclesCard(report)
+                    AnalysisCard.BODY_MAP -> BodyMapCard(report)
+                    AnalysisCard.MUSCLES -> MusclesCard(report)
+                    AnalysisCard.REP_RANGES -> RepRangesCard(report)
+                    AnalysisCard.WEEKLY_VOLUME -> WeeklyVolumeCard(report)
+                    AnalysisCard.STRENGTH_VS_WEIGHT -> StrengthVsWeightCard(state)
+                    AnalysisCard.RELATIVE_STRENGTH -> RelativeStrengthCard(state)
+                    AnalysisCard.SUMMARY -> SummaryCard(report)
+                    AnalysisCard.CARDIO -> CardioCard(report)
+                    AnalysisCard.TIMES -> SessionLengthCard(report)
+                    AnalysisCard.RECENCY -> RecencyCard(report)
+                    AnalysisCard.MEASUREMENTS -> MeasurementsCard(
+                        measurements = state.measurements,
+                        from = report.from,
+                        today = report.to,
+                        selectedType = selectedMeasure,
+                        onType = { measureType = it.name },
+                        onLog = { logSheetOpen = true },
+                        onDelete = { actions.onDeleteMeasurement(it.id) },
+                        onUndo = actions.onUndoDeleteMeasurement,
+                    )
+                    AnalysisCard.PROPORTIONS -> ProportionsCard(report.waistHip, report.to)
                 }
-                bodyItems(state, report)
-                measurementsItem(state, report, selectedMeasure, { measureType = it.name }, { logSheetOpen = true }, actions)
             }
-            StatsPage.STRENGTH -> strengthItems(report, actions)
-            StatsPage.HABIT -> habitItems(report)
         }
     }
     if (logSheetOpen) {
@@ -112,142 +231,16 @@ internal fun StatsContent(
     }
 }
 
-private fun LazyListScope.measurementsItem(
-    state: StatsUiState,
-    report: StatsReport,
-    selected: MeasurementType?,
-    onType: (MeasurementType) -> Unit,
-    onLog: () -> Unit,
-    actions: StatsActions,
-) {
-    item(key = "measurements") {
-        MeasurementsCard(
-            measurements = state.measurements,
-            from = report.from,
-            today = report.to,
-            selectedType = selected,
-            onType = onType,
-            onLog = onLog,
-            onDelete = { actions.onDeleteMeasurement(it.id) },
-            onUndo = actions.onUndoDeleteMeasurement,
-        )
-    }
-}
-
-private fun LazyListScope.bodyItems(state: StatsUiState, report: StatsReport) {
-    item(key = "week-muscles") { WeekMusclesCard(report) }
-    if (BodyInsightRules.muscleDetailLoad(report).values.any { it > 0 }) {
-        item(key = "body-map") { BodyMapCard(report) }
-        item(key = "muscles") { MusclesCard(report) }
-    }
-    if (hasBalance(report.balance)) {
-        item(key = "balance") { BalanceCard(report.balance) }
-    }
-    if (hasRelativeStrength(state)) {
-        item(key = "relative-strength") { RelativeStrengthCard(state) }
-    }
-    if (hasStrengthChart(report)) {
-        item(key = "strength-vs-weight") { StrengthVsWeightCard(state) }
-    }
-    if (report.muscleWeeks.isNotEmpty()) {
-        item(key = "hard-sets") { HardSetsCard(report) }
-    }
-    if (report.waistHip.isNotEmpty()) {
-        item(key = "proportions") { ProportionsCard(report.waistHip, report.to) }
-    }
-}
-
-private fun LazyListScope.strengthItems(report: StatsReport, actions: StatsActions) {
-    if (report.strength.isNotEmpty()) {
-        item(key = "strength") { StrengthCard(report, actions.onOpenMachine) }
-    }
-    if (report.records.isNotEmpty()) {
-        item(key = "records") { RecordsCard(report, actions.onOpenMachine) }
-    }
-    if (report.machineTrends.isNotEmpty()) {
-        item(key = "machine-trends") { TrendSummaryCard(report.machineTrends, actions.onOpenMachine) }
-    }
-    if (report.muscleVolumes.isNotEmpty()) {
-        item(key = "muscle-volume") { MuscleVolumeCard(report.muscleVolumes) }
-    }
-    if (report.repRanges.any { it.sets > 0 }) {
-        item(key = "rep-ranges") { RepRangesCard(report) }
-    }
-}
-
-private fun LazyListScope.habitItems(report: StatsReport) {
-    item(key = "summary") { SummaryCard(report) }
-    if (report.muscleWeeks.any { it.volumeKg > 0 }) {
-        item(key = "volume") { WeeklyVolumeCard(report) }
-    }
-    report.workload?.let { workload ->
-        item(key = "workload") { WorkloadCard(workload) }
-    }
-    report.patterns?.let { patterns ->
-        item(key = "patterns") { PatternsCard(patterns) }
-    }
-    if (report.cardioBlocks.isNotEmpty()) {
-        item(key = "cardio") { CardioCard(report) }
-    }
-    item(key = "recency") { RecencyCard(report) }
-    if (report.times.averageMinutes != null || report.times.averageMinutesBetweenSets != null) {
-        item(key = "times") { SessionLengthCard(report) }
-    }
-}
-
-/** Up to three cards in a row that scrolls sideways; tapping one opens the page that holds its card. */
+/** A section heading between Analysis cards: bold title for "More statistics", smaller for its groups. */
 @Composable
-internal fun HighlightsStrip(highlights: List<Highlight>, onPage: (StatsPage) -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        highlights.forEach { highlight -> HighlightCard(highlight, onPage) }
-    }
-}
-
-@Composable
-private fun HighlightCard(highlight: Highlight, onPage: (StatsPage) -> Unit) {
-    val group = highlight.muscleGroup?.label().orEmpty()
-    val sentence = when (highlight.kind) {
-        HighlightKind.MUSCLE_LOAD -> stringResource(R.string.stats_highlight_load, group, formatOneDecimal(highlight.value))
-        HighlightKind.MUSCLE_BEHIND -> pluralStringResource(R.plurals.stats_highlight_behind, highlight.days, group, highlight.days)
-        HighlightKind.STRENGTH_GAIN -> stringResource(
-            R.string.stats_highlight_gain,
-            highlight.machine?.name.orEmpty(),
-            stringResource(R.string.stats_percent, signedPercentNumber(highlight.value)),
-        )
-        HighlightKind.GOAL_STREAK -> {
-            val weeks = highlight.value.roundToInt()
-            pluralStringResource(R.plurals.stats_highlight_streak, weeks, weeks)
-        }
-    }
-    val kindLabel = stringResource(
-        when (highlight.kind) {
-            HighlightKind.MUSCLE_LOAD -> R.string.stats_highlight_kind_load
-            HighlightKind.MUSCLE_BEHIND -> R.string.stats_highlight_kind_behind
-            HighlightKind.STRENGTH_GAIN -> R.string.stats_highlight_kind_gain
-            HighlightKind.GOAL_STREAK -> R.string.stats_highlight_kind_streak
-        },
+private fun AnalysisHeading(text: String, sub: Boolean) {
+    Text(
+        text,
+        style = if (sub) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        color = if (sub) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(start = 4.dp, top = if (sub) 0.dp else 8.dp),
     )
-    BoraCard(modifier = Modifier.width(220.dp).heightIn(min = 104.dp), onClick = { onPage(highlight.target) }) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                kindLabel,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            Icon(
-                painterResource(CoreUiR.drawable.ic_arrow_upward),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp).graphicsLayer { rotationZ = 90f },
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(sentence, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis)
-    }
 }
 
 @Composable

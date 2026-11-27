@@ -10,6 +10,7 @@ import com.boratreino.core.model.MachineProgress
 import com.boratreino.core.model.ProgressMetric
 import com.boratreino.core.model.ProgressOverview
 import com.boratreino.core.model.ProgressRules
+import com.boratreino.core.model.SuspiciousJumpRules
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.LocalDate
@@ -56,6 +57,10 @@ internal const val MOST_IMPROVED_COUNT = 5
 internal fun buildProgressState(overview: ProgressOverview, today: LocalDate): ProgressUiState {
     val shown = overview.machines.map { it.forExercisesList() }
     val improved = shown
+        .filter { progress ->
+            // A suspicious load jump is a flag only, but never a "most improved" row.
+            SuspiciousJumpRules.find(progress.machine, SuspiciousJumpRules.weightSeries(progress), today.minusDays(30), today) == null
+        }
         .mapNotNull { progress ->
             ProgressRules.improvement(progress.points, today)?.let { ImprovedRow(progress.machine, progress.metric, it, trendOf(progress.points.map { p -> p.value })) }
         }
