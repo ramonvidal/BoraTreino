@@ -331,6 +331,9 @@
     <string name="analysis_title">Análise detalhada</string>
     <string name="analysis_group_muscles">Músculos</string>
     <string name="action_back">Voltar</string>
+    <string name="progress_show_all_count">Ver todos os %1$d treinos</string>
+    <string name="stats_muscles_show_all">Ver todos os %1$d músculos</string>
+    <string name="analysis_section_highlights">Destaques</string>
     <plurals name="progress_trainings">
         <item quantity="one">%d treino</item>
         <item quantity="other">%d treinos</item>

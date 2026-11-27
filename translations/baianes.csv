@@ -563,9 +563,11 @@ feature/progress,habit_between_sets,,%1$s min between sets,%1$s min entre série
 feature/progress,analysis_row_title,,Detailed analysis,Ver análise detalhada
 feature/progress,analysis_row_subtitle,,"Trend, recent load, patterns, sets per muscle, proportions","Tendência, carga recente, padrões, séries por músculo, proporções"
 feature/progress,analysis_title,,Detailed analysis,Análise detalhada
-feature/progress,analysis_more,,More statistics,Mais estatísticas
 feature/progress,analysis_group_muscles,,Muscles,Músculos
 feature/progress,action_back,,Back,Voltar
+feature/progress,progress_show_all_count,,Show all %1$d sessions,Ver todos os %1$d treinos
+feature/progress,stats_muscles_show_all,,Show all %1$d muscles,Ver todos os %1$d músculos
+feature/progress,analysis_section_highlights,,Highlights,Destaques
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha
