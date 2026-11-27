@@ -11,7 +11,7 @@ logins) are marked **YOU**. Play Console menus get renamed now and then: if a na
 | The app bundle (`.aab`) signed with your upload key | built by CI on every push, attached to the newest GitHub release as `BoraTreino.aab` (after step 2) |
 | Store texts, English and Portuguese: name, short description, full description, release notes | `docs/play-store/listing/en-US/` and `.../pt-BR/` |
 | App icon 512x512 and feature graphics 1024x500 (EN and PT) | `docs/play-store/graphics/` |
-| Phone screenshots 1080x2160, English and Portuguese (7 each) | `docs/play-store/screenshots/en-US/` and `.../pt-BR/` (added once CI has drawn them) |
+| Phone screenshots 1080x2160, English and Portuguese (8 each) | `docs/play-store/screenshots/en-US/` and `.../pt-BR/` (added once CI has drawn them) |
 | Privacy policy page (English and Portuguese on one page) | `docs/privacy-policy.html` |
 | Exact answers for every Play Console form (content rating, data safety, health, ads...) | `docs/play-store/console-answers.md` |
 | Upload key (and its passwords), outside git | the `signing/play/` folder that was sent to you in the chat |
@@ -84,7 +84,7 @@ declaration is filled in and approved**, so do it before you roll out (internal 
 **Grow > Store presence > Main store listing** (English):
 1. App name, short description, full description: copy from `docs/play-store/listing/en-US/`.
 2. App icon: `docs/play-store/graphics/icon-512.png`. Feature graphic: `feature-graphic-en-US.png`.
-3. Phone screenshots: upload the seven files of `docs/play-store/screenshots/en-US/` (in numeric order).
+3. Phone screenshots: upload the eight files of `docs/play-store/screenshots/en-US/` (in numeric order).
 4. Category: **Health & Fitness**. Tags: pick Fitness / Workout / Exercise if offered.
 5. Contact details: an email address (shown publicly on the store page), optionally your website
    (you can use `https://github.com/ramonvidal/BoraTreino`).
