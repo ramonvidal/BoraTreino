@@ -41,7 +41,7 @@ class CalendarRotationDayTest {
     private val routineChoices = listOf(RoutineChoiceUi(1L, "Treino A", "A"), RoutineChoiceUi(2L, "Treino B", "B"))
     private val projectedB = ProjectedUi(2L, "B", "Treino B")
     private val projectedC = ProjectedUi(3L, "C", "Treino C")
-    private val projectedFixedF = ProjectedUi(4L, "F", "Treino F")
+    private val projectedFixedF = ProjectedUi(4L, "F", "Treino F", inRotation = false)
     private val planA = PlannedUi(1L, "Treino A", "A")
     private val planB = PlannedUi(2L, "Treino B", "B")
 

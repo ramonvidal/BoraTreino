@@ -289,7 +289,7 @@ CI green, screenshots looked at).
       top at most three findings chosen by rules in `:core:model` (plateau, muscle with few
       sets, recent record, drop in frequency), each opening its detail; the rest in sections;
       technical cards in an "Analysis" level.
-- [ ] **C7: Play Store page.** New screenshots (8 per language) from the final screens and
+- [x] **C7: Play Store page.** New screenshots (8 per language) from the final screens and
       the listing texts revised; the owner uploads them in the Play Console.
 
 ## Settled questions

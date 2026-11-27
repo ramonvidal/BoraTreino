@@ -97,7 +97,7 @@ class CalendarRotationScreenshotTest {
             sessions = emptyList(),
             routines = routineChoices,
             projected = mapOf(nov5 to projected(CalendarSamples.routineC)),
-            projectedMore = mapOf(nov5 to listOf(ProjectedUi(4L, "F", "Treino F"))),
+            projectedMore = mapOf(nov5 to listOf(ProjectedUi(4L, "F", "Treino F", inRotation = false))),
         ),
     )
 
