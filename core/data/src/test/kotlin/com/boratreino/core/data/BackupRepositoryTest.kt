@@ -314,9 +314,9 @@ class BackupRepositoryTest {
 
     @Test
     fun `a newer backup previews as too new`() {
-        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":12,\"machines\":\"odd\"}")
+        val preview = repo.preview("{\"app\":\"boratreino\",\"version\":13,\"machines\":\"odd\"}")
 
-        assertEquals(BackupPreview.TooNew(12), preview)
+        assertEquals(BackupPreview.TooNew(13), preview)
     }
 
     @Test

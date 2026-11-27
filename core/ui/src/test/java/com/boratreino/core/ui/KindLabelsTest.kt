@@ -33,6 +33,13 @@ class KindLabelsTest {
         return result
     }
 
+    /** Like [text] for several texts: a test may set the content only once. */
+    private fun texts(vararg contents: @Composable () -> String): List<String> {
+        val results = MutableList(contents.size) { "" }
+        compose.setContent { contents.forEachIndexed { index, content -> results[index] = content() } }
+        return results
+    }
+
     private fun machine(kind: MachineKind) = Machine(
         id = 1L,
         name = "Machine",
@@ -92,24 +99,30 @@ class KindLabelsTest {
 
     @Test
     fun `seconds text and metres text always carry their unit`() {
-        assertEquals("45 s", text { secondsText(45) })
-        assertEquals("20 m", text { metresText(20) })
+        assertEquals(listOf("45 s", "20 m"), texts({ secondsText(45) }, { metresText(20) }))
     }
 
     @Test
     fun `amount label names the measure of the kind`() {
-        assertEquals("Reps", text { amountLabel(machine(MachineKind.WEIGHT_REPS)) })
-        assertEquals("Time (s)", text { amountLabel(machine(MachineKind.WEIGHT_TIME)) })
-        assertEquals("Time (s)", text { amountLabel(machine(MachineKind.TIME)) })
-        assertEquals("Distance (m)", text { amountLabel(machine(MachineKind.WEIGHT_DISTANCE)) })
+        assertEquals(
+            listOf("Reps", "Time (s)", "Time (s)", "Distance (m)"),
+            texts(
+                { amountLabel(machine(MachineKind.WEIGHT_REPS)) },
+                { amountLabel(machine(MachineKind.WEIGHT_TIME)) },
+                { amountLabel(machine(MachineKind.TIME)) },
+                { amountLabel(machine(MachineKind.WEIGHT_DISTANCE)) },
+            ),
+        )
     }
 
     @Test
     fun `target of a time kind shows the sets only`() {
         val item = RoutineItem(routineId = 1L, machineId = 1L, position = 0, targetSets = 3, repsMin = 8, repsMax = 12)
 
-        assertEquals("3 sets", text { targetText(item, MachineKind.TIME) })
-        assertEquals("3 sets", text { targetText(item, MachineKind.WEIGHT_DISTANCE) })
+        assertEquals(
+            listOf("3 sets", "3 sets"),
+            texts({ targetText(item, MachineKind.TIME) }, { targetText(item, MachineKind.WEIGHT_DISTANCE) }),
+        )
     }
 
     @Test
