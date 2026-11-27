@@ -1,42 +1,54 @@
 Bora pro Treino! is a gym logbook made to be quick between sets.
 
-Open today's workout, see what you lifted last time and log the set in one tap. One button says exactly what it will log, like "Log 125 kg × 8". If today is different, change the weight with the big minus and plus buttons. No typing, no "start workout" step, no account.
+Open today's workout, see what you did last time and log the set in one tap. One button says exactly what it will log, like "Log 125 kg × 8". If today is different, change the weight with the big minus and plus buttons. No keyboard, no "start workout" step, no account.
 
-WHAT YOU GET
+LOGGING IN ONE TAP
 
-• Today: your next routine, whether your training follows a rotation or fixed weekdays (you set that in the Agenda tab), with a start or continue button and a progress ring.
+• Today shows your next routine, with a continue button and a progress ring. The training finishes by itself when the last exercise is done.
 
-• One-tap logging: the button logs the set on the screen. Warm-up suggestions tell you what to lift before your heavy sets.
+• Tired day? "Same as last time" logs the whole routine as you did it last time, in one tap, with undo. Or use the suggested weights.
 
-• Your gym, registered once: add your machines and exercises, or pick from a library of about 750 exercises. Each one has instructions on how to do it, and you can filter by muscle group, equipment and level. Or create your own. Machines from the library show how to do them.
+• Sets by weight and reps, by time (plank, 30 s farmer's walk) or by distance, plus warm-up suggestions before your heavy sets.
 
-• Routines (fichas): build routine A, B, C and more, with sets and rep targets. After a training, a routine can be updated to match what you did, in one tap, with undo. A training finishes by itself when the last exercise in its routine is done.
+• Cardio: minutes, calories, distance and intensity (decimals too, like 7.5). Use the steppers, or tap a number to enter it on a big number pad.
 
-• Rest timer that keeps working with the screen off, with a countdown notification and a buzz when it is time for the next set.
+• Rest timer that rings on time even with the screen off, with a countdown notification and an optional beep.
 
-• Agenda: a week strip shows the workouts you trained and the ones you planned. Plan several workouts per day and reorder them. Keep track of your weekly goal and your streak of weeks. Forgot to log something? Add or fix a past training.
+ROUTINES AND AGENDA
 
-• Progress, Exercises page: a sparkline for each exercise and how much it changed.
+• Build routine A, B, C and more, with sets and rep targets. Train them in turn on the days you choose, or on fixed weekdays.
 
-• Progress, Stats: split into Body, Strength and Habit, with highlights. The body map shows front and back, with direct and indirect sets for each muscle group. Also strength per body weight, balance between muscle groups, records and rep ranges.
+• The calendar shows what you trained, what you planned and which routine comes next in the rotation. Plan several workouts on a day, keep a weekly goal and a streak.
 
-• Training summary with an image you can share.
+• Forgot to log? Add or fix a past training.
 
-• Cardio too: log minutes, calories and distance for the treadmill, bike and more.
+• A library of about 750 exercises with how-to instructions and filters by muscle group, equipment and level. Or create your own.
 
-• Optional Health Connect: send each finished training to Health Connect. It is off by default, it only writes, and the app never reads from it.
+PROGRESS
+
+• An overview that starts with what matters now: a muscle group with few sets, an exercise stuck at the same weight, a new record. Tap to see the details.
+
+• A chart and trend for each exercise, records, sets per muscle group, a body map, and a detailed analysis for those who like numbers.
+
+• Body measurements (waist, hips, chest, arm and more) and your weight, with their trend.
+
+• Training summary with a picture you can share.
+
+ALSO
+
+• A home screen widget that shows your next workout.
 
 • Training reminders that tell you what is next.
 
+• Optional Health Connect: sends each finished training there. Off by default, it only writes and never reads.
+
 • Backup and restore with a simple file, to move your history to a new phone.
 
-• First-run setup in 3 steps.
-
-• English and Brazilian Portuguese (Baianês), with a light look.
+• English and Brazilian Portuguese (Baianês).
 
 PRIVATE BY DESIGN
 
-Everything stays on your phone (the Health Connect option only writes to your own Health Connect). There is no account, no ads, no tracking and the app does not even ask for internet access.
+Everything stays on your phone. No account, no ads, no tracking, and the app does not even ask for internet access.
 
 Exercise illustrations: Everkinetic (everkinetic.com, by Greg Priday), CC BY-SA 4.0.
 Body map outlines: react-body-highlighter (MIT)

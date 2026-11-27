@@ -1,42 +1,54 @@
 O Bora pro Treino! é um diário de academia simples, feito pra ser rápido entre as séries.
 
-Abra o treino de hoje, veja o que você levantou da última vez e registre a série com um toque. Um botão só, que diz exatamente o que vai registrar, tipo "Registrar 125 kg × 8". Se hoje está diferente, mude a carga com os botões grandes de menos e mais. Sem digitar, sem "iniciar treino", sem conta.
+Abra o treino de hoje, veja o que você fez da última vez e registre a série com um toque. Um botão só, que diz exatamente o que vai registrar, tipo "Registrar 125 kg × 8". Se hoje está diferente, mude a carga com os botões grandes de menos e mais. Sem teclado, sem "iniciar treino", sem conta.
 
-O QUE VOCÊ TEM
+REGISTRO COM UM TOQUE
 
-• Hoje: a sua próxima ficha, seja por rodízio ou por dias fixos da semana (você escolhe na Agenda), com botão de começar ou continuar e um anel de progresso.
+• Hoje: a sua próxima ficha, com botão de continuar e um anel de progresso. O treino termina sozinho quando o último exercício é feito.
 
-• Registro com um toque: o botão registra a série que está na tela. Sugestões de aquecimento dizem o que fazer antes das séries pesadas.
+• Dia cansado? "Igual à última vez" registra a ficha inteira do jeito que você fez da última vez, com um toque e desfazer. Ou use as cargas sugeridas.
 
-• Sua academia, cadastrada uma vez: adicione seus aparelhos e exercícios, ou escolha numa biblioteca com cerca de 750 exercícios. Cada um tem o passo a passo de como fazer, e dá pra filtrar por grupo muscular, equipamento e nível. Ou crie o seu. Aparelho vindo da biblioteca mostra como fazer.
+• Séries por carga e repetições, por tempo (prancha, farmer's walk de 30 s) ou por distância, e sugestões de aquecimento antes das séries pesadas.
 
-• Fichas: monte a ficha A, B, C e outras, com séries e faixa de repetições. Depois do treino, a ficha pode ser atualizada pra refletir o que você fez, com um toque e desfazer. O treino termina sozinho quando o último exercício da ficha é feito.
+• Cardio: minutos, calorias, distância e intensidade (com decimal também, tipo 7,5). Use os botões de menos e mais, ou toque no número pra digitar num teclado numérico grande.
 
-• Cronômetro de descanso que continua contando com a tela desligada, com notificação de contagem regressiva e uma vibração quando chega a hora da próxima série.
+• Cronômetro de descanso que toca na hora certa mesmo com a tela desligada, com notificação de contagem regressiva e um bipe opcional.
 
-• Agenda: uma faixa com a semana mostra os treinos feitos e os planejados. Planeje vários treinos no mesmo dia e mude a ordem. Acompanhe a meta semanal e a sequência de semanas. Esqueceu de registrar? Adicione ou corrija um treino passado.
+FICHAS E AGENDA
 
-• Evolução, página de Exercícios: um gráfico pequeno de cada exercício e o quanto ele mudou.
+• Monte a ficha A, B, C e outras, com séries e faixa de repetições. Faça em rodízio nos dias que você escolher, ou em dias fixos da semana.
 
-• Evolução, Estatísticas: divididas em Corpo, Força e Hábito, com destaques. O mapa corporal mostra frente e costas, com séries diretas e indiretas por grupo muscular. Também tem força por peso corporal, equilíbrio entre os grupos, recordes e faixas de repetições.
+• A agenda mostra os treinos feitos, os planejados e qual ficha vem a seguir no rodízio. Planeje vários treinos no mesmo dia, acompanhe a meta semanal e a sequência de semanas.
+
+• Esqueceu de registrar? Adicione ou corrija um treino passado.
+
+• Uma biblioteca com cerca de 750 exercícios, com passo a passo e filtros por grupo muscular, equipamento e nível. Ou crie o seu.
+
+EVOLUÇÃO
+
+• Um resumo que começa pelo que importa agora: um grupo muscular com poucas séries, um exercício parado na mesma carga, um recorde novo. Toque pra ver os detalhes.
+
+• Gráfico e tendência de cada exercício, recordes, séries por grupo muscular, mapa do corpo e uma análise detalhada pra quem gosta de números.
+
+• Medidas do corpo (cintura, quadril, peito, braço e mais) e o seu peso, com a tendência.
 
 • Resumo do treino com uma imagem pra compartilhar.
 
-• Cardio também: registre minutos, calorias e distância da esteira, bicicleta e mais.
+E MAIS
 
-• Health Connect opcional: envie cada treino terminado pro Health Connect. Vem desligado, só escreve e o app nunca lê nada de lá.
+• Um widget na tela inicial que mostra o próximo treino.
 
 • Lembretes de treino que dizem o que vem a seguir.
 
+• Health Connect opcional: envia cada treino terminado pra lá. Vem desligado, só escreve e nunca lê nada.
+
 • Backup e restauração com um arquivo simples, pra levar seu histórico pra um celular novo.
 
-• Configuração inicial em 3 passos.
-
-• Português do Brasil (Baianês) e inglês, com visual claro.
+• Português do Brasil (Baianês) e inglês.
 
 PRIVADO DE FÁBRICA
 
-Tudo fica no seu celular (a opção do Health Connect só escreve no seu próprio Health Connect). Não tem conta, não tem anúncio, não tem rastreamento e o app nem pede acesso à internet.
+Tudo fica no seu celular. Não tem conta, não tem anúncio, não tem rastreamento e o app nem pede acesso à internet.
 
 Ilustrações dos exercícios: Everkinetic (everkinetic.com, de Greg Priday), CC BY-SA 4.0.
 Contornos do mapa corporal: react-body-highlighter (MIT)
