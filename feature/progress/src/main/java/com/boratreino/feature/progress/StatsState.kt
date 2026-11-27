@@ -38,6 +38,21 @@ internal enum class AnalysisCard {
     SUMMARY, CARDIO, TIMES, RECENCY, MEASUREMENTS, PROPORTIONS,
 }
 
+/** The Analysis level shows one section at a time; the chips at its top pick it. */
+internal enum class AnalysisSection { HIGHLIGHTS, STRENGTH, MUSCLES, HABIT, BODY }
+
+/** Pure: the section a card belongs to. */
+internal fun sectionOf(card: AnalysisCard): AnalysisSection = when (card) {
+    AnalysisCard.TREND, AnalysisCard.WORKLOAD, AnalysisCard.PATTERNS, AnalysisCard.HARD_SETS, AnalysisCard.BALANCE ->
+        AnalysisSection.HIGHLIGHTS
+    AnalysisCard.STRENGTH, AnalysisCard.RECORDS, AnalysisCard.REP_RANGES, AnalysisCard.STRENGTH_VS_WEIGHT,
+    AnalysisCard.RELATIVE_STRENGTH -> AnalysisSection.STRENGTH
+    AnalysisCard.MUSCLE_VOLUME, AnalysisCard.WEEK_MUSCLES, AnalysisCard.BODY_MAP, AnalysisCard.MUSCLES,
+    AnalysisCard.WEEKLY_VOLUME -> AnalysisSection.MUSCLES
+    AnalysisCard.SUMMARY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY -> AnalysisSection.HABIT
+    AnalysisCard.MEASUREMENTS, AnalysisCard.PROPORTIONS -> AnalysisSection.BODY
+}
+
 /** What the Stats page can ask for. */
 internal data class StatsActions(
     val onPeriod: (StatsPeriod) -> Unit = {},

@@ -329,7 +329,6 @@
     <string name="analysis_row_title">Ver análise detalhada</string>
     <string name="analysis_row_subtitle">Tendência, carga recente, padrões, séries por músculo, proporções</string>
     <string name="analysis_title">Análise detalhada</string>
-    <string name="analysis_more">Mais estatísticas</string>
     <string name="analysis_group_muscles">Músculos</string>
     <string name="action_back">Voltar</string>
     <plurals name="progress_trainings">

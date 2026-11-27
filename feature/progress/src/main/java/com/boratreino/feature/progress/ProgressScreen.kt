@@ -78,6 +78,7 @@ internal fun ProgressShell(
     var chosen by rememberSaveable { mutableStateOf(ProgressPage.OVERVIEW.name) }
     var analysisOpen by rememberSaveable { mutableStateOf(false) }
     var anchor by rememberSaveable { mutableStateOf<String?>(null) }
+    var analysisSection by rememberSaveable { mutableStateOf(AnalysisSection.HIGHLIGHTS.name) }
     val page = progressPageOf(chosen)
     val stats by statsViewModel.state.collectAsStateWithLifecycle()
     val overviewListState = rememberLazyListState()
@@ -92,6 +93,7 @@ internal fun ProgressShell(
             onUndoDeleteMeasurement = statsViewModel::undoDeleteMeasurement,
             onOpenAnalysis = { card ->
                 anchor = card?.name
+                analysisSection = (card?.let(::sectionOf) ?: AnalysisSection.HIGHLIGHTS).name
                 if (card == null) scope.launch { analysisListState.scrollToItem(0) }
                 analysisOpen = true
             },
@@ -113,6 +115,11 @@ internal fun ProgressShell(
                 listState = analysisListState,
                 anchor = AnalysisCard.entries.firstOrNull { it.name == anchor },
                 onAnchorShown = { anchor = null },
+                section = AnalysisSection.entries.firstOrNull { it.name == analysisSection } ?: AnalysisSection.HIGHLIGHTS,
+                onSection = {
+                    analysisSection = it.name
+                    scope.launch { analysisListState.scrollToItem(0) }
+                },
                 modifier = Modifier.weight(1f),
             )
         } else {

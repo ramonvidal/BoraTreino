@@ -7,9 +7,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -32,9 +38,12 @@ internal fun musclesByLoad(load: Map<Muscle, Double>): List<Muscle> =
 @Composable
 internal fun MusclesCard(report: StatsReport, modifier: Modifier = Modifier) {
     val load = BodyInsightRules.muscleDetailLoad(report)
-    val ordered = musclesByLoad(load)
+    val all = musclesByLoad(load)
+    var showAll by rememberSaveable { mutableStateOf(false) }
+    val ordered = if (showAll) all else all.filter { load.getValue(it) > 0.0 }
+    val hidden = all.size - ordered.size
     val names = Muscle.entries.associateWith { it.label() }
-    val max = ordered.maxOfOrNull { load.getValue(it) } ?: 0.0
+    val max = all.maxOfOrNull { load.getValue(it) } ?: 0.0
     val accent = MaterialTheme.colorScheme.primary
     val track = StatsPalette.track()
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
@@ -70,6 +79,11 @@ internal fun MusclesCard(report: StatsReport, modifier: Modifier = Modifier) {
                         }
                     }
                 }
+            }
+        }
+        if (hidden > 0) {
+            TextButton(onClick = { showAll = true }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.stats_muscles_show_all, all.size))
             }
         }
     }

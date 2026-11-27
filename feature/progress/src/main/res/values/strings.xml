@@ -432,7 +432,9 @@
     <string name="analysis_row_title">Detailed analysis</string>
     <string name="analysis_row_subtitle">Trend, recent load, patterns, sets per muscle, proportions</string>
     <string name="analysis_title">Detailed analysis</string>
-    <string name="analysis_more">More statistics</string>
     <string name="analysis_group_muscles">Muscles</string>
     <string name="action_back">Back</string>
+    <string name="progress_show_all_count">Show all %1$d sessions</string>
+    <string name="stats_muscles_show_all">Show all %1$d muscles</string>
+    <string name="analysis_section_highlights">Highlights</string>
 </resources>

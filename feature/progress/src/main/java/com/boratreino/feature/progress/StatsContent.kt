@@ -2,6 +2,7 @@ package com.boratreino.feature.progress
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,6 +41,7 @@ import com.boratreino.core.model.RepRange
 import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.ui.BoraCard
+import com.boratreino.core.ui.BoraChip
 import com.boratreino.core.ui.formatKg
 import com.boratreino.core.ui.label
 import java.time.LocalDate
@@ -55,29 +58,10 @@ private sealed interface AnalysisItem {
         override val key = "empty"
     }
 
-    data class Heading(override val key: String, val title: Int, val sub: Boolean) : AnalysisItem
-
     data class CardItem(val card: AnalysisCard) : AnalysisItem {
         override val key: String = card.name
     }
 }
-
-private val StrengthGroup = listOf(
-    AnalysisCard.STRENGTH,
-    AnalysisCard.RECORDS,
-    AnalysisCard.REP_RANGES,
-    AnalysisCard.STRENGTH_VS_WEIGHT,
-    AnalysisCard.RELATIVE_STRENGTH,
-)
-private val MusclesGroup = listOf(
-    AnalysisCard.MUSCLE_VOLUME,
-    AnalysisCard.WEEK_MUSCLES,
-    AnalysisCard.BODY_MAP,
-    AnalysisCard.MUSCLES,
-    AnalysisCard.WEEKLY_VOLUME,
-)
-private val HabitGroup = listOf(AnalysisCard.SUMMARY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY)
-private val BodyGroup = listOf(AnalysisCard.MEASUREMENTS, AnalysisCard.PROPORTIONS)
 
 /** Whether [card] has anything to show for [state] (the card's own condition from the old pages). */
 private fun isPresent(card: AnalysisCard, state: StatsUiState, report: StatsReport): Boolean = when (card) {
@@ -103,33 +87,67 @@ private fun isPresent(card: AnalysisCard, state: StatsUiState, report: StatsRepo
     AnalysisCard.PROPORTIONS -> report.waistHip.isNotEmpty()
 }
 
-/** The Analysis list in display order, headings included. Empty when there is no report yet. */
-private fun analysisItems(state: StatsUiState): List<AnalysisItem> {
+/** Every card in display order (section by section, then the card order within each section). */
+private val AllCardsInOrder: List<AnalysisCard> = listOf(
+    AnalysisCard.TREND, AnalysisCard.WORKLOAD, AnalysisCard.PATTERNS, AnalysisCard.HARD_SETS, AnalysisCard.BALANCE,
+    AnalysisCard.STRENGTH, AnalysisCard.RECORDS, AnalysisCard.REP_RANGES, AnalysisCard.STRENGTH_VS_WEIGHT,
+    AnalysisCard.RELATIVE_STRENGTH,
+    AnalysisCard.MUSCLE_VOLUME, AnalysisCard.WEEK_MUSCLES, AnalysisCard.BODY_MAP, AnalysisCard.MUSCLES,
+    AnalysisCard.WEEKLY_VOLUME,
+    AnalysisCard.SUMMARY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY,
+    AnalysisCard.MEASUREMENTS, AnalysisCard.PROPORTIONS,
+)
+
+/** The present cards in display order; the empty period shows only the measurements. Empty when there is no report. */
+private fun presentCards(state: StatsUiState): List<AnalysisCard> {
     val report = state.report ?: return emptyList()
-    if (report.isEmptyPeriod()) return listOf(AnalysisItem.Empty, AnalysisItem.CardItem(AnalysisCard.MEASUREMENTS))
-    val items = mutableListOf<AnalysisItem>()
-    listOf(AnalysisCard.TREND, AnalysisCard.WORKLOAD, AnalysisCard.PATTERNS, AnalysisCard.HARD_SETS, AnalysisCard.BALANCE)
-        .filter { isPresent(it, state, report) }
-        .forEach { items += AnalysisItem.CardItem(it) }
-    items += AnalysisItem.Heading("heading-more", R.string.analysis_more, sub = false)
-    listOf(
-        Triple("heading-strength", R.string.stats_page_strength, StrengthGroup),
-        Triple("heading-muscles", R.string.analysis_group_muscles, MusclesGroup),
-        Triple("heading-habit", R.string.stats_page_habit, HabitGroup),
-        Triple("heading-body", R.string.stats_page_body, BodyGroup),
-    ).forEach { (key, title, cards) ->
-        val present = cards.filter { isPresent(it, state, report) }
-        if (present.isNotEmpty()) {
-            items += AnalysisItem.Heading(key, title, sub = true)
-            present.forEach { items += AnalysisItem.CardItem(it) }
-        }
-    }
-    return items
+    if (report.isEmptyPeriod()) return listOf(AnalysisCard.MEASUREMENTS)
+    return AllCardsInOrder.filter { isPresent(it, state, report) }
 }
 
-/** Pure: the cards present for this state, in display order. */
-internal fun analysisCards(state: StatsUiState): List<AnalysisCard> =
-    analysisItems(state).filterIsInstance<AnalysisItem.CardItem>().map { it.card }
+/** Pure: every present card for this state, in display order. */
+internal fun analysisCards(state: StatsUiState): List<AnalysisCard> = presentCards(state)
+
+/** Pure: the present cards of [section], in display order. */
+internal fun analysisCards(state: StatsUiState, section: AnalysisSection): List<AnalysisCard> =
+    presentCards(state).filter { sectionOf(it) == section }
+
+/** Pure: the sections having a present card, in enum order. Empty with no report; the empty period has only BODY. */
+internal fun analysisSections(state: StatsUiState): List<AnalysisSection> {
+    val present = presentCards(state).map { sectionOf(it) }.toSet()
+    return AnalysisSection.entries.filter { it in present }
+}
+
+/** The list items of the selected [section]: the empty-period card first when the period is empty. */
+private fun analysisItems(state: StatsUiState, section: AnalysisSection?): List<AnalysisItem> {
+    val report = state.report ?: return emptyList()
+    val cards = section?.let { analysisCards(state, it) }.orEmpty().map { AnalysisItem.CardItem(it) }
+    return if (report.isEmptyPeriod()) listOf(AnalysisItem.Empty) + cards else cards
+}
+
+@Composable
+private fun sectionLabel(section: AnalysisSection): String = stringResource(
+    when (section) {
+        AnalysisSection.HIGHLIGHTS -> R.string.analysis_section_highlights
+        AnalysisSection.STRENGTH -> R.string.stats_page_strength
+        AnalysisSection.MUSCLES -> R.string.analysis_group_muscles
+        AnalysisSection.HABIT -> R.string.stats_page_habit
+        AnalysisSection.BODY -> R.string.stats_page_body
+    },
+)
+
+/** The scrollable row of section chips at the top of Analysis. */
+@Composable
+private fun SectionChips(sections: List<AnalysisSection>, selected: AnalysisSection?, onSection: (AnalysisSection) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        for (section in sections) {
+            BoraChip(label = sectionLabel(section), selected = section == selected, onClick = { onSection(section) })
+        }
+    }
+}
 
 /**
  * The Analysis level: the existing detail cards (the header lives in [ProgressShell]). Drawn from its state
@@ -142,14 +160,19 @@ internal fun AnalysisContent(
     listState: LazyListState,
     anchor: AnalysisCard?,
     onAnchorShown: () -> Unit,
+    section: AnalysisSection,
+    onSection: (AnalysisSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val report = state.report
     var measureType by rememberSaveable { mutableStateOf<String?>(null) }
     var logSheetOpen by rememberSaveable { mutableStateOf(false) }
     val selectedMeasure = MeasurementType.entries.firstOrNull { it.name == measureType }
-    val entries = analysisItems(state)
-    val anchorIndex = if (anchor == null) -1 else entries.indexOfFirst { it.key == anchor.name }
+    val sections = analysisSections(state)
+    val shown = if (section in sections) section else sections.firstOrNull()
+    val entries = analysisItems(state, shown)
+    // Index 0 is the chip row.
+    val anchorIndex = if (anchor == null) -1 else entries.indexOfFirst { it.key == anchor.name }.let { if (it < 0) it else it + 1 }
     LaunchedEffect(anchor, anchorIndex, state.loaded) {
         if (anchor == null) return@LaunchedEffect
         if (anchorIndex >= 0) {
@@ -166,10 +189,12 @@ internal fun AnalysisContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (report == null) return@LazyColumn
+        if (sections.isNotEmpty()) {
+            item(key = "sections") { SectionChips(sections, shown, onSection) }
+        }
         items(entries, key = { it.key }) { item ->
             when (item) {
                 AnalysisItem.Empty -> StatsEmptyCard()
-                is AnalysisItem.Heading -> AnalysisHeading(stringResource(item.title), item.sub)
                 is AnalysisItem.CardItem -> when (item.card) {
                     AnalysisCard.TREND -> TrendSummaryCard(report.machineTrends, actions.onOpenMachine)
                     AnalysisCard.WORKLOAD -> report.workload?.let { WorkloadCard(it) }
@@ -217,18 +242,6 @@ internal fun AnalysisContent(
             onDismiss = { logSheetOpen = false },
         )
     }
-}
-
-/** A section heading between Analysis cards: bold title for "More statistics", smaller for its groups. */
-@Composable
-private fun AnalysisHeading(text: String, sub: Boolean) {
-    Text(
-        text,
-        style = if (sub) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        color = if (sub) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(start = 4.dp, top = if (sub) 0.dp else 8.dp),
-    )
 }
 
 @Composable

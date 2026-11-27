@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +46,7 @@ import java.time.LocalDate
 import kotlin.math.roundToInt
 
 /** Sessions listed before "Show all". */
-internal const val SESSIONS_SHOWN = 15
+internal const val SESSIONS_SHOWN = 5
 
 /** What the machine detail can ask for. */
 internal data class MachineProgressActions(
@@ -158,13 +159,11 @@ private fun DetailList(state: MachineProgressUiState, actions: MachineProgressAc
                     modifier = Modifier.padding(start = 4.dp),
                 )
             }
-            items(visible, key = { it.sessionId }) { point ->
-                SessionRow(state, point)
-            }
+            item(key = "sessions") { SessionsCard(state, visible) }
             if (!state.showAll && newestFirst.size > SESSIONS_SHOWN) {
                 item(key = "show-all") {
                     TextButton(onClick = actions.onShowAll, modifier = Modifier.heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.progress_show_all))
+                        Text(stringResource(R.string.progress_show_all_count, newestFirst.size))
                     }
                 }
             }
@@ -443,19 +442,25 @@ private fun chartDescription(state: MachineProgressUiState): String {
     }
 }
 
+/** The shown sessions as one card, rows separated by dividers. */
 @Composable
-private fun SessionRow(state: MachineProgressUiState, point: SessionPoint) {
+private fun SessionsCard(state: MachineProgressUiState, points: List<SessionPoint>) {
     BoraCard(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            stringResource(
-                R.string.progress_detail,
-                formatShortDate(point.date, state.today),
-                topText(state.metric, point),
-                setsText(point),
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp),
-        )
+        Column(Modifier.fillMaxWidth()) {
+            points.forEachIndexed { index, point ->
+                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text(
+                    stringResource(
+                        R.string.progress_detail,
+                        formatShortDate(point.date, state.today),
+                        topText(state.metric, point),
+                        setsText(point),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(vertical = 8.dp),
+                )
+            }
+        }
     }
 }
 
