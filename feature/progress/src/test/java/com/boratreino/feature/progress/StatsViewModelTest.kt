@@ -2,13 +2,22 @@ package com.boratreino.feature.progress
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.boratreino.core.data.HistoryRepository
+import com.boratreino.core.data.MachineRepository
 import com.boratreino.core.data.MeasurementRepository
+import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.StatsRepository
 import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.BodyProfile
+import com.boratreino.core.model.Machine
 import com.boratreino.core.model.MeasurementRules
 import com.boratreino.core.model.MeasurementType
+import com.boratreino.core.model.PlannedWorkout
 import com.boratreino.core.model.ReminderSettings
+import com.boratreino.core.model.RoutinePlan
+import com.boratreino.core.model.RoutinePlanWithRoutines
+import com.boratreino.core.model.ScheduleMode
+import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.model.Sex
 import com.boratreino.core.model.StatsPeriod
@@ -21,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -125,13 +135,24 @@ class StatsViewModelTest {
     private val settings = FakeSettings()
     private val body = FakeBody()
     private val measurements = FakeMeasurementRepository()
+    private val trainingDates = MutableStateFlow<Set<LocalDate>>(emptySet())
+    private val history = answering<HistoryRepository>(
+        "observeTrainingDates" to trainingDates,
+        "observeDay" to flowOf(emptyList<SessionDetail>()),
+    )
+    private val machines = answering<MachineRepository>("observeMachines" to flowOf(emptyList<Machine>()))
+    private val routines = answering<RoutineRepository>(
+        "observePlanned" to flowOf(emptyList<PlannedWorkout>()),
+        "observePlan" to flowOf(RoutinePlanWithRoutines(RoutinePlan(1L, ScheduleMode.IN_TURN), emptyList())),
+        "observeLastRoutineId" to flowOf<Long?>(null),
+    )
 
     private fun TestScope.viewModel(
         handle: SavedStateHandle = SavedStateHandle(),
         bodySettings: BodySettings = body,
         measurementRepository: MeasurementRepository = measurements,
     ): StatsViewModel {
-        val vm = StatsViewModel(repository, settings, bodySettings, handle, measurementRepository)
+        val vm = StatsViewModel(repository, settings, bodySettings, handle, measurementRepository, history, machines, routines, statsTestClock)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect { } }
         runCurrent()
         return vm
@@ -139,33 +160,33 @@ class StatsViewModelTest {
 
     @Test
     fun `before anything is collected the state is the empty initial one`() = runTest(dispatcher) {
-        val vm = StatsViewModel(repository, settings, body, SavedStateHandle(), measurements)
+        val vm = StatsViewModel(repository, settings, body, SavedStateHandle(), measurements, history, machines, routines, statsTestClock)
         val state = vm.state.value
         assertFalse(state.loaded)
         assertNull(state.report)
-        assertEquals(StatsPeriod.THREE_MONTHS, state.period)
+        assertEquals(StatsPeriod.FOUR_WEEKS, state.period)
         assertEquals(4, state.weeklyGoal)
         assertTrue(state.measurements.isEmpty())
     }
 
     @Test
-    fun `the default period is three months`() = runTest(dispatcher) {
+    fun `the default period is four weeks`() = runTest(dispatcher) {
         val vm = viewModel()
-        assertEquals(StatsPeriod.THREE_MONTHS, vm.state.value.period)
-        assertEquals(StatsPeriod.THREE_MONTHS, vm.state.value.report!!.period)
+        assertEquals(StatsPeriod.FOUR_WEEKS, vm.state.value.period)
+        assertEquals(StatsPeriod.FOUR_WEEKS, vm.state.value.report!!.period)
     }
 
     @Test
     fun `the report loads and loaded becomes true`() = runTest(dispatcher) {
         val vm = viewModel()
         assertTrue(vm.state.value.loaded)
-        assertEquals(StatsSamples.full.copy(period = StatsPeriod.THREE_MONTHS), vm.state.value.report)
+        assertEquals(StatsSamples.full.copy(period = StatsPeriod.FOUR_WEEKS), vm.state.value.report)
     }
 
     @Test
     fun `the weekly goal from the settings is passed to the repository`() = runTest(dispatcher) {
         val vm = viewModel()
-        assertEquals(StatsPeriod.THREE_MONTHS to 4, repository.calls.last())
+        assertEquals(StatsPeriod.FOUR_WEEKS to 4, repository.calls.last())
         assertEquals(4, vm.state.value.weeklyGoal)
     }
 
@@ -173,7 +194,7 @@ class StatsViewModelTest {
     fun `a different goal in the settings is used from the start`() = runTest(dispatcher) {
         settings.goal.value = 6
         val vm = viewModel()
-        assertEquals(StatsPeriod.THREE_MONTHS to 6, repository.calls.last())
+        assertEquals(StatsPeriod.FOUR_WEEKS to 6, repository.calls.last())
         assertEquals(6, vm.state.value.weeklyGoal)
     }
 
@@ -182,7 +203,7 @@ class StatsViewModelTest {
         val vm = viewModel()
         settings.goal.value = 2
         runCurrent()
-        assertEquals(StatsPeriod.THREE_MONTHS to 2, repository.calls.last())
+        assertEquals(StatsPeriod.FOUR_WEEKS to 2, repository.calls.last())
         assertEquals(2, vm.state.value.weeklyGoal)
         assertTrue(vm.state.value.loaded)
     }
@@ -225,7 +246,7 @@ class StatsViewModelTest {
     }
 
     @Test
-    fun `the one week period is restored from the saved state and a fresh handle starts on three months`() = runTest(dispatcher) {
+    fun `the one week period is restored from the saved state and a fresh handle starts on four weeks`() = runTest(dispatcher) {
         val handle = SavedStateHandle()
         viewModel(handle).setPeriod(StatsPeriod.ONE_WEEK)
         runCurrent()
@@ -233,7 +254,7 @@ class StatsViewModelTest {
         val restored = viewModel(handle)
         assertEquals(StatsPeriod.ONE_WEEK, restored.state.value.period)
         assertEquals(StatsPeriod.ONE_WEEK, restored.state.value.report!!.period)
-        assertEquals(StatsPeriod.THREE_MONTHS, viewModel(SavedStateHandle()).state.value.period)
+        assertEquals(StatsPeriod.FOUR_WEEKS, viewModel(SavedStateHandle()).state.value.period)
     }
 
     @Test
@@ -241,7 +262,32 @@ class StatsViewModelTest {
         viewModel().setPeriod(StatsPeriod.ALL)
         runCurrent()
         val other = viewModel(SavedStateHandle())
-        assertEquals(StatsPeriod.THREE_MONTHS, other.state.value.period)
+        assertEquals(StatsPeriod.FOUR_WEEKS, other.state.value.period)
+    }
+
+    // The Overview inputs
+
+    @Test
+    fun `the frequency counts the training days of the current week`() = runTest(dispatcher) {
+        trainingDates.value = setOf(LocalDate.of(2026, 11, 2), LocalDate.of(2026, 10, 20))
+        val vm = viewModel()
+
+        assertEquals(1, vm.state.value.frequency!!.thisWeek)
+        assertEquals(4, vm.state.value.frequency!!.goal)
+    }
+
+    @Test
+    fun `the body section tiles are the newest measurement of each type`() = runTest(dispatcher) {
+        val vm = viewModel(
+            measurementRepository = FakeMeasurementRepository(
+                listOf(
+                    BodyMeasurement(id = 1, date = LocalDate.of(2026, 10, 1), type = MeasurementType.HIPS, valueCm = 99.0),
+                    BodyMeasurement(id = 2, date = LocalDate.of(2026, 11, 1), type = MeasurementType.HIPS, valueCm = 98.0),
+                ),
+            ),
+        )
+
+        assertEquals(listOf(98.0), vm.state.value.body.tiles.map { it.valueCm })
     }
 
     // Body weight

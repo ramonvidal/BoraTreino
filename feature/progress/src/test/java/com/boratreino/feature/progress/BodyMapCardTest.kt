@@ -1,7 +1,5 @@
 package com.boratreino.feature.progress
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -10,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.boratreino.core.model.StatsReport
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -21,7 +20,7 @@ import org.robolectric.annotation.Config
  * on a region shows, and when the page leaves it out.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "en-w500dp-h3000dp")
+@Config(sdk = [34], qualifiers = "en-w500dp-h20000dp")
 class BodyMapCardTest {
     @get:Rule
     val compose = createComposeRule()
@@ -33,9 +32,7 @@ class BodyMapCardTest {
     }
 
     private fun showPage(report: StatsReport) {
-        compose.setContent {
-            StatsScreenHost { StatsContent(BodyInsightSamples.state(report), StatsActions(), Modifier.fillMaxSize()) }
-        }
+        compose.setContent { AnalysisHost(BodyInsightSamples.state(report)) }
     }
 
     private fun yOf(text: String): Float = compose.onNodeWithText(text).fetchSemanticsNode().positionInRoot.y
@@ -141,22 +138,20 @@ class BodyMapCardTest {
     // The page
 
     @Test
-    fun `the body map is on the Body page below the muscle groups card`() {
+    fun `the body map is in the analysis below the muscle groups card`() {
         showPage(report)
 
         val week = compose.onNodeWithText("Muscle groups").fetchSemanticsNode().positionInRoot.y
         val body = compose.onNodeWithText("Body map").fetchSemanticsNode().positionInRoot.y
         assertTrue(week < body)
-        // The summary now lives on the Habit page.
-        compose.onNodeWithText("Summary").assertDoesNotExist()
     }
 
     @Test
-    fun `the muscles card is on the Body page right after the body map`() {
-        showPage(report)
+    fun `the muscles card is in the analysis right after the body map`() {
+        // "Muscles" is also the name of its group heading, so the order is checked on the card list.
+        val cards = analysisCards(BodyInsightSamples.state(report))
 
-        compose.onNodeWithText("Muscles").assertIsDisplayed()
-        assertTrue(yOf("Body map") < yOf("Muscles"))
+        assertEquals(cards.indexOf(AnalysisCard.BODY_MAP) + 1, cards.indexOf(AnalysisCard.MUSCLES))
     }
 
     @Test

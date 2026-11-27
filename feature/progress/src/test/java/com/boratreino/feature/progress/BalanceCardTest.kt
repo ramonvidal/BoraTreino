@@ -1,8 +1,6 @@
 package com.boratreino.feature.progress
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -17,7 +15,7 @@ import org.robolectric.annotation.Config
 
 /** The balance card: the two sides of each pair, the ratio, the footnote, and when a pair or the card is left out. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "en-w500dp-h3000dp")
+@Config(sdk = [34], qualifiers = "en-w500dp-h20000dp")
 class BalanceCardTest {
     @get:Rule
     val compose = createComposeRule()
@@ -27,15 +25,7 @@ class BalanceCardTest {
     }
 
     private fun showPage(balance: BalanceStats) {
-        compose.setContent {
-            StatsScreenHost {
-                StatsContent(
-                    BodyInsightSamples.state(StatsSamples.full.copy(balance = balance)),
-                    StatsActions(),
-                    Modifier.fillMaxSize(),
-                )
-            }
-        }
+        compose.setContent { AnalysisHost(BodyInsightSamples.state(StatsSamples.full.copy(balance = balance))) }
     }
 
     @Test

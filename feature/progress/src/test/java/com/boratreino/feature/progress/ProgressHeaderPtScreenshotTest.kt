@@ -13,8 +13,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * The Progress header in Baianês at 360 dp, the narrowest phone width, so the four page chips
- * (Exercícios, Corpo, Força, Hábito) can be looked at; saved to build/outputs/roborazzi.
+ * The Progress header in Baianês at 360 dp, the narrowest phone width, so the two page chips
+ * (Resumo, Exercícios) can be looked at; saved to build/outputs/roborazzi.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "pt-rBR-w360dp-h3000dp")
@@ -25,7 +25,7 @@ class ProgressHeaderPtScreenshotTest {
     private fun header(
         name: String,
         page: ProgressPage,
-        period: StatsPeriod = StatsPeriod.THREE_MONTHS,
+        period: StatsPeriod = StatsPeriod.FOUR_WEEKS,
         showPeriod: Boolean = page != ProgressPage.EXERCISES,
         dark: Boolean = false,
         fontScale: Float = 1f,
@@ -45,7 +45,7 @@ class ProgressHeaderPtScreenshotTest {
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name-pt.png")
     }
 
-    private fun sheet(name: String, selected: StatsPeriod = StatsPeriod.THREE_MONTHS, dark: Boolean = false, fontScale: Float = 1f) {
+    private fun sheet(name: String, selected: StatsPeriod = StatsPeriod.FOUR_WEEKS, dark: Boolean = false, fontScale: Float = 1f) {
         compose.setContent { StatsCardHost(dark, fontScale) { PeriodSheetContent(selected, {}) } }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name-pt.png")
     }
@@ -54,19 +54,13 @@ class ProgressHeaderPtScreenshotTest {
     fun `header exercises page`() = header("progress-header-exercises", ProgressPage.EXERCISES)
 
     @Test
-    fun `header body page`() = header("progress-header-body", ProgressPage.BODY)
+    fun `header overview page`() = header("progress-header-overview", ProgressPage.OVERVIEW)
 
     @Test
-    fun `header strength page`() = header("progress-header-strength", ProgressPage.STRENGTH)
+    fun `header overview page dark`() = header("progress-header-overview-dark", ProgressPage.OVERVIEW, dark = true)
 
     @Test
-    fun `header habit page`() = header("progress-header-habit", ProgressPage.HABIT)
-
-    @Test
-    fun `header body page dark`() = header("progress-header-body-dark", ProgressPage.BODY, dark = true)
-
-    @Test
-    fun `header body page large text`() = header("progress-header-body-large", ProgressPage.BODY, fontScale = 2f)
+    fun `header overview page large text`() = header("progress-header-overview-large", ProgressPage.OVERVIEW, fontScale = 2f)
 
     @Test
     fun `period sheet content`() = sheet("progress-period-sheet")

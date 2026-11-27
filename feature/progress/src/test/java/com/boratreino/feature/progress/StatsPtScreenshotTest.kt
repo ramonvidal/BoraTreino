@@ -1,8 +1,6 @@
 package com.boratreino.feature.progress
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,11 +21,7 @@ class StatsPtScreenshotTest {
     private val full = StatsSamples.full
 
     private fun page(name: String, state: StatsUiState, dark: Boolean = false, fontScale: Float = 1f) {
-        compose.setContent {
-            StatsScreenHost(dark, fontScale) {
-                StatsContent(state = state, actions = StatsActions(), modifier = Modifier.fillMaxSize())
-            }
-        }
+        compose.setContent { AnalysisHost(state, dark = dark, fontScale = fontScale) }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name-pt.png")
     }
 

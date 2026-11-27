@@ -22,7 +22,7 @@ class ProgressHeaderScreenshotTest {
     private fun header(
         name: String,
         page: ProgressPage,
-        period: StatsPeriod = StatsPeriod.THREE_MONTHS,
+        period: StatsPeriod = StatsPeriod.FOUR_WEEKS,
         showPeriod: Boolean = page != ProgressPage.EXERCISES,
         dark: Boolean = false,
         fontScale: Float = 1f,
@@ -42,7 +42,7 @@ class ProgressHeaderScreenshotTest {
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
-    private fun sheet(name: String, selected: StatsPeriod = StatsPeriod.THREE_MONTHS, dark: Boolean = false, fontScale: Float = 1f) {
+    private fun sheet(name: String, selected: StatsPeriod = StatsPeriod.FOUR_WEEKS, dark: Boolean = false, fontScale: Float = 1f) {
         compose.setContent { StatsCardHost(dark, fontScale) { PeriodSheetContent(selected, {}) } }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
@@ -53,36 +53,26 @@ class ProgressHeaderScreenshotTest {
     fun `header exercises page`() = header("progress-header-exercises", ProgressPage.EXERCISES)
 
     @Test
-    fun `header body page`() = header("progress-header-body", ProgressPage.BODY)
+    fun `header overview page`() = header("progress-header-overview", ProgressPage.OVERVIEW)
 
     @Test
-    fun `header strength page`() = header("progress-header-strength", ProgressPage.STRENGTH)
-
-    @Test
-    fun `header habit page`() = header("progress-header-habit", ProgressPage.HABIT)
-
-    @Test
-    fun `header one year selected`() =
-        header("progress-header-one-year", ProgressPage.BODY, period = StatsPeriod.ONE_YEAR)
+    fun `header overview page one year selected`() =
+        header("progress-header-one-year", ProgressPage.OVERVIEW, period = StatsPeriod.ONE_YEAR)
 
     // Dark and large text
 
     @Test
-    fun `header body page dark`() = header("progress-header-body-dark", ProgressPage.BODY, dark = true)
+    fun `header overview page dark`() = header("progress-header-overview-dark", ProgressPage.OVERVIEW, dark = true)
 
     @Test
     fun `header exercises page dark`() =
         header("progress-header-exercises-dark", ProgressPage.EXERCISES, dark = true)
 
     @Test
-    fun `header body page large text`() =
-        header("progress-header-body-large", ProgressPage.BODY, fontScale = 2f)
+    fun `header overview page large text`() =
+        header("progress-header-overview-large", ProgressPage.OVERVIEW, fontScale = 2f)
 
-    @Test
-    fun `header habit page large text`() =
-        header("progress-header-habit-large", ProgressPage.HABIT, fontScale = 2f)
-
-    // The period sheet
+    // The period sheet    // The period sheet
 
     @Test
     fun `period sheet content`() = sheet("progress-period-sheet")

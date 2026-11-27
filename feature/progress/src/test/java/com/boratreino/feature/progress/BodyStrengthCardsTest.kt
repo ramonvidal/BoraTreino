@@ -1,8 +1,6 @@
 package com.boratreino.feature.progress
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -16,7 +14,7 @@ import org.robolectric.annotation.Config
 
 /** "Strength per body weight" and "Body weight and strength together": what they say, and when they are left out. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], qualifiers = "en-w500dp-h3000dp")
+@Config(sdk = [34], qualifiers = "en-w500dp-h20000dp")
 class BodyStrengthCardsTest {
     @get:Rule
     val compose = createComposeRule()
@@ -28,7 +26,7 @@ class BodyStrengthCardsTest {
     }
 
     private fun showPage(state: StatsUiState) {
-        compose.setContent { StatsScreenHost { StatsContent(state, StatsActions(), Modifier.fillMaxSize()) } }
+        compose.setContent { AnalysisHost(state) }
     }
 
     // Strength per body weight

@@ -1,7 +1,6 @@
 package com.boratreino.feature.progress
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
@@ -73,53 +72,38 @@ class ProgressHeaderTest {
     }
 
     @Test
-    fun `the four page chips are Exercises Body Strength and Habit`() {
+    fun `the two page chips are Overview and Exercises`() {
         showHeader()
 
+        shown("Overview")
         shown("Exercises")
-        shown("Body")
-        shown("Strength")
-        shown("Habit")
     }
 
     @Test
-    fun `the page chips are in one row in the order Exercises Body Strength and Habit`() {
+    fun `the page chips are in one row, Overview first`() {
         showHeader()
 
-        val exercises = xOf("Exercises")
-        val body = xOf("Body")
-        val strength = xOf("Strength")
-        val habit = xOf("Habit")
-        assertTrue(exercises < body)
-        assertTrue(body < strength)
-        assertTrue(strength < habit)
-        assertEquals(yOf("Exercises"), yOf("Habit"), 0.5f)
+        assertTrue(xOf("Overview") < xOf("Exercises"))
+        assertEquals(yOf("Overview"), yOf("Exercises"), 0.5f)
     }
 
     @Test
     fun `the chosen page chip is selected`() {
-        showHeader(page = ProgressPage.STRENGTH)
+        showHeader(page = ProgressPage.OVERVIEW)
 
-        compose.onNodeWithText("Strength").assertIsSelected()
+        compose.onNodeWithText("Overview").assertIsSelected()
         compose.onNodeWithText("Exercises").assertIsNotSelected()
-        compose.onNodeWithText("Body").assertIsNotSelected()
-        compose.onNodeWithText("Habit").assertIsNotSelected()
     }
 
     @Test
     fun `tapping each page chip reports its page`() {
         val asked = mutableListOf<ProgressPage>()
-        showHeader(page = ProgressPage.EXERCISES, onPage = { asked += it })
+        showHeader(page = ProgressPage.OVERVIEW, onPage = { asked += it })
 
-        compose.onNodeWithText("Body").performClick()
-        compose.onNodeWithText("Strength").performClick()
-        compose.onNodeWithText("Habit").performClick()
         compose.onNodeWithText("Exercises").performClick()
+        compose.onNodeWithText("Overview").performClick()
 
-        assertEquals(
-            listOf(ProgressPage.BODY, ProgressPage.STRENGTH, ProgressPage.HABIT, ProgressPage.EXERCISES),
-            asked,
-        )
+        assertEquals(listOf(ProgressPage.EXERCISES, ProgressPage.OVERVIEW), asked)
     }
 
     // The period pill
@@ -133,7 +117,7 @@ class ProgressHeaderTest {
     }
 
     @Test
-    fun `the period pill is left out when the period is not shown`() {
+    fun `the period pill is left out on the Exercises page`() {
         showHeader(showPeriod = false)
 
         periodPill("3 months").assertDoesNotExist()

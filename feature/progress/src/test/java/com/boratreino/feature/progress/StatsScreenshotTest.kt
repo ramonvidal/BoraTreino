@@ -1,12 +1,9 @@
 package com.boratreino.feature.progress
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.boratreino.core.model.StatsPage
 import com.boratreino.core.model.StatsPeriod
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -14,7 +11,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The Stats page and each of its cards; saved to build/outputs/roborazzi. */
+/** The Analysis list in its states, and each of its cards; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "en-w411dp-h3000dp")
 class StatsScreenshotTest {
@@ -23,23 +20,9 @@ class StatsScreenshotTest {
 
     private val full = StatsSamples.full
 
-    private fun page(
-        name: String,
-        state: StatsUiState,
-        dark: Boolean = false,
-        fontScale: Float = 1f,
-        statsPage: StatsPage = StatsPage.BODY,
-    ) {
-        compose.setContent {
-            StatsScreenHost(dark, fontScale) {
-                StatsContent(
-                    state = state,
-                    actions = StatsActions(),
-                    modifier = Modifier.fillMaxSize(),
-                    page = statsPage,
-                )
-            }
-        }
+    /** The Analysis list over [state], as one image. */
+    private fun page(name: String, state: StatsUiState, dark: Boolean = false, fontScale: Float = 1f) {
+        compose.setContent { AnalysisHost(state, dark = dark, fontScale = fontScale) }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
@@ -47,35 +30,6 @@ class StatsScreenshotTest {
         compose.setContent { StatsCardHost(dark, fontScale) { content() } }
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
-
-    // The page
-
-    @Test
-    fun `stats full`() = page("stats-full", StatsSamples.state())
-
-    @Test
-    fun `stats body page`() = page("stats-page-body", StatsSamples.state(), statsPage = StatsPage.BODY)
-
-    @Test
-    fun `stats strength page`() = page("stats-page-strength", StatsSamples.state(), statsPage = StatsPage.STRENGTH)
-
-    @Test
-    fun `stats habit page`() = page("stats-page-habit", StatsSamples.state(), statsPage = StatsPage.HABIT)
-
-    @Test
-    fun `stats habit page dark`() =
-        page("stats-page-habit-dark", StatsSamples.state(), dark = true, statsPage = StatsPage.HABIT)
-
-    @Test
-    fun `stats full dark`() = page("stats-full-dark", StatsSamples.state(), dark = true)
-
-    @Test
-    fun `stats strength page large text`() =
-        page("stats-page-strength-large", StatsSamples.state(), fontScale = 2f, statsPage = StatsPage.STRENGTH)
-
-    @Test
-    fun `stats empty period on the habit page`() =
-        page("stats-empty-habit", StatsSamples.state(StatsSamples.empty), statsPage = StatsPage.HABIT)
 
     @Test
     fun `stats full large text`() = page("stats-full-large", StatsSamples.state(), fontScale = 2f)
@@ -95,18 +49,6 @@ class StatsScreenshotTest {
     @Test
     fun `stats one year selected`() =
         page("stats-one-year", StatsSamples.state(full.copy(period = StatsPeriod.ONE_YEAR)))
-
-    @Test
-    fun `stats one week body`() =
-        page("stats-week-body", StatsSamples.state(StatsSamples.oneWeek), statsPage = StatsPage.BODY)
-
-    @Test
-    fun `stats one week strength`() =
-        page("stats-week-strength", StatsSamples.state(StatsSamples.oneWeek), statsPage = StatsPage.STRENGTH)
-
-    @Test
-    fun `stats one week habit`() =
-        page("stats-week-habit", StatsSamples.state(StatsSamples.oneWeek), statsPage = StatsPage.HABIT)
 
     // The cards, light
 
