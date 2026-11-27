@@ -208,9 +208,13 @@ object CardioRules {
     fun toDraft(set: WorkoutSet): CardioDraft =
         CardioDraft(minutesOf(set.seconds ?: 0), set.calories ?: 0, set.distanceM ?: 0, set.intensity)
 
-    /** True when the set carries seconds, calories, distance or intensity. */
+    /**
+     * A cardio set: no weight and no reps, and seconds, calories, distance or intensity. Every strength set has a
+     * weight (0.0 = no load), so timed and distance strength sets are not cardio.
+     */
     fun isCardio(set: WorkoutSet): Boolean =
-        set.seconds != null || set.calories != null || set.distanceM != null || set.intensity != null
+        set.weightKg == null && set.reps == null &&
+            (set.seconds != null || set.calories != null || set.distanceM != null || set.intensity != null)
 
     /** Whole minutes in [seconds], rounded to the nearest minute. */
     internal fun minutesOf(seconds: Int): Int = ((seconds.toLong() + 30L) / 60L).toInt()

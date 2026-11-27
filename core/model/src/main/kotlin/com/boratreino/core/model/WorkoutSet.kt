@@ -11,7 +11,14 @@ val WorkoutSet.isWorking: Boolean get() = type != SetType.WARMUP
 /** The working sets, order kept. */
 fun List<WorkoutSet>.working(): List<WorkoutSet> = filter { it.isWorking }
 
-/** One logged set on a machine within a session. */
+/**
+ * One logged set on a machine within a session.
+ *
+ * Shapes by machine kind (invariant): WEIGHT_REPS and BODYWEIGHT_REPS have a weight and reps; WEIGHT_TIME has a
+ * weight and [seconds] (no reps, no distance); WEIGHT_DISTANCE has a weight and [distanceM] (no reps, no seconds);
+ * TIME has weight 0.0 and [seconds]; CARDIO has no weight and no reps. Every strength set has a non-null weight
+ * (0.0 = no load), which is what [CardioRules.isCardio] relies on.
+ */
 data class WorkoutSet(
     val id: Long,
     val sessionId: Long,

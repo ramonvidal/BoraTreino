@@ -7,9 +7,10 @@ import java.time.YearMonth
 /**
  * What a machine's progress chart measures. [ONE_RM] is for chart values only (see [ProgressRules.oneRmPoints]).
  * [SPEED] (km/h), [INTENSITY] and [DISTANCE] (km) are for cardio machines; for cardio, [MINUTES] is the time.
+ * [SECONDS] and [METRES] are the amount of the timed and distance strength kinds (see [ProgressRules.strengthMetrics]).
  */
 enum class ProgressMetric {
-    WEIGHT, REPS, MINUTES, ONE_RM, SPEED, INTENSITY, DISTANCE,
+    WEIGHT, REPS, MINUTES, ONE_RM, SPEED, INTENSITY, DISTANCE, SECONDS, METRES,
 }
 
 /** One point per session for one machine; [topSet] is the set that gave [value]. */
@@ -46,6 +47,11 @@ data class MachineProgress(
      * without data maps to an empty list. [points] holds the default one ([metric], see [ProgressRules.defaultCardioMetric]).
      */
     val cardioPoints: Map<ProgressMetric, List<SessionPoint>> = emptyMap(),
+    /**
+     * Strength kinds with two metrics (WEIGHT_TIME, WEIGHT_DISTANCE): points per metric of
+     * [ProgressRules.strengthMetrics], ascending; empty for every other kind. [points] holds the default one ([metric]).
+     */
+    val measurePoints: Map<ProgressMetric, List<SessionPoint>> = emptyMap(),
 )
 
 data class ProgressOverview(
@@ -80,18 +86,39 @@ object ProgressRules {
         }
     }
 
-    /** CARDIO machine -> [defaultCardioMetric]; BODYWEIGHT_REPS machine with no set whose weight > 0 -> REPS; else WEIGHT. */
-    fun metricFor(machine: Machine, sets: List<WorkoutSet>): ProgressMetric = when {
-        machine.kind == MachineKind.CARDIO -> defaultCardioMetric(sets)
-        machine.kind == MachineKind.BODYWEIGHT_REPS && sets.working().none { (it.weightKg ?: 0.0) > 0.0 } -> ProgressMetric.REPS
-        else -> ProgressMetric.WEIGHT
+    /** The metrics a strength kind can chart: WEIGHT_TIME -> [WEIGHT, SECONDS]; WEIGHT_DISTANCE -> [WEIGHT, METRES]; TIME -> [SECONDS]; else empty. */
+    fun strengthMetrics(kind: MachineKind): List<ProgressMetric> = when (kind) {
+        MachineKind.WEIGHT_TIME -> listOf(ProgressMetric.WEIGHT, ProgressMetric.SECONDS)
+        MachineKind.WEIGHT_DISTANCE -> listOf(ProgressMetric.WEIGHT, ProgressMetric.METRES)
+        MachineKind.TIME -> listOf(ProgressMetric.SECONDS)
+        else -> emptyList()
     }
+
+    /**
+     * CARDIO machine -> [defaultCardioMetric]; BODYWEIGHT_REPS machine with no set whose weight > 0 -> REPS; TIME -> SECONDS;
+     * WEIGHT_TIME with no set whose weight > 0 -> SECONDS; WEIGHT_DISTANCE with no such set -> METRES; else WEIGHT.
+     */
+    fun metricFor(machine: Machine, sets: List<WorkoutSet>): ProgressMetric {
+        val noLoad = sets.working().none { (it.weightKg ?: 0.0) > 0.0 }
+        return when {
+            machine.kind == MachineKind.CARDIO -> defaultCardioMetric(sets)
+            machine.kind == MachineKind.BODYWEIGHT_REPS && noLoad -> ProgressMetric.REPS
+            machine.kind == MachineKind.TIME -> ProgressMetric.SECONDS
+            machine.kind == MachineKind.WEIGHT_TIME && noLoad -> ProgressMetric.SECONDS
+            machine.kind == MachineKind.WEIGHT_DISTANCE && noLoad -> ProgressMetric.METRES
+            else -> ProgressMetric.WEIGHT
+        }
+    }
+
+    /** The set's own amount: reps, else seconds, else distance, else 0. */
+    private fun WorkoutSet.amount(): Int = reps ?: seconds ?: distanceM ?: 0
 
     /**
      * One point per session that has at least one of this machine's sets, ascending by date then session id.
      * [sessionDates] maps session id -> its local date; sets whose session is missing are ignored.
-     * WEIGHT: topSet = heaviest weight (null counts 0), ties -> more reps, then later position. REPS: topSet = most
-     * reps, ties -> heavier, then later position. value = that set's weight or reps. MINUTES: value = total minutes
+     * WEIGHT: topSet = heaviest weight (null counts 0), ties -> more amount (reps, else seconds, else metres), then later position. REPS: topSet = most
+     * reps, ties -> heavier, then later position. value = that set's weight or reps. SECONDS: topSet = most seconds (ties heavier, then later position), value = its seconds.
+     * METRES: topSet = farthest (ties heavier, then later position), value = its metres. MINUTES: value = total minutes
      * of the session's sets; topSet = the longest set, ties -> later position.
      * Cardio metrics (sessions without the data have no point): SPEED = the session's total distance / total time
      * (km/h) over its sets with both; INTENSITY = time-weighted average intensity over its sets with intensity and
@@ -104,9 +131,11 @@ object ProgressRules {
         metric: ProgressMetric,
     ): List<SessionPoint> {
         val order: Comparator<WorkoutSet> = when (metric) {
-            ProgressMetric.WEIGHT -> compareBy<WorkoutSet>({ it.weightKg ?: 0.0 }, { it.reps ?: 0 }, { it.position })
+            ProgressMetric.WEIGHT -> compareBy<WorkoutSet>({ it.weightKg ?: 0.0 }, { it.amount() }, { it.position })
             ProgressMetric.REPS -> compareBy<WorkoutSet>({ it.reps ?: 0 }, { it.weightKg ?: 0.0 }, { it.position })
             ProgressMetric.MINUTES -> compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.position })
+            ProgressMetric.SECONDS -> compareBy<WorkoutSet>({ it.seconds ?: 0 }, { it.weightKg ?: 0.0 }, { it.position })
+            ProgressMetric.METRES -> compareBy<WorkoutSet>({ it.distanceM ?: 0 }, { it.weightKg ?: 0.0 }, { it.position })
             ProgressMetric.ONE_RM -> return oneRmPoints(sets, sessionDates)
             ProgressMetric.SPEED, ProgressMetric.INTENSITY, ProgressMetric.DISTANCE,
             -> return cardioPoints(sets, sessionDates, metric)
@@ -119,6 +148,8 @@ object ProgressRules {
                 val value = when (metric) {
                     ProgressMetric.WEIGHT -> top.weightKg ?: 0.0
                     ProgressMetric.REPS -> (top.reps ?: 0).toDouble()
+                    ProgressMetric.SECONDS -> (top.seconds ?: 0).toDouble()
+                    ProgressMetric.METRES -> (top.distanceM ?: 0).toDouble()
                     ProgressMetric.MINUTES -> CardioRules.minutesOf(group.sumOf { it.seconds ?: 0 }).toDouble()
                     else -> top.weightKg ?: 0.0
                 }
@@ -249,9 +280,15 @@ object ProgressRules {
         }
         val oneRm = if (!isCardio) oneRmPoints(own, sessionDates) else emptyList()
         val cardioPoints = if (isCardio) CARDIO_METRICS.associateWith { points(own, sessionDates, it) } else emptyMap()
+        val strengthMetrics = strengthMetrics(machine.kind)
+        val measurePoints = if (strengthMetrics.size >= 2) {
+            strengthMetrics.associateWith { points(own, sessionDates, it) }
+        } else {
+            emptyMap()
+        }
         return MachineProgress(
             machine, metric, points(own, sessionDates, metric),
-            weeks = cardioWeeks, oneRmPoints = oneRm, cardioPoints = cardioPoints,
+            weeks = cardioWeeks, oneRmPoints = oneRm, cardioPoints = cardioPoints, measurePoints = measurePoints,
         )
     }
 

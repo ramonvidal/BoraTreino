@@ -32,7 +32,7 @@ data class LibraryExercise(
         }
 
     val kind: MachineKind
-        get() = when {
+        get() = KIND_OVERRIDES[id] ?: when {
             category == CARDIO_CATEGORY -> MachineKind.CARDIO
             equipment == LibraryEquipment.BODY_ONLY ||
                 (equipment == LibraryEquipment.OTHER && category == "plyometrics") -> MachineKind.BODYWEIGHT_REPS
@@ -47,6 +47,19 @@ data class LibraryExercise(
 
     private companion object {
         const val CARDIO_CATEGORY = "cardio"
+
+        /** Library exercises measured by time or distance instead of reps, by library id. */
+        val KIND_OVERRIDES: Map<String, MachineKind> = mapOf(
+            "Farmers_Walk" to MachineKind.WEIGHT_TIME,
+            "Rickshaw_Carry" to MachineKind.WEIGHT_TIME,
+            "Yoke_Walk" to MachineKind.WEIGHT_TIME,
+            "Sled_Push" to MachineKind.WEIGHT_DISTANCE,
+            "Sled_Drag_-_Harness" to MachineKind.WEIGHT_DISTANCE,
+            "Bear_Crawl_Sled_Drags" to MachineKind.WEIGHT_DISTANCE,
+            "Sled_Overhead_Backward_Walk" to MachineKind.WEIGHT_DISTANCE,
+            "Plank" to MachineKind.TIME,
+            "Side_Bridge" to MachineKind.TIME,
+        )
     }
 }
 

@@ -59,7 +59,8 @@ sealed interface BackupDecodeResult {
 }
 
 object BackupCodec {
-    const val FORMAT_VERSION = 11
+    /** 12: kinds WEIGHT_TIME, WEIGHT_DISTANCE, TIME. */
+    const val FORMAT_VERSION = 12
     private const val APP = "boratreino"
 
     fun encode(data: BackupData, exportedAt: Instant): String {

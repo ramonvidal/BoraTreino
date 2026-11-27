@@ -198,6 +198,10 @@ object StarterMachines {
         w("Russian twist", "Rotação russa", K, 2.0),
         w("Wood chopper", "Lenhador no cabo", K),
         bw("Ab wheel", "Roda abdominal", K),
+        StarterMachine("Plank", K, MachineKind.TIME, 2.5, "Prancha"),
+        // By time or distance
+        StarterMachine("Farmer's walk", A, MachineKind.WEIGHT_TIME, 2.0, "Caminhada do fazendeiro"),
+        StarterMachine("Sled push", L, MachineKind.WEIGHT_DISTANCE, 5.0, "Empurrar trenó"),
         // Cardio
         cardio("Treadmill", "Esteira"),
         cardio("Stationary bike", "Bicicleta ergométrica"),
