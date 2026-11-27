@@ -48,10 +48,12 @@ internal fun findingTitle(finding: Finding): String = when (finding) {
     }
     is Finding.NewRecord -> {
         val event = finding.event
+        // A property from another module can't be smart-cast: read it into a local first.
+        val record = event?.record
         when {
             event == null -> pluralStringResource(R.plurals.finding_records_title, finding.others, finding.others)
-            event.record is Record.HeaviestWeight ->
-                stringResource(R.string.finding_record_title, event.machine.name, formatKg(event.record.weightKg))
+            record is Record.HeaviestWeight ->
+                stringResource(R.string.finding_record_title, event.machine.name, formatKg(record.weightKg))
             else -> stringResource(R.string.finding_record_title_other, event.machine.name)
         }
     }
