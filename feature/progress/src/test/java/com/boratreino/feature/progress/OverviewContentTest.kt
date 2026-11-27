@@ -12,6 +12,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 
 /** The Overview tab: what it says and where its taps go, checked on the text it shows. */
 @RunWith(AndroidJUnit4::class)

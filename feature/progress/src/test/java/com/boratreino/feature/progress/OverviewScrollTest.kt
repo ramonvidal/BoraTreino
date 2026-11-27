@@ -8,6 +8,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
 
 /** A short screen, so the frequency section starts below the fold and the finding tap has to scroll to it. */
 @RunWith(AndroidJUnit4::class)

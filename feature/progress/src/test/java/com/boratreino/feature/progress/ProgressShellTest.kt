@@ -15,6 +15,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
 
 /** The Progress tab: the Analysis level opens from the Overview and system back returns to the Overview. */
 @RunWith(AndroidJUnit4::class)

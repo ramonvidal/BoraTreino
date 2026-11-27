@@ -6,7 +6,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MEMBERS = ("assertExists", "assertDoesNotExist", "onNode", "onAllNodes")
-NEEDS_IMPORT = ("onFirst", "onLast", "assertCountEquals")
+NEEDS_IMPORT = (
+    "onFirst", "onLast", "assertCountEquals",
+    "onNodeWithText", "onAllNodesWithText", "onNodeWithContentDescription",
+    "onAllNodesWithContentDescription", "onNodeWithTag", "onAllNodesWithTag", "onRoot",
+)
 # Non-inline lambdas: composables cannot be called inside them.
 NON_INLINE = re.compile(r"\b(joinToString|buildString)\s*(\([^)]*\))?\s*\{")
 problems = []

@@ -9,6 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import com.boratreino.core.model.StatsPeriod
 
 /** The Overview in full, each kind of finding card and the strength section with a flagged jump; saved to build/outputs/roborazzi. */
 @RunWith(AndroidJUnit4::class)

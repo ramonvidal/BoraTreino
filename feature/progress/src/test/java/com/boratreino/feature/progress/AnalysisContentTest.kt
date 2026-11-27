@@ -18,6 +18,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
 
 /** The Analysis level: what it says and does, checked on the text it shows. */
 @RunWith(AndroidJUnit4::class)
