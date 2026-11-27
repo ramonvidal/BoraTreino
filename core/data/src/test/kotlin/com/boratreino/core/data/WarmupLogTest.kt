@@ -187,10 +187,11 @@ class WarmupLogTest {
         val stale = store.insertSession(
             Session(id = 0, startedAt = now.minus(Duration.ofHours(5)), endedAt = null, routineId = null, note = null),
         )
-        // A session only exists with sets: give the stale one a set, logged when it started.
+        // A session only exists with sets: give the stale one a set on another exercise, logged when it started.
+        val curl = machine("Curl")
         store.insertSet(
             WorkoutSet(
-                id = 0, sessionId = stale, machineId = press, position = 0, weightKg = 100.0, reps = 10,
+                id = 0, sessionId = stale, machineId = curl, position = 0, weightKg = 100.0, reps = 10,
                 seconds = null, calories = null, distanceM = null, loggedAt = now.minus(Duration.ofHours(5)),
             ),
         )
