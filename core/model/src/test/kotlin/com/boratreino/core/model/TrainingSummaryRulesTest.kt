@@ -139,7 +139,7 @@ class TrainingSummaryRulesTest {
     fun `cardio adds nothing to the volume`() {
         val summary = build(
             sets = listOf(
-                set(1, machineId = 3L, weightKg = 50.0, reps = 10, seconds = 600),
+                set(1, machineId = 3L, weightKg = null, reps = null, seconds = 600),
                 set(2, machineId = 1L, weightKg = 100.0, reps = 10),
             ),
         )

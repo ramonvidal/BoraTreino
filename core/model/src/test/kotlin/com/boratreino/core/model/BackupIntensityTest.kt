@@ -39,9 +39,9 @@ class BackupIntensityTest {
     }
 
     @Test
-    fun `the format is version 11`() {
-        assertEquals(11, BackupCodec.FORMAT_VERSION)
-        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":11,"))
+    fun `the format is version 12`() {
+        assertEquals(12, BackupCodec.FORMAT_VERSION)
+        assertTrue(text.startsWith("{\"app\":\"boratreino\",\"version\":12,"))
     }
 
     @Test
@@ -68,7 +68,9 @@ class BackupIntensityTest {
 
     @Test
     fun `a whole-number intensity in a version 11 file reads as a decimal`() {
-        val ok = BackupCodec.decode(withFirstIntensity(text, "12")) as BackupDecodeResult.Ok
+        val v11 = withFirstIntensity(text, "12").replace("\"version\":12", "\"version\":11")
+
+        val ok = BackupCodec.decode(v11) as BackupDecodeResult.Ok
 
         assertEquals(12.0, ok.data.sets[4].intensity!!, 0.0)
     }
@@ -83,7 +85,7 @@ class BackupIntensityTest {
     @Test
     fun `a version 10 file with the old console keys imports its intensity as a decimal and ignores the old keys`() {
         val v10 = text
-            .replace("\"version\":11", "\"version\":10")
+            .replace("\"version\":12", "\"version\":10")
             .replace(Regex("\"intensity\":12(?:\\.0)?([,}])")) { m ->
                 "\"intensity\":12,\"watts\":160,\"heartRate\":142,\"wattsPerKg\":2.4,\"tss\":48,\"intensityFactor\":0.79" +
                     m.groupValues[1]
@@ -99,7 +101,7 @@ class BackupIntensityTest {
 
     @Test
     fun `a version 8 file without intensities imports`() {
-        val v8 = withoutIntensity(text).replace("\"version\":11", "\"version\":8")
+        val v8 = withoutIntensity(text).replace("\"version\":12", "\"version\":8")
 
         val ok = BackupCodec.decode(v8) as BackupDecodeResult.Ok
 
@@ -133,7 +135,7 @@ class BackupIntensityTest {
     }
 
     @Test
-    fun `a version 12 file is too new`() {
-        assertEquals(BackupDecodeResult.TooNew(12), BackupCodec.decode(text.replace("\"version\":11", "\"version\":12")))
+    fun `a version 13 file is too new`() {
+        assertEquals(BackupDecodeResult.TooNew(13), BackupCodec.decode(text.replace("\"version\":12", "\"version\":13")))
     }
 }

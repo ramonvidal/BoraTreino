@@ -364,7 +364,7 @@ class StatsRulesTest {
         val m = log.machine()
         val s = log.session(d(11, 9))
         log.set(s, m, 50.0, 10, position = 0)
-        log.set(s, m, 40.0, 10, position = 1, seconds = 600)
+        log.set(s, m, null, null, position = 1, seconds = 600)
 
         val week = report(log).weeks.last()
 
@@ -1048,7 +1048,7 @@ class StatsRulesTest {
         val press = log.machine()
         log.lift(d(11, 9), rower, 50.0, 10)
         val timed = log.session(d(11, 9))
-        log.set(timed, press, 60.0, 8, seconds = 600)
+        log.set(timed, press, null, null, seconds = 600)
 
         assertTrue(report(log).strengthNow.isEmpty())
     }

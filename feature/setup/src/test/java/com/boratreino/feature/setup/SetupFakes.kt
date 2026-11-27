@@ -35,6 +35,8 @@ internal class FakeSetupMachines(private val all: List<Machine> = emptyList()) :
     val addCalls = mutableListOf<List<String>>()
     var gate: CompletableDeferred<Unit>? = null
     private val ids = LinkedHashMap<String, Long>()
+    override suspend fun kindConversions(machineId: Long): Map<com.boratreino.core.model.MachineKind, com.boratreino.core.model.KindConversion> = emptyMap()
+    override suspend fun saveConvertingSets(machine: com.boratreino.core.model.Machine, factor: Int?): Boolean = true
 
     /** The id a starter name got, or null when it was never added. */
     fun idOf(name: String): Long? = ids[name]

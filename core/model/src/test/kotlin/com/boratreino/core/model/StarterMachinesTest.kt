@@ -141,8 +141,8 @@ class StarterMachinesTest {
     }
 
     @Test
-    fun `there are 103 starters`() {
-        assertEquals(103, all.size)
+    fun `there are 106 starters`() {
+        assertEquals(106, all.size)
     }
 
     @Test
@@ -223,6 +223,27 @@ class StarterMachinesTest {
             assertEquals(row.en, row.kind, starter.kind)
             assertEquals(row.en, row.step, starter.stepKg, 0.0)
         }
+    }
+
+    @Test
+    fun `the timed and distance starters are in the list with their kinds, groups, steps and Portuguese names`() {
+        val farmers = all.single { it.name == "Farmer's walk" }
+        assertEquals("Caminhada do fazendeiro", farmers.namePt)
+        assertEquals(MuscleGroup.ARMS, farmers.muscleGroup)
+        assertEquals(MachineKind.WEIGHT_TIME, farmers.kind)
+        assertEquals(2.0, farmers.stepKg, 0.0)
+
+        val plank = all.single { it.name == "Plank" }
+        assertEquals("Prancha", plank.namePt)
+        assertEquals(MuscleGroup.CORE, plank.muscleGroup)
+        assertEquals(MachineKind.TIME, plank.kind)
+        assertEquals(2.5, plank.stepKg, 0.0)
+
+        val sled = all.single { it.name == "Sled push" }
+        assertEquals("Empurrar trenó", sled.namePt)
+        assertEquals(MuscleGroup.LEGS, sled.muscleGroup)
+        assertEquals(MachineKind.WEIGHT_DISTANCE, sled.kind)
+        assertEquals(5.0, sled.stepKg, 0.0)
     }
 
     @Test
