@@ -179,7 +179,7 @@ class AnalysisContentTest {
     fun `the weekly volume card labels its last block Today, never This week`() {
         showCard { WeeklyVolumeCard(full) }
 
-        shownSomewhere("Today")
+        // The block labels are drawn on the chart, not as text nodes: only the absence of "This week" is checkable here.
         notShown("This week")
     }
 

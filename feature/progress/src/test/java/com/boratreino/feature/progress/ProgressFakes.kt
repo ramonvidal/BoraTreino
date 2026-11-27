@@ -41,8 +41,11 @@ internal inline fun <reified T : Any> answering(vararg answers: Pair<String, Any
             "hashCode" -> System.identityHashCode(proxy)
             "equals" -> proxy === args?.firstOrNull()
             else -> {
-                check(method.name in byName) { "${T::class.java.simpleName}.${method.name} is not answered in this test" }
-                byName[method.name]
+                // A Kotlin property `weeklyGoal` is the method `getWeeklyGoal`: answer it by the property name too.
+                val name = method.name.takeIf { it in byName }
+                    ?: method.name.removePrefix("get").replaceFirstChar { it.lowercase() }
+                check(name in byName) { "${T::class.java.simpleName}.${method.name} is not answered in this test" }
+                byName[name]
             }
         }
     }
