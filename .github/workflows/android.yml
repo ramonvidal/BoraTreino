@@ -67,7 +67,8 @@ jobs:
 
       # Every Gradle invocation also checks the module structure (boratreino.module-rules).
       - name: Unit tests
-        run: ./gradlew :core:model:test testDebugUnitTest
+        # --continue: report every failing module in one run; the step still fails if any test failed.
+        run: ./gradlew --continue :core:model:test testDebugUnitTest
 
       # Room writes the database schema while compiling; it must be committed (CLAUDE.md, "Data").
       # On a mismatch the generated files are printed so they can be copied into the repo.

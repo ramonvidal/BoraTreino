@@ -6,6 +6,9 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -39,10 +42,27 @@ internal fun Project.configureKotlinAndroid(android: CommonExtension<*, *, *, *,
 }
 
 internal fun Project.configureKotlin(vararg optIns: String) {
+    configureTestLogging()
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
             optIn.addAll(*optIns)
+        }
+    }
+}
+
+/**
+ * Failed tests print their assertion message and stack trace in the log (so CI shows why
+ * without opening the report); passing tests stay silent. Applies to every module's unit tests.
+ */
+internal fun Project.configureTestLogging() {
+    tasks.withType<Test>().configureEach {
+        testLogging {
+            events(TestLogEvent.FAILED)
+            exceptionFormat = TestExceptionFormat.FULL
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
         }
     }
 }
