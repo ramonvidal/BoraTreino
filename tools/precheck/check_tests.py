@@ -11,6 +11,8 @@ NEEDS_IMPORT = (
     "onNodeWithText", "onAllNodesWithText", "onNodeWithContentDescription",
     "onAllNodesWithContentDescription", "onNodeWithTag", "onAllNodesWithTag", "onRoot",
 )
+# Classes that live in androidx.compose.ui.test, not where their name suggests.
+TEST_PACKAGE = ("SemanticsMatcher", "SemanticsNodeInteraction", "SemanticsNodeInteractionCollection")
 # Non-inline lambdas: composables cannot be called inside them.
 NON_INLINE = re.compile(r"\b(joinToString|buildString)\s*(\([^)]*\))?\s*\{")
 problems = []
@@ -29,6 +31,9 @@ def check(path, is_test):
             m = re.match(r"import androidx\.compose\.ui\.test\.(\w+)\s*$", l)
             if m and m.group(1) in MEMBERS:
                 report(path, i, f"'{m.group(1)}' is a member, not a top-level function: remove the import")
+            m = re.match(r"import androidx\.compose\.ui\.(?!test\.)[\w.]*\.(\w+)\s*$", l)
+            if m and m.group(1) in TEST_PACKAGE:
+                report(path, i, f"'{m.group(1)}' lives in androidx.compose.ui.test: import androidx.compose.ui.test.{m.group(1)}")
             if re.search(r"^\s*(?:val|var)\s+\w+\s*=\s*assertNotNull\(|assertNotNull\([^()]*(?:\([^()]*\)[^()]*)*\)\s*\.|[=(,]\s*assertNotNull\(", l):
                 report(path, i, "JUnit assertNotNull returns Unit; use the value you already have or '!!'")
             m = re.match(r"\s*(?:@Test\s+)?fun\s+`([^`]*)`", l)

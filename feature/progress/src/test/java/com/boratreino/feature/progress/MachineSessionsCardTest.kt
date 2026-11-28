@@ -5,7 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.semantics.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertCountEquals
@@ -69,7 +70,7 @@ class MachineSessionsCardTest {
 
     /** The session rows: a text of a date, a top value and the sets, so two dots (the trend's "R² · sessions" has one). */
     private fun sessionRows() = compose.onAllNodes(
-        SemanticsMatcher("a session row") { node ->
+        SemanticsMatcher("a session row") { node: SemanticsNode ->
             node.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text.count { it == '·' } == 2 } == true
         },
         useUnmergedTree = true,
