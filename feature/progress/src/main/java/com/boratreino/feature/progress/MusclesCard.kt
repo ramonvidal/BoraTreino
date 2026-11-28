@@ -34,13 +34,16 @@ import com.boratreino.core.ui.label
 internal fun musclesByLoad(load: Map<Muscle, Double>): List<Muscle> =
     Muscle.entries.sortedByDescending { load.getValue(it) }
 
+/** Below this a row would read "0.0": such muscles are hidden until "Show all". */
+private const val SHOWN_MIN_LOAD = 0.05
+
 /** One bar per specific muscle: average effective sets a week over the period, highest first, untrained last. */
 @Composable
 internal fun MusclesCard(report: StatsReport, modifier: Modifier = Modifier) {
     val load = BodyInsightRules.muscleDetailLoad(report)
     val all = musclesByLoad(load)
     var showAll by rememberSaveable { mutableStateOf(false) }
-    val ordered = if (showAll) all else all.filter { load.getValue(it) > 0.0 }
+    val ordered = if (showAll) all else all.filter { load.getValue(it) >= SHOWN_MIN_LOAD }
     val hidden = all.size - ordered.size
     val names = Muscle.entries.associateWith { it.label() }
     val max = all.maxOfOrNull { load.getValue(it) } ?: 0.0
