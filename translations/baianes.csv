@@ -568,6 +568,12 @@ feature/progress,action_back,,Back,Voltar
 feature/progress,progress_show_all_count,,Show all %1$d sessions,Ver todos os %1$d treinos
 feature/progress,stats_muscles_show_all,,Show all %1$d muscles,Ver todos os %1$d músculos
 feature/progress,analysis_section_highlights,,Highlights,Destaques
+feature/progress,stats_energy_title,,Daily energy,Energia por dia
+feature/progress,stats_energy_last7,,Last 7 days: about %1$s kcal a day,Últimos 7 dias: cerca de %1$s kcal por dia
+feature/progress,stats_energy_last28,,Last 28 days: about %1$s kcal a day,Últimos 28 dias: cerca de %1$s kcal por dia
+feature/progress,stats_energy_training_adds,,Training adds about %1$s kcal on the days you train,O treino acrescenta cerca de %1$s kcal nos dias em que você treina
+feature/progress,stats_energy_note,,Estimate from your body data (Settings) and your logged training; not advice.,Estimativa com seus dados do corpo (Ajustes) e os treinos anotados; não é recomendação.
+feature/progress,stats_energy_chart_description,,"Daily energy estimate over %1$d days, %2$d of them training days","Estimativa diária de energia em %1$d dias, %2$d deles com treino"
 feature/routines,routines_title,,Routines,Fichas
 feature/routines,routines_new_routine,,New routine,Nova ficha
 feature/routines,routines_next_routine,,Next routine,Próxima ficha

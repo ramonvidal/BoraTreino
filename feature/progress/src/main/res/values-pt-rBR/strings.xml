@@ -334,6 +334,12 @@
     <string name="progress_show_all_count">Ver todos os %1$d treinos</string>
     <string name="stats_muscles_show_all">Ver todos os %1$d músculos</string>
     <string name="analysis_section_highlights">Destaques</string>
+    <string name="stats_energy_title">Energia por dia</string>
+    <string name="stats_energy_last7">Últimos 7 dias: cerca de %1$s kcal por dia</string>
+    <string name="stats_energy_last28">Últimos 28 dias: cerca de %1$s kcal por dia</string>
+    <string name="stats_energy_training_adds">O treino acrescenta cerca de %1$s kcal nos dias em que você treina</string>
+    <string name="stats_energy_note">Estimativa com seus dados do corpo (Ajustes) e os treinos anotados; não é recomendação.</string>
+    <string name="stats_energy_chart_description">Estimativa diária de energia em %1$d dias, %2$d deles com treino</string>
     <plurals name="progress_trainings">
         <item quantity="one">%d treino</item>
         <item quantity="other">%d treinos</item>
