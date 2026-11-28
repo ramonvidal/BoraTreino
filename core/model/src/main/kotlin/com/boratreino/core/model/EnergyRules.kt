@@ -12,6 +12,18 @@ data class DayEnergy(val kcal: Int, val restDayKcal: Int, val trainingBurnKcal: 
 
 enum class DayKind { TRAINED, TRAINING_EXPECTED, REST }
 
+/** One day of [EnergyHistory]: [kcal] the day's estimate, [burnKcal] its net training part, both rounded to 10. */
+data class EnergyPoint(val date: LocalDate, val kcal: Int, val burnKcal: Int, val trained: Boolean)
+
+/** Daily estimates over a range; averages are rounded to 10 and null when there is too little data. */
+data class EnergyHistory(
+    val points: List<EnergyPoint>,
+    val last7AverageKcal: Int?,
+    val last28AverageKcal: Int?,
+    val averageBurnKcal: Int?,
+    val trainedDays: Int,
+)
+
 /** Estimate of a day's energy need. Never tracks food; an estimate, not advice. */
 object EnergyRules {
     const val ACTIVITY_FACTOR = 1.2
@@ -20,6 +32,9 @@ object EnergyRules {
     const val MIN_SESSION_MINUTES = 20
     const val MAX_SESSION_HOURS = 3
     private const val MIN_AGE = 10
+    private const val MINUTES_PER_DAY = 1440.0
+    private const val SHORT_WINDOW = 7
+    private const val LONG_WINDOW = 28
 
     /** today.year - birthYear, at least 10. */
     fun age(profile: BodyProfile, today: LocalDate): Int = (today.year - profile.birthYear).coerceAtLeast(MIN_AGE)
@@ -36,17 +51,28 @@ object EnergyRules {
         roundTo10(bmr(profile, today) * ACTIVITY_FACTOR * goalFactor(profile))
 
     /**
-     * Burn of the day's sessions: logged cardio calories, plus STRENGTH_MET * kg * hours when the
-     * session has working non-cardio sets. Hours = ended - effective start (SessionTimeRules, so cardio minutes count), capped at 3 h; a closed session
-     * with zero duration counts 20 min; an open session counts up to [now].
+     * NET burn of the day's sessions: only the extra over the baseline (1.2 x BMR already covers the whole day).
+     * Strength: (STRENGTH_MET - 1) * kg * hours when the session has working non-cardio sets; hours = ended - effective
+     * start (SessionTimeRules, so cardio minutes count), capped at 3 h; a closed session with zero duration counts
+     * 20 min; an open session counts up to [now]. Cardio: per set, logged calories minus the resting burn of its
+     * minutes (bmr / 1440 per minute, [date]'s BMR), never below zero.
      */
-    fun trainingBurnKcal(profile: BodyProfile, sessions: List<SessionSets>, now: Instant): Double =
-        sessions.sumOf { (session, sets) ->
-            val cardio = sets.filter { CardioRules.isCardio(it) }.sumOf { it.calories ?: 0 }.toDouble()
+    fun trainingBurnKcal(profile: BodyProfile, date: LocalDate, sessions: List<SessionSets>, now: Instant): Double {
+        val restingPerMinute = bmr(profile, date) / MINUTES_PER_DAY
+        return sessions.sumOf { (session, sets) ->
+            val cardio = sets.filter { CardioRules.isCardio(it) }.sumOf { set ->
+                val minutes = (set.seconds ?: 0) / 60.0
+                maxOf(0.0, (set.calories ?: 0) - restingPerMinute * minutes)
+            }
             val hasStrength = sets.filterNot { CardioRules.isCardio(it) }.working().isNotEmpty()
-            cardio + if (hasStrength) STRENGTH_MET * profile.weightKg * hours(session, sets, now) else 0.0
+            cardio + if (hasStrength) (STRENGTH_MET - 1.0) * profile.weightKg * hours(session, sets, now) else 0.0
         }
+    }
 
+    /**
+     * A day's estimate: baseline (1.2 x BMR) plus the NET training burn, times the goal factor. Rest days are the
+     * baseline alone; [trainingExpected] only matters for a day without sets.
+     */
     fun day(
         profile: BodyProfile,
         date: LocalDate,
@@ -59,16 +85,55 @@ object EnergyRules {
         val factor = goalFactor(profile)
         return when {
             sessions.any { it.sets.isNotEmpty() } -> {
-                val burn = trainingBurnKcal(profile, sessions, now)
+                val burn = trainingBurnKcal(profile, date, sessions, now)
                 DayEnergy(roundTo10((base + burn) * factor), rest, roundTo10(burn), DayKind.TRAINED)
             }
             trainingExpected -> {
-                val burn = STRENGTH_MET * profile.weightKg * (DEFAULT_SESSION_MINUTES / 60.0)
+                val burn = (STRENGTH_MET - 1.0) * profile.weightKg * (DEFAULT_SESSION_MINUTES / 60.0)
                 DayEnergy(roundTo10((base + burn) * factor), rest, roundTo10(burn), DayKind.TRAINING_EXPECTED)
             }
             else -> DayEnergy(rest, rest, 0, DayKind.REST)
         }
     }
+
+    /** The weight on [date]: the newest entry dated on or before it, else the profile's weight. */
+    fun weightOn(profile: BodyProfile, weights: List<WeightEntry>, date: LocalDate): Double =
+        weights.filter { !it.date.isAfter(date) }.maxByOrNull { it.date }?.kg ?: profile.weightKg
+
+    /**
+     * One point per calendar day from [from] to [to] (never past [to]; days without sets are rest days), each from
+     * [day] with that day's weight. Averages are rounded to 10; the 28-day one needs at least 7 points.
+     */
+    fun history(
+        profile: BodyProfile,
+        weights: List<WeightEntry>,
+        sessionsByDate: Map<LocalDate, List<SessionSets>>,
+        from: LocalDate,
+        to: LocalDate,
+        now: Instant,
+    ): EnergyHistory {
+        val points = generateSequence(from) { it.plusDays(1) }.takeWhile { !it.isAfter(to) }.map { date ->
+            val result = day(
+                profile = profile.copy(weightKg = weightOn(profile, weights, date)),
+                date = date,
+                now = now,
+                sessions = sessionsByDate[date].orEmpty(),
+                trainingExpected = false,
+            )
+            EnergyPoint(date, result.kcal, result.trainingBurnKcal, result.kind == DayKind.TRAINED)
+        }.toList()
+        val trained = points.filter { it.trained }
+        return EnergyHistory(
+            points = points,
+            last7AverageKcal = points.takeIf { it.isNotEmpty() }?.let { averageOfLast(it, SHORT_WINDOW) },
+            last28AverageKcal = points.takeIf { it.size >= SHORT_WINDOW }?.let { averageOfLast(it, LONG_WINDOW) },
+            averageBurnKcal = trained.takeIf { it.isNotEmpty() }?.let { roundTo10(it.map { p -> p.burnKcal }.average()) },
+            trainedDays = trained.size,
+        )
+    }
+
+    private fun averageOfLast(points: List<EnergyPoint>, n: Int): Int =
+        roundTo10(points.takeLast(n).map { it.kcal }.average())
 
     private fun goalFactor(profile: BodyProfile): Double = 1.0 + profile.coerced().goalAdjustmentPercent / 100.0
 

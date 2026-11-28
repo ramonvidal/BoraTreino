@@ -16,6 +16,7 @@ import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SessionInfo
 import com.boratreino.core.model.SessionMachine
+import com.boratreino.core.model.SessionSets
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.model.working
@@ -77,6 +78,19 @@ internal class DefaultHistoryRepository @Inject constructor(
         ) { sessions, sets, machines, routines ->
             val setsBySession = sets.groupBy { it.sessionId }
             sessions.map { detail(it, setsBySession[it.id].orEmpty(), machines, routines) }
+        }
+    }
+
+    override fun observeSessionSets(from: LocalDate, to: LocalDate): Flow<Map<LocalDate, List<SessionSets>>> {
+        val start = from.startInstant()
+        val end = to.plusDays(1).startInstant()
+        return combine(
+            store.observeSessionsStartedBetween(start, end),
+            store.observeSetsOfSessionsStartedBetween(start, end),
+        ) { sessions, sets ->
+            val setsBySession = sets.groupBy { it.sessionId }
+            sessions.map { SessionSets(it, setsBySession[it.id].orEmpty()) }
+                .groupBy { it.session.startedAt.atZone(zone).toLocalDate() }
         }
     }
 

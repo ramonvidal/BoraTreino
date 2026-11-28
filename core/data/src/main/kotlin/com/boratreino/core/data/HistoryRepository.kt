@@ -5,6 +5,7 @@ import com.boratreino.core.model.HealthExport
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SessionInfo
+import com.boratreino.core.model.SessionSets
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +17,8 @@ interface HistoryRepository {
     fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>>
     /** The day's sessions by startedAt. */
     fun observeDay(date: LocalDate): Flow<List<SessionDetail>>
+    /** Sessions that started on [from]..[to] (inclusive, Clock's zone) with all their sets, grouped by date; dates without sessions are absent. */
+    fun observeSessionSets(from: LocalDate, to: LocalDate): Flow<Map<LocalDate, List<SessionSets>>>
     fun observeSession(sessionId: Long): Flow<SessionDetail?>
     /** Every date with at least one session. */
     fun observeTrainingDates(): Flow<Set<LocalDate>>

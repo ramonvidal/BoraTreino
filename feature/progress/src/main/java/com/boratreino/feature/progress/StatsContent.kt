@@ -80,6 +80,7 @@ private fun isPresent(card: AnalysisCard, state: StatsUiState, report: StatsRepo
     AnalysisCard.STRENGTH_VS_WEIGHT -> hasStrengthChart(report)
     AnalysisCard.RELATIVE_STRENGTH -> hasRelativeStrength(state)
     AnalysisCard.SUMMARY -> true
+    AnalysisCard.ENERGY -> state.energy?.points?.isNotEmpty() == true
     AnalysisCard.CARDIO -> report.cardioBlocks.isNotEmpty()
     AnalysisCard.TIMES -> report.times.averageMinutes != null || report.times.averageMinutesBetweenSets != null
     AnalysisCard.RECENCY -> true
@@ -94,7 +95,7 @@ private val AllCardsInOrder: List<AnalysisCard> = listOf(
     AnalysisCard.RELATIVE_STRENGTH,
     AnalysisCard.MUSCLE_VOLUME, AnalysisCard.WEEK_MUSCLES, AnalysisCard.BODY_MAP, AnalysisCard.MUSCLES,
     AnalysisCard.WEEKLY_VOLUME,
-    AnalysisCard.SUMMARY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY,
+    AnalysisCard.SUMMARY, AnalysisCard.ENERGY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY,
     AnalysisCard.MEASUREMENTS, AnalysisCard.PROPORTIONS,
 )
 
@@ -212,6 +213,7 @@ internal fun AnalysisContent(
                     AnalysisCard.STRENGTH_VS_WEIGHT -> StrengthVsWeightCard(state)
                     AnalysisCard.RELATIVE_STRENGTH -> RelativeStrengthCard(state)
                     AnalysisCard.SUMMARY -> SummaryCard(report)
+                    AnalysisCard.ENERGY -> state.energy?.let { EnergyCard(it) }
                     AnalysisCard.CARDIO -> CardioCard(report)
                     AnalysisCard.TIMES -> SessionLengthCard(report)
                     AnalysisCard.RECENCY -> RecencyCard(report)

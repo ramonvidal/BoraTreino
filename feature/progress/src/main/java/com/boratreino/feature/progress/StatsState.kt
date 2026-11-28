@@ -2,6 +2,7 @@ package com.boratreino.feature.progress
 
 import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.BodySnapshot
+import com.boratreino.core.model.EnergyHistory
 import com.boratreino.core.model.Finding
 import com.boratreino.core.model.FrequencySummary
 import com.boratreino.core.model.HabitSummary
@@ -29,13 +30,15 @@ internal data class StatsUiState(
     val strengthSummary: StrengthSummary = StrengthSummary.EMPTY,
     val body: BodySnapshot = BodySnapshot(emptyList(), null, false),
     val habit: HabitSummary? = null,
+    /** Daily energy estimate; null without a body profile or when the estimate is switched off. */
+    val energy: EnergyHistory? = null,
 )
 
 /** Where Analysis opens. */
 internal enum class AnalysisCard {
     TREND, WORKLOAD, PATTERNS, HARD_SETS, BALANCE, STRENGTH, RECORDS, MUSCLE_VOLUME,
     WEEK_MUSCLES, BODY_MAP, MUSCLES, REP_RANGES, WEEKLY_VOLUME, STRENGTH_VS_WEIGHT, RELATIVE_STRENGTH,
-    SUMMARY, CARDIO, TIMES, RECENCY, MEASUREMENTS, PROPORTIONS,
+    SUMMARY, ENERGY, CARDIO, TIMES, RECENCY, MEASUREMENTS, PROPORTIONS,
 }
 
 /** The Analysis level shows one section at a time; the chips at its top pick it. */
@@ -49,7 +52,8 @@ internal fun sectionOf(card: AnalysisCard): AnalysisSection = when (card) {
     AnalysisCard.RELATIVE_STRENGTH -> AnalysisSection.STRENGTH
     AnalysisCard.MUSCLE_VOLUME, AnalysisCard.WEEK_MUSCLES, AnalysisCard.BODY_MAP, AnalysisCard.MUSCLES,
     AnalysisCard.WEEKLY_VOLUME -> AnalysisSection.MUSCLES
-    AnalysisCard.SUMMARY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY -> AnalysisSection.HABIT
+    AnalysisCard.SUMMARY, AnalysisCard.ENERGY, AnalysisCard.CARDIO, AnalysisCard.TIMES,
+    AnalysisCard.RECENCY -> AnalysisSection.HABIT
     AnalysisCard.MEASUREMENTS, AnalysisCard.PROPORTIONS -> AnalysisSection.BODY
 }
 

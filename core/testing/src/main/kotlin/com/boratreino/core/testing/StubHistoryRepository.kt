@@ -6,6 +6,7 @@ import com.boratreino.core.model.HealthExport
 import com.boratreino.core.model.RepeatMode
 import com.boratreino.core.model.SessionDetail
 import com.boratreino.core.model.SessionInfo
+import com.boratreino.core.model.SessionSets
 import com.boratreino.core.model.SetDraft
 import com.boratreino.core.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,8 @@ import java.time.YearMonth
 open class StubHistoryRepository : HistoryRepository {
     override fun observeMonth(month: YearMonth): Flow<Map<LocalDate, List<SessionInfo>>> = flowOf(emptyMap())
     override fun observeDay(date: LocalDate): Flow<List<SessionDetail>> = flowOf(emptyList())
+    override fun observeSessionSets(from: LocalDate, to: LocalDate): Flow<Map<LocalDate, List<SessionSets>>> =
+        flowOf(emptyMap())
     override fun observeSession(sessionId: Long): Flow<SessionDetail?> = flowOf(null)
     override fun observeTrainingDates(): Flow<Set<LocalDate>> = flowOf(emptySet())
     override suspend fun addSessionWithSet(

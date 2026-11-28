@@ -10,6 +10,8 @@ import com.boratreino.core.data.RoutineRepository
 import com.boratreino.core.data.StatsRepository
 import com.boratreino.core.model.BodyMeasurement
 import com.boratreino.core.model.MeasurementType
+import com.boratreino.core.model.EnergyHistory
+import com.boratreino.core.model.EnergyRules
 import com.boratreino.core.model.FrequencyRules
 import com.boratreino.core.model.InsightRules
 import com.boratreino.core.model.MuscleGroup
@@ -24,6 +26,7 @@ import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.settings.TrainingSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.Locale
@@ -39,6 +42,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val PERIOD_KEY = "statsPeriod"
+private const val ENERGY_MIN_DAYS = 28
 
 private data class StatsInputs(
     val period: StatsPeriod,
@@ -60,10 +64,10 @@ private data class OverviewInputs(
 class StatsViewModel @Inject constructor(
     stats: StatsRepository,
     settings: TrainingSettings,
-    body: BodySettings,
+    private val body: BodySettings,
     private val savedState: SavedStateHandle,
     private val measurements: MeasurementRepository,
-    history: HistoryRepository,
+    private val history: HistoryRepository,
     machines: MachineRepository,
     routines: RoutineRepository,
     private val clock: Clock,
@@ -111,6 +115,23 @@ class StatsViewModel @Inject constructor(
             (weights.firstOrNull()?.kg ?: profile?.weightKg) to weights
         }
 
+    /**
+     * The daily energy estimate over the report's period, at least the last 28 days so the 28-day average exists.
+     * Null without a profile or when the estimate is switched off. The maths is EnergyRules.history.
+     */
+    private fun energy(reportFrom: LocalDate, reportTo: LocalDate): Flow<EnergyHistory?> {
+        val from = minOf(reportFrom, reportTo.minusDays(ENERGY_MIN_DAYS - 1L))
+        return combine(
+            body.profile,
+            body.showEnergyEstimate,
+            body.weights,
+            history.observeSessionSets(from, reportTo),
+        ) { profile, show, weights, sessionsByDate ->
+            if (profile == null || !show) return@combine null
+            EnergyRules.history(profile, weights, sessionsByDate, from, reportTo, Instant.now(clock))
+        }
+    }
+
     internal val state: StateFlow<StatsUiState> = combine(
         period,
         settings.weeklyGoal,
@@ -120,8 +141,8 @@ class StatsViewModel @Inject constructor(
         .combine(overviewInputs) { inputs, overview -> inputs to overview }
         .flatMapLatest { (inputs, overview) ->
             val (period, goal, bodyPair, measured) = inputs
-            stats.observeStats(period, goal).map { report ->
-                StatsUiState(
+            stats.observeStats(period, goal).flatMapLatest { report ->
+                energy(report.from, report.to).map { energy -> StatsUiState(
                     loaded = true,
                     period = period,
                     report = report,
@@ -141,7 +162,8 @@ class StatsViewModel @Inject constructor(
                     strengthSummary = StrengthSummaryRules.summary(report),
                     body = OverviewRules.body(measured),
                     habit = OverviewRules.habit(report),
-                )
+                    energy = energy,
+                ) }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUiState())
