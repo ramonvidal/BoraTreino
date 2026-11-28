@@ -168,3 +168,52 @@ jobs:
             --latest
           # Keep the three newest releases.
           gh release list --limit 100 --json tagName --jq '.[3:][].tagName' | xargs -r -n1 gh release delete --cleanup-tag --yes
+
+      # Google Play, internal testing track (owner's decision): every green build of the release branches
+      # goes there; the owner promotes it to production in the Play Console. Needs PLAY_SERVICE_ACCOUNT_JSON
+      # (the service account's JSON key, with release rights on the app) and the upload key secrets.
+      - name: Prepare the Google Play upload
+        id: play
+        if: github.event_name == 'push' && (github.ref_name == 'claude/gym-tracking-app-pyg6li' || github.ref_name == 'main')
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::warning::PLAY_SERVICE_ACCOUNT_JSON is not set: nothing is sent to Google Play."
+            exit 0
+          fi
+          if [ ! -f app/boratreino-upload.keystore ]; then
+            echo "::warning::Not sending to Google Play: the bundle is not signed with the upload key."
+            exit 0
+          fi
+          # "What's new" from the listing texts, one file per language (Play caps it at 500 characters).
+          mkdir -p whatsnew
+          for lang in en-US pt-BR; do
+            head -c 500 "docs/play-store/listing/$lang/release_notes.txt" > "whatsnew/whatsnew-$lang"
+          done
+          echo "upload=true" >> "$GITHUB_OUTPUT"
+
+      - name: Send to Google Play (internal testing)
+        id: play_upload
+        if: steps.play.outputs.upload == 'true'
+        continue-on-error: true
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.punyplatypus.boratreino
+          releaseFiles: app/build/outputs/bundle/playRelease/app-play-release.aab
+          track: internal
+          status: completed
+          whatsNewDirectory: whatsnew
+
+      # An app Google hasn't published yet only accepts draft releases; the owner rolls those out in the Console.
+      - name: Send to Google Play as a draft (app not published yet)
+        if: steps.play.outputs.upload == 'true' && steps.play_upload.outcome == 'failure'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.punyplatypus.boratreino
+          releaseFiles: app/build/outputs/bundle/playRelease/app-play-release.aab
+          track: internal
+          status: draft
+          whatsNewDirectory: whatsnew
