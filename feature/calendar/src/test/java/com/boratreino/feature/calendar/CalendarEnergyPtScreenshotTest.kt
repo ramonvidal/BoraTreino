@@ -21,7 +21,7 @@ class CalendarEnergyPtScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val trained = CalendarSamples.monthWithTraining.copy(energy = DayEnergyUi(2450, DayKind.TRAINED))
+    private val trained = CalendarSamples.monthWithTraining.copy(energy = DayEnergyUi(2340, DayKind.TRAINED))
     private val rest = CalendarSamples.emptyToday.copy(energy = DayEnergyUi(2150, DayKind.REST))
     private val hidden = CalendarSamples.monthWithTraining
 

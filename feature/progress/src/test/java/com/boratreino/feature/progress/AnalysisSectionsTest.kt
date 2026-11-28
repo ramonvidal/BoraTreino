@@ -20,7 +20,7 @@ class AnalysisSectionsTest {
             AnalysisCard.MUSCLES, AnalysisCard.WEEKLY_VOLUME,
         ),
         AnalysisSection.HABIT to listOf(
-            AnalysisCard.SUMMARY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY,
+            AnalysisCard.SUMMARY, AnalysisCard.ENERGY, AnalysisCard.CARDIO, AnalysisCard.TIMES, AnalysisCard.RECENCY,
         ),
         AnalysisSection.BODY to listOf(AnalysisCard.MEASUREMENTS, AnalysisCard.PROPORTIONS),
     )
@@ -97,7 +97,7 @@ class AnalysisSectionsTest {
             analysisCards(state, AnalysisSection.MUSCLES),
         )
         assertEquals(
-            listOf(AnalysisCard.SUMMARY, AnalysisCard.TIMES, AnalysisCard.RECENCY),
+            listOf(AnalysisCard.SUMMARY, AnalysisCard.ENERGY, AnalysisCard.TIMES, AnalysisCard.RECENCY),
             analysisCards(state, AnalysisSection.HABIT),
         )
         assertEquals(listOf(AnalysisCard.MEASUREMENTS), analysisCards(state, AnalysisSection.BODY))
@@ -106,6 +106,14 @@ class AnalysisSectionsTest {
     @Test
     fun `a section with no present card has no cards`() {
         assertEquals(emptyList<AnalysisCard>(), analysisCards(StatsSamples.state(noHighlights), AnalysisSection.HIGHLIGHTS))
+    }
+
+    @Test
+    fun `without energy the habit section keeps its other cards`() {
+        assertEquals(
+            listOf(AnalysisCard.SUMMARY, AnalysisCard.TIMES, AnalysisCard.RECENCY),
+            analysisCards(StatsSamples.state(energy = null), AnalysisSection.HABIT),
+        )
     }
 
     @Test

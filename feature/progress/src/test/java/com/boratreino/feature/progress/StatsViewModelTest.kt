@@ -17,12 +17,15 @@ import com.boratreino.core.model.ReminderSettings
 import com.boratreino.core.model.RoutinePlan
 import com.boratreino.core.model.RoutinePlanWithRoutines
 import com.boratreino.core.model.ScheduleMode
+import com.boratreino.core.model.Session
 import com.boratreino.core.model.SessionDetail
+import com.boratreino.core.model.SessionSets
 import com.boratreino.core.model.RestTimerSettings
 import com.boratreino.core.model.Sex
 import com.boratreino.core.model.StatsPeriod
 import com.boratreino.core.model.StatsReport
 import com.boratreino.core.model.WeightEntry
+import com.boratreino.core.model.WorkoutSet
 import com.boratreino.core.settings.BodySettings
 import com.boratreino.core.settings.TrainingSettings
 import com.boratreino.core.testing.StubBodySettings
@@ -30,6 +33,7 @@ import com.boratreino.core.testing.StubMeasurementRepository
 import com.boratreino.core.testing.StubStatsRepository
 import com.boratreino.core.testing.StubTrainingSettings
 import com.boratreino.core.testing.answering
+import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,6 +52,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -67,13 +72,15 @@ class StatsViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    /** Records every query; the report it returns carries the asked period. */
-    private class FakeStatsRepository : StubStatsRepository() {
+    /** Records every query; the report it returns is [reportOf] the asked period (the full one by default). */
+    private class FakeStatsRepository(
+        private val reportOf: (StatsPeriod) -> StatsReport = { StatsSamples.full.copy(period = it) },
+    ) : StubStatsRepository() {
         val calls = mutableListOf<Pair<StatsPeriod, Int>>()
 
         override fun observeStats(period: StatsPeriod, weeklyGoal: Int): Flow<StatsReport> = flow {
             calls += period to weeklyGoal
-            emit(StatsSamples.full.copy(period = period))
+            emit(reportOf(period))
         }
     }
 
@@ -89,8 +96,10 @@ class StatsViewModelTest {
     private class FakeBody(profile: BodyProfile? = null, weights: List<WeightEntry> = emptyList()) : StubBodySettings() {
         val profileFlow = MutableStateFlow(profile)
         val weightsFlow = MutableStateFlow(weights)
+        val showFlow = MutableStateFlow(true)
         override val profile: Flow<BodyProfile?> get() = profileFlow
         override val weights: Flow<List<WeightEntry>> get() = weightsFlow
+        override val showEnergyEstimate: Flow<Boolean> get() = showFlow
         override suspend fun setProfile(profile: BodyProfile) {
             profileFlow.value = profile
         }
@@ -132,9 +141,11 @@ class StatsViewModelTest {
     private val body = FakeBody()
     private val measurements = FakeMeasurementRepository()
     private val trainingDates = MutableStateFlow<Set<LocalDate>>(emptySet())
+    private val sessionsByDate = MutableStateFlow<Map<LocalDate, List<SessionSets>>>(emptyMap())
     private val history = answering<HistoryRepository>(
         "observeTrainingDates" to trainingDates,
         "observeDay" to flowOf(emptyList<SessionDetail>()),
+        "observeSessionSets" to sessionsByDate,
     )
     private val machines = answering<MachineRepository>("observeMachines" to flowOf(emptyList<Machine>()))
     private val routines = answering<RoutineRepository>(
@@ -147,8 +158,9 @@ class StatsViewModelTest {
         handle: SavedStateHandle = SavedStateHandle(),
         bodySettings: BodySettings = body,
         measurementRepository: MeasurementRepository = measurements,
+        statsRepository: StatsRepository = repository,
     ): StatsViewModel {
-        val vm = StatsViewModel(repository, settings, bodySettings, handle, measurementRepository, history, machines, routines, statsTestClock)
+        val vm = StatsViewModel(statsRepository, settings, bodySettings, handle, measurementRepository, history, machines, routines, statsTestClock)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect { } }
         runCurrent()
         return vm
@@ -379,5 +391,107 @@ class StatsViewModelTest {
         runCurrent()
         assertEquals(original, vm.state.value.measurements.first { it.id == 1L })
         assertEquals(measured, vm.state.value.measurements)
+    }
+
+    // energy
+
+    private val energyProfile = BodyProfile(Sex.MALE, birthYear = 1990, heightCm = 180, weightKg = 80.0)
+    private val yesterday = StatsSamples.today.minusDays(1)
+
+    /** One hour of strength (a 50 kg set of 10) on 1 November 2026: 3 * 80 * 1 = 240 kcal net. */
+    private fun anHourOfStrength(): SessionSets {
+        val start = Instant.parse("2026-11-01T10:00:00Z")
+        val session = Session(id = 1L, startedAt = start, endedAt = start.plusSeconds(3600), routineId = null, note = null)
+        val set = WorkoutSet(
+            id = 1L, sessionId = 1L, machineId = 1L, position = 0,
+            weightKg = 50.0, reps = 10, seconds = null, calories = null, distanceM = null, loggedAt = start,
+        )
+        return SessionSets(session, listOf(set))
+    }
+
+    @Test
+    fun `energy is null without a body profile`() = runTest(dispatcher) {
+        val vm = viewModel()
+
+        assertTrue(vm.state.value.loaded)
+        assertNull(vm.state.value.energy)
+    }
+
+    @Test
+    fun `energy is null when the estimate is switched off`() = runTest(dispatcher) {
+        body.profileFlow.value = energyProfile
+        body.showFlow.value = false
+
+        assertNull(viewModel().state.value.energy)
+    }
+
+    @Test
+    fun `switching the estimate off and on hides and shows the energy`() = runTest(dispatcher) {
+        body.profileFlow.value = energyProfile
+        val vm = viewModel()
+        assertNotNull(vm.state.value.energy)
+
+        body.showFlow.value = false
+        runCurrent()
+        assertNull(vm.state.value.energy)
+
+        body.showFlow.value = true
+        runCurrent()
+        assertNotNull(vm.state.value.energy)
+    }
+
+    @Test
+    fun `energy has one day per day of the report`() = runTest(dispatcher) {
+        body.profileFlow.value = energyProfile
+
+        val points = viewModel().state.value.energy!!.points
+
+        // 90 days before today through today, both included
+        assertEquals(91, points.size)
+        assertEquals(StatsSamples.full.from, points.first().date)
+        assertEquals(StatsSamples.full.to, points.last().date)
+    }
+
+    @Test
+    fun `energy covers at least the last 28 days for a one week report`() = runTest(dispatcher) {
+        body.profileFlow.value = energyProfile
+        val vm = viewModel(statsRepository = FakeStatsRepository { StatsSamples.oneWeek })
+
+        val energy = vm.state.value.energy!!
+
+        assertEquals(28, energy.points.size)
+        assertEquals(StatsSamples.today.minusDays(27), energy.points.first().date)
+        assertEquals(StatsSamples.today, energy.points.last().date)
+        assertNotNull(energy.last28AverageKcal)
+    }
+
+    @Test
+    fun `a day with sessions has the net burn of its sets`() = runTest(dispatcher) {
+        body.profileFlow.value = energyProfile
+        sessionsByDate.value = mapOf(yesterday to listOf(anHourOfStrength()))
+
+        val energy = viewModel().state.value.energy!!
+        val day = energy.points.single { it.date == yesterday }
+
+        // 2100 + 3 * 80 * 1 h = 2340, of which 240 is training
+        assertEquals(2340, day.kcal)
+        assertEquals(240, day.burnKcal)
+        assertTrue(day.trained)
+        assertEquals(1, energy.trainedDays)
+        assertEquals(240, energy.averageBurnKcal)
+    }
+
+    @Test
+    fun `the 7 and 28 day averages are the means of the points`() = runTest(dispatcher) {
+        body.profileFlow.value = energyProfile
+        sessionsByDate.value = mapOf(yesterday to listOf(anHourOfStrength()))
+        val vm = viewModel(statsRepository = FakeStatsRepository { StatsSamples.oneWeek })
+
+        val energy = vm.state.value.energy!!
+
+        // last 7 days: six rest days (2100) and the trained day (2340): 2134.3 -> 2130
+        assertEquals(2130, energy.last7AverageKcal)
+        // last 28 days: twenty-seven rest days and the trained day: 2108.6 -> 2110
+        assertEquals(2110, energy.last28AverageKcal)
     }
 }

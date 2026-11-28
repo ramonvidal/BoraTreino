@@ -213,6 +213,56 @@ class HistoryRepositoryTest {
         assertNull(history.observeSession(999).first())
     }
 
+    // observeSessionSets
+
+    @Test
+    fun `observeSessionSets groups the range's sessions by local date with their sets`() = runTest {
+        val leg = machine("Leg press", MuscleGroup.LEGS)
+        val trained = session(at("2026-11-02", "18:00"), at("2026-11-02", "19:00"))
+        storeSet(trained, leg, 0, at("2026-11-02", "18:10"))
+        storeSet(trained, leg, 1, at("2026-11-02", "18:20"))
+        val empty = session(at("2026-11-03", "07:00"))
+        session(at("2026-11-04", "07:00"))
+
+        val byDate = history.observeSessionSets(LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 3)).first()
+
+        assertEquals(setOf(LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 3)), byDate.keys)
+        val day = byDate.getValue(LocalDate.of(2026, 11, 2)).single()
+        assertEquals(trained, day.session.id)
+        assertEquals(2, day.sets.size)
+        assertEquals(listOf(empty), byDate.getValue(LocalDate.of(2026, 11, 3)).map { it.session.id })
+        assertTrue(byDate.getValue(LocalDate.of(2026, 11, 3)).single().sets.isEmpty())
+    }
+
+    @Test
+    fun `observeSessionSets includes both end days in full`() = runTest {
+        session(at("2026-11-01", "07:00"))
+        val startDay = session(at("2026-11-02", "00:30"))
+        val endDay = session(at("2026-11-03", "23:30"))
+        session(at("2026-11-04", "00:10"))
+
+        val ids = history.observeSessionSets(LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 3))
+            .first().values.flatten().map { it.session.id }
+
+        assertEquals(listOf(startDay, endDay), ids)
+    }
+
+    @Test
+    fun `observeSessionSets has no entry for a date without sessions`() = runTest {
+        session(at("2026-11-03", "07:00"))
+
+        val byDate = history.observeSessionSets(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 5)).first()
+
+        assertEquals(setOf(LocalDate.of(2026, 11, 3)), byDate.keys)
+    }
+
+    @Test
+    fun `observeSessionSets is empty for a range without sessions`() = runTest {
+        session(at("2026-11-03", "07:00"))
+
+        assertTrue(history.observeSessionSets(LocalDate.of(2026, 11, 4), LocalDate.of(2026, 11, 5)).first().isEmpty())
+    }
+
     // observeTrainingDates
 
     @Test

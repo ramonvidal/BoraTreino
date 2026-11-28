@@ -90,8 +90,8 @@ class CalendarViewModelEnergyTest {
         viewModel.selectDay(trainedDate)
         runCurrent()
 
-        // 2100 + 4 * 80 * 1 h = 2420
-        assertEquals(DayEnergyUi(2420, DayKind.TRAINED), energy)
+        // 2100 + 3 * 80 * 1 h = 2340
+        assertEquals(DayEnergyUi(2340, DayKind.TRAINED), energy)
         val expected = EnergyRules.day(profile, trainedDate, clock.instant(), listOf(SessionSets(session, sets)), false)
         assertEquals(DayEnergyUi(expected.kcal, expected.kind), energy)
     }

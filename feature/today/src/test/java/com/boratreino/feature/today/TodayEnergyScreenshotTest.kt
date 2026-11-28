@@ -21,11 +21,11 @@ class TodayEnergyScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val trainingDay = TodaySamples.routineBNotStarted.copy(energy = DayEnergyUi(2420, DayKind.TRAINING_EXPECTED))
-    private val trainedDay = TodaySamples.routineBInProgress.copy(energy = DayEnergyUi(2450, DayKind.TRAINED))
+    private val trainingDay = TodaySamples.routineBNotStarted.copy(energy = DayEnergyUi(2340, DayKind.TRAINING_EXPECTED))
+    private val trainedDay = TodaySamples.routineBInProgress.copy(energy = DayEnergyUi(2220, DayKind.TRAINED))
     private val restDay = TodaySamples.restDay.copy(energy = DayEnergyUi(2150, DayKind.REST))
     private val hidden = TodaySamples.routineBNotStarted
-    private val withoutRoutines = TodaySamples.openSession.copy(energy = DayEnergyUi(2450, DayKind.TRAINED))
+    private val withoutRoutines = TodaySamples.openSession.copy(energy = DayEnergyUi(2220, DayKind.TRAINED))
 
     private fun shoot(name: String, state: TodayUiState, dark: Boolean = false) {
         compose.setContent {

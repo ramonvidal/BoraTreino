@@ -173,6 +173,31 @@ class AnalysisContentTest {
     }
 
     @Test
+    fun `the habit section has the daily energy card with its averages`() {
+        showAnalysis(section = AnalysisSection.HABIT)
+
+        shown("Daily energy")
+        shown("Last 7 days: about 2,200 kcal a day")
+        shown("Last 28 days: about 2,130 kcal a day")
+        shown("Training adds about 240 kcal on the days you train")
+    }
+
+    @Test
+    fun `the daily energy card comes after the summary`() {
+        showAnalysis(section = AnalysisSection.HABIT)
+
+        assertTrue(yOf("Daily energy") > yOf("Summary"))
+    }
+
+    @Test
+    fun `without an energy history the habit section has no energy card`() {
+        showAnalysis(StatsSamples.state(energy = null), section = AnalysisSection.HABIT)
+
+        notShown("Daily energy")
+        shown("Summary")
+    }
+
+    @Test
     fun `the summary has the sessions a week, the consistency and the best week`() {
         showAnalysis(section = AnalysisSection.HABIT)
 

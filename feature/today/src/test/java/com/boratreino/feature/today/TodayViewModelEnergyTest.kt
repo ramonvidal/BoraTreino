@@ -216,8 +216,8 @@ class TodayViewModelEnergyTest {
         suggestRoutine()
         start()
 
-        // 2100 + 4 * 80 * 1 h = 2420
-        assertEquals(DayEnergyUi(2420, DayKind.TRAINING_EXPECTED), energy)
+        // 2100 + 3 * 80 * 1 h = 2340
+        assertEquals(DayEnergyUi(2340, DayKind.TRAINING_EXPECTED), energy)
         val result = expected(emptyList(), trainingExpected = true)
         assertEquals(DayEnergyUi(result.kcal, result.kind), energy)
     }
@@ -230,8 +230,8 @@ class TodayViewModelEnergyTest {
         history.day.value = listOf(detail(done, strengthSet()))
         start()
 
-        // half an hour: 2100 + 160 = 2260
-        assertEquals(DayEnergyUi(2260, DayKind.TRAINED), energy)
+        // half an hour: 2100 + 3 * 80 * 0.5 = 2220
+        assertEquals(DayEnergyUi(2220, DayKind.TRAINED), energy)
         val result = expected(listOf(SessionSets(done, listOf(strengthSet()))), trainingExpected = true)
         assertEquals(DayEnergyUi(result.kcal, result.kind), energy)
     }
@@ -252,8 +252,8 @@ class TodayViewModelEnergyTest {
         training.open.value = OpenSession(open, listOf(SessionMachine(sample.legPress, listOf(strengthSet(sessionId = 2L)))))
         start()
 
-        // open for 30 minutes up to the clock: 2100 + 160 = 2260
-        assertEquals(DayEnergyUi(2260, DayKind.TRAINED), energy)
+        // open for 30 minutes up to the clock: 2100 + 120 = 2220
+        assertEquals(DayEnergyUi(2220, DayKind.TRAINED), energy)
     }
 
     @Test
@@ -265,7 +265,7 @@ class TodayViewModelEnergyTest {
         history.day.value = listOf(SessionDetail(open, null, listOf(SessionMachine(sample.legPress, sets))))
         start()
 
-        assertEquals(DayEnergyUi(2260, DayKind.TRAINED), energy)
+        assertEquals(DayEnergyUi(2220, DayKind.TRAINED), energy)
     }
 
     @Test
@@ -274,7 +274,7 @@ class TodayViewModelEnergyTest {
         training.open.value = OpenSession(session(id = 2L, startedAt = "2026-11-05T11:55:00Z", endedAt = null), emptyList())
         start()
 
-        assertEquals(DayEnergyUi(2420, DayKind.TRAINING_EXPECTED), energy)
+        assertEquals(DayEnergyUi(2340, DayKind.TRAINING_EXPECTED), energy)
     }
 
     @Test
@@ -288,8 +288,8 @@ class TodayViewModelEnergyTest {
         training.open.value = OpenSession(open, listOf(SessionMachine(sample.legPress, listOf(strengthSet(sessionId = 2L)))))
         runCurrent()
 
-        // one hour open: 2100 + 320 = 2420
-        assertEquals(DayEnergyUi(2420, DayKind.TRAINED), energy)
+        // one hour open: 2100 + 3 * 80 * 1 = 2340
+        assertEquals(DayEnergyUi(2340, DayKind.TRAINED), energy)
     }
 
     @Test

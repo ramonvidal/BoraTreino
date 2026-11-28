@@ -1,6 +1,8 @@
 package com.boratreino.feature.progress
 
 import com.boratreino.core.model.Consistency
+import com.boratreino.core.model.EnergyHistory
+import com.boratreino.core.model.EnergyPoint
 import com.boratreino.core.model.MachineEstimate
 import com.boratreino.core.model.MachineKind
 import com.boratreino.core.model.Muscle
@@ -241,6 +243,29 @@ internal object StatsSamples {
         times = SessionTimes(0, null, null),
     )
 
-    fun state(report: StatsReport = full, period: StatsPeriod = report.period) =
-        StatsUiState(loaded = true, period = period, report = report, weeklyGoal = 4)
+    /**
+     * 28 days ending today: rest days at 2,100 kcal, the last three days trained at 2,340 kcal (240 kcal of training).
+     * Last 7 days: (4 * 2100 + 3 * 2340) / 7 = 2202.9 -> 2200; last 28 days: (25 * 2100 + 3 * 2340) / 28 = 2125.7 -> 2130.
+     */
+    val energyHistory = EnergyHistory(
+        points = (0 until 28).map { i ->
+            val trained = i >= 25
+            EnergyPoint(
+                date = today.minusDays(27L - i),
+                kcal = if (trained) 2340 else 2100,
+                burnKcal = if (trained) 240 else 0,
+                trained = trained,
+            )
+        },
+        last7AverageKcal = 2200,
+        last28AverageKcal = 2130,
+        averageBurnKcal = 240,
+        trainedDays = 3,
+    )
+
+    fun state(
+        report: StatsReport = full,
+        period: StatsPeriod = report.period,
+        energy: EnergyHistory? = energyHistory,
+    ) = StatsUiState(loaded = true, period = period, report = report, weeklyGoal = 4, energy = energy)
 }

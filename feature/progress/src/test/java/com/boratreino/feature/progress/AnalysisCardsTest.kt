@@ -1,5 +1,6 @@
 package com.boratreino.feature.progress
 
+import com.boratreino.core.model.EnergyHistory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -21,12 +22,32 @@ class AnalysisCardsTest {
                 AnalysisCard.MUSCLES,
                 AnalysisCard.WEEKLY_VOLUME,
                 AnalysisCard.SUMMARY,
+                AnalysisCard.ENERGY,
                 AnalysisCard.TIMES,
                 AnalysisCard.RECENCY,
                 AnalysisCard.MEASUREMENTS,
             ),
             analysisCards(StatsSamples.state()),
         )
+    }
+
+    @Test
+    fun `the energy card is listed right after the summary when there are energy points`() {
+        val cards = analysisCards(StatsSamples.state())
+
+        assertEquals(cards.indexOf(AnalysisCard.SUMMARY) + 1, cards.indexOf(AnalysisCard.ENERGY))
+    }
+
+    @Test
+    fun `without an energy history there is no energy card`() {
+        assertFalse(AnalysisCard.ENERGY in analysisCards(StatsSamples.state(energy = null)))
+    }
+
+    @Test
+    fun `an energy history without points has no energy card`() {
+        val none = EnergyHistory(points = emptyList(), last7AverageKcal = null, last28AverageKcal = null, averageBurnKcal = null, trainedDays = 0)
+
+        assertFalse(AnalysisCard.ENERGY in analysisCards(StatsSamples.state(energy = none)))
     }
 
     @Test
@@ -50,9 +71,18 @@ class AnalysisCardsTest {
 
     @Test
     fun `the cardio card comes after the summary of the habit group when there are cardio blocks`() {
-        val cards = analysisCards(StatsSamples.state(StatsSamples.full.copy(cardioBlocks = Phase46Samples.cardioBlocks)))
+        val cards = analysisCards(
+            StatsSamples.state(StatsSamples.full.copy(cardioBlocks = Phase46Samples.cardioBlocks), energy = null),
+        )
 
         assertEquals(cards.indexOf(AnalysisCard.SUMMARY) + 1, cards.indexOf(AnalysisCard.CARDIO))
+    }
+
+    @Test
+    fun `the cardio card comes after the energy card when both are shown`() {
+        val cards = analysisCards(StatsSamples.state(StatsSamples.full.copy(cardioBlocks = Phase46Samples.cardioBlocks)))
+
+        assertEquals(cards.indexOf(AnalysisCard.ENERGY) + 1, cards.indexOf(AnalysisCard.CARDIO))
     }
 
     @Test
