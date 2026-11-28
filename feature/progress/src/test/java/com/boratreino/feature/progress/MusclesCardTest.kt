@@ -110,7 +110,7 @@ class MusclesCardTest {
 
         compose.onNodeWithContentDescription(
             "Chest: 8.0. Quadriceps: 2.0. Hamstrings: 2.0. Glutes: 2.0. Calves: 2.0. Hips: 2.0. " +
-                "Upper back: 0.3. Traps and neck: 0.3. Lower back: 0.3. Shoulders: 0.2.",
+                "Upper back: 0.3. Traps and neck: 0.3. Lower back: 0.3. Shoulders: 0.2",
         ).assertIsDisplayed()
     }
 
