@@ -291,6 +291,10 @@ CI green, screenshots looked at).
       technical cards in an "Analysis" level.
 - [x] **C7: Play Store page.** New screenshots (8 per language) from the final screens and
       the listing texts revised; the owner uploads them in the Play Console.
+- [x] **C8: shorter Evolução screens.** Analysis shows one section at a time (chips: Highlights,
+      Strength, Muscles, Habit, Body; a finding opens its section); the Muscles card hides rows that
+      would read 0.0 behind "Show all 14 muscles"; the exercise detail lists the last 5 sessions in
+      one card with "Show all N sessions".
 
 ## Settled questions
 
